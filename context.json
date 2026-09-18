@@ -1,8 +1,9 @@
 {
   "meta": {
-    "project_name": "",
+    "project_name": "1+1 Daire - 50 m2 (Amerikan Mutfak)",
     "units": "mm",
-    "scale": "1:50"
+    "scale": "1:50",
+    "target_total_area_m2": 50
   },
   "layers": [
     { "name": "DUVARLAR", "color": 7, "linetype": "CONTINUOUS" },
@@ -11,9 +12,33 @@
     { "name": "OLCU", "color": 1, "linetype": "CONTINUOUS" },
     { "name": "METIN", "color": 2, "linetype": "CONTINUOUS" }
   ],
-  "rooms": [],
-  "walls": [],
-  "openings": [],
-  "labels": [],
-  "rev_history": []
+  "rooms": [
+    { "id": "banyo1", "name": "Banyo", "area_m2": 4.485, "polygon": [[0, 0], [3900, 0], [3900, 1150], [0, 1150]] },
+    { "id": "oda1", "name": "Oda", "area_m2": 15.015, "polygon": [[0, 1150], [3900, 1150], [3900, 5000], [0, 5000]] },
+    { "id": "salon1", "name": "Salon", "area_m2": 30.5, "polygon": [[3900, 0], [10000, 0], [10000, 5000], [3900, 5000]] }
+  ],
+  "walls": [
+    { "id": "w_ext_bottom", "start": [0, 0], "end": [10000, 0], "thickness": 200, "layer": "DUVARLAR" },
+    { "id": "w_ext_right", "start": [10000, 0], "end": [10000, 5000], "thickness": 200, "layer": "DUVARLAR" },
+    { "id": "w_ext_top", "start": [10000, 5000], "end": [0, 5000], "thickness": 200, "layer": "DUVARLAR" },
+    { "id": "w_ext_left", "start": [0, 5000], "end": [0, 0], "thickness": 200, "layer": "DUVARLAR" },
+    { "id": "w_int_vertical", "start": [3900, 0], "end": [3900, 5000], "thickness": 100, "layer": "DUVARLAR" },
+    { "id": "w_int_horizontal", "start": [0, 1150], "end": [3900, 1150], "thickness": 100, "layer": "DUVARLAR" }
+  ],
+  "openings": [
+    { "id": "door_entry", "type": "door", "wall_id": "w_ext_bottom", "position_from_start": 7000, "width": 900, "layer": "KAPI-PENCERE" },
+    { "id": "door_oda", "type": "door", "wall_id": "w_int_vertical", "position_from_start": 3000, "width": 800, "layer": "KAPI-PENCERE" },
+    { "id": "door_banyo", "type": "door", "wall_id": "w_int_vertical", "position_from_start": 575, "width": 700, "layer": "KAPI-PENCERE" },
+    { "id": "win_salon", "type": "window", "wall_id": "w_ext_top", "position_from_start": 3000, "width": 1500, "layer": "KAPI-PENCERE" },
+    { "id": "win_oda", "type": "window", "wall_id": "w_ext_top", "position_from_start": 8000, "width": 1200, "layer": "KAPI-PENCERE" },
+    { "id": "win_banyo", "type": "window", "wall_id": "w_ext_bottom", "position_from_start": 1950, "width": 500, "layer": "KAPI-PENCERE" }
+  ],
+  "labels": [
+    { "id": "lbl_mutfak", "type": "text", "text": "AMERIKAN MUTFAK", "position": [8800, 4400], "height": 180, "layer": "METIN" },
+    { "id": "dim_width", "type": "dimension", "text": "10000", "position": [5000, -400], "height": 200, "layer": "OLCU" },
+    { "id": "dim_depth", "type": "dimension", "text": "5000", "position": [-500, 2500], "height": 200, "layer": "OLCU" }
+  ],
+  "rev_history": [
+    { "rev": 1, "ts": "2026-09-18T07:51:20Z", "summary": "1+1 daire, ~50 m2, Banyo+Oda+Salon (Amerikan mutfak), Oda:Salon oran ~1:2" }
+  ]
 }
