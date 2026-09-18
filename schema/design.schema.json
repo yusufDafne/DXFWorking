@@ -1,0 +1,147 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "daire-plani-ai/design.schema.json",
+  "title": "Daire Plani Context Schema",
+  "type": "object",
+  "required": ["meta", "layers", "rooms", "walls", "openings", "labels", "rev_history"],
+  "additionalProperties": false,
+  "properties": {
+    "meta": {
+      "type": "object",
+      "description": "Proje meta bilgisi",
+      "required": ["units"],
+      "additionalProperties": false,
+      "properties": {
+        "project_name": { "type": "string" },
+        "units": {
+          "type": "string",
+          "enum": ["mm", "m"],
+          "description": "Tum koordinat ve olculerin birimi"
+        },
+        "scale": {
+          "type": "string",
+          "description": "Ciktinin olceklendirme etiketi, orn. '1:50'"
+        },
+        "target_total_area_m2": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Kullanicinin talep ettigi hedef toplam daire alani (m2)"
+        }
+      }
+    },
+    "layers": {
+      "type": "array",
+      "description": "Katman tanimlari",
+      "items": {
+        "type": "object",
+        "required": ["name"],
+        "additionalProperties": false,
+        "properties": {
+          "name": { "type": "string" },
+          "color": { "type": "integer", "minimum": 0, "maximum": 255 },
+          "linetype": { "type": "string" }
+        }
+      }
+    },
+    "rooms": {
+      "type": "array",
+      "description": "Oda listesi",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "area_m2", "polygon"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "area_m2": { "type": "number", "exclusiveMinimum": 0 },
+          "polygon": {
+            "type": "array",
+            "description": "Kapali poligonu tanimlayan koseler [[x,y], ...], en az 3 nokta",
+            "minItems": 3,
+            "items": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "items": { "type": "number" }
+            }
+          },
+          "layer": { "type": "string" }
+        }
+      }
+    },
+    "walls": {
+      "type": "array",
+      "description": "Duvar segmentleri",
+      "items": {
+        "type": "object",
+        "required": ["id", "start", "end", "thickness", "layer"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string" },
+          "start": {
+            "type": "array", "minItems": 2, "maxItems": 2, "items": { "type": "number" }
+          },
+          "end": {
+            "type": "array", "minItems": 2, "maxItems": 2, "items": { "type": "number" }
+          },
+          "thickness": { "type": "number", "exclusiveMinimum": 0 },
+          "layer": { "type": "string" }
+        }
+      }
+    },
+    "openings": {
+      "type": "array",
+      "description": "Kapi / pencere listesi",
+      "items": {
+        "type": "object",
+        "required": ["id", "type", "wall_id", "position_from_start", "width"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string" },
+          "type": { "type": "string", "enum": ["door", "window"] },
+          "wall_id": { "type": "string", "description": "Ait oldugu duvarin id degeri" },
+          "position_from_start": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Duvarin baslangic noktasindan itibaren acikligin ortasina olan mesafe"
+          },
+          "width": { "type": "number", "exclusiveMinimum": 0 },
+          "layer": { "type": "string" }
+        }
+      }
+    },
+    "labels": {
+      "type": "array",
+      "description": "Metin / olcu etiketleri",
+      "items": {
+        "type": "object",
+        "required": ["id", "type", "text", "position"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string" },
+          "type": { "type": "string", "enum": ["text", "dimension"] },
+          "text": { "type": "string" },
+          "position": {
+            "type": "array", "minItems": 2, "maxItems": 2, "items": { "type": "number" }
+          },
+          "height": { "type": "number", "exclusiveMinimum": 0 },
+          "layer": { "type": "string" }
+        }
+      }
+    },
+    "rev_history": {
+      "type": "array",
+      "description": "Kisa revizyon gunlugu",
+      "items": {
+        "type": "object",
+        "required": ["rev", "ts", "summary"],
+        "additionalProperties": false,
+        "properties": {
+          "rev": { "type": "integer", "minimum": 1 },
+          "ts": { "type": "string" },
+          "summary": { "type": "string" }
+        }
+      }
+    }
+  }
+}

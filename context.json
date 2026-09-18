@@ -1,0 +1,19 @@
+{
+  "meta": {
+    "project_name": "",
+    "units": "mm",
+    "scale": "1:50"
+  },
+  "layers": [
+    { "name": "DUVARLAR", "color": 7, "linetype": "CONTINUOUS" },
+    { "name": "KAPI-PENCERE", "color": 5, "linetype": "CONTINUOUS" },
+    { "name": "MOBILYA", "color": 3, "linetype": "CONTINUOUS" },
+    { "name": "OLCU", "color": 1, "linetype": "CONTINUOUS" },
+    { "name": "METIN", "color": 2, "linetype": "CONTINUOUS" }
+  ],
+  "rooms": [],
+  "walls": [],
+  "openings": [],
+  "labels": [],
+  "rev_history": []
+}
