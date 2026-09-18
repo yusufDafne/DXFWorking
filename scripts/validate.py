@@ -182,6 +182,24 @@ def check_rooms(context: dict) -> tuple[list[str], list[str]]:
     return errors, warnings
 
 
+def point_on_segment(pt: tuple[float, float], seg_a: list[float], seg_b: list[float], tol: float) -> bool:
+    """pt, (seg_a -> seg_b) dogru parcasinin uzerinde mi (T-kesisimi dahil)?"""
+    ax, ay = seg_a
+    bx, by = seg_b
+    px, py = pt
+    abx, aby = bx - ax, by - ay
+    seg_len = (abx ** 2 + aby ** 2) ** 0.5
+    if seg_len == 0:
+        return False
+    apx, apy = px - ax, py - ay
+    cross = abx * apy - aby * apx
+    dist = abs(cross) / seg_len
+    if dist > tol:
+        return False
+    t = (apx * abx + apy * aby) / (seg_len ** 2)
+    return -1e-6 <= t <= 1 + 1e-6
+
+
 def check_walls(context: dict) -> tuple[list[str], list[str]]:
     errors: list[str] = []
     warnings: list[str] = []
@@ -192,21 +210,32 @@ def check_walls(context: dict) -> tuple[list[str], list[str]]:
         warnings.append("Hic duvar tanimlanmamis.")
         return errors, warnings
 
-    # Sarkan uc (dangling endpoint) kontrolu: her duvar ucu en az bir baska
-    # duvarla paylasilmali (derece >= 2), aksi halde poligon kapali degildir.
+    # Sarkan uc (dangling endpoint) kontrolu: her duvar ucu ya baska bir
+    # duvarin ucuyla ayni noktada bulusmali (kose), ya da baska bir duvarin
+    # uzerine (T-kesisimi) denk gelmelidir. Ikisi de saglanmiyorsa poligon
+    # kapali degildir.
+    tol = 1.0 if units == "mm" else 0.001
+
     endpoint_count: dict[tuple[float, float], int] = {}
     for wall in walls:
         for pt in (wall["start"], wall["end"]):
             key = round_point(pt, units)
             endpoint_count[key] = endpoint_count.get(key, 0) + 1
 
-    dangling = [pt for pt, count in endpoint_count.items() if count < 2]
-    if dangling:
-        pts_str = ", ".join(f"({x}, {y})" for x, y in dangling)
-        errors.append(
-            f"Duvar agi kapali degil: su noktalarda baglantisiz (sarkan) duvar "
-            f"ucu var: {pts_str}."
-        )
+    for wall in walls:
+        for pt in (wall["start"], wall["end"]):
+            key = round_point(pt, units)
+            if endpoint_count[key] >= 2:
+                continue  # baska bir duvarla ayni noktada (kose) bulusuyor
+            supported = any(
+                other["id"] != wall["id"] and point_on_segment(pt, other["start"], other["end"], tol)
+                for other in walls
+            )
+            if not supported:
+                errors.append(
+                    f"Duvar '{wall['id']}' ucu ({pt[0]}, {pt[1]}) baska hicbir "
+                    f"duvara (kose veya T-kesisimi olarak) baglanmiyor (sarkan uc)."
+                )
 
     # Sifir uzunluklu duvar kontrolu
     for wall in walls:

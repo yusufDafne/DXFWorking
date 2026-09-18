@@ -38,6 +38,49 @@ def load_json(path: Path) -> dict:
         return json.load(f)
 
 
+def cleanup_fallback_files(output_path: Path) -> None:
+    """output_path tekrar yazilabilir oldugunda, gecmiste kilit yuzunden
+    olusturulmus '<isim>_N<uzanti>' yedek dosyalarini temizler."""
+    pattern = f"{output_path.stem}_*{output_path.suffix}"
+    for alt in output_path.parent.glob(pattern):
+        try:
+            alt.unlink()
+        except OSError:
+            pass  # kilitliyse veya silinemiyorsa sessizce gec
+
+
+def save_with_fallback(save_fn, output_path: Path, max_attempts: int = 50) -> Path:
+    """save_fn(path) ile kaydetmeyi dener; PermissionError alirsa (dosya baska
+    bir programda acik) akisi kesmeden '<isim>_N<uzanti>' olarak kaydedip
+    kullaniciyi bilgilendirir. output_path tekrar musaitse eski yedek
+    dosyalari temizler ve normal isme kaydeder."""
+    try:
+        save_fn(output_path)
+    except PermissionError as original_error:
+        alt_path = output_path
+        saved = False
+        for n in range(1, max_attempts + 1):
+            alt_path = output_path.with_name(f"{output_path.stem}_{n}{output_path.suffix}")
+            try:
+                save_fn(alt_path)
+                saved = True
+                break
+            except PermissionError:
+                continue
+        if not saved:
+            raise original_error
+        print(
+            f"UYARI: '{output_path.name}' su anda baska bir programda acik oldugu icin "
+            f"uzerine yazilamadi. Bunun yerine '{alt_path.name}' olarak kaydedildi. "
+            f"'{output_path.name}' dosyasini kapatip bir sonraki calistirmada bu yedek "
+            f"dosya otomatik olarak temizlenecek."
+        )
+        return alt_path
+
+    cleanup_fallback_files(output_path)
+    return output_path
+
+
 def generate_preview(context_path: Path = DEFAULT_CONTEXT_PATH, output_path: Path = DEFAULT_OUTPUT_PATH) -> Path:
     context = load_json(context_path)
 
@@ -90,9 +133,11 @@ def generate_preview(context_path: Path = DEFAULT_CONTEXT_PATH, output_path: Pat
     ax.grid(True, linestyle="--", linewidth=0.3, alpha=0.5)
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(output_path, dpi=150, bbox_inches="tight")
+    saved_path = save_with_fallback(
+        lambda p: fig.savefig(p, dpi=150, bbox_inches="tight"), output_path
+    )
     plt.close(fig)
-    return output_path
+    return saved_path
 
 
 def main() -> int:
