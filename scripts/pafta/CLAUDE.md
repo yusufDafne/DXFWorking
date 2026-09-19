@@ -39,9 +39,51 @@ mümkün olduğunca **kendi kendine yeterli** olacak şekilde yazılmıştır.
    kontrol eder; aşarsa istisna fırlatıp DXF üretimini durdurur. **Bu,
    "bir proje asla pafta dışına taşmamalı" kuralının uygulamasıdır ve
    istisnasızdır.**
-4. **`PaperSizePlanner`** — sabit bir ölçek (`meta.scale`) için, projenin en
-   yüksek paftasının standart kağıt yüksekliklerinden (45/60/90cm) hangisine
-   sığdığını hesaplar/raporlar. Ölçeği KENDİLİĞİNDEN değiştirmez.
+4. **`PaperSizePlanner`** — TMMOB/imar yönetmeliği araştırmasına dayanır
+   (bkz. "Mevzuat kaynağı" bölümü). Sabit bir ölçek (`meta.scale`) için,
+   projenin en yüksek paftasının standart rulo kağıtların GERÇEK NET
+   yüksekliklerinden (`ROLL_PAPER_NET_HEIGHT_MM`: 45'lik→43cm,
+   60'lık→58cm, 90'lık→88cm) hangisine sığdığını hesaplar/raporlar
+   (`select`). Ölçeği KENDİLİĞİNDEN değiştirmez/küçültmez — hiçbir rulo
+   yetmiyorsa `fits=False` döner (çözüm pafta bölme+keyplan'dır, aşağıya
+   bakın). Ayrıca `classify_violation(project_type, footprint_m2)` ile,
+   `context.json`'da BİLDİRİLMİŞSE (`meta.project_type`), kullanılan
+   ölçeğin o proje tipi için mevzuaten (`PROJECT_TYPES`) izinli olup
+   olmadığını doğrular ve varsa ihlali açıklayan bir metin döner.
+
+## Mevzuat kaynağı (rev-4, "PAFTA_MEVZUATI" araştırması)
+
+Kullanıcı, başka bir ajandan aldığı detaylı bir TMMOB/imar yönetmeliği +
+DIN/ISO 5457 araştırmasını paylaştı. Modül isimleri/terimleri BİZİM
+mimarimize (Sheet/PaperSizePlanner/CONTENT_PADDING) göre uyarlandı, o
+araştırmanın kendi isimlendirmesi (STATIK_KALIP vb. proje tipi adları hariç)
+birebir kopyalanmadı. Uygulanan / uygulanmayan kısımlar:
+
+- ✅ **Proje tipine göre zorunlu ölçek** (`PROJECT_TYPES`): uygulandı.
+- ✅ **Rulo kağıt NET yükseklikleri** (430/580/880mm): uygulandı, eski
+  yanlış "brüt=net" varsayımının yerini aldı.
+- ✅ **"Ölçek küçültülemez" kuralı**: uygulandı — `PaperSizePlanner` artık
+  asla ölçek düşürmeyi ÖNERMEZ bile, sadece "pafta bölme + keyplan gerekir"
+  der.
+- ✅ **Antet (Tip-B) boyutu ölçeğe göre türetilir** (185×70mm kağıt
+  üzerinde): uygulandı, ama `MAX_TITLE_BOX_WIDTH_MM`/`MAX_TITLE_BOX_HEIGHT_MM`
+  ile PRATİK bir tavana kırpılıyor — çünkü paftamız henüz TAM bir standart
+  kağıda oturan bir tuval değil (bkz. "Bilinen sınırlamalar"). Tipik
+  ölçeklerimizde (1:50, 1:100) bu tavan hep devreye girer; sadece çok küçük
+  ölçekli (DETAY, 1:5 vb.) paftalarda gerçek değer kullanılabilir.
+- ❌ **Tip-A kapak paftası** (ISO 7200, tapu/imza/müellif bilgileri):
+  UYGULANMADI — bizim hiçbir zaman bu tür yasal/resmi veriye erişimimiz yok
+  ve context.json'da böyle bir veri modeli hiç yok. Sadece fikir olarak
+  not edildi.
+- ❌ **Parçalı pafta + Keyplan** (bina aks/dilatasyon hatlarından bölünüp
+  her parçaya 1:500/1:1000 taranmış bir konum planı eklenmesi): HENÜZ
+  UYGULANMADI (büyük bir özellik) — şu anki projemiz zaten tek parça
+  sığdığı için ihtiyaç doğmadı, ama mevzuata göre DOĞRU sonraki adım budur
+  (ölçek küçültmek DEĞİL).
+- ❌ **Sayfa marjları** (sol 20mm cilt payı, sağ/üst/alt 10mm): sabit
+  olarak kaydedildi (`PRINTED_MARGIN_LEFT_MM`, `PRINTED_MARGIN_MM`) ama
+  HENÜZ ÇİZİLMİYOR — bunlar gerçek bir kağıt/plot-alanı sınırı ima eder,
+  bizim modelspace-only paftamızda henüz karşılığı yok (bkz. altta).
 
 ## Bu modülün DIŞINDA kalanlar (sorumluluk sınırı)
 
@@ -76,6 +118,8 @@ sheet.draw(msp, dx, width, y_bottom, y_top, label, content_entities=[...bu pafta
 # yakalamaz, DXF uretimi BASARISIZ olarak sonlanir (kasitli).
 # Kagit boyutu raporu icin: PaperSizePlanner(scale).select(sheet.outer_height)
 # (outer_height TUM paftalarda ayni oldugu icin TEK bir deger yeterli).
+# Mevzuat uygunluk kontrolu icin (meta.project_type varsa):
+# PaperSizePlanner(scale).classify_violation(project_type, footprint_m2)
 ```
 
 `content_entities`'i toplamak için tipik desen: pafta içeriğini çizmeye
@@ -104,13 +148,29 @@ doğrulamalı:
 
 ## Bilinen sınırlamalar / gelecek işler
 
-- `PaperSizePlanner` şu an sadece SABİT bir ölçek için kağıt boyutu seçer;
-  "1/50 favori, sığmazsa 1/100'e düş" kaskad mantığı (yeni/ölçeği henüz
-  seçilmemiş bir proje için) henüz YOK — kullanıcı bu konuya ileride daha
-  detaylı dönecek.
+- **Uniform sheet template (öncelikli):** Paftamız şu an içeriği SIKI SARAN
+  bir tuval (content+padding), TAM bir standart kağıda (örn. gerçek 90'lık
+  rulo eni) oturan bir şablon DEĞİL. Bu yüzden antet gibi kağıt-mm tabanlı
+  standartlar (185×70mm) `MAX_TITLE_BOX_*` ile kırpılmak ZORUNDA kalıyor.
+  Bu uygulanırsa (paftalar gerçek bir rulo genişliğine/uzunluğuna
+  oturtulursa) kırpma kalkar, gerçek standart değerler dogrudan kullanılır.
+- **Pafta bölme + Keyplan** (mevzuata göre "sığmazsa ölçek küçült" DEĞİL,
+  bunun yerine yapılması gereken şey): büyük bir özellik, henüz yok. Bina
+  aks/dilatasyon hatlarından bölünür, her parçaya küçük ölçekli
+  (1:500/1:1000) taranmış bir konum (keyplan) eklenir.
+- **Tip-A kapak paftası** (ISO 7200): context.json'da hiç veri modeli yok,
+  henüz uygulanmadı.
+- **Sayfa marjı çizimi** (20mm sol / 10mm sağ-üst-alt, gerçek kağıt
+  sınırını modelspace'te göstermek): sabitler kayıtlı ama çizilmiyor.
+- **`PaperSizePlanner`, proje tipi henüz SEÇİLMEMİŞ yeni bir proje için**
+  "en uygun ölçeği kendi seç" modunda ÇALIŞMAZ — sadece BİLDİRİLEN
+  `meta.scale`'i BİLDİRİLEN `meta.project_type`'a göre doğrular. Otomatik
+  tip/ölçek ÖNERİSİ (örn. "bu oturum için MIMARI_UYGULAMA + 1:50 öneririm")
+  henüz yok.
 - Ortak yükseklik SADECE yükseklik içindir; genişlik kasıtlı olarak dinamik
   bırakıldı (kullanıcı talebi). İleride genişlik için de bir "uniform
   template" istenirse, aynı `content_ranges` deseni genişlik için de
   uygulanabilir.
 - Aks sıkıştırma (kağıda sığmadığında `AXIS_EXTENSION`/`CONTENT_PADDING`'i
-  otomatik küçültme) henüz yok, sadece fikir olarak not edildi.
+  otomatik küçültme) mevzuata göre zaten YANLIŞ bir cozum (ölçek/aks
+  küçültülemez) - bu fikir kaldırıldı, yerine pafta bölme+keyplan kondu.

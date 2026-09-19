@@ -183,6 +183,11 @@
         "project_name": { "type": "string" },
         "units": { "type": "string", "enum": ["mm", "m"] },
         "scale": { "type": "string" },
+        "project_type": {
+          "type": "string",
+          "enum": ["MIMARI_UYGULAMA", "MIMARI_RUHSAT_KUCUK", "STATIK_KALIP", "VAZIYET_PLANI", "DETAY"],
+          "description": "TMMOB/imar mevzuati siniflandirmasi - scripts/pafta::PaperSizePlanner.classify_violation bunu meta.scale ile karsilastirip mevzuata uygunlugu raporlar. Opsiyonel; verilmezse kontrol atlanir."
+        },
         "floor_width": { "type": "number", "exclusiveMinimum": 0, "description": "Tum katlarda ortak bina ayak izi genisligi (cikma yok)" },
         "floor_depth": { "type": "number", "exclusiveMinimum": 0, "description": "Tum katlarda ortak bina ayak izi derinligi" }
       }

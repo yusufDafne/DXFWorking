@@ -745,18 +745,27 @@ def generate(context_path: Path = DEFAULT_CONTEXT_PATH, output_path: Path = DEFA
         elevation_level_labels, available_width=CONTENT_PADDING - 600.0, max_height=text_height,
     )
 
-    paper_plan = PaperSizePlanner(scale).select(sheet.outer_height)
+    planner = PaperSizePlanner(scale)
+    paper_plan = planner.select(sheet.outer_height)
     if paper_plan["fits"]:
         print(
             f"Pafta boyutu: olcek {scale}, en yuksek pafta {paper_plan['required_cm']:.1f} cm "
-            f"gerektiriyor -> standart {paper_plan['paper_height_cm']:.0f} cm kagida sigiyor."
+            f"gerektiriyor -> {paper_plan['paper_height_cm']:.0f}'lik rulo kagida sigiyor "
+            f"(net kullanilabilir {paper_plan['net_height_cm']:.1f} cm)."
         )
     else:
         print(
             f"UYARI: olcek {scale} icin en yuksek pafta {paper_plan['required_cm']:.1f} cm "
-            f"gerektiriyor - standart 45/60/90 cm kagitlarin hicbirine sigmiyor. "
-            f"Aks sikistirma veya olcek degisikligi degerlendirilmeli."
+            f"gerektiriyor - en buyuk standart rulo (90'lik, net 88 cm) bile yetmiyor. "
+            f"MEVZUAT GEREGI OLCEK KUCULTULEMEZ - tek gecerli cozum pafta bolme + keyplan "
+            f"eklemektir (henuz uygulanmadi, bkz. scripts/pafta/CLAUDE.md)."
         )
+
+    footprint_m2 = (floor_width * floor_depth) / 1_000_000.0
+    project_type = context["meta"].get("project_type")
+    violation = planner.classify_violation(project_type, footprint_m2)
+    if violation:
+        print(f"UYARI (olcek mevzuati): {violation}")
 
     # Paftalar DIS cizgilerinden BITISIKTIR (aralarinda ekstra bosluk yok):
     # bir paftanin dis cercevesinin sag kenari bir sonrakinin sol kenarina

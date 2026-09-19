@@ -3,6 +3,7 @@
     "project_name": "Cok Katli Konut + Ticaret Binasi",
     "units": "mm",
     "scale": "1:100",
+    "project_type": "MIMARI_UYGULAMA",
     "floor_width": 20000.0,
     "floor_depth": 17500.0
   },
@@ -7195,6 +7196,11 @@
       "rev": 4,
       "ts": "2026-09-19T08:20:04Z",
       "summary": "Pafta modulu (scripts/pafta/, kendi CLAUDE.md'si) kuruldu - projenin ilk izole cizim modulu. Sheet sinifi: cift cizgili (dis+ic hat) cerceve, TUM pafta adlarina gercek font metrikleriyle sigan tek metin boyutu (PAFTA n/N kaldirildi, 2 satir: olcek+ad, ic cizginin kosesinde biter), pafta tasma korumasi (PaftaOverflowError + verify_within_frame - gercek bir tasma hatasini yakaladi: uzun oda etiketleri artik kendi oda genisligine sigacak sekilde kucultuluyor), PaperSizePlanner (sabit olcekte standart 45/60/90cm kagida sigma raporu - bu proje 1:100'de 45cm'e sigiyor). TUM paftalar (9 kat plani + 2 gorunus) artik AYNI MUTLAK dis-cerceve Y-ARALIGINI ([-7950,22750], yukseklik 30700mm) paylasiyor - bu, her paftayi kendi icerik merkezine gore simetrik sisirmek yerine TEK bir mutlak araligin tum paftalara aynen uygulanmasiyla saglaniyor (ilk denemede simetrik yaklasim gorunus/kat-plani paftalari arasinda 1350mm dusey kaymaya yol acmisti, duzeltildi). Genislik dinamik/serbest kaldi. Paftalar artik dis cizgilerinden BITISIK (meta.sheet_gap semadan kaldirildi, aralarinda ekstra bosluk yok). Pafta padding'i (CONTENT_PADDING) IC cizgiden olculuyor. Aks sistemi ayrica duzeltildi: AKS katmani sabit RGB(67,77,88) (kod tarafinda), en altta ciziliyor, cizgiler baloncuga teget bitiyor, uzama 1200 birim, aks-arasi mesafeler kucuk punto DXF linear dimension (tam sayi cm) ile gosteriliyor."
+    },
+    {
+      "rev": 5,
+      "ts": "2026-09-19T08:44:01Z",
+      "summary": "TMMOB/imar mevzuati + DIN/ISO 5457 arastirmasi scripts/pafta/ modulune entegre edildi: PROJECT_TYPES sinifi-ozel zorunlu olcek tablosu eklendi (MIMARI_UYGULAMA/MIMARI_RUHSAT_KUCUK/STATIK_KALIP/VAZIYET_PLANI/DETAY), meta.project_type alani eklendi (bu proje: MIMARI_UYGULAMA). PaperSizePlanner artik GERCEK net rulo yukseklikleri kullaniyor (430/580/880mm, eski 'brut=net' varsayimi yanlisti) ve KRITIK KURAL olarak 'sigdirmak icin olcek kucultulemez' mantigini uyguluyor (eski '1/50 sigmazsa 1/100'e dus' kaskad fikri KALDIRILDI - mevzuata aykiriydi); sigmama durumunda tek cozum pafta bolme+keyplan (henuz uygulanmadi, planlandi). classify_violation(project_type, footprint_m2) eklendi: bu PROJEDE BULUNAN UYUMSUZLUK raporlaniyor - oturum 350m2 (>300m2 istisna siniri) oldugundan MIMARI_UYGULAMA sinifina giriyor ve mevzuat SADECE 1:50 kabul ediyor, ancak proje su an 1:100 kullaniyor (kullanici karari bekleniyor, otomatik degistirilmedi). Antet (baslik kutusu) boyutu artik DIN/ISO Tip-B standardindan (185x70mm kagit) olcege gore turetiliyor, pratik bir ust sinirla (8000x1200mm) kirpiliyor - bu kirpma gerceklestiginde CONTENT_PADDING'in de (1800->3200mm) buyutulmesi gerektigi ortaya cikti (aks baloncugu ile baslik kutusu cakismasin diye). KULLANICI KARARI: 1:100'de bilincli olarak kaliniyor (mevzuat uyarisi sadece bilgi amacli raporlanmaya devam eder, olcek degistirilmedi)."
     }
   ]
 }

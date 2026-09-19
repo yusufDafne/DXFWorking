@@ -168,16 +168,43 @@ guncellenir.
   (`fit_text_height`, gerçek font ölçümü) — bu kontrol rev-4'te tam da bu
   şekilde bir taşma hatasını (uzun oda adı) gerçekten yakalayıp
   düzeltilmesini sağladı.
-- **Kağıt boyutu planlaması:** `scripts/pafta::PaperSizePlanner`, projenin
-  SABİT `meta.scale`'i için en yüksek paftanın standart kağıt
-  yüksekliklerinden (45/60/90cm) hangisine sığdığını hesaplar ve
-  `generate_dxf.py` çalıştığında raporlar (örn. "45cm kağıda sığıyor").
-  Ölçeği kendiliğinden DEĞİŞTİRMEZ; "1/50 favori, sığmazsa 1/100'e düş"
-  gibi bir ölçek henüz seçilmemiş yeni bir proje için düşünülen kaskad
-  mantığı henüz uygulanmadı (kullanıcı bu konuya ileride daha detaylı
-  dönecek). Tüm paftaların FİZİKSEL boyutunun da birebir aynı olacağı bir
-  "uniform sheet template" henüz YOK — bkz. `scripts/pafta/CLAUDE.md`
-  "Bilinen sınırlamalar".
+- **Ölçek mevzuatı ve kağıt boyutu planlaması (rev-4'te mevzuat-tabanlı
+  hale getirildi):** `scripts/pafta::PaperSizePlanner`, TMMOB/imar
+  yönetmeliği araştırmasına dayanır:
+  - **Proje tipine göre ölçek KESİN KISITTIR** (`PROJECT_TYPES`,
+    `meta.project_type` — opsiyonel, verilirse kontrol edilir):
+    `MIMARI_UYGULAMA`→sadece 1:50; `MIMARI_RUHSAT_KUCUK`→oturum ≤300m²
+    ise 1:100 veya 1:50; `STATIK_KALIP`→sadece 1:50; `VAZIYET_PLANI`→1:200
+    veya 1:500; `DETAY`→1:20/1:10/1:5/1:1. `classify_violation(...)`,
+    projenin BİLDİRİLEN tipiyle kullandığı ölçeğin çeliştiği durumları
+    `generate_dxf.py` çalıştığında UYARI olarak raporlar (bloklamaz).
+  - **Rulo kağıt NET yükseklikleri** (`ROLL_PAPER_NET_HEIGHT_MM`):
+    45'lik→430mm net, 60'lık→580mm net, 90'lık→880mm net (üst/alt 10mm
+    pay düşülmüş) — önceki sürümdeki "brüt = net" varsayımı YANLIŞTI,
+    düzeltildi.
+  - **KRİTİK KURAL — ölçek küçültülemez:** Pafta boyutuna sığdırmak için
+    ölçek KÜÇÜLTÜLEMEZ (önceki "1/50 favori, sığmazsa 1/100'e düş" kaskad
+    fikri bu yüzden YANLIŞTI ve KALDIRILDI). En büyük rulo (90'lık, net
+    880mm) bile yetmiyorsa tek geçerli çözüm **pafta bölme + keyplan**
+    eklemektir (aks/dilatasyon hatlarından bölünür, her parçaya 1:500 veya
+    1:1000 ölçekli, binanın şematik konturunu tarayarak gösteren bir
+    keyplan eklenir) — bu HENÜZ uygulanmadı, bkz.
+    `scripts/pafta/CLAUDE.md`.
+  - **Antet (başlık kutusu) boyutu artık ÖLÇEĞE göre türetilir**
+    (DIN/ISO 5457 Tip-B: kağıt üzerinde 185×70mm), pratik bir üst sınırla
+    (`MAX_TITLE_BOX_WIDTH_MM`/`MAX_TITLE_BOX_HEIGHT_MM`) sınırlanmış hâlde
+    — tam ölçekli uygulanması, paftanın gerçekten standart bir kağıt
+    boyutuna oturduğu bir "uniform sheet template" gerektirir (henüz YOK,
+    bkz. `scripts/pafta/CLAUDE.md` "Bilinen sınırlamalar"). Tip-A (kapak
+    paftası, ISO 7200) henüz hiç uygulanmadı, sadece fikir olarak not
+    edildi.
+  - **Bu projede tespit edilen uyumsuzluk (bilinçli istisna, rev-5):** Bina
+    oturumu 350m² (>300m² istisna sınırı), bu yüzden `MIMARI_UYGULAMA`
+    sınıfına giriyor ve mevzuat SADECE 1:50 ölçeğini kabul ediyor — proje
+    şu an `1:100` kullanıyor. Kullanıcıya soruldu; **kullanıcı bilinçli
+    olarak 1:100'de kalmayı seçti** (uyarı sadece bilgi amaçlı raporlanmaya
+    devam eder, hiçbir şey otomatik değiştirilmez). İleride bu proje resmi
+    ruhsat/uygulama projesine dönüşürse ölçek 1:50'ye çekilmelidir.
 - **Aks (grid) sistemi:** Bina, `context.json`'ın üst seviye `grid` alanında
   tanımlanan bir aks ızgarasına oturur:
   - `grid.vertical_axes`: düşey aks çizgileri (sabit X, Y boyunca uzanır),
