@@ -17,9 +17,17 @@ kenarlariyla kesistirilip (gonye/miter) uzatilir/kisaltilir. Bu mantik
 Wall/WallNetwork siniflarinda kapsullenmistir.
 
 Pafta duzeni: context.json'daki "floors" listesi soldan saga, ardindan
-"elevations" listesi soldan saga dizilir (her pafta kendi genisligi +
-meta.sheet_gap kadar sagda baslar). Her pafta sag-alt kosesine bir cerceve
-ve baslik (kat adi + pafta no) yazilir.
+"elevations" listesi soldan saga, DIS CIZGILERINDEN BITISIK olarak dizilir
+(aralarinda ekstra bosluk yoktur). Her pafta cift-cizgili bir cerceve
+(Sheet._draw_double_frame) ve sag-alt kosede iki satirlik standart baslik
+kutusu (ust: olcek, alt: pafta adi) alir. Tum paftalar AYNI mutlak dis-
+cerceve Y-araligini paylasir (bkz. scripts/pafta), genislik ise dinamiktir.
+
+Aks (grid) sistemi: AxisGrid sinifi, context.json'daki "grid" alanindaki
+sabit aks izgarasini (tum kat paftalarinda ayni konumda) kesikli çizgi +
+uc baloncuklariyla cizer ve on/yan cephelere uygun aile ile izdusurur.
+AKS katmani RGB(67,77,88) sabit renktedir ve HER paftada digerlerinden once
+(en altta) cizilir.
 
 Bu script calistirilmadan once mutlaka scripts/validate.py BASARILI donmus
 olmalidir. output/plan.dxf elle duzenlenmez; her degisiklik icin bu script
@@ -41,6 +49,17 @@ except ImportError:
     import ezdxf
     from ezdxf.enums import TextEntityAlignment
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from pafta import (  # noqa: E402  (once sys.path ayarlanmali)
+    CONTENT_PADDING,
+    FRAME_GAP,
+    PaftaOverflowError,
+    PaperSizePlanner,
+    Sheet,
+    fit_text_height,
+    fit_uniform_text_height,
+)
+
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_CONTEXT_PATH = PROJECT_ROOT / "context.json"
 DEFAULT_OUTPUT_PATH = PROJECT_ROOT / "output" / "plan.dxf"
@@ -48,13 +67,22 @@ DEFAULT_OUTPUT_PATH = PROJECT_ROOT / "output" / "plan.dxf"
 # --- Cizim/sunum sabitleri (tasarim verisi degil) ---
 DEFAULT_LAYER_COLOR = 7
 GAP_EPSILON = 1e-6
-PAFTA_MARGIN = 1500.0
 DEFAULT_ELEVATION_WINDOW_SIZE = (1200.0, 1400.0)
 ELEVATION_DOOR_SIZE = (1800.0, 2100.0)
-AXIS_EXTENSION = 700.0
+ELEVATION_LABEL_OFFSET = 300.0   # icerik kenarindan itibaren bilerek birakilmis bosluk (sifir-hizali degil)
+
+# Aks (grid) standardi (bkz. CLAUDE.md "Aks (grid) sistemi")
+AXIS_EXTENSION = 1200.0          # yapi kenarindan aksin uzayacagi mesafe
 AXIS_BUBBLE_RADIUS = 450.0
 AXIS_LINETYPE = "DASHED"
 AXIS_LAYER = "AKS"
+AXIS_RGB = (67, 77, 88)          # kullanici standardi: sabit RGB, ACI degil
+AXIS_DIM_OFFSET = 400.0          # aks-arasi olcu cizgisinin yapi kenarina uzakligi
+AXIS_DIM_TEXT_HEIGHT = 120.0     # aks-arasi olcu metni kucuk olmali
+
+# Pafta cercevesi/baslik/tasma-kontrolu/kagit-boyutu artik scripts/pafta
+# modulunde (bkz. scripts/pafta/CLAUDE.md) - bu script sadece Sheet/
+# CONTENT_PADDING'i yukarida import eder, kendi kopyasini tutmaz.
 
 
 def load_json(path: Path) -> dict:
@@ -338,42 +366,25 @@ def ensure_dashed_linetype(doc) -> None:
         doc.linetypes.add(AXIS_LINETYPE, pattern=[750.0, 500.0, -250.0], description="Aks kesikli cizgi")
 
 
+def ensure_axis_layer(doc) -> None:
+    """AKS katmani kod-tarafinda standardize edilir (context.json'dan degil):
+    sabit RGB(67,77,88) + kesikli linetype. DASHED linetype, katmandan once
+    yuklenmelidir (aksi halde ezdxf katmanin linetype/renk atamasini
+    tamamlayamaz)."""
+    ensure_dashed_linetype(doc)
+    if AXIS_LAYER in doc.layers:
+        layer = doc.layers.get(AXIS_LAYER)
+    else:
+        layer = doc.layers.add(AXIS_LAYER)
+    layer.dxf.linetype = AXIS_LINETYPE
+    layer.dxf.color = 8  # ACI yedek (true-color desteklemeyen goruculer icin)
+    layer.dxf.true_color = ezdxf.colors.rgb2int(AXIS_RGB)
+
+
 def add_text(msp, content: str, position, height: float, layer: str, align=TextEntityAlignment.LEFT):
     text = msp.add_text(content, dxfattribs={"layer": layer, "height": height})
     text.set_placement(position, align=align)
     return text
-
-
-class Sheet:
-    """Pafta cercevesi + standart sag-alt kose baslik kutusu (bkz. CLAUDE.md
-    'Pafta basligi' standardi). Olcege ve metin yuksekligine gore parametrik;
-    hem kat plani hem cephe paftalarinda ayni sekilde kullanilir."""
-
-    def __init__(self, scale: str, text_height: float, margin: float = PAFTA_MARGIN):
-        self.scale = scale
-        self.text_height = text_height
-        self.margin = margin
-
-    def draw(self, msp, dx: float, width: float, y_bottom: float, y_top: float,
-              label: str, sheet_note: str | None, sheet_number: int, total_sheets: int) -> None:
-        x0, y0 = dx - self.margin, y_bottom - self.margin
-        x1, y1 = dx + width + self.margin, y_top + self.margin
-        frame = msp.add_lwpolyline([(x0, y0), (x1, y0), (x1, y1), (x0, y1)], dxfattribs={"layer": "CERCEVE"})
-        frame.closed = True
-
-        box_w = min(width * 0.4, 8000.0)
-        box_h = self.text_height * 4.4
-        bx0, by0, bx1, by1 = x1 - box_w, y0, x1, y0 + box_h
-        box = msp.add_lwpolyline([(bx0, by0), (bx1, by0), (bx1, by1), (bx0, by1)], dxfattribs={"layer": "CERCEVE"})
-        box.closed = True
-        mid_y = by0 + box_h * 0.55
-        msp.add_line((bx0, mid_y), (bx1, mid_y), dxfattribs={"layer": "CERCEVE"})
-
-        add_text(msp, label, (bx0 + 150, by1 - 150), self.text_height * 1.2, "METIN", align=TextEntityAlignment.TOP_LEFT)
-        sub = f"PAFTA {sheet_number}/{total_sheets} - OLCEK {self.scale}"
-        if sheet_note:
-            sub += f" - {sheet_note}"
-        add_text(msp, sub, (bx0 + 150, mid_y - 150), self.text_height * 0.8, "METIN", align=TextEntityAlignment.TOP_LEFT)
 
 
 class AxisGrid:
@@ -382,11 +393,14 @@ class AxisGrid:
     etiketli) plan uzerinde dikey cizgi olarak, ayni sekilde on/arka cephede
     de dikey cizgi olarak izdusurulur; yatay akslar (sabit Y, alfabetik
     etiketli) planda yatay cizgi, sag/sol cephede ise dikey cizgi olarak
-    izdusurulur (bkz. CLAUDE.md 'Aks (grid) sistemi')."""
+    izdusurulur (bkz. CLAUDE.md 'Aks (grid) sistemi'). Aks cizgileri,
+    baloncuklarin icine girmeyecek sekilde kisaltilir; aks-arasi mesafeler
+    kucuk metinli, tam sayi cm formatinda DXF linear dimension'lariyla
+    gosterilir."""
 
     def __init__(self, vertical_axes: list[dict], horizontal_axes: list[dict], text_height: float):
-        self.vertical_axes = vertical_axes
-        self.horizontal_axes = horizontal_axes
+        self.vertical_axes = sorted(vertical_axes, key=lambda a: a["position"])
+        self.horizontal_axes = sorted(horizontal_axes, key=lambda a: a["position"])
         self.text_height = text_height
 
     def _bubble(self, msp, point, label: str) -> None:
@@ -394,9 +408,45 @@ class AxisGrid:
         add_text(msp, label, point, self.text_height, AXIS_LAYER, align=TextEntityAlignment.MIDDLE_CENTER)
 
     def _line_with_bubbles(self, msp, p1, p2, label: str) -> None:
-        msp.add_line(p1, p2, dxfattribs={"layer": AXIS_LAYER, "linetype": AXIS_LINETYPE})
+        total_len = vec_len(vec_sub(p2, p1))
+        if total_len > 2 * AXIS_BUBBLE_RADIUS:
+            direction = vec_norm(vec_sub(p2, p1))
+            line_p1 = vec_add(p1, vec_scale(direction, AXIS_BUBBLE_RADIUS))
+            line_p2 = vec_add(p2, vec_scale(direction, -AXIS_BUBBLE_RADIUS))
+        else:
+            line_p1, line_p2 = p1, p2
+        msp.add_line(line_p1, line_p2, dxfattribs={"layer": AXIS_LAYER, "linetype": AXIS_LINETYPE})
         self._bubble(msp, p1, label)
         self._bubble(msp, p2, label)
+
+    def _dim_override(self) -> dict:
+        return {
+            "dimtxt": AXIS_DIM_TEXT_HEIGHT,
+            "dimasz": AXIS_DIM_TEXT_HEIGHT * 0.7,
+            "dimexo": 150.0,
+            "dimexe": 150.0,
+            "dimgap": 80.0,
+        }
+
+    def _dim_chain_x(self, msp, xs: list[float], edge_y: float, dim_y: float) -> None:
+        for x1, x2 in zip(xs, xs[1:]):
+            dist_cm = round(abs(x2 - x1) / 10.0)
+            dim = msp.add_linear_dim(
+                base=(x1, dim_y), p1=(x1, edge_y), p2=(x2, edge_y), angle=0,
+                dimstyle="Standard", override=self._dim_override(), text=str(int(dist_cm)),
+                dxfattribs={"layer": AXIS_LAYER},
+            )
+            dim.render()
+
+    def _dim_chain_y(self, msp, ys: list[float], edge_x: float, dim_x: float) -> None:
+        for y1, y2 in zip(ys, ys[1:]):
+            dist_cm = round(abs(y2 - y1) / 10.0)
+            dim = msp.add_linear_dim(
+                base=(dim_x, y1), p1=(edge_x, y1), p2=(edge_x, y2), angle=90,
+                dimstyle="Standard", override=self._dim_override(), text=str(int(dist_cm)),
+                dxfattribs={"layer": AXIS_LAYER},
+            )
+            dim.render()
 
     def draw_on_floor(self, msp, dx: float, floor_width: float, floor_depth: float) -> None:
         y0, y1 = -AXIS_EXTENSION, floor_depth + AXIS_EXTENSION
@@ -409,6 +459,9 @@ class AxisGrid:
             y = axis["position"]
             self._line_with_bubbles(msp, (x0, y), (x1, y), axis["label"])
 
+        self._dim_chain_x(msp, [dx + a["position"] for a in self.vertical_axes], edge_y=0.0, dim_y=-AXIS_DIM_OFFSET)
+        self._dim_chain_y(msp, [a["position"] for a in self.horizontal_axes], edge_x=dx, dim_x=dx - AXIS_DIM_OFFSET)
+
     def draw_on_elevation(self, msp, dx: float, axis_source: str | None, y_bottom: float, y_top: float) -> None:
         if axis_source == "vertical":
             axes = self.vertical_axes
@@ -420,6 +473,8 @@ class AxisGrid:
         for axis in axes:
             x = dx + axis["position"]
             self._line_with_bubbles(msp, (x, y0), (x, y1), axis["label"])
+
+        self._dim_chain_x(msp, [dx + a["position"] for a in axes], edge_y=y_bottom, dim_y=y_bottom - AXIS_DIM_OFFSET)
 
 
 def draw_wall_network(msp, network: WallNetwork, openings: list[dict]) -> None:
@@ -488,11 +543,14 @@ def polygon_centroid(polygon: list[list[float]]) -> tuple[float, float]:
     return (cx, cy)
 
 
-def draw_room_label(msp, room: dict, text_height: float) -> None:
+def draw_room_label(msp, room: dict, max_text_height: float) -> None:
     cx, cy = polygon_centroid(room["polygon"])
     content = f"{room['name']} ({room['area_m2']:.1f} m2)"
-    text = msp.add_text(content, dxfattribs={"layer": "METIN", "height": text_height})
-    text.dxf.insert = (cx, cy)
+    xs = [p[0] for p in room["polygon"]]
+    available_width = max(0.0, (max(xs) - min(xs)) - 200.0)
+    height = fit_text_height(content, available_width, max_text_height, min_height=60.0)
+    text = msp.add_text(content, dxfattribs={"layer": "METIN", "height": height})
+    text.set_placement((cx, cy), align=TextEntityAlignment.MIDDLE_CENTER)
 
 
 def draw_labels(msp, labels: list[dict], default_height: float) -> None:
@@ -531,8 +589,12 @@ def translate_floor(floor: dict, dx: float) -> dict:
 
 
 def draw_floor_sheet(msp, floor: dict, dx: float, units: str, floor_width: float, floor_depth: float,
-                      sheet_number: int, total_sheets: int, text_height: float,
-                      sheet: Sheet, axis_grid: AxisGrid) -> None:
+                      text_height: float, sheet: Sheet, axis_grid: AxisGrid) -> None:
+    content_start = len(msp)
+
+    # Aks izgarasi HER ZAMAN en once (en altta) cizilir (bkz. kullanici standardi).
+    axis_grid.draw_on_floor(msp, dx, floor_width, floor_depth)
+
     tfloor = translate_floor(floor, dx)
 
     walls = [
@@ -555,12 +617,8 @@ def draw_floor_sheet(msp, floor: dict, dx: float, units: str, floor_width: float
     for marking in tfloor.get("markings", []):
         msp.add_line(marking["start"], marking["end"], dxfattribs={"layer": marking["layer"]})
 
-    axis_grid.draw_on_floor(msp, dx, floor_width, floor_depth)
-
-    sheet.draw(
-        msp, dx, floor_width, 0.0, floor_depth, floor["label"], floor.get("sheet_note"),
-        sheet_number, total_sheets,
-    )
+    content_entities = list(msp)[content_start:]
+    sheet.draw(msp, dx, floor_width, 0.0, floor_depth, floor["label"], content_entities=content_entities)
 
 
 def elevation_vertical_extent(elevation: dict) -> tuple[float, float]:
@@ -574,18 +632,24 @@ def elevation_vertical_extent(elevation: dict) -> tuple[float, float]:
     return -total_below, total_above + extra
 
 
-def draw_elevation(msp, elevation: dict, dx: float, text_height: float, axis_grid: AxisGrid) -> None:
+def draw_elevation(msp, elevation: dict, dx: float, text_height: float, axis_grid: AxisGrid,
+                    label_text_height: float) -> None:
     width = elevation["width"]
     levels = elevation["levels"]
 
     total_below = sum(l["height"] for l in levels if l.get("below_ground"))
     cursor = -total_below
-
+    computed = []
     for level in levels:
         y0 = cursor
         y1 = cursor + level["height"]
+        computed.append((level, y0, y1))
         cursor = y1
 
+    # Aks izgarasi HER ZAMAN en once (en altta) cizilir.
+    axis_grid.draw_on_elevation(msp, dx, elevation.get("axis_source"), -total_below, cursor)
+
+    for level, y0, y1 in computed:
         outline = msp.add_lwpolyline(
             [(dx, y0), (dx + width, y0), (dx + width, y1), (dx, y1)], dxfattribs={"layer": "DUVARLAR"}
         )
@@ -628,18 +692,15 @@ def draw_elevation(msp, elevation: dict, dx: float, text_height: float, axis_gri
             mr.closed = True
 
         add_text(
-            msp, level["label"], (dx - 200, (y0 + y1) / 2.0), text_height, "METIN",
+            msp, level["label"], (dx - ELEVATION_LABEL_OFFSET, (y0 + y1) / 2.0), label_text_height, "METIN",
             align=TextEntityAlignment.MIDDLE_RIGHT,
         )
 
     msp.add_line((dx - 1000, 0), (dx + width + 1000, 0), dxfattribs={"layer": "OLCU"})
     add_text(
-        msp, "+-0.00 ZEMIN", (dx - 200, 150.0), text_height * 0.8, "OLCU",
+        msp, "+-0.00 ZEMIN", (dx - ELEVATION_LABEL_OFFSET, 150.0), label_text_height, "OLCU",
         align=TextEntityAlignment.MIDDLE_RIGHT,
     )
-
-    y_bottom, y_top = -total_below, cursor
-    axis_grid.draw_on_elevation(msp, dx, elevation.get("axis_source"), y_bottom, y_top)
 
 
 def generate(context_path: Path = DEFAULT_CONTEXT_PATH, output_path: Path = DEFAULT_OUTPUT_PATH) -> Path:
@@ -647,37 +708,74 @@ def generate(context_path: Path = DEFAULT_CONTEXT_PATH, output_path: Path = DEFA
     units = context["meta"]["units"]
     floor_width = context["meta"]["floor_width"]
     floor_depth = context["meta"]["floor_depth"]
-    sheet_gap = context["meta"].get("sheet_gap", 3000.0)
 
     doc = ezdxf.new(dxfversion="R2010")
     doc.header["$INSUNITS"] = ezdxf.units.MM if units == "mm" else ezdxf.units.M
+    ensure_axis_layer(doc)
     setup_layers(doc, context["layers"])
-    ensure_dashed_linetype(doc)
     msp = doc.modelspace()
 
     floors = context["floors"]
     elevations = context["elevations"]
-    total_sheets = len(floors) + len(elevations)
     text_height = text_height_for_units(units)
 
     scale = context["meta"].get("scale", "1:100")
-    sheet = Sheet(scale, text_height)
+    all_labels = [f["label"] for f in floors] + [e["label"] for e in elevations]
+
+    # Tum paftalarin (kat plani + gorunus) AYNI MUTLAK dis-cerceve Y-araligini
+    # paylasmasi (ve boylece birbirine gore DUSEY KAYMAMASI) icin, her
+    # paftanin kendi HAM (y_bottom, y_top) araligi toplanir; Sheet bunlarin
+    # en genisini kapsayan TEK bir mutlak aralik hesaplar (bkz.
+    # scripts/pafta/CLAUDE.md - genislik ise her pafta icin serbesttir).
+    content_ranges = [(0.0, floor_depth) for _ in floors]
+    for elevation in elevations:
+        content_ranges.append(elevation_vertical_extent(elevation))
+
+    sheet = Sheet(scale, text_height, all_labels, content_ranges)
     grid = context["grid"]
     axis_grid = AxisGrid(grid["vertical_axes"], grid["horizontal_axes"], text_height)
 
-    cursor = 0.0
-    for i, floor in enumerate(floors, start=1):
-        draw_floor_sheet(msp, floor, cursor, units, floor_width, floor_depth, i, total_sheets, text_height, sheet, axis_grid)
-        cursor += floor_width + sheet_gap
+    # Cephe kat etiketleri (+ zemin notu), pafta IC cizgisinden itibaren
+    # birakilan bosluga (CONTENT_PADDING) sigacak, sifir-hizali degil
+    # gercekten padding'li konumlandirilir (bkz. scripts/pafta/CLAUDE.md -
+    # onceki surumde bu metinler pafta kenarina bitisikti / komsu paftaya
+    # tasiyordu).
+    elevation_level_labels = [lvl["label"] for e in elevations for lvl in e["levels"]] + ["+-0.00 ZEMIN"]
+    elevation_label_height = fit_uniform_text_height(
+        elevation_level_labels, available_width=CONTENT_PADDING - 600.0, max_height=text_height,
+    )
 
-    for j, elevation in enumerate(elevations, start=1):
-        y_bottom, y_top = elevation_vertical_extent(elevation)
-        draw_elevation(msp, elevation, cursor, text_height, axis_grid)
-        sheet.draw(
-            msp, cursor, elevation["width"], y_bottom, y_top, elevation["label"], None,
-            len(floors) + j, total_sheets,
+    paper_plan = PaperSizePlanner(scale).select(sheet.outer_height)
+    if paper_plan["fits"]:
+        print(
+            f"Pafta boyutu: olcek {scale}, en yuksek pafta {paper_plan['required_cm']:.1f} cm "
+            f"gerektiriyor -> standart {paper_plan['paper_height_cm']:.0f} cm kagida sigiyor."
         )
-        cursor += elevation["width"] + sheet_gap
+    else:
+        print(
+            f"UYARI: olcek {scale} icin en yuksek pafta {paper_plan['required_cm']:.1f} cm "
+            f"gerektiriyor - standart 45/60/90 cm kagitlarin hicbirine sigmiyor. "
+            f"Aks sikistirma veya olcek degisikligi degerlendirilmeli."
+        )
+
+    # Paftalar DIS cizgilerinden BITISIKTIR (aralarinda ekstra bosluk yok):
+    # bir paftanin dis cercevesinin sag kenari bir sonrakinin sol kenarina
+    # tam oturur. Her paftanin kendi genisligine, dis cerceveye ulasmak icin
+    # iki yaninda (padding+frame_gap) kadar pay eklenir.
+    frame_half_width = CONTENT_PADDING + FRAME_GAP
+
+    cursor = 0.0
+    for floor in floors:
+        draw_floor_sheet(msp, floor, cursor, units, floor_width, floor_depth, text_height, sheet, axis_grid)
+        cursor += floor_width + 2 * frame_half_width
+
+    for elevation in elevations:
+        content_start = len(msp)
+        draw_elevation(msp, elevation, cursor, text_height, axis_grid, elevation_label_height)
+        content_entities = list(msp)[content_start:]
+        y_bottom, y_top = elevation_vertical_extent(elevation)
+        sheet.draw(msp, cursor, elevation["width"], y_bottom, y_top, elevation["label"], content_entities=content_entities)
+        cursor += elevation["width"] + 2 * frame_half_width
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     return save_with_fallback(lambda p: doc.saveas(p), output_path)
@@ -686,7 +784,11 @@ def generate(context_path: Path = DEFAULT_CONTEXT_PATH, output_path: Path = DEFA
 def main() -> int:
     context_path = Path(sys.argv[1]) if len(sys.argv) > 1 else DEFAULT_CONTEXT_PATH
     output_path = Path(sys.argv[2]) if len(sys.argv) > 2 else DEFAULT_OUTPUT_PATH
-    result = generate(context_path, output_path)
+    try:
+        result = generate(context_path, output_path)
+    except PaftaOverflowError as exc:
+        print(f"DXF URETILEMEDI (pafta tasmasi): {exc}")
+        return 1
     print(f"DXF uretildi: {result}")
     return 0
 

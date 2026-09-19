@@ -4,8 +4,7 @@
     "units": "mm",
     "scale": "1:100",
     "floor_width": 20000.0,
-    "floor_depth": 17500.0,
-    "sheet_gap": 3000.0
+    "floor_depth": 17500.0
   },
   "layers": [
     {
@@ -42,11 +41,6 @@
       "name": "OTOPARK",
       "color": 9,
       "linetype": "CONTINUOUS"
-    },
-    {
-      "name": "AKS",
-      "color": 1,
-      "linetype": "DASHED"
     }
   ],
   "grid": {
@@ -7196,6 +7190,11 @@
       "rev": 3,
       "ts": "2026-09-19T06:26:17Z",
       "summary": "Cizim altyapisina aks (grid) izgarasi eklendi: 4 duesy (numerik, 1-4) + 4 yatay (alfabetik, A-D) aks, dis cephe + cekirdek sinirina oturuyor, tum katlarda ayni konumda. Sheet ve AxisGrid siniflari kuruldu (scripts/generate_dxf.py). Pafta baslik kutusu standardize edildi."
+    },
+    {
+      "rev": 4,
+      "ts": "2026-09-19T08:20:04Z",
+      "summary": "Pafta modulu (scripts/pafta/, kendi CLAUDE.md'si) kuruldu - projenin ilk izole cizim modulu. Sheet sinifi: cift cizgili (dis+ic hat) cerceve, TUM pafta adlarina gercek font metrikleriyle sigan tek metin boyutu (PAFTA n/N kaldirildi, 2 satir: olcek+ad, ic cizginin kosesinde biter), pafta tasma korumasi (PaftaOverflowError + verify_within_frame - gercek bir tasma hatasini yakaladi: uzun oda etiketleri artik kendi oda genisligine sigacak sekilde kucultuluyor), PaperSizePlanner (sabit olcekte standart 45/60/90cm kagida sigma raporu - bu proje 1:100'de 45cm'e sigiyor). TUM paftalar (9 kat plani + 2 gorunus) artik AYNI MUTLAK dis-cerceve Y-ARALIGINI ([-7950,22750], yukseklik 30700mm) paylasiyor - bu, her paftayi kendi icerik merkezine gore simetrik sisirmek yerine TEK bir mutlak araligin tum paftalara aynen uygulanmasiyla saglaniyor (ilk denemede simetrik yaklasim gorunus/kat-plani paftalari arasinda 1350mm dusey kaymaya yol acmisti, duzeltildi). Genislik dinamik/serbest kaldi. Paftalar artik dis cizgilerinden BITISIK (meta.sheet_gap semadan kaldirildi, aralarinda ekstra bosluk yok). Pafta padding'i (CONTENT_PADDING) IC cizgiden olculuyor. Aks sistemi ayrica duzeltildi: AKS katmani sabit RGB(67,77,88) (kod tarafinda), en altta ciziliyor, cizgiler baloncuga teget bitiyor, uzama 1200 birim, aks-arasi mesafeler kucuk punto DXF linear dimension (tam sayi cm) ile gosteriliyor."
     }
   ]
 }

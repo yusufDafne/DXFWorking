@@ -29,9 +29,13 @@ except ImportError:
     import matplotlib.pyplot as plt
     from matplotlib.patches import Polygon as MplPolygon
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from pafta import CONTENT_PADDING, FRAME_GAP  # noqa: E402  (once sys.path ayarlanmali)
+
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_CONTEXT_PATH = PROJECT_ROOT / "context.json"
 DEFAULT_OUTPUT_PATH = PROJECT_ROOT / "output" / "preview.png"
+FRAME_HALF_WIDTH = CONTENT_PADDING + FRAME_GAP  # generate_dxf.py ile ayni bitisik-pafta formulu
 
 
 def load_json(path: Path) -> dict:
@@ -192,25 +196,26 @@ def generate_preview(context_path: Path = DEFAULT_CONTEXT_PATH, output_path: Pat
     context = load_json(context_path)
     meta = context["meta"]
     floor_width = meta.get("floor_width")
-    sheet_gap = meta.get("sheet_gap", 3000.0)
 
     fig, ax = plt.subplots(figsize=(28, 8))
 
     grid = context.get("grid")
     if floor_width is not None:
         floor_depth = meta.get("floor_depth")
+        # Paftalar dis cizgilerinden bitisiktir (bkz. scripts/pafta/CLAUDE.md) -
+        # generate_dxf.py ile ayni formul kullanilir, aralarinda ekstra bosluk yok.
         cursor = 0.0
         for floor in context["floors"]:
             draw_floor(ax, floor, cursor)
             if grid:
                 draw_axes_on_floor(ax, grid, cursor, floor_width, floor_depth)
-            cursor += floor_width + sheet_gap
+            cursor += floor_width + 2 * FRAME_HALF_WIDTH
         for elevation in context["elevations"]:
             draw_elevation(ax, elevation, cursor)
             if grid:
                 y_bottom, y_top = elevation_vertical_extent(elevation)
                 draw_axes_on_elevation(ax, grid, cursor, elevation.get("axis_source"), y_bottom, y_top)
-            cursor += elevation["width"] + sheet_gap
+            cursor += elevation["width"] + 2 * FRAME_HALF_WIDTH
     else:
         # eski tek-daire (duz) sema geriye-donuk uyumluluk
         draw_floor(ax, context, 0.0)

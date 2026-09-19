@@ -184,8 +184,7 @@
         "units": { "type": "string", "enum": ["mm", "m"] },
         "scale": { "type": "string" },
         "floor_width": { "type": "number", "exclusiveMinimum": 0, "description": "Tum katlarda ortak bina ayak izi genisligi (cikma yok)" },
-        "floor_depth": { "type": "number", "exclusiveMinimum": 0, "description": "Tum katlarda ortak bina ayak izi derinligi" },
-        "sheet_gap": { "type": "number", "minimum": 0, "description": "Paftalar arasi bosluk" }
+        "floor_depth": { "type": "number", "exclusiveMinimum": 0, "description": "Tum katlarda ortak bina ayak izi derinligi" }
       }
     },
     "layers": {

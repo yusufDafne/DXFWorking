@@ -111,21 +111,100 @@ guncellenir.
   ondalıklı m değil). Bu SADECE ölçü metninin gösterim formatıdır;
   context.json'daki asıl koordinat/ölçü birimi (`meta.units`) yine mm
   kalır, değişmez.
+- **Pafta modülü (`scripts/pafta/`, rev-4'te ilk modül olarak kuruldu):**
+  Pafta çerçevesi, başlık kutusu, tasma kontrolü ve kağıt boyutu planlaması
+  ARTIK `scripts/generate_dxf.py`'de DEĞİL, kendi izole modülünde
+  (`scripts/pafta/__init__.py` + kendi **`scripts/pafta/CLAUDE.md`**
+  dosyası) yaşar. Bu, projenin "her çizim konusu kendi modülü + kendi
+  izole CLAUDE.md'si olsun, böylece ileride bir ajan sadece o modülü açıp
+  derinlemesine çalışabilsin" mottosunun İLK uygulamasıdır — sonraki
+  modüller (aks, duvar/oda, kolon, ...) de aynı desenle ayrılacak (bkz.
+  `scripts/CLAUDE.md`).
 - **Pafta başlık kutusu:** Her pafta, sağ-alt köşesinde standart bir
-  kutucuk içinde (çerçeveli, iki bölmeli: üstte kat/pafta adı, altta
-  "PAFTA n/N - ÖLÇEK x - not") gösterilir. Uygulaması
-  `scripts/generate_dxf.py::Sheet` sınıfıdır — yeni pafta türleri de bu
-  sınıf üzerinden çizilir, ayrı ad-hoc başlık kodu yazılmaz.
+  kutucuk içinde **iki satır** gösterilir: üstte "ÖLÇEK x", altta pafta adı.
+  "PAFTA n/N" gösterimi KALDIRILDI. Kutunun metin boyutu, projedeki TÜM
+  pafta adlarının (+ ölçek metninin) kutuya **gerçek font metrikleriyle**
+  (kaba karakter-sayısı tahmini DEĞİL) sığacağı en küçük ortak boyut olacak
+  şekilde bir kere hesaplanır ve tüm paftalarda AYNEN uygulanır. Uygulaması
+  `scripts/pafta::Sheet` sınıfıdır — yeni pafta türleri de bu sınıf
+  üzerinden çizilir, ayrı ad-hoc başlık kodu yazılmaz.
+- **Pafta çerçevesi:** Duvar rail mantığına benzer şekilde **çift/ofsetli
+  çizgi** (dış hat + iç hat) olarak çizilir (`Sheet._draw_double_frame`),
+  tek çizgili basit dikdörtgen değildir.
+- **Ortak yükseklik, dinamik genişlik, hizalı paftalar (rev-4'te
+  tamamlandı):** Projedeki TÜM paftalar (kat planları + görünüşler) **aynı
+  MUTLAK dış-çerçeve Y-ARALIĞINI** (`frame_y0`..`frame_y1`) paylaşır — bu,
+  tüm paftaların ham `(y_bottom, y_top)` aralıklarının EN GENİŞİNİ kapsayacak
+  şekilde bir kere hesaplanır. **Kritik nokta:** bu, her paftayı KENDİ
+  içeriğinin merkezine göre simetrik olarak şişirmek DEĞİLDİR — öyle
+  yapılırsa farklı "merkezli" paftalar (örn. bir kat planının yerel sıfırı
+  ile bir görünüşün zemin kotu) birbirine göre DÜŞEY KAYAR (bu gerçekten
+  yaşandı ve düzeltildi). Bunun yerine TEK bir mutlak aralık her paftaya
+  aynen uygulanır, böylece hem yükseklik birebir aynı olur HEM DE paftalar
+  arasında dikey kayma sıfırdır. **Genişlik** her paftanın kendi içeriğine
+  göre serbestçe belirlenir, bir sınır yoktur. Uygulaması `Sheet.__init__`'e
+  verilen `content_ranges` (her paftanın kendi `(y_bottom, y_top)` çifti)
+  listesidir (`frame_y0`/`frame_y1`/`outer_height`).
+- **Paftalar dış çizgilerinden bitişiktir (rev-4'te tamamlandı):** Paftalar
+  arasında EKSTRA BOŞLUK YOKTUR — bir paftanın dış çerçevesinin sağ kenarı,
+  bir sonrakinin dış çerçevesinin sol kenarına tam oturur. `meta.sheet_gap`
+  alanı bu yüzden şemadan KALDIRILDI; ardışık paftaların X-ofseti
+  `generate_dxf.py::generate` içinde `width + 2*(CONTENT_PADDING+FRAME_GAP)`
+  kadar ilerletilir.
+- **Pafta padding'i (rev-4'te tamamlandı):** Bir paftaya yerleştirilecek
+  çizim (aks baloncukları, cephe kat etiketleri vb.), paftanın **İÇ
+  çizgisinden itibaren** ölçülen bir boşluk (`CONTENT_PADDING`) kadar içeri
+  çekilir — hiçbir öğe paftaya "sıfır hizalı"/bitişik yerleştirilmez.
+  Başlık kutusu da bu iç çizgiye göre konumlanır: kutunun sağ-alt köşesi
+  **iç çizgide BİTER** (dış çizgiye taşmaz, iç çizginin üzerinde de
+  durmaz).
+- **Pafta taşma koruması (istisnasız kural):** Bir projenin çizimi HİÇBİR
+  ZAMAN kendi paftasının çerçevesini aşamaz. Bu, `scripts/pafta::Sheet.draw`'a
+  o paftaya ait tüm DXF varlıkları (`content_entities`) verilerek,
+  `verify_within_frame` ile gerçek bir bounding-box kontrolüyle
+  uygulanır — aşan bir içerik varsa `PaftaOverflowError` fırlatılır ve DXF
+  üretimi BAŞARISIZ olur (sessizce hatalı bir dosya üretilmez). Oda
+  etiketleri gibi metinler de kendi oda genişliğine göre otomatik küçültülür
+  (`fit_text_height`, gerçek font ölçümü) — bu kontrol rev-4'te tam da bu
+  şekilde bir taşma hatasını (uzun oda adı) gerçekten yakalayıp
+  düzeltilmesini sağladı.
+- **Kağıt boyutu planlaması:** `scripts/pafta::PaperSizePlanner`, projenin
+  SABİT `meta.scale`'i için en yüksek paftanın standart kağıt
+  yüksekliklerinden (45/60/90cm) hangisine sığdığını hesaplar ve
+  `generate_dxf.py` çalıştığında raporlar (örn. "45cm kağıda sığıyor").
+  Ölçeği kendiliğinden DEĞİŞTİRMEZ; "1/50 favori, sığmazsa 1/100'e düş"
+  gibi bir ölçek henüz seçilmemiş yeni bir proje için düşünülen kaskad
+  mantığı henüz uygulanmadı (kullanıcı bu konuya ileride daha detaylı
+  dönecek). Tüm paftaların FİZİKSEL boyutunun da birebir aynı olacağı bir
+  "uniform sheet template" henüz YOK — bkz. `scripts/pafta/CLAUDE.md`
+  "Bilinen sınırlamalar".
 - **Aks (grid) sistemi:** Bina, `context.json`'ın üst seviye `grid` alanında
   tanımlanan bir aks ızgarasına oturur:
   - `grid.vertical_axes`: düşey aks çizgileri (sabit X, Y boyunca uzanır),
     **nümerik** etiketli (1, 2, 3, ...).
   - `grid.horizontal_axes`: yatay aks çizgileri (sabit Y, X boyunca
     uzanır), **alfabetik** etiketli (A, B, C, ...).
-  - Aks çizgileri **kesikli** (`AKS` katmanı, `DASHED` linetype), diğer
-    katmanlardan daha belirgin/koyu renkte, uçlarında etiketi taşıyan bir
-    daire ("O" baloncuğu) ile gösterilir. Uygulaması
-    `scripts/generate_dxf.py::AxisGrid` sınıfıdır.
+  - Aks çizgileri **kesikli** (`AKS` katmanı, `DASHED` linetype), **sabit
+    RGB(67,77,88)** renginde (ACI index DEĞİL, context.json'da da
+    tanımlanmaz — `generate_dxf.py::ensure_axis_layer` tarafından kod
+    tarafında zorunlu kılınır), uçlarında etiketi taşıyan bir daire ("O"
+    baloncuğu) ile gösterilir. Uygulaması `AxisGrid` sınıfıdır.
+  - **Çizim sırası:** Aks izgarası HER paftada diğer her şeyden ÖNCE
+    (dolayısıyla "en altta") çizilir.
+  - **Baloncuk teğetliği:** Aks çizgisi, baloncuğun merkezine kadar değil,
+    baloncuğun kenarına (yarıçapı kadar önce) kadar çizilir — çizgi
+    baloncuğun içine girmez.
+  - **Uzama mesafesi:** Aks, yapının kenarından itibaren **1200 birim**
+    (mm) ileriye uzanır (`AXIS_EXTENSION`) ve bu uzama + baloncuk yarıçapı,
+    pafta çerçevesini (`PAFTA_MARGIN`) KESİNLİKLE aşmayacak şekilde
+    `PAFTA_MARGIN` bu mesafeye göre büyük tutulur. Komşu paftaların
+    baloncukları/çerçeveleri çakışmasın diye `meta.sheet_gap` da buna göre
+    yeterince büyük seçilmelidir.
+  - **Aks arası mesafeler:** Ardışık akslar arasındaki mesafe, gerçek bir
+    DXF `LINEAR DIMENSION` (ölçü) varlığıyla, **küçük punto** (`AKS`
+    katmanı, ~120mm) ve **tam sayı cm** metniyle gösterilir
+    (`AxisGrid._dim_chain_x/_dim_chain_y`). Bu, aks sınıfına ait bir
+    fonksiyondur, ayrı bir "ölçülendirme" akışı değildir.
   - Aks konumları **tüm kat paftalarında aynıdır** (bina boyunca sabit) —
     farklı kat tiplerinin iç bölmeleri farklı olsa da (daire/dükkan/otopark)
     dış cephe ve çekirdek (asansör/merdiven) konumu her katta ortak
