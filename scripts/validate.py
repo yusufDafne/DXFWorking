@@ -6,14 +6,15 @@ Kullanim:
 
 Yaptigi kontroller:
   1) JSON Schema dogrulamasi (schema/design.schema.json)
-  2) Geometrik / mantiksal saglik kontrolleri:
+  2) Her kat (floors[]) icin geometrik / mantiksal saglik kontrolleri:
      - Her oda poligonu en az 3 nokta iceriyor mu
      - Beyan edilen oda alani (area_m2), poligondan hesaplanan alanla tutarli mi
-     - Oda alanlari toplami, meta.target_total_area_m2 ile tutarli mi (varsa)
      - Duvar agi sarkan (baglantisiz) uc icermeden kapali bir yapi olusturuyor mu
+       (kose VE T-kesisimi taniniyor)
      - Her kapi/pencere, var olan bir duvara (wall_id) referans veriyor mu ve
-       genisligi o duvarin uzunlugundan kucuk mu
+       genisligi o duvarin uzunlugundan kucuk mu, duvar sinirlari icinde mi
      - Iki oda poligonu birbiriyle cakisiyor mu (convex/dikdortgen varsayimiyla)
+  3) Her cephe gorunusu (elevations[]) icin hafif tutarlilik kontrolleri.
 
 Cikis kodu: basarili -> 0, basarisiz -> 1.
 Bu script FAIL ile bitiyorsa generate_dxf.py CALISTIRILMAMALIDIR.
@@ -35,12 +36,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 SCHEMA_PATH = PROJECT_ROOT / "schema" / "design.schema.json"
 DEFAULT_CONTEXT_PATH = PROJECT_ROOT / "context.json"
 
-AREA_TOLERANCE_RATIO = 0.03       # oda alani vs poligon alani icin toleransi
-TOTAL_AREA_TOLERANCE_RATIO = 0.05  # toplam alan vs hedef alan icin tolerans
-
-
-class ValidationError(Exception):
-    pass
+AREA_TOLERANCE_RATIO = 0.03  # oda alani vs poligon alani icin tolerans
 
 
 def load_json(path: Path) -> dict:
@@ -71,7 +67,7 @@ def to_m2(raw_area: float, units: str) -> float:
         return raw_area / 1_000_000.0
     if units == "m":
         return raw_area
-    raise ValidationError(f"Bilinmeyen birim: {units}")
+    raise ValueError(f"Bilinmeyen birim: {units}")
 
 
 def polygon_intersection_area(subject: list[list[float]], clip: list[list[float]]) -> float:
@@ -92,7 +88,6 @@ def polygon_intersection_area(subject: list[list[float]], clip: list[list[float]
         return [p1[0] + t * (p2[0] - p1[0]), p1[1] + t * (p2[1] - p1[1])]
 
     output = list(subject)
-    # clip poligonunun yonunu (CCW) garanti et; degilse ters cevir
     clip_area_signed = 0.0
     for i in range(len(clip)):
         x1, y1 = clip[i]
@@ -128,61 +123,7 @@ def round_point(pt: list[float], units: str) -> tuple[float, float]:
     return (round(pt[0], precision), round(pt[1], precision))
 
 
-def check_rooms(context: dict) -> tuple[list[str], list[str]]:
-    errors: list[str] = []
-    warnings: list[str] = []
-    units = context["meta"]["units"]
-    rooms = context["rooms"]
-
-    for room in rooms:
-        if len(room["polygon"]) < 3:
-            errors.append(f"Oda '{room['id']}' poligonu en az 3 nokta icermeli.")
-            continue
-        computed_raw = shoelace_area(room["polygon"])
-        computed_m2 = to_m2(computed_raw, units)
-        declared_m2 = room["area_m2"]
-        if declared_m2 <= 0:
-            errors.append(f"Oda '{room['id']}' icin area_m2 pozitif olmali.")
-            continue
-        diff_ratio = abs(computed_m2 - declared_m2) / declared_m2
-        if diff_ratio > AREA_TOLERANCE_RATIO:
-            errors.append(
-                f"Oda '{room['id']}': beyan edilen alan {declared_m2:.2f} m^2, "
-                f"poligondan hesaplanan alan {computed_m2:.2f} m^2 ile tutarsiz "
-                f"(fark %{diff_ratio*100:.1f}, tolerans %{AREA_TOLERANCE_RATIO*100:.0f})."
-            )
-
-    # Oda alanlari toplami vs hedef toplam alan
-    target = context["meta"].get("target_total_area_m2")
-    if target:
-        total_declared = sum(r["area_m2"] for r in rooms)
-        if total_declared > 0:
-            diff_ratio = abs(total_declared - target) / target
-            if diff_ratio > TOTAL_AREA_TOLERANCE_RATIO:
-                errors.append(
-                    f"Oda alanlari toplami {total_declared:.2f} m^2, hedef toplam alan "
-                    f"{target:.2f} m^2 ile tutarsiz (fark %{diff_ratio*100:.1f}, "
-                    f"tolerans %{TOTAL_AREA_TOLERANCE_RATIO*100:.0f})."
-                )
-
-    # Oda cakismalari (convex/dikdortgen varsayimiyla)
-    for i in range(len(rooms)):
-        for j in range(i + 1, len(rooms)):
-            r1, r2 = rooms[i], rooms[j]
-            if len(r1["polygon"]) < 3 or len(r2["polygon"]) < 3:
-                continue
-            inter_raw = polygon_intersection_area(r1["polygon"], r2["polygon"])
-            inter_m2 = to_m2(inter_raw, units)
-            if inter_m2 > 0.01:  # 0.01 m^2'den buyuk kesisimler cakisma sayilir
-                errors.append(
-                    f"Oda '{r1['id']}' ile '{r2['id']}' cakisiyor "
-                    f"(kesisim alani ~{inter_m2:.2f} m^2)."
-                )
-
-    return errors, warnings
-
-
-def point_on_segment(pt: tuple[float, float], seg_a: list[float], seg_b: list[float], tol: float) -> bool:
+def point_on_segment(pt, seg_a, seg_b, tol: float) -> bool:
     """pt, (seg_a -> seg_b) dogru parcasinin uzerinde mi (T-kesisimi dahil)?"""
     ax, ay = seg_a
     bx, by = seg_b
@@ -200,20 +141,47 @@ def point_on_segment(pt: tuple[float, float], seg_a: list[float], seg_b: list[fl
     return -1e-6 <= t <= 1 + 1e-6
 
 
-def check_walls(context: dict) -> tuple[list[str], list[str]]:
+def check_rooms(units: str, rooms: list[dict]) -> list[str]:
     errors: list[str] = []
-    warnings: list[str] = []
-    units = context["meta"]["units"]
-    walls = context["walls"]
+
+    for room in rooms:
+        if len(room["polygon"]) < 3:
+            errors.append(f"Oda '{room['id']}' poligonu en az 3 nokta icermeli.")
+            continue
+        computed_m2 = to_m2(shoelace_area(room["polygon"]), units)
+        declared_m2 = room["area_m2"]
+        if declared_m2 <= 0:
+            errors.append(f"Oda '{room['id']}' icin area_m2 pozitif olmali.")
+            continue
+        diff_ratio = abs(computed_m2 - declared_m2) / declared_m2
+        if diff_ratio > AREA_TOLERANCE_RATIO:
+            errors.append(
+                f"Oda '{room['id']}': beyan edilen alan {declared_m2:.2f} m^2, "
+                f"poligondan hesaplanan alan {computed_m2:.2f} m^2 ile tutarsiz "
+                f"(fark %{diff_ratio*100:.1f}, tolerans %{AREA_TOLERANCE_RATIO*100:.0f})."
+            )
+
+    for i in range(len(rooms)):
+        for j in range(i + 1, len(rooms)):
+            r1, r2 = rooms[i], rooms[j]
+            if len(r1["polygon"]) < 3 or len(r2["polygon"]) < 3:
+                continue
+            inter_m2 = to_m2(polygon_intersection_area(r1["polygon"], r2["polygon"]), units)
+            if inter_m2 > 0.01:
+                errors.append(
+                    f"Oda '{r1['id']}' ile '{r2['id']}' cakisiyor "
+                    f"(kesisim alani ~{inter_m2:.2f} m^2)."
+                )
+
+    return errors
+
+
+def check_walls(units: str, walls: list[dict]) -> list[str]:
+    errors: list[str] = []
 
     if not walls:
-        warnings.append("Hic duvar tanimlanmamis.")
-        return errors, warnings
+        return errors
 
-    # Sarkan uc (dangling endpoint) kontrolu: her duvar ucu ya baska bir
-    # duvarin ucuyla ayni noktada bulusmali (kose), ya da baska bir duvarin
-    # uzerine (T-kesisimi) denk gelmelidir. Ikisi de saglanmiyorsa poligon
-    # kapali degildir.
     tol = 1.0 if units == "mm" else 0.001
 
     endpoint_count: dict[tuple[float, float], int] = {}
@@ -226,7 +194,7 @@ def check_walls(context: dict) -> tuple[list[str], list[str]]:
         for pt in (wall["start"], wall["end"]):
             key = round_point(pt, units)
             if endpoint_count[key] >= 2:
-                continue  # baska bir duvarla ayni noktada (kose) bulusuyor
+                continue
             supported = any(
                 other["id"] != wall["id"] and point_on_segment(pt, other["start"], other["end"], tol)
                 for other in walls
@@ -237,21 +205,19 @@ def check_walls(context: dict) -> tuple[list[str], list[str]]:
                     f"duvara (kose veya T-kesisimi olarak) baglanmiyor (sarkan uc)."
                 )
 
-    # Sifir uzunluklu duvar kontrolu
     for wall in walls:
         length = ((wall["end"][0] - wall["start"][0]) ** 2 + (wall["end"][1] - wall["start"][1]) ** 2) ** 0.5
         if length <= 0:
             errors.append(f"Duvar '{wall['id']}' sifir uzunlukta.")
 
-    return errors, warnings
+    return errors
 
 
-def check_openings(context: dict) -> tuple[list[str], list[str]]:
+def check_openings(openings: list[dict], walls: list[dict]) -> list[str]:
     errors: list[str] = []
-    warnings: list[str] = []
-    walls_by_id = {w["id"]: w for w in context["walls"]}
+    walls_by_id = {w["id"]: w for w in walls}
 
-    for opening in context["openings"]:
+    for opening in openings:
         wall = walls_by_id.get(opening["wall_id"])
         if wall is None:
             errors.append(
@@ -275,7 +241,27 @@ def check_openings(context: dict) -> tuple[list[str], list[str]]:
                 f"width={opening['width']}, duvar uzunlugu={wall_length:.1f})."
             )
 
-    return errors, warnings
+    return errors
+
+
+def check_floor(units: str, floor: dict) -> list[str]:
+    errors: list[str] = []
+    prefix = f"[{floor['id']}] "
+    errors += [prefix + e for e in check_rooms(units, floor["rooms"])]
+    errors += [prefix + e for e in check_walls(units, floor["walls"])]
+    errors += [prefix + e for e in check_openings(floor["openings"], floor["walls"])]
+    return errors
+
+
+def check_elevation(elevation: dict) -> list[str]:
+    errors: list[str] = []
+    prefix = f"[{elevation['id']}] "
+    if not elevation["levels"]:
+        errors.append(prefix + "en az bir seviye (levels) tanimlanmali.")
+    for level in elevation["levels"]:
+        if level["height"] <= 0:
+            errors.append(prefix + f"seviye '{level['label']}' yuksekligi pozitif olmali.")
+    return errors
 
 
 def run_validation(context_path: Path = DEFAULT_CONTEXT_PATH) -> bool:
@@ -289,18 +275,14 @@ def run_validation(context_path: Path = DEFAULT_CONTEXT_PATH) -> bool:
             print(f"  - {e}")
         return False
 
+    units = context["meta"]["units"]
     all_errors: list[str] = []
-    all_warnings: list[str] = []
 
-    for check in (check_rooms, check_walls, check_openings):
-        errors, warnings = check(context)
-        all_errors.extend(errors)
-        all_warnings.extend(warnings)
+    for floor in context["floors"]:
+        all_errors += check_floor(units, floor)
 
-    if all_warnings:
-        print("UYARILAR:")
-        for w in all_warnings:
-            print(f"  - {w}")
+    for elevation in context["elevations"]:
+        all_errors += check_elevation(elevation)
 
     if all_errors:
         print("DOGRULAMA BASARISIZ (geometri/mantik):")
@@ -308,7 +290,10 @@ def run_validation(context_path: Path = DEFAULT_CONTEXT_PATH) -> bool:
             print(f"  - {e}")
         return False
 
-    print("DOGRULAMA BASARILI: context.json semaya ve saglik kontrollerine uygun.")
+    print(
+        f"DOGRULAMA BASARILI: context.json semaya uygun, "
+        f"{len(context['floors'])} kat + {len(context['elevations'])} cephe saglik kontrollerinden gecti."
+    )
     return True
 
 

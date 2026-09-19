@@ -1,23 +1,25 @@
 #!/usr/bin/env python3
-"""context.json'dan output/plan.dxf uretir.
+"""context.json'dan output/plan.dxf uretir (cok katli bina, cok pafta).
 
 Kullanim:
     python scripts/generate_dxf.py [context.json yolu] [cikti .dxf yolu]
 
 ONEMLI: Bu script, context.json'da (veya kullanicidan gelen talepte) mevcut
 OLMAYAN hicbir olcuyu/koordinati uydurmaz. Asagida gorulen sabitler (metin
-yuksekligi, kapi kolu/pervaz cizim detaylari gibi) SADECE cizim/sunum
-kurallaridir; mimari tasarim verisi degildir ve context.json'daki gercek
-geometriyi degistirmez.
+yuksekligi, pafta cercevesi, elevasyon pencere/kapi cizim boyutlari gibi)
+SADECE cizim/sunum kurallaridir; mimari tasarim verisi degildir.
 
 Duvar cizim standardi (Turkiye standardi, bkz. CLAUDE.md):
 Duvarlar "tek merkez cizgisi + width" yontemiyle DEGIL, kalinligina karsilik
 gelen iki paralel kenar cizgisiyle (rail) - LINE olarak - cizilir. Birlesim
 noktalarinda (kose / T-kesisimi) bu kenar cizgileri komsu duvarlarin
-kenarlariyla kesistirilip (gonye/miter) uzatilir/kisaltilir; boylece her dis
-kose disaridan tek bir noktada temiz birlesir. Bu mantik Wall/WallNetwork
-siniflarinda kapsullenmistir - yeni duvar cizim kodu bu siniflar uzerinden
-yazilmalidir.
+kenarlariyla kesistirilip (gonye/miter) uzatilir/kisaltilir. Bu mantik
+Wall/WallNetwork siniflarinda kapsullenmistir.
+
+Pafta duzeni: context.json'daki "floors" listesi soldan saga, ardindan
+"elevations" listesi soldan saga dizilir (her pafta kendi genisligi +
+meta.sheet_gap kadar sagda baslar). Her pafta sag-alt kosesine bir cerceve
+ve baslik (kat adi + pafta no) yazilir.
 
 Bu script calistirilmadan once mutlaka scripts/validate.py BASARILI donmus
 olmalidir. output/plan.dxf elle duzenlenmez; her degisiklik icin bu script
@@ -33,9 +35,11 @@ from pathlib import Path
 
 try:
     import ezdxf
+    from ezdxf.enums import TextEntityAlignment
 except ImportError:
     subprocess.check_call([sys.executable, "-m", "pip", "install", "ezdxf"])
     import ezdxf
+    from ezdxf.enums import TextEntityAlignment
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_CONTEXT_PATH = PROJECT_ROOT / "context.json"
@@ -43,7 +47,10 @@ DEFAULT_OUTPUT_PATH = PROJECT_ROOT / "output" / "plan.dxf"
 
 # --- Cizim/sunum sabitleri (tasarim verisi degil) ---
 DEFAULT_LAYER_COLOR = 7
-GAP_EPSILON = 1e-6  # duvar uzerinde kalan parca cok kisaysa cizmemek icin
+GAP_EPSILON = 1e-6
+PAFTA_MARGIN = 1000.0
+DEFAULT_ELEVATION_WINDOW_SIZE = (1200.0, 1400.0)
+ELEVATION_DOOR_SIZE = (1800.0, 2100.0)
 
 
 def load_json(path: Path) -> dict:
@@ -52,21 +59,15 @@ def load_json(path: Path) -> dict:
 
 
 def cleanup_fallback_files(output_path: Path) -> None:
-    """output_path tekrar yazilabilir oldugunda, gecmiste kilit yuzunden
-    olusturulmus '<isim>_N<uzanti>' yedek dosyalarini temizler."""
     pattern = f"{output_path.stem}_*{output_path.suffix}"
     for alt in output_path.parent.glob(pattern):
         try:
             alt.unlink()
         except OSError:
-            pass  # kilitliyse veya silinemiyorsa sessizce gec
+            pass
 
 
 def save_with_fallback(save_fn, output_path: Path, max_attempts: int = 50) -> Path:
-    """save_fn(path) ile kaydetmeyi dener; PermissionError alirsa (dosya baska
-    bir programda acik, ör. AutoCAD) akisi kesmeden '<isim>_N<uzanti>' olarak
-    kaydedip kullaniciyi bilgilendirir. output_path tekrar musaitse eski
-    yedek dosyalari temizler ve normal isme kaydeder."""
     try:
         save_fn(output_path)
     except PermissionError as original_error:
@@ -95,8 +96,12 @@ def save_with_fallback(save_fn, output_path: Path, max_attempts: int = 50) -> Pa
 
 
 def text_height_for_units(units: str) -> float:
-    # Cizimde okunabilir metin yuksekligi icin standart bir CAD sunum degeri.
-    return 250.0 if units == "mm" else 0.25
+    return 350.0 if units == "mm" else 0.35
+
+
+def room_label_height_for_units(units: str) -> float:
+    # Oda etiketleri kucuk odalara (WC, mutfak vb.) da sigmali - genel metinden kucuk.
+    return 200.0 if units == "mm" else 0.2
 
 
 def vec_sub(a, b):
@@ -123,7 +128,6 @@ def vec_norm(a):
 
 
 def vec_perp(a):
-    # 90 derece saat yonu tersine (CCW) donduruleus vektor
     return (-a[1], a[0])
 
 
@@ -133,7 +137,6 @@ def round_point(pt, units: str) -> tuple[float, float]:
 
 
 def point_on_segment(pt, seg_a, seg_b, tol: float) -> bool:
-    """pt, (seg_a -> seg_b) dogru parcasinin uzerinde mi (T-kesisimi dahil)?"""
     ax, ay = seg_a
     bx, by = seg_b
     px, py = pt
@@ -151,7 +154,6 @@ def point_on_segment(pt, seg_a, seg_b, tol: float) -> bool:
 
 
 def line_intersection(p1, d1, p2, d2):
-    """Iki sonsuz dogrunun (p1+t*d1) ve (p2+s*d2) kesisim noktasi; paralelse None."""
     denom = d1[0] * d2[1] - d1[1] * d2[0]
     if abs(denom) < 1e-9:
         return None
@@ -161,19 +163,11 @@ def line_intersection(p1, d1, p2, d2):
 
 
 def project_s(point, origin, direction) -> float:
-    """point'in origin'den direction yonunde (birim vektor) olculen s parametresi."""
     return (point[0] - origin[0]) * direction[0] + (point[1] - origin[1]) * direction[1]
 
 
 class Wall:
-    """Tek bir duvar segmenti: merkez cizgisi + kalinlik.
-
-    Duvar, kalinligina karsilik gelen iki paralel kenar cizgisiyle (rail)
-    temsil edilir: 'pos' (merkez cizginin +normal tarafi) ve 'neg' (-normal
-    tarafi). Her rail'in cizilebilir [s_start, s_end] araligi (s=0 orijinal
-    baslangic, s=length orijinal bitis), WallNetwork tarafindan komsu
-    duvarlarla olan birlesim noktalarina gore (gonye/miter) guncellenir.
-    """
+    """Tek bir duvar segmenti: merkez cizgisi + kalinlik (bkz. CLAUDE.md duvar standardi)."""
 
     def __init__(self, wall_id: str, start, end, thickness: float, layer: str):
         self.id = wall_id
@@ -208,12 +202,7 @@ class Wall:
 
 
 class WallNetwork:
-    """Duvarlar arasi birlesim (kose / T-kesisimi) cozumlemesini yapar.
-
-    Her duvarin iki rail'ini komsu duvarlarin rail'leriyle kesistirip
-    (gonye/miter birlesim) dogru uzunluga getirir; boylece disaridan
-    bakildiginda her kose tek bir noktada temiz sekilde birlesir.
-    """
+    """Duvarlar arasi birlesim (kose / T-kesisimi) cozumlemesi (gonye/miter)."""
 
     def __init__(self, walls: list[Wall], units: str):
         self.walls = walls
@@ -230,8 +219,6 @@ class WallNetwork:
 
         handled: set[tuple[str, str]] = set()
 
-        # 1) Kose birlesimleri: ayni noktada bulusan tum duvar uclarini
-        #    ikili ikili gonyeleyerek kesistir.
         for entries in endpoint_groups.values():
             if len(entries) < 2:
                 continue
@@ -243,8 +230,6 @@ class WallNetwork:
             for w, which in entries:
                 handled.add((w.id, which))
 
-        # 2) T-kesisimleri: kose olarak islenmeyen her uc icin, baska bir
-        #    duvarin uzerine denk gelip gelmedigine bak.
         for w in self.walls:
             for which, pt in (("start", w.start), ("end", w.end)):
                 if (w.id, which) in handled:
@@ -255,8 +240,6 @@ class WallNetwork:
                     if point_on_segment(pt, other.start, other.end, self.tol):
                         self._trim_stub_at_through(w, which, other)
                         break
-            # Baglanti bulunamazsa (validate.py bunu zaten engeller) duvar
-            # kendi orijinal ucunda birakilir.
 
     def _miter_corner(self, wA: Wall, whichA: str, wB: Wall, whichB: str) -> None:
         for side in ("pos", "neg"):
@@ -264,7 +247,7 @@ class WallNetwork:
             originB, dirB = wB.rail_line(side)
             inter = line_intersection(originA, dirA, originB, dirB)
             if inter is None:
-                continue  # paralel duvarlar - gonye uygulanamaz, oldugu gibi birakilir
+                continue
             wA.set_trim(side, whichA, project_s(inter, originA, dirA))
             wB.set_trim(side, whichB, project_s(inter, originB, dirB))
 
@@ -281,7 +264,6 @@ class WallNetwork:
                     candidates.append(inter)
             if not candidates:
                 continue
-            # Uzak uctan bakildiginda ilk carpilan yuz = dogru kesim noktasi
             best = min(candidates, key=lambda p: vec_len(vec_sub(p, far_point)))
             stub.set_trim(side, which, project_s(best, origin, direction))
 
@@ -346,13 +328,18 @@ def setup_layers(doc, layers: list[dict]) -> None:
         doc.layers.add(name=name, dxfattribs=attribs or {"color": DEFAULT_LAYER_COLOR})
 
 
+def add_text(msp, content: str, position, height: float, layer: str, align=TextEntityAlignment.LEFT):
+    text = msp.add_text(content, dxfattribs={"layer": layer, "height": height})
+    text.set_placement(position, align=align)
+    return text
+
+
 def draw_wall_network(msp, network: WallNetwork, openings: list[dict]) -> None:
     for wall in network.walls:
         for side in ("pos", "neg"):
             for p1, p2 in network.drawable_rail_segments(wall, side, openings):
                 msp.add_line(p1, p2, dxfattribs={"layer": wall.layer})
 
-        # Aciklik kenarlarina pervaz (jamb) cizgileri + kapi/pencere sembolleri
         perp = wall.normal
         for g_start, g_end, op in gaps_for_wall(wall, openings):
             op_layer = op.get("layer", "KAPI-PENCERE")
@@ -405,7 +392,6 @@ def polygon_centroid(polygon: list[list[float]]) -> tuple[float, float]:
         cy += (y1 + y2) * cross
     area *= 0.5
     if abs(area) < 1e-9:
-        # dejenere poligon icin basit ortalama
         xs = [p[0] for p in polygon]
         ys = [p[1] for p in polygon]
         return (sum(xs) / len(xs), sum(ys) / len(ys))
@@ -429,29 +415,187 @@ def draw_labels(msp, labels: list[dict], default_height: float) -> None:
         text.dxf.insert = tuple(label["position"])
 
 
+def shift_point(pt, dx: float):
+    return [pt[0] + dx, pt[1]]
+
+
+def translate_floor(floor: dict, dx: float) -> dict:
+    if dx == 0:
+        return floor
+    new_floor = dict(floor)
+    new_floor["rooms"] = [
+        {**r, "polygon": [shift_point(p, dx) for p in r["polygon"]]} for r in floor["rooms"]
+    ]
+    new_floor["walls"] = [
+        {**w, "start": shift_point(w["start"], dx), "end": shift_point(w["end"], dx)} for w in floor["walls"]
+    ]
+    new_floor["openings"] = list(floor["openings"])
+    new_floor["labels"] = [
+        {**l, "position": shift_point(l["position"], dx)} for l in floor["labels"]
+    ]
+    new_floor["counters"] = [
+        {**c, "polygon": [shift_point(p, dx) for p in c["polygon"]]} for c in floor.get("counters", [])
+    ]
+    new_floor["markings"] = [
+        {**m, "start": shift_point(m["start"], dx), "end": shift_point(m["end"], dx)} for m in floor.get("markings", [])
+    ]
+    return new_floor
+
+
+def draw_sheet_frame(msp, dx: float, width: float, y_bottom: float, y_top: float,
+                      label: str, sheet_note: str | None, sheet_number: int, total_sheets: int,
+                      text_height: float) -> None:
+    x0, y0 = dx - PAFTA_MARGIN, y_bottom - PAFTA_MARGIN
+    x1, y1 = dx + width + PAFTA_MARGIN, y_top + PAFTA_MARGIN
+    frame = msp.add_lwpolyline([(x0, y0), (x1, y0), (x1, y1), (x0, y1)], dxfattribs={"layer": "CERCEVE"})
+    frame.closed = True
+
+    sub_text = f"PAFTA {sheet_number}/{total_sheets}"
+    if sheet_note:
+        sub_text += f" - {sheet_note}"
+    add_text(msp, sub_text, (x1 - 200, y0 + 200), text_height, "METIN", align=TextEntityAlignment.BOTTOM_RIGHT)
+    add_text(
+        msp, label, (x1 - 200, y0 + 200 + text_height * 1.8), text_height * 1.4, "METIN",
+        align=TextEntityAlignment.BOTTOM_RIGHT,
+    )
+
+
+def draw_floor_sheet(msp, floor: dict, dx: float, units: str, floor_width: float, floor_depth: float,
+                      sheet_number: int, total_sheets: int, text_height: float) -> None:
+    tfloor = translate_floor(floor, dx)
+
+    walls = [
+        Wall(w["id"], w["start"], w["end"], w["thickness"], w["layer"])
+        for w in tfloor["walls"]
+    ]
+    network = WallNetwork(walls, units)
+    draw_wall_network(msp, network, tfloor["openings"])
+
+    room_label_height = room_label_height_for_units(units)
+    for room in tfloor["rooms"]:
+        draw_room_label(msp, room, room_label_height)
+
+    draw_labels(msp, tfloor["labels"], text_height)
+
+    for counter in tfloor.get("counters", []):
+        pl = msp.add_lwpolyline(counter["polygon"], dxfattribs={"layer": counter["layer"]})
+        pl.closed = True
+
+    for marking in tfloor.get("markings", []):
+        msp.add_line(marking["start"], marking["end"], dxfattribs={"layer": marking["layer"]})
+
+    draw_sheet_frame(
+        msp, dx, floor_width, 0.0, floor_depth, floor["label"], floor.get("sheet_note"),
+        sheet_number, total_sheets, text_height,
+    )
+
+
+def elevation_vertical_extent(elevation: dict) -> tuple[float, float]:
+    levels = elevation["levels"]
+    total_below = sum(l["height"] for l in levels if l.get("below_ground"))
+    total_above = sum(l["height"] for l in levels if not l.get("below_ground"))
+    extra = 0.0
+    for l in levels:
+        if l.get("machine_room"):
+            extra = max(extra, l["height"] * 0.8)
+    return -total_below, total_above + extra
+
+
+def draw_elevation(msp, elevation: dict, dx: float, text_height: float) -> None:
+    width = elevation["width"]
+    levels = elevation["levels"]
+
+    total_below = sum(l["height"] for l in levels if l.get("below_ground"))
+    cursor = -total_below
+
+    for level in levels:
+        y0 = cursor
+        y1 = cursor + level["height"]
+        cursor = y1
+
+        outline = msp.add_lwpolyline(
+            [(dx, y0), (dx + width, y0), (dx + width, y1), (dx, y1)], dxfattribs={"layer": "DUVARLAR"}
+        )
+        outline.closed = True
+
+        window_count = level.get("window_count", 0)
+        if window_count > 0:
+            win_w, win_h = level.get("window_size", list(DEFAULT_ELEVATION_WINDOW_SIZE))
+            sill = max(0.0, (level["height"] - win_h) / 2.0)
+            gap = width / (window_count + 1)
+            for i in range(1, window_count + 1):
+                cx = dx + gap * i
+                x0w = cx - win_w / 2.0
+                win = msp.add_lwpolyline(
+                    [
+                        (x0w, y0 + sill), (x0w + win_w, y0 + sill),
+                        (x0w + win_w, y0 + sill + win_h), (x0w, y0 + sill + win_h),
+                    ],
+                    dxfattribs={"layer": "KAPI-PENCERE"},
+                )
+                win.closed = True
+
+        if level.get("door"):
+            door_w, door_h = ELEVATION_DOOR_SIZE
+            cx = dx + width / 2.0
+            x0d = cx - door_w / 2.0
+            door = msp.add_lwpolyline(
+                [(x0d, y0), (x0d + door_w, y0), (x0d + door_w, y0 + door_h), (x0d, y0 + door_h)],
+                dxfattribs={"layer": "KAPI-PENCERE"},
+            )
+            door.closed = True
+
+        if level.get("machine_room"):
+            mr_w, mr_h = width * 0.25, level["height"] * 0.8
+            cx = dx + width * 0.2
+            mr = msp.add_lwpolyline(
+                [(cx, y1), (cx + mr_w, y1), (cx + mr_w, y1 + mr_h), (cx, y1 + mr_h)],
+                dxfattribs={"layer": "DUVARLAR"},
+            )
+            mr.closed = True
+
+        add_text(
+            msp, level["label"], (dx - 200, (y0 + y1) / 2.0), text_height, "METIN",
+            align=TextEntityAlignment.MIDDLE_RIGHT,
+        )
+
+    msp.add_line((dx - 1000, 0), (dx + width + 1000, 0), dxfattribs={"layer": "OLCU"})
+    add_text(
+        msp, "+-0.00 ZEMIN", (dx - 200, 150.0), text_height * 0.8, "OLCU",
+        align=TextEntityAlignment.MIDDLE_RIGHT,
+    )
+
+
 def generate(context_path: Path = DEFAULT_CONTEXT_PATH, output_path: Path = DEFAULT_OUTPUT_PATH) -> Path:
     context = load_json(context_path)
     units = context["meta"]["units"]
+    floor_width = context["meta"]["floor_width"]
+    floor_depth = context["meta"]["floor_depth"]
+    sheet_gap = context["meta"].get("sheet_gap", 3000.0)
 
     doc = ezdxf.new(dxfversion="R2010")
     doc.header["$INSUNITS"] = ezdxf.units.MM if units == "mm" else ezdxf.units.M
     setup_layers(doc, context["layers"])
     msp = doc.modelspace()
 
-    walls = [
-        Wall(w["id"], w["start"], w["end"], w["thickness"], w["layer"])
-        for w in context["walls"]
-    ]
-    network = WallNetwork(walls, units)
-
-    openings = context["openings"]
-    draw_wall_network(msp, network, openings)
-
+    floors = context["floors"]
+    elevations = context["elevations"]
+    total_sheets = len(floors) + len(elevations)
     text_height = text_height_for_units(units)
-    for room in context["rooms"]:
-        draw_room_label(msp, room, text_height)
 
-    draw_labels(msp, context["labels"], text_height)
+    cursor = 0.0
+    for i, floor in enumerate(floors, start=1):
+        draw_floor_sheet(msp, floor, cursor, units, floor_width, floor_depth, i, total_sheets, text_height)
+        cursor += floor_width + sheet_gap
+
+    for j, elevation in enumerate(elevations, start=1):
+        y_bottom, y_top = elevation_vertical_extent(elevation)
+        draw_elevation(msp, elevation, cursor, text_height)
+        draw_sheet_frame(
+            msp, cursor, elevation["width"], y_bottom, y_top, elevation["label"], None,
+            len(floors) + j, total_sheets, text_height,
+        )
+        cursor += elevation["width"] + sheet_gap
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     return save_with_fallback(lambda p: doc.saveas(p), output_path)

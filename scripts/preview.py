@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""context.json'dan basit bir ustten-gorunum PNG onizlemesi uretir.
+"""context.json'dan tum paftalarin (kat planlari + cepheler) basit bir
+ustten-gorunum PNG onizlemesini uretir.
 
 Kullanim:
     python scripts/preview.py [context.json yolu] [cikti .png yolu]
@@ -39,21 +40,15 @@ def load_json(path: Path) -> dict:
 
 
 def cleanup_fallback_files(output_path: Path) -> None:
-    """output_path tekrar yazilabilir oldugunda, gecmiste kilit yuzunden
-    olusturulmus '<isim>_N<uzanti>' yedek dosyalarini temizler."""
     pattern = f"{output_path.stem}_*{output_path.suffix}"
     for alt in output_path.parent.glob(pattern):
         try:
             alt.unlink()
         except OSError:
-            pass  # kilitliyse veya silinemiyorsa sessizce gec
+            pass
 
 
 def save_with_fallback(save_fn, output_path: Path, max_attempts: int = 50) -> Path:
-    """save_fn(path) ile kaydetmeyi dener; PermissionError alirsa (dosya baska
-    bir programda acik) akisi kesmeden '<isim>_N<uzanti>' olarak kaydedip
-    kullaniciyi bilgilendirir. output_path tekrar musaitse eski yedek
-    dosyalari temizler ve normal isme kaydeder."""
     try:
         save_fn(output_path)
     except PermissionError as original_error:
@@ -81,13 +76,9 @@ def save_with_fallback(save_fn, output_path: Path, max_attempts: int = 50) -> Pa
     return output_path
 
 
-def generate_preview(context_path: Path = DEFAULT_CONTEXT_PATH, output_path: Path = DEFAULT_OUTPUT_PATH) -> Path:
-    context = load_json(context_path)
-
-    fig, ax = plt.subplots(figsize=(10, 10))
-
-    for room in context["rooms"]:
-        polygon = room["polygon"]
+def draw_floor(ax, floor: dict, dx: float) -> None:
+    for room in floor["rooms"]:
+        polygon = [(p[0] + dx, p[1]) for p in room["polygon"]]
         patch = MplPolygon(polygon, closed=True, facecolor="#dbeafe", edgecolor="none", alpha=0.6, zorder=1)
         ax.add_patch(patch)
         xs = [p[0] for p in polygon]
@@ -95,17 +86,17 @@ def generate_preview(context_path: Path = DEFAULT_CONTEXT_PATH, output_path: Pat
         cx, cy = sum(xs) / len(xs), sum(ys) / len(ys)
         ax.text(
             cx, cy, f"{room['name']}\n{room['area_m2']:.1f} m2",
-            ha="center", va="center", fontsize=9, zorder=4,
+            ha="center", va="center", fontsize=5, zorder=4,
         )
 
-    for wall in context["walls"]:
-        x1, y1 = wall["start"]
-        x2, y2 = wall["end"]
+    for wall in floor["walls"]:
+        x1, y1 = wall["start"][0] + dx, wall["start"][1]
+        x2, y2 = wall["end"][0] + dx, wall["end"][1]
         thickness = wall.get("thickness", 1)
-        ax.plot([x1, x2], [y1, y2], color="black", linewidth=max(1.0, thickness / 50), zorder=2)
+        ax.plot([x1, x2], [y1, y2], color="black", linewidth=max(0.5, thickness / 80), zorder=2)
 
-    walls_by_id = {w["id"]: w for w in context["walls"]}
-    for opening in context["openings"]:
+    walls_by_id = {w["id"]: w for w in floor["walls"]}
+    for opening in floor["openings"]:
         wall = walls_by_id.get(opening["wall_id"])
         if wall is None:
             continue
@@ -114,23 +105,81 @@ def generate_preview(context_path: Path = DEFAULT_CONTEXT_PATH, output_path: Pat
         length = ((x2 - x1) ** 2 + (y2 - y1) ** 2) ** 0.5
         if length == 0:
             continue
-        dx, dy = (x2 - x1) / length, (y2 - y1) / length
+        ux, uy = (x2 - x1) / length, (y2 - y1) / length
         pos = opening["position_from_start"]
         half = opening["width"] / 2.0
-        gx1, gy1 = x1 + dx * (pos - half), y1 + dy * (pos - half)
-        gx2, gy2 = x1 + dx * (pos + half), y1 + dy * (pos + half)
+        gx1, gy1 = x1 + ux * (pos - half) + dx, y1 + uy * (pos - half)
+        gx2, gy2 = x1 + ux * (pos + half) + dx, y1 + uy * (pos + half)
         color = "#dc2626" if opening["type"] == "door" else "#2563eb"
-        ax.plot([gx1, gx2], [gy1, gy2], color=color, linewidth=3, zorder=3)
+        ax.plot([gx1, gx2], [gy1, gy2], color=color, linewidth=2, zorder=3)
 
-    for label in context["labels"]:
-        x, y = label["position"]
-        ax.text(x, y, label["text"], fontsize=8, color="#374151", zorder=4)
+    for counter in floor.get("counters", []):
+        polygon = [(p[0] + dx, p[1]) for p in counter["polygon"]]
+        ax.add_patch(MplPolygon(polygon, closed=True, facecolor="#d1d5db", edgecolor="#6b7280", linewidth=0.5, zorder=3))
+
+    for marking in floor.get("markings", []):
+        x1, y1 = marking["start"][0] + dx, marking["start"][1]
+        x2, y2 = marking["end"][0] + dx, marking["end"][1]
+        ax.plot([x1, x2], [y1, y2], color="#9ca3af", linewidth=0.6, zorder=2)
+
+    for label in floor["labels"]:
+        x, y = label["position"][0] + dx, label["position"][1]
+        ax.text(x, y, label["text"], fontsize=5, color="#374151", zorder=4)
+
+    ax.text(dx, -600, floor["label"], fontsize=7, color="#111827", ha="left", va="top")
+
+
+def draw_elevation(ax, elevation: dict, dx: float) -> None:
+    width = elevation["width"]
+    levels = elevation["levels"]
+    total_below = sum(l["height"] for l in levels if l.get("below_ground"))
+    cursor = -total_below
+    for level in levels:
+        y0, y1 = cursor, cursor + level["height"]
+        cursor = y1
+        style = "--" if level.get("below_ground") else "-"
+        ax.plot([dx, dx + width, dx + width, dx, dx], [y0, y0, y1, y1, y0], color="black", linewidth=0.8, linestyle=style)
+        ax.text(dx - 200, (y0 + y1) / 2, level["label"], fontsize=5, ha="right", va="center")
+        wc = level.get("window_count", 0)
+        if wc:
+            win_w, win_h = level.get("window_size", [1200, 1400])
+            gap = width / (wc + 1)
+            sill = max(0.0, (level["height"] - win_h) / 2.0)
+            for i in range(1, wc + 1):
+                cx = dx + gap * i
+                ax.add_patch(plt.Rectangle((cx - win_w / 2, y0 + sill), win_w, win_h, facecolor="#bfdbfe", edgecolor="#2563eb", linewidth=0.4))
+        if level.get("door"):
+            dw, dh = 1800, 2100
+            ax.add_patch(plt.Rectangle((dx + width / 2 - dw / 2, y0), dw, dh, facecolor="#fecaca", edgecolor="#dc2626", linewidth=0.4))
+    ax.plot([dx - 1000, dx + width + 1000], [0, 0], color="#9ca3af", linewidth=0.6)
+    ax.text(dx, -600, elevation["label"], fontsize=7, color="#111827", ha="left", va="top")
+
+
+def generate_preview(context_path: Path = DEFAULT_CONTEXT_PATH, output_path: Path = DEFAULT_OUTPUT_PATH) -> Path:
+    context = load_json(context_path)
+    meta = context["meta"]
+    floor_width = meta.get("floor_width")
+    sheet_gap = meta.get("sheet_gap", 3000.0)
+
+    fig, ax = plt.subplots(figsize=(28, 8))
+
+    if floor_width is not None:
+        cursor = 0.0
+        for floor in context["floors"]:
+            draw_floor(ax, floor, cursor)
+            cursor += floor_width + sheet_gap
+        for elevation in context["elevations"]:
+            draw_elevation(ax, elevation, cursor)
+            cursor += elevation["width"] + sheet_gap
+    else:
+        # eski tek-daire (duz) sema geriye-donuk uyumluluk
+        draw_floor(ax, context, 0.0)
 
     ax.set_aspect("equal", adjustable="datalim")
     ax.autoscale_view()
-    ax.set_title(context["meta"].get("project_name") or "Daire Plani Onizleme")
+    ax.set_title(context["meta"].get("project_name") or "Bina Plani Onizleme")
     ax.set_xlabel(f"birim: {context['meta']['units']}")
-    ax.grid(True, linestyle="--", linewidth=0.3, alpha=0.5)
+    ax.grid(True, linestyle="--", linewidth=0.3, alpha=0.4)
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     saved_path = save_with_fallback(

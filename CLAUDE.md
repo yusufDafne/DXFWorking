@@ -58,6 +58,44 @@ kalıcı kurallardır. Aşağıdaki kurallar istisnasız uygulanır.
   türetilir/kullanılır — duvar çizen yeni kod tekilleştirilmiş bu sınıflar
   üzerinden yazılır, ayrı ayrı ad-hoc çizim mantığı eklenmez.
 
+## Çok katli bina yapisi (rev-2'den itibaren)
+- context.json semasi rev-2'de degisti: artik duz (tek daire) yapi degil,
+  `meta.floor_width` / `meta.floor_depth` / `meta.sheet_gap` + `floors[]`
+  (her biri kendi rooms/walls/openings/labels/counters/markings listesine
+  sahip bir "pafta") + `elevations[]` (basitlestirilmis cephe seviye istifi)
+  iceriyor. `schema/design.schema.json` bu yapiyi tanimlar.
+- **Pafta duzeni:** `floors[]` sirayla, sonra `elevations[]` sirayla soldan
+  saga dizilir; her paftanin X-ofseti kendi genisligi + `sheet_gap` kadar
+  ilerler (bkz. `generate_dxf.py::generate`). Her paftanin sag-alt kosesine
+  `CERCEVE` katmaninda bir cerceve ve METIN katmaninda kat adi + "PAFTA n/N"
+  yazilir (`draw_sheet_frame`).
+- **Ortak bina ayak izi:** Tum kat paftalari AYNI `floor_width x floor_depth`
+  dikdortgenini kullanir (cikma yok). Derinlik iki banda ayrilir:
+  - `y: 0 - 13000` "birim bandi": katin asil islevi (otopark / dukkan+lobi /
+    3 daire / cati terasi) burada.
+  - `y: 13000 - 17500` "sirkulasyon bandi": HER KATTA AYNI KONUMDA asansor
+    (x:0-1000) + merdiven (x:1000-5000), bunlarin guney yuzu `y=14500`'de
+    koridora acilir; L-seklinde koridor/rampa odasi tum genisligi kaplar.
+    Bu konum tum katlarda sabit tutulmalidir (asansor/merdiven duseyde
+    hizali olsun diye).
+  - `y=13000` duvari ("band_south"): zemin/normal katlarda VAR (giris
+    kapilariyla), bodrum/catida YOK (acik gecis - rampa/teras).
+- **Mutfak tezgahi:** `floor.counters[]` icinde basit dikdortgen poligon
+  olarak tanimlanir, `MOBILYA` katmaninda kapali polyline ciizilir.
+- **Cephe gorunusleri (elevations):** Gercek plan geometrisinden TURETILMEZ;
+  kullanicinin acikca izin verdigi sekilde (bkz. rev-2 talebi) semantik/basit
+  bir seviye istifi + esit araliklarla yerlestirilmis jenerik pencere
+  dikdortgenleri olarak cizilir (`draw_elevation`). `below_ground: true`
+  seviyeler zemin cizgisinin (`y=0`) altinda cizilir; DXF'te ayri bir
+  kesikli linetype UYGULANMAZ (sadece etiketle ayirt edilir) - bu bilinen
+  bir basitlestirmedir.
+- **Bilinen basitlestirmeler (rev-2):** Banyo/WC gibi servis odalari,
+  "birim bandi"nin tam derinligini paylastigi icin gercekte olmasi
+  gerekenden biraz dar-uzun orantili olabilir; otopark cizgileri
+  (`markings[]`, `OTOPARK` katmani) salt gorsel/semantik olmayan
+  isaretlemedir, validate.py bunlari kontrol etmez; asansor/merdiven kapi
+  sembolu cizilmez (sadece etiketli kapali oda olarak gosterilir).
+
 ## Git (güncellendi)
 1. Git komutları (`add`, `commit`, `log`, `diff`) SADECE bu proje dizini
    içinde çalıştırılır. Her git komutundan önce `git rev-parse
