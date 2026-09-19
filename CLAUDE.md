@@ -96,6 +96,57 @@ kalıcı kurallardır. Aşağıdaki kurallar istisnasız uygulanır.
   isaretlemedir, validate.py bunlari kontrol etmez; asansor/merdiven kapi
   sembolu cizilmez (sadece etiketli kapali oda olarak gosterilir).
 
+## Çizim standartları (ofis standardı, rev-3'ten itibaren)
+Bunlar bir yönetmelik degil, kullanicinin kisisel/ofis standardidir; ileride
+daha detayli yonetmelik-destekli standartlar gelebilir, o zaman bu bolum
+guncellenir.
+
+- **Ölçek:** Aksi açıkça belirtilmedikçe varsayılan ölçek **1/100**'dür
+  (`meta.scale`). Farklı bir ölçek istenirse context.json'da açıkça
+  belirtilir.
+- **Ölçülendirme birimi:** Çizim üzerine bir ölçü (dimension) metni/etiketi
+  eklenirken (örn. `labels[]` içindeki `type: "dimension"` girdileri veya
+  ileride kurulacak `DimensionChain` sınıfı) metin **tam sayı cm** olarak
+  yazılır — örn. gerçek ölçü 3750mm ise etiket metni `"375"` olur (mm veya
+  ondalıklı m değil). Bu SADECE ölçü metninin gösterim formatıdır;
+  context.json'daki asıl koordinat/ölçü birimi (`meta.units`) yine mm
+  kalır, değişmez.
+- **Pafta başlık kutusu:** Her pafta, sağ-alt köşesinde standart bir
+  kutucuk içinde (çerçeveli, iki bölmeli: üstte kat/pafta adı, altta
+  "PAFTA n/N - ÖLÇEK x - not") gösterilir. Uygulaması
+  `scripts/generate_dxf.py::Sheet` sınıfıdır — yeni pafta türleri de bu
+  sınıf üzerinden çizilir, ayrı ad-hoc başlık kodu yazılmaz.
+- **Aks (grid) sistemi:** Bina, `context.json`'ın üst seviye `grid` alanında
+  tanımlanan bir aks ızgarasına oturur:
+  - `grid.vertical_axes`: düşey aks çizgileri (sabit X, Y boyunca uzanır),
+    **nümerik** etiketli (1, 2, 3, ...).
+  - `grid.horizontal_axes`: yatay aks çizgileri (sabit Y, X boyunca
+    uzanır), **alfabetik** etiketli (A, B, C, ...).
+  - Aks çizgileri **kesikli** (`AKS` katmanı, `DASHED` linetype), diğer
+    katmanlardan daha belirgin/koyu renkte, uçlarında etiketi taşıyan bir
+    daire ("O" baloncuğu) ile gösterilir. Uygulaması
+    `scripts/generate_dxf.py::AxisGrid` sınıfıdır.
+  - Aks konumları **tüm kat paftalarında aynıdır** (bina boyunca sabit) —
+    farklı kat tiplerinin iç bölmeleri farklı olsa da (daire/dükkan/otopark)
+    dış cephe ve çekirdek (asansör/merdiven) konumu her katta ortak
+    olduğundan aks ızgarası bunlara oturtulur.
+  - **Aks sıklığı optimum belirlenir**, her duvara aks konmaz — sadece ana
+    strüktürel hatlar (dış cephe, çekirdek sınırları, ileride kolon
+    hizaları) aks alır. Kolon yerleşimi projeye girdiğinde aks sayısı ve
+    sıklığı kolon rastırına göre yeniden/dinamik belirlenir.
+  - **Görünüşlerde izdüşüm:** Düşey (nümerik) akslar plandaki X konumunu
+    korur ve **ön/arka cephede düşey çizgi** olarak aynı etiketle
+    izdüşürülür. Yatay (alfabetik) akslar plandaki Y konumunu (derinlik)
+    temsil eder ve **sağ/sol cephede düşey çizgi** olarak aynı etiketle
+    izdüşürülür (bir cephe kendi ailesini gösterir, diğerini göstermez).
+    Bu, `elevation.axis_source` alanıyla (`"vertical"` veya `"horizontal"`)
+    kontrol edilir.
+- **Genişletilebilir altyapı:** Bu ve gelecekteki çizim yetenekleri
+  (kolonlar, ölçü zincirleri, kapı/pencere cetveli vb.) `Wall`/`WallNetwork`
+  örneğindeki gibi parametrik, tek-sorumluluklu Python sınıflarıyla
+  kurulur. Bu mimarinin planı ve durumu **`scripts/CLAUDE.md`** dosyasında
+  tutulur — yeni bir sınıf fikri veya kararı oraya işlenir, buraya değil.
+
 ## Git (güncellendi)
 1. Git komutları (`add`, `commit`, `log`, `diff`) SADECE bu proje dizini
    içinde çalıştırılır. Her git komutundan önce `git rev-parse

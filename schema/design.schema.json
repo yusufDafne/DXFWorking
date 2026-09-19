@@ -3,7 +3,7 @@
   "$id": "daire-plani-ai/design.schema.json",
   "title": "Bina Plani Context Schema",
   "type": "object",
-  "required": ["meta", "layers", "floors", "elevations", "rev_history"],
+  "required": ["meta", "layers", "grid", "floors", "elevations", "rev_history"],
   "additionalProperties": false,
   "definitions": {
     "point": {
@@ -140,6 +140,35 @@
         "levels": {
           "type": "array", "minItems": 1, "items": { "$ref": "#/definitions/elevation_level" },
           "description": "Zeminden yukariya (ve varsa asagiya) dogru seviye istifi, ciziliş sirasiyla"
+        },
+        "axis_source": {
+          "type": "string", "enum": ["vertical", "horizontal"],
+          "description": "Bu cepheye plandan hangi aks ailesi izdusurulsun: 'vertical' (numerik akslar, on/arka cephe) veya 'horizontal' (alfabetik akslar, sag/sol cephe). Belirtilmezse aks cizilmez."
+        }
+      }
+    },
+    "axis": {
+      "type": "object",
+      "required": ["label", "position"],
+      "additionalProperties": false,
+      "properties": {
+        "label": { "type": "string" },
+        "position": { "type": "number" }
+      }
+    },
+    "grid": {
+      "type": "object",
+      "description": "Binanin tum kat paftalarinda ortak, sabit aks izgarasi",
+      "required": ["vertical_axes", "horizontal_axes"],
+      "additionalProperties": false,
+      "properties": {
+        "vertical_axes": {
+          "type": "array", "items": { "$ref": "#/definitions/axis" },
+          "description": "Sabit X'te, Y boyunca uzanan duesy akslar - numerik etiketli (1,2,3,...)"
+        },
+        "horizontal_axes": {
+          "type": "array", "items": { "$ref": "#/definitions/axis" },
+          "description": "Sabit Y'de, X boyunca uzanan yatay akslar - alfabetik etiketli (A,B,C,...)"
         }
       }
     }
@@ -172,6 +201,7 @@
         }
       }
     },
+    "grid": { "$ref": "#/definitions/grid" },
     "floors": {
       "type": "array",
       "description": "Soldan saga dizilecek kat plani paftalari, ciziliş sirasiyla",

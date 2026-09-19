@@ -25,7 +25,7 @@
     },
     {
       "name": "OLCU",
-      "color": 1,
+      "color": 4,
       "linetype": "CONTINUOUS"
     },
     {
@@ -42,8 +42,51 @@
       "name": "OTOPARK",
       "color": 9,
       "linetype": "CONTINUOUS"
+    },
+    {
+      "name": "AKS",
+      "color": 1,
+      "linetype": "DASHED"
     }
   ],
+  "grid": {
+    "vertical_axes": [
+      {
+        "label": "1",
+        "position": 0.0
+      },
+      {
+        "label": "2",
+        "position": 1000.0
+      },
+      {
+        "label": "3",
+        "position": 5000.0
+      },
+      {
+        "label": "4",
+        "position": 20000.0
+      }
+    ],
+    "horizontal_axes": [
+      {
+        "label": "A",
+        "position": 0.0
+      },
+      {
+        "label": "B",
+        "position": 13000.0
+      },
+      {
+        "label": "C",
+        "position": 14500.0
+      },
+      {
+        "label": "D",
+        "position": 17500.0
+      }
+    ]
+  },
   "floors": [
     {
       "id": "bodrum2",
@@ -7062,7 +7105,8 @@
           "height": 1000.0,
           "machine_room": true
         }
-      ]
+      ],
+      "axis_source": "vertical"
     },
     {
       "id": "sag_cephe",
@@ -7138,7 +7182,8 @@
           "height": 1000.0,
           "machine_room": true
         }
-      ]
+      ],
+      "axis_source": "horizontal"
     }
   ],
   "rev_history": [
@@ -7146,6 +7191,11 @@
       "rev": 2,
       "ts": "2026-09-18T15:18:00Z",
       "summary": "Tek daireden 11 paftalik cok katli binaya gecis: 2 bodrum otopark, zemin (giris+4 dukkan), 5 normal kat (2x2+1 100m2 + 1x1+1 60m2), cati, on+sag cephe gorunusleri. Asansor 2.bodrum-5.normal arasi calisir."
+    },
+    {
+      "rev": 3,
+      "ts": "2026-09-19T06:26:17Z",
+      "summary": "Cizim altyapisina aks (grid) izgarasi eklendi: 4 duesy (numerik, 1-4) + 4 yatay (alfabetik, A-D) aks, dis cephe + cekirdek sinirina oturuyor, tum katlarda ayni konumda. Sheet ve AxisGrid siniflari kuruldu (scripts/generate_dxf.py). Pafta baslik kutusu standardize edildi."
     }
   ]
 }

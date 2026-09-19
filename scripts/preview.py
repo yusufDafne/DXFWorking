@@ -129,6 +129,39 @@ def draw_floor(ax, floor: dict, dx: float) -> None:
     ax.text(dx, -600, floor["label"], fontsize=7, color="#111827", ha="left", va="top")
 
 
+def draw_axes_on_floor(ax, grid: dict, dx: float, floor_width: float, floor_depth: float) -> None:
+    ext = 700.0
+    for axis in grid["vertical_axes"]:
+        x = dx + axis["position"]
+        ax.plot([x, x], [-ext, floor_depth + ext], color="#dc2626", linewidth=0.6, linestyle="--", zorder=5)
+        ax.text(x, -ext, axis["label"], fontsize=5, color="#dc2626", ha="center", va="top")
+    for axis in grid["horizontal_axes"]:
+        y = axis["position"]
+        ax.plot([dx - ext, dx + floor_width + ext], [y, y], color="#dc2626", linewidth=0.6, linestyle="--", zorder=5)
+        ax.text(dx - ext, y, axis["label"], fontsize=5, color="#dc2626", ha="right", va="center")
+
+
+def draw_axes_on_elevation(ax, grid: dict, dx: float, axis_source: str | None, y_bottom: float, y_top: float) -> None:
+    ext = 700.0
+    if axis_source == "vertical":
+        axes = grid["vertical_axes"]
+    elif axis_source == "horizontal":
+        axes = grid["horizontal_axes"]
+    else:
+        return
+    for axis in axes:
+        x = dx + axis["position"]
+        ax.plot([x, x], [y_bottom - ext, y_top + ext], color="#dc2626", linewidth=0.6, linestyle="--", zorder=5)
+        ax.text(x, y_top + ext, axis["label"], fontsize=5, color="#dc2626", ha="center", va="bottom")
+
+
+def elevation_vertical_extent(elevation: dict) -> tuple[float, float]:
+    levels = elevation["levels"]
+    total_below = sum(l["height"] for l in levels if l.get("below_ground"))
+    total_above = sum(l["height"] for l in levels if not l.get("below_ground"))
+    return -total_below, total_above
+
+
 def draw_elevation(ax, elevation: dict, dx: float) -> None:
     width = elevation["width"]
     levels = elevation["levels"]
@@ -163,13 +196,20 @@ def generate_preview(context_path: Path = DEFAULT_CONTEXT_PATH, output_path: Pat
 
     fig, ax = plt.subplots(figsize=(28, 8))
 
+    grid = context.get("grid")
     if floor_width is not None:
+        floor_depth = meta.get("floor_depth")
         cursor = 0.0
         for floor in context["floors"]:
             draw_floor(ax, floor, cursor)
+            if grid:
+                draw_axes_on_floor(ax, grid, cursor, floor_width, floor_depth)
             cursor += floor_width + sheet_gap
         for elevation in context["elevations"]:
             draw_elevation(ax, elevation, cursor)
+            if grid:
+                y_bottom, y_top = elevation_vertical_extent(elevation)
+                draw_axes_on_elevation(ax, grid, cursor, elevation.get("axis_source"), y_bottom, y_top)
             cursor += elevation["width"] + sheet_gap
     else:
         # eski tek-daire (duz) sema geriye-donuk uyumluluk

@@ -48,9 +48,13 @@ DEFAULT_OUTPUT_PATH = PROJECT_ROOT / "output" / "plan.dxf"
 # --- Cizim/sunum sabitleri (tasarim verisi degil) ---
 DEFAULT_LAYER_COLOR = 7
 GAP_EPSILON = 1e-6
-PAFTA_MARGIN = 1000.0
+PAFTA_MARGIN = 1500.0
 DEFAULT_ELEVATION_WINDOW_SIZE = (1200.0, 1400.0)
 ELEVATION_DOOR_SIZE = (1800.0, 2100.0)
+AXIS_EXTENSION = 700.0
+AXIS_BUBBLE_RADIUS = 450.0
+AXIS_LINETYPE = "DASHED"
+AXIS_LAYER = "AKS"
 
 
 def load_json(path: Path) -> dict:
@@ -328,10 +332,94 @@ def setup_layers(doc, layers: list[dict]) -> None:
         doc.layers.add(name=name, dxfattribs=attribs or {"color": DEFAULT_LAYER_COLOR})
 
 
+def ensure_dashed_linetype(doc) -> None:
+    if AXIS_LINETYPE not in doc.linetypes:
+        # Pattern: [toplam_uzunluk, cizgi, -bosluk] - mm olcegine gore secildi.
+        doc.linetypes.add(AXIS_LINETYPE, pattern=[750.0, 500.0, -250.0], description="Aks kesikli cizgi")
+
+
 def add_text(msp, content: str, position, height: float, layer: str, align=TextEntityAlignment.LEFT):
     text = msp.add_text(content, dxfattribs={"layer": layer, "height": height})
     text.set_placement(position, align=align)
     return text
+
+
+class Sheet:
+    """Pafta cercevesi + standart sag-alt kose baslik kutusu (bkz. CLAUDE.md
+    'Pafta basligi' standardi). Olcege ve metin yuksekligine gore parametrik;
+    hem kat plani hem cephe paftalarinda ayni sekilde kullanilir."""
+
+    def __init__(self, scale: str, text_height: float, margin: float = PAFTA_MARGIN):
+        self.scale = scale
+        self.text_height = text_height
+        self.margin = margin
+
+    def draw(self, msp, dx: float, width: float, y_bottom: float, y_top: float,
+              label: str, sheet_note: str | None, sheet_number: int, total_sheets: int) -> None:
+        x0, y0 = dx - self.margin, y_bottom - self.margin
+        x1, y1 = dx + width + self.margin, y_top + self.margin
+        frame = msp.add_lwpolyline([(x0, y0), (x1, y0), (x1, y1), (x0, y1)], dxfattribs={"layer": "CERCEVE"})
+        frame.closed = True
+
+        box_w = min(width * 0.4, 8000.0)
+        box_h = self.text_height * 4.4
+        bx0, by0, bx1, by1 = x1 - box_w, y0, x1, y0 + box_h
+        box = msp.add_lwpolyline([(bx0, by0), (bx1, by0), (bx1, by1), (bx0, by1)], dxfattribs={"layer": "CERCEVE"})
+        box.closed = True
+        mid_y = by0 + box_h * 0.55
+        msp.add_line((bx0, mid_y), (bx1, mid_y), dxfattribs={"layer": "CERCEVE"})
+
+        add_text(msp, label, (bx0 + 150, by1 - 150), self.text_height * 1.2, "METIN", align=TextEntityAlignment.TOP_LEFT)
+        sub = f"PAFTA {sheet_number}/{total_sheets} - OLCEK {self.scale}"
+        if sheet_note:
+            sub += f" - {sheet_note}"
+        add_text(msp, sub, (bx0 + 150, mid_y - 150), self.text_height * 0.8, "METIN", align=TextEntityAlignment.TOP_LEFT)
+
+
+class AxisGrid:
+    """Duvar/oda cizimlerinden bagimsiz, binanin tum kat paftalarinda ayni
+    konumda tekrarlanan aks (grid) izgarasi. Duesy akslar (sabit X, numerik
+    etiketli) plan uzerinde dikey cizgi olarak, ayni sekilde on/arka cephede
+    de dikey cizgi olarak izdusurulur; yatay akslar (sabit Y, alfabetik
+    etiketli) planda yatay cizgi, sag/sol cephede ise dikey cizgi olarak
+    izdusurulur (bkz. CLAUDE.md 'Aks (grid) sistemi')."""
+
+    def __init__(self, vertical_axes: list[dict], horizontal_axes: list[dict], text_height: float):
+        self.vertical_axes = vertical_axes
+        self.horizontal_axes = horizontal_axes
+        self.text_height = text_height
+
+    def _bubble(self, msp, point, label: str) -> None:
+        msp.add_circle(point, AXIS_BUBBLE_RADIUS, dxfattribs={"layer": AXIS_LAYER})
+        add_text(msp, label, point, self.text_height, AXIS_LAYER, align=TextEntityAlignment.MIDDLE_CENTER)
+
+    def _line_with_bubbles(self, msp, p1, p2, label: str) -> None:
+        msp.add_line(p1, p2, dxfattribs={"layer": AXIS_LAYER, "linetype": AXIS_LINETYPE})
+        self._bubble(msp, p1, label)
+        self._bubble(msp, p2, label)
+
+    def draw_on_floor(self, msp, dx: float, floor_width: float, floor_depth: float) -> None:
+        y0, y1 = -AXIS_EXTENSION, floor_depth + AXIS_EXTENSION
+        for axis in self.vertical_axes:
+            x = dx + axis["position"]
+            self._line_with_bubbles(msp, (x, y0), (x, y1), axis["label"])
+
+        x0, x1 = dx - AXIS_EXTENSION, dx + floor_width + AXIS_EXTENSION
+        for axis in self.horizontal_axes:
+            y = axis["position"]
+            self._line_with_bubbles(msp, (x0, y), (x1, y), axis["label"])
+
+    def draw_on_elevation(self, msp, dx: float, axis_source: str | None, y_bottom: float, y_top: float) -> None:
+        if axis_source == "vertical":
+            axes = self.vertical_axes
+        elif axis_source == "horizontal":
+            axes = self.horizontal_axes
+        else:
+            return
+        y0, y1 = y_bottom - AXIS_EXTENSION, y_top + AXIS_EXTENSION
+        for axis in axes:
+            x = dx + axis["position"]
+            self._line_with_bubbles(msp, (x, y0), (x, y1), axis["label"])
 
 
 def draw_wall_network(msp, network: WallNetwork, openings: list[dict]) -> None:
@@ -442,26 +530,9 @@ def translate_floor(floor: dict, dx: float) -> dict:
     return new_floor
 
 
-def draw_sheet_frame(msp, dx: float, width: float, y_bottom: float, y_top: float,
-                      label: str, sheet_note: str | None, sheet_number: int, total_sheets: int,
-                      text_height: float) -> None:
-    x0, y0 = dx - PAFTA_MARGIN, y_bottom - PAFTA_MARGIN
-    x1, y1 = dx + width + PAFTA_MARGIN, y_top + PAFTA_MARGIN
-    frame = msp.add_lwpolyline([(x0, y0), (x1, y0), (x1, y1), (x0, y1)], dxfattribs={"layer": "CERCEVE"})
-    frame.closed = True
-
-    sub_text = f"PAFTA {sheet_number}/{total_sheets}"
-    if sheet_note:
-        sub_text += f" - {sheet_note}"
-    add_text(msp, sub_text, (x1 - 200, y0 + 200), text_height, "METIN", align=TextEntityAlignment.BOTTOM_RIGHT)
-    add_text(
-        msp, label, (x1 - 200, y0 + 200 + text_height * 1.8), text_height * 1.4, "METIN",
-        align=TextEntityAlignment.BOTTOM_RIGHT,
-    )
-
-
 def draw_floor_sheet(msp, floor: dict, dx: float, units: str, floor_width: float, floor_depth: float,
-                      sheet_number: int, total_sheets: int, text_height: float) -> None:
+                      sheet_number: int, total_sheets: int, text_height: float,
+                      sheet: Sheet, axis_grid: AxisGrid) -> None:
     tfloor = translate_floor(floor, dx)
 
     walls = [
@@ -484,9 +555,11 @@ def draw_floor_sheet(msp, floor: dict, dx: float, units: str, floor_width: float
     for marking in tfloor.get("markings", []):
         msp.add_line(marking["start"], marking["end"], dxfattribs={"layer": marking["layer"]})
 
-    draw_sheet_frame(
+    axis_grid.draw_on_floor(msp, dx, floor_width, floor_depth)
+
+    sheet.draw(
         msp, dx, floor_width, 0.0, floor_depth, floor["label"], floor.get("sheet_note"),
-        sheet_number, total_sheets, text_height,
+        sheet_number, total_sheets,
     )
 
 
@@ -501,7 +574,7 @@ def elevation_vertical_extent(elevation: dict) -> tuple[float, float]:
     return -total_below, total_above + extra
 
 
-def draw_elevation(msp, elevation: dict, dx: float, text_height: float) -> None:
+def draw_elevation(msp, elevation: dict, dx: float, text_height: float, axis_grid: AxisGrid) -> None:
     width = elevation["width"]
     levels = elevation["levels"]
 
@@ -565,6 +638,9 @@ def draw_elevation(msp, elevation: dict, dx: float, text_height: float) -> None:
         align=TextEntityAlignment.MIDDLE_RIGHT,
     )
 
+    y_bottom, y_top = -total_below, cursor
+    axis_grid.draw_on_elevation(msp, dx, elevation.get("axis_source"), y_bottom, y_top)
+
 
 def generate(context_path: Path = DEFAULT_CONTEXT_PATH, output_path: Path = DEFAULT_OUTPUT_PATH) -> Path:
     context = load_json(context_path)
@@ -576,6 +652,7 @@ def generate(context_path: Path = DEFAULT_CONTEXT_PATH, output_path: Path = DEFA
     doc = ezdxf.new(dxfversion="R2010")
     doc.header["$INSUNITS"] = ezdxf.units.MM if units == "mm" else ezdxf.units.M
     setup_layers(doc, context["layers"])
+    ensure_dashed_linetype(doc)
     msp = doc.modelspace()
 
     floors = context["floors"]
@@ -583,17 +660,22 @@ def generate(context_path: Path = DEFAULT_CONTEXT_PATH, output_path: Path = DEFA
     total_sheets = len(floors) + len(elevations)
     text_height = text_height_for_units(units)
 
+    scale = context["meta"].get("scale", "1:100")
+    sheet = Sheet(scale, text_height)
+    grid = context["grid"]
+    axis_grid = AxisGrid(grid["vertical_axes"], grid["horizontal_axes"], text_height)
+
     cursor = 0.0
     for i, floor in enumerate(floors, start=1):
-        draw_floor_sheet(msp, floor, cursor, units, floor_width, floor_depth, i, total_sheets, text_height)
+        draw_floor_sheet(msp, floor, cursor, units, floor_width, floor_depth, i, total_sheets, text_height, sheet, axis_grid)
         cursor += floor_width + sheet_gap
 
     for j, elevation in enumerate(elevations, start=1):
         y_bottom, y_top = elevation_vertical_extent(elevation)
-        draw_elevation(msp, elevation, cursor, text_height)
-        draw_sheet_frame(
+        draw_elevation(msp, elevation, cursor, text_height, axis_grid)
+        sheet.draw(
             msp, cursor, elevation["width"], y_bottom, y_top, elevation["label"], None,
-            len(floors) + j, total_sheets, text_height,
+            len(floors) + j, total_sheets,
         )
         cursor += elevation["width"] + sheet_gap
 
