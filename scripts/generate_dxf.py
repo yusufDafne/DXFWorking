@@ -60,7 +60,13 @@ from pafta import (  # noqa: E402  (once sys.path ayarlanmali)
     fit_text_height,
     fit_uniform_text_height,
 )
-from axis import AxisGrid, ensure_axis_layer  # noqa: E402
+from axis import (  # noqa: E402
+    AxisCoverageReport,
+    AxisDrawingStandard,
+    AxisGrid,
+    ensure_axis_layer,
+)
+from dimensions import DimensionSettings, FloorDimensionPlanner  # noqa: E402
 from walls import WallNetwork, draw_wall_network  # noqa: E402
 from walls.geometry import vec_add, vec_len, vec_norm, vec_scale, vec_sub  # noqa: E402
 from rooms import RoomLabeler  # noqa: E402
@@ -276,7 +282,8 @@ def draw_floor_sheet(msp, floor: dict, dx: float, units: str, floor_width: float
                       text_styles: TextStyles, furniture_catalog: FurnitureCatalog,
                       column_catalog: ColumnSectionCatalog,
                       column_hatch_style: ColumnHatchStyle,
-                      column_label_style: ColumnLabelStyle) -> None:
+                      column_label_style: ColumnLabelStyle,
+                      dimension_settings: DimensionSettings) -> None:
     content_start = len(msp)
 
     # Aks izgarasi HER ZAMAN en once (en altta) cizilir (bkz. kullanici standardi).
@@ -328,6 +335,12 @@ def draw_floor_sheet(msp, floor: dict, dx: float, units: str, floor_width: float
     if tfloor.get("furniture"):
         items = [FurnitureItem.from_context(data) for data in tfloor["furniture"]]
         FurnitureRenderer.draw(msp, items, furniture_catalog)
+
+    # Olcu zincirleri (DEV-017): aciklik / mahal / toplam kademeleri, yapinin
+    # guney ve bati kenarinda kademelendirilmis olarak. Olcu SAYISI buradaki
+    # geometriden TURETILIR (uydurulmaz); hangi kademenin cizilecegi
+    # `meta.dimensions` ile gelen bir SUNUM kararidir.
+    FloorDimensionPlanner(floor, dimension_settings).draw(msp, dx)
 
     content_entities = list(msp)[content_start:]
     sheet.draw(msp, dx, floor_width, 0.0, floor_depth, floor["label"], content_entities=content_entities)
@@ -468,7 +481,20 @@ def generate(context_path: Path = DEFAULT_CONTEXT_PATH, output_path: Path = DEFA
 
     sheet = Sheet(scale, text_height, all_labels, content_ranges)
     grid = context["grid"]
-    axis_grid = AxisGrid(grid["vertical_axes"], grid["horizontal_axes"], text_height)
+    # Olcu yigini ile aks baloncuklari AYNI kenari paylasir: baloncuk,
+    # zincirlerin DISINDA kalmalidir. Gereken uzamayi yalnizca `dimensions`
+    # bilir (yigin derinligi onun kararidir), bu yuzden aks standardi ona
+    # sorularak kurulur - iki modul birbirini import etmez.
+    dimension_settings = DimensionSettings.from_context(context)
+    axis_defaults = AxisDrawingStandard()
+    axis_standard = AxisDrawingStandard(
+        extension=dimension_settings.required_axis_extension(
+            axis_defaults.extension, axis_defaults.bubble_radius),
+        dimension_offset=dimension_settings.axis_dimension_offset(
+            axis_defaults.dimension_offset),
+    )
+    axis_grid = AxisGrid(grid["vertical_axes"], grid["horizontal_axes"], text_height,
+                         standard=axis_standard)
 
     # Cephe kat etiketleri (+ zemin notu), pafta IC cizgisinden itibaren
     # birakilan bosluga (CONTENT_PADDING) sigacak, sifir-hizali degil
@@ -521,9 +547,19 @@ def generate(context_path: Path = DEFAULT_CONTEXT_PATH, output_path: Path = DEFA
     cursor = cover_outer_x1 + frame_half_width
 
     for floor in floors:
+        # Kolon rasteri aks kapsama raporu (DEV-015 Fikir 1): SALT OKUNUR.
+        # Sistem context'e aks YAZMAZ; yalnizca aks'siz kalan kolon hizalarini
+        # bildirir ve karari kullaniciya birakir.
+        coverage = AxisCoverageReport.from_columns(
+            floor.get("columns", []), grid["vertical_axes"],
+            grid["horizontal_axes"], floor.get("code", ""))
+        for line in coverage.lines():
+            print(f"UYARI (aks kapsami): {line}")
+
         draw_floor_sheet(msp, floor, cursor, units, floor_width, floor_depth, text_height,
                          sheet, axis_grid, text_styles, furniture_catalog,
-                         column_catalog, column_hatch_style, column_label_style)
+                         column_catalog, column_hatch_style, column_label_style,
+                         dimension_settings)
         cursor += floor_width + 2 * frame_half_width
 
     for elevation in elevations:

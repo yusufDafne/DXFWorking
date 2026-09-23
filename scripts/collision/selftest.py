@@ -213,6 +213,44 @@ def check_engine() -> list[str]:
     return errors
 
 
+def check_door_pair() -> list[str]:
+    """Iki kapi birbirine aciliyorsa HATA (rev-13, DEV-016).
+
+    rev-12'de bu cift MUAFTI cunku acilim yonu schema'da yoktu ve yay sabit
+    bir varsayilan tarafa ciziliyordu; kontrol yanlis-pozitif uretirdi. Yon
+    artik veriden geldigi icin kontrol anlamli.
+    """
+    context = {
+        "meta": {"units": "mm"},
+        "floors": [{
+            "id": "k", "code": "T2", "rooms": [], "columns": [], "furniture": [],
+            "walls": [{"id": "w1", "start": [0, 0], "end": [6000, 0],
+                       "thickness": 200, "layer": "DUVAR"}],
+            "openings": [
+                # merkezler 600 mm arayla -> 900'luk iki yay ust uste biner
+                {"id": "d1", "type": "door", "wall_id": "w1",
+                 "position_from_start": 1000, "width": 900},
+                {"id": "d2", "type": "door", "wall_id": "w1",
+                 "position_from_start": 1600, "width": 900},
+            ],
+        }],
+    }
+    report = check_context(context)
+    pair = {frozenset({c.a.id, c.b.id if c.b else ""}) for c in report.errors}
+    errors: list[str] = []
+    if frozenset({"d1", "d2"}) not in pair:
+        errors.append(f"YAKALANMADI: birbirine acilan iki kapi bildirilmedi "
+                      f"({report.error_lines()}).")
+
+    # Ayni iki kapi SURME olsaydi sektor uretilmez, bulgu da olmazdi
+    for opening in context["floors"][0]["openings"]:
+        opening["variant"] = "sliding"
+    if check_context(context).clashes:
+        errors.append("YANLIS-POZITIF: surme kapilar icin acilim cakismasi "
+                      "bildirildi (surme kapi onunde bos alan gerektirmez).")
+    return errors
+
+
 def check_clean() -> list[str]:
     """Bozuk yerlesimler cikarilinca motor SESSIZ kalmali (yanlis-pozitif yok)."""
     context = _context()
@@ -230,6 +268,7 @@ def main() -> int:
     groups = (
         ("geometri", check_geometry()),
         ("motor (negatif test)", check_engine()),
+        ("kapi <-> kapi acilimi", check_door_pair()),
         ("temiz kat (yanlis-pozitif testi)", check_clean()),
     )
     failed = False

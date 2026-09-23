@@ -145,11 +145,21 @@ geliştirme görevleri, tamamlanmış geçmiş, fikirler ve geliştirici notlar�
      (modüle özel) altındaki küçük, izole referans projelerini baştan üretip
      aynı kontrolleri uygular. Bir modül bozulduğunda hangi modül olduğu
      doğrudan görünür.
-7. **Çakışma motoru self-test'i:** `python scripts/collision/selftest.py`
-   çalıştırılır. Motorun işi hata BULMAKTIR; "temiz döndü" tek başına hiçbir
-   şey kanıtlamaz (motor hiç çalışmasa da temiz dönerdi), bu yüzden kasıtlı
-   bozulmuş bir kat üzerinde beklenen bulguların TAM OLARAK üretildiği
-   sınanır.
+7. **Modül self-test'leri:** `collision`, `dimensions`, `axis` ve
+   `openings` modüllerinin her birinde bir `selftest.py` vardır ve hepsi
+   çalıştırılır:
+
+   ```
+   python scripts/collision/selftest.py
+   python scripts/dimensions/selftest.py
+   python scripts/axis/selftest.py
+   python scripts/openings/selftest.py
+   ```
+
+   Ortak disiplin: beklenen değerler ELLE hesaplanabilir tutulur ve kurallar
+   **kasıtlı bozmayla** sınanır. "Temiz döndü" çıktısı tek başına hiçbir şey
+   kanıtlamaz — kontrol hiç çalışmasa da temiz dönerdi. Her test ayrıca
+   **yanlış-pozitif** tarafını da sınar.
 8. **Doküman tutarlılığı:** `python scripts/doc_check.py` çalıştırılır. Bu
    kontrol, "çalışma sonunda dokümanları güncelle" kuralını düzyazı olmaktan
    çıkarıp MEKANİK hale getirir: görev durumu ile bulunduğu bölüm, durum özeti
@@ -270,6 +280,40 @@ guncellenir.
   ondalıklı m değil). Bu SADECE ölçü metninin gösterim formatıdır;
   context.json'daki asıl koordinat/ölçü birimi (`meta.units`) yine mm
   kalır, değişmez.
+- **Ölçü zinciri (rev-13'ten itibaren):** Kat paftalarında ölçü, kullanıcı
+  tarafından yazılmaz — **geometriden TÜRETİLİR**. Bir ölçü sayısı tasarım
+  verisi değil, geometrinin ölçüsüdür: duvar koordinatı zaten
+  `context.json`dadır ve ölçüyü ayrıca elle yazmak aynı bilgiyi iki yerde
+  tutmak olurdu (duvar taşınır, ölçü metni eski kalır). Bu, "ölçü uydurulmaz"
+  kuralını DELMEZ — sayı uydurulmuyor, ölçülüyor.
+  - **Hangi kenarın ölçüleneceği bir SUNUM kararıdır** ve `meta.dimensions`
+    ile gelir. Varsayılan KAPALIDIR; bu projede açıktır.
+  - Üç kademe, **içten dışa doğru kabalaşır**: `aciklik` (cephedeki
+    kapı/pencere kenarları) → `mahal` (dik duvarların **yüzleri**: net mahal +
+    duvar kalınlığı) → `toplam` (dıştan dışa). Üçü de aynı ordinatlarda
+    başlayıp biter.
+  - **Aks ölçü zinciri EN DIŞTA durur** (mimari gelenek). Aks baloncukları da
+    yığının dışına itilir; gereken uzamayı `dimensions` hesaplar, `axis` ise
+    baloncuk yarıçapını verir — iki modül birbirini import etmez.
+  - Aynı kenarda iki zincirin aynı baseline'a oturması **hatadır**
+    (`ChainLayout.verify_no_overlap`); kademelendirme `ChainStack` ile
+    deterministiktir. Uygulaması `scripts/dimensions/`dır, ayrı ad-hoc ölçü
+    kodu yazılmaz.
+  - `pafta::CONTENT_PADDING` bu yüzden rev-13'te 3200 → 4000 oldu; artış
+    tahminle değil, taşma korumasının verdiği ölçüyle yapıldı.
+- **Açıklık varyantları ve açılım yönü (rev-13'ten itibaren):** Kapılar
+  `variant` (`single`/`double`/`sliding`/`folding`), `swing` (menteşe duvarın
+  başında mı sonunda mı) ve `host_side` (kanat hangi tarafa açılıyor)
+  alanlarıyla sürülür. **Üçünün de varsayılanı rev-12 davranışıdır**, yani
+  alan verilmeyen projeler aynı çizimi üretir. Sürme kapı açılım alanı
+  GEREKTİRMEZ ve çakışma denetiminde sektör üretmez.
+  - **Açılım yayının tek sahibi `openings::swing_geometry`dir**; çizim ve
+    çakışma denetimi aynı kaynaktan okur. İkisinin ayrı hesaplanması rev-13'te
+    gerçek bir hataya yol açtı (denetlenen sektör çizilen yaydan yarım
+    genişlik kayıktı).
+  - `position_from_start`, duvar başlangıcından açıklığın **MERKEZİNE** olan
+    mesafedir; duvar boyunca gerçek boşluk aralığı her zaman
+    `walls.gaps_for_wall` ile alınır.
 - **Yazı tipi (rev-9'dan itibaren):** Projenin tüm metinleri **Arial
   Narrow**'dur. Uygulaması `scripts/typography::TextStyles`'tir: proje fontu
   `Standard` text style'ına yazılır, böylece stil verilmeyen HER metin
@@ -477,6 +521,20 @@ guncellenir.
     **nümerik** etiketli (1, 2, 3, ...).
   - `grid.horizontal_axes`: yatay aks çizgileri (sabit Y, X boyunca
     uzanır), **alfabetik** etiketli (A, B, C, ...).
+  - **Ara aks `1'` yazılır, `1A` YAZILMAZ (rev-13 kararı).** Gerekçe tercih
+    değil çatışmadır: yatay aile zaten `A`, `B`, `C`'dir, dolayısıyla `1A`
+    "1 ve A akslarının kesişimi" gibi okunur ve `columns::on_axis_report`un
+    ürettiği kolon adıyla (`B2`) aynı dizede çarpışır. Kural
+    `scripts/axis/naming.py` içinde yazılıdır ve `validate.py` tarafından
+    **mekanik olarak** denetlenir; aynı etiketin iki kez kullanılması da
+    hatadır.
+  - **Kısmi aks (rev-13):** `extent` verilen bir aks yalnızca o aralıkta
+    uzanır, uçlarına kendi baloncukları gelir ve **ulaşmadığı kenarın ölçü
+    zincirine GİRMEZ** — aksi halde zincir, orada olmayan bir aksı ölçüyormuş
+    gibi görünürdü.
+  - **Kolon rasteri kapsama raporu (rev-13):** `AxisCoverageReport`, aks'sız
+    kalan kolon hizalarını üretim sırasında UYARI olarak bildirir. **Salt
+    okunurdur** — context'e aks yazmaz; karar kullanıcınındır.
   - Aks çizgileri **kesikli** (`AKS` katmanı, `DASHED` linetype), **sabit
     RGB(67,77,88)** renginde (ACI index DEĞİL, context.json'da da
     tanımlanmaz — `generate_dxf.py::ensure_axis_layer` tarafından kod

@@ -22,9 +22,9 @@ agent kendi başına sıra değiştirmez.
 | DEV-012 | `legend/` | PLANNED |
 | DEV-013 | `import/` | PLANNED |
 | DEV-014 | `walls/` | PLANNED |
-| DEV-015 | `axis/` | PLANNED |
-| DEV-016 | `openings/` | PLANNED |
-| DEV-017 | `dimensions/` | PLANNED |
+| DEV-015 | `axis/` | COMPLETED (rev-13) |
+| DEV-016 | `openings/` | COMPLETED (rev-13) |
+| DEV-017 | `dimensions/` | COMPLETED (rev-13) |
 | DEV-018 | DXF `BLOCK` (modüller arası) | PLANNED |
 | DEV-019 | `collision/` (modüller arası) | COMPLETED (rev-12) |
 | DEV-020 | sürüm + provenance | COMPLETED (rev-12) |
@@ -370,6 +370,169 @@ düzyazı yerine mekanik kontrol.
   modül başına tek sayı mı olacak (şimdilik evet; okunan her alan için ayrı
   sürüm erken optimizasyon görünüyor)?
 
+### DEV-015 — `axis/` — aks sistemi genişletmesi
+
+- **Durum:** COMPLETED (rev-13)
+- **Sonuç:**
+  - *Fikir 2 — ara ve kısmi aks:* `Axis` artık bir `dict` değil tipli bir
+    nesnedir ve `extent` taşır. Kısmi bir aks yalnızca bildirilen aralıkta
+    uzanır, uçlarına kendi baloncukları gelir ve tam uzama yerine küçük bir
+    `partial_extension` kadar taşar. **Ulaşmadığı kenarın ölçü zincirine
+    GİRMEZ** — aksi halde zincir, orada olmayan bir aksı ölçüyormuş gibi
+    görünürdü.
+  - *Fikir 1 — kolon rasterine göre aks:* `AxisCoverageReport` **salt
+    okunurdur**; aks'sız kalan kolon hizalarını bildirir, context'e aks
+    YAZMAZ (türetilmiş geometriyi context'e yazma yasağı). `columns::
+    on_axis_report` bunun tersidir; ikisi birlikte kolon↔aks çapraz kontrolünü
+    tamamlar.
+- **Açık karar kapandı — ara aks `1'` yazılır, `1A` YAZILMAZ.** Gerekçe tercih
+  değil ÇATIŞMA: yatay aks ailesi zaten `A`, `B`, `C`'dir, dolayısıyla `1A`
+  "1 ve A akslarının kesişimi" gibi okunur ve `on_axis_report`un ürettiği
+  kolon adıyla (`B2`) aynı dizede çarpışır. Kural `scripts/axis/naming.py`
+  içinde yazılıp `validate.py`ye bağlandı: düşey akslar numerik, yatay akslar
+  alfabetik, ikisi de tek kesme işaretiyle ara aks olabilir; aynı etiketin iki
+  kez kullanılması da hatadır.
+- **Modül bölündü** (kullanıcı ilkesi: tek `__init__.py`de her şey olmaz):
+  `standard` / `axis` / `naming` / `grid` / `report`.
+- **Doğrulama:** `python scripts/axis/selftest.py` — kısmi aks uzanımı, ölçü
+  zinciri üyeliği, etiket kuralının beş negatif vakası ve kapsama raporunun
+  yanlış-pozitif testi.
+- **Kayıt:** `DEVELOPMENT_HISTORY.md` içindeki `HD-008`.
+
+<details><summary>Uygulama oncesi plan notu (tarihsel)</summary>
+
+- **Mevcut durum:** Tamamlandı: kesikli AKS layer'ı, sabit RGB, baloncuk
+  teğetliği, cephelere `axis_source` ile izdüşüm, gerçek DXF ölçü zincirleri.
+  Aks konumları context'ten geliyor ve tüm katlarda sabit.
+- **Fikir 1 — Kolon rasterine göre otomatik aks:** Kök kurallar, kolon
+  yerleşimi projeye girdiğinde aks sayısı/sıklığının kolon rasterine göre
+  yeniden belirlenmesini öngörüyor. `DEV-010` ile birlikte ele alınmalı.
+- **Fikir 2 — Ara aks ve kısmi aks:** `1'`, `2'` gibi ara akslar ve yalnızca
+  belirli bir bölgede uzanan kısmi akslar. Bugün her aks tüm yapı boyunca
+  uzanıyor.
+- **Açık kararlar:** Ara aks etiketleme kuralı (`1'` mi `1A` mı)?
+
+</details>
+
+### DEV-016 — `openings/` — açıklık varyantları
+
+- **Durum:** COMPLETED (rev-13)
+- **Sonuç (her iki fikir de uygulandı):**
+  - *Fikir 1 — varyant sembolleri:* `single`, `double`, `sliding`, `folding`.
+    Seçim VERİ ODAKLIDIR (`symbols.DOOR_SYMBOLS`); yeni varyant için alt sınıf
+    gerekmez, sözlüğe bir fonksiyon eklenir.
+  - *Fikir 2 — swing/menteşe yönü:* `swing` (menteşe duvarın başında mı
+    sonunda mı) ve `host_side` (kanat hangi tarafa açılıyor) schema'ya
+    eklendi. **Üç alanın da varsayılanı rev-12 davranışıdır**, yani mevcut
+    projeler hiçbir şey değiştirmeden aynı çizimi üretir.
+- **Açık karar kapandı — `position_from_start` KORUNDU.** Alan, duvar
+  başlangıcından açıklığın **merkezine** olan mesafedir. Kenardan ölçmeye
+  çevirmek geriye uyumsuz bir schema kırılımı (MAJOR) olurdu ve karşılığında
+  hiçbir yetenek kazandırmazdı.
+- **İki gerçek hata bulundu ve düzeltildi:**
+  1. **Açılım yayı 270° olabiliyordu.** Açılar `min(along, perp)` ..
+     `max(along, perp)` olarak veriliyordu; duvar −X yönünde çizilmişse
+     (`along = 180`, `perp = −90`) bu 270°'lik bir yay üretirdi. Mevcut
+     projede her duvar +X/+Y yönündeydi, bu yüzden hata hiç görünmedi — ama
+     `golden/minimal` referansında ucu ters verilmiş iki duvar ZATEN VARDI ve
+     oraya bir kapı konduğu anda ortaya çıkacaktı. Yön artık çapraz çarpımla
+     belirleniyor; yay her zaman 90°.
+  2. **Çakışma sektörü çizilen yaydan yarım genişlik kayıktı.**
+     `openings/collision.py`, `position_from_start`i açıklığın BAŞLANGICI
+     sanıyordu; oysa MERKEZİDİR. 900'lük bir kapıda menteşe 450 mm yanlış
+     yerdeydi. Artık boşluk aralığı çizimle AYNI fonksiyondan
+     (`walls.gaps_for_wall`) alınıyor.
+- **Tek sahip:** `openings/geometry.py::swing_geometry` açılım yayının tek
+  kaynağıdır; hem çizim (`symbols.py`) hem çakışma denetimi (`collision.py`)
+  buradan okur. İki yerde ayrı hesaplanması yukarıdaki 2 numaralı hatayı
+  üretmişti.
+- **Bağlı değişiklikler:** Çakışma matrisinde **kapı ↔ kapı artık HATADIR**
+  (rev-12'de yön bilinmediği için muaf bırakılmıştı); sürme kapı açılım alanı
+  üretmez. Golden kuralı `rule_opening_symbols` varyant farkındası oldu ve
+  beklenen yay sayısını `openings.ARCS_PER_VARIANT` tablosundan okuyor —
+  kural ile çizim aynı kaynağa bakıyor.
+- **Doğrulama:** `python scripts/openings/selftest.py` — beş duvar yönü × iki
+  swing × iki host_side için yayın **her zaman 90°** olduğu, varyant başına
+  çizilen çizgi/yay sayısı, geçersiz değerlerin üretimi durdurması ve boşluk
+  aralığı sözleşmesinin regresyon testi.
+- **Kayıt:** `DEVELOPMENT_HISTORY.md` içindeki `HD-008`.
+
+<details><summary>Uygulama oncesi plan notu (tarihsel)</summary>
+
+- **Mevcut durum:** `Opening`/`Door`/`Window` tipli, host-wall ve genişlik
+  doğrulaması aktif, `OpeningSymbolStyle` Protocol'ü hazır. Ancak pratikte tek
+  stil var (`DefaultPlanOpeningStyle`) ve schema'da varyant/swing alanı YOK —
+  açıklıklar tek kanat, tek yönlü çiziliyor.
+- **Fikir 1 — Varyant sembolleri:** Çift kanat, sürme, katlanır ve döner kapı
+  sembolleri. Protocol zaten var, yeni stil eklemek mevcut mimariyle uyumlu.
+- **Fikir 2 — Swing/menteşe yönü:** Kapının hangi tarafa ve hangi yöne
+  açıldığını veriden almak. Bugün yön geometriden sabit türetiliyor; gerçek
+  projede kaçış yönü ve mobilya çakışması için kritik (`DEV-009` ile ilişkili).
+- **Açık kararlar:** `variant` ve `swing` schema alanları ne zaman eklenecek?
+  Konum duvar başlangıcına göre mi, merkeze göre mi tanımlanacak?
+
+</details>
+
+### DEV-017 — `dimensions/` — ölçülendirme genişletmesi
+
+- **Durum:** COMPLETED (rev-13)
+- **Sonuç (her iki fikir de uygulandı):**
+  - *Fikir 1 — türetilen ölçü zinciri:* `dimensions/derive.py::FloorOrdinates`
+    kat geometrisinden üç kademede ordinat üretir — `aciklik` (cephedeki
+    kapı/pencere kenarları), `mahal` (dik duvarların **yüzleri** → net mahal +
+    duvar kalınlığı), `toplam` (dıştan dışa). Üçü de aynı ordinatlarda başlayıp
+    biter; mimari bir ölçü yığınının görünümü budur.
+  - *Fikir 2 — kademelendirme:* `layout.py::ChainStack` aynı kenardaki
+    zincirleri deterministik olarak basamaklandırır ve
+    `ChainLayout.verify_no_overlap` **aynı baseline'a oturan iki zinciri artık
+    HATA sayar**. Önceden `ChainLayout` yalnızca sınır kontrolü yapıyordu;
+    üst üste binen iki zincir sessizce okunamaz bir çizim üretirdi.
+- **Açık karar kapandı — ölçü TÜRETİLİR, elle bildirilmez.** Bir ölçü sayısı
+  tasarım verisi değildir, geometrinin ölçüsüdür. Duvar koordinatı zaten
+  context'tedir; ölçüyü ayrıca yazmak aynı bilgiyi iki yerde tutmak olurdu ve
+  kaçınılmaz olarak ayrışırdı (duvar taşınır, ölçü metni eski kalır — bu,
+  projenin "bayat satır" sorununun geometri hâli). Türetme "ölçü uydurulmaz"
+  yasağını DELMEZ: sayı uydurulmuyor, ölçülüyor. Buna karşılık **hangi
+  kenarın hangi kademede ölçüleneceği bir SUNUM kararıdır** ve
+  `meta.dimensions` ile gelir (varsayılan KAPALI; bu projede AÇIK).
+- **Tolerans alan değil DERİNLİK:** 2100 mm'lik bir koltuk duvara 5 mm girse
+  kesişim alanı 10500 mm² olur — alan eşiği eleman boyuyla ölçeklendiği için
+  anlamsızdır. Aynı mantık ölçüde de geçerli: 1 mm içindeki iki ordinat
+  birleştirilir (`merge_ordinates`), aksi halde "0" metinli sıfır uzunluklu
+  ölçüler üretilirdi.
+- **Çapraz nokta (yeni):** Ölçü yığını ile aks baloncukları AYNI kenarı
+  paylaşır. `DimensionSettings.axis_dimension_offset` ve
+  `required_axis_extension` aks standardını besler; iki modül birbirini
+  **import etmez**, baloncuk yarıçapı parametre olarak verilir. Aks ölçü
+  zinciri artık yığının **DIŞINDA** durur (mimari sıra: içeride en ayrıntılı,
+  dışarıda en kaba).
+- **Ölçülerek yapılan değişiklik:** `pafta::CONTENT_PADDING` 3200 → 4000.
+  İçerik yatayda gerçekten genişledi ve 3200 ile üretim `PaftaOverflowError`
+  ile DURDU — yani artış tahminle değil, taşma korumasının yakaladığı gerçek
+  bir ölçüyle yapıldı. Pafta yüksekliği 67.0 → 70.2 cm, 90'lık rulonun 88 cm
+  netine sığıyor.
+- **Doğrulama:** `python scripts/dimensions/selftest.py` — ordinatlar elle
+  hesaplanabilir bir kat üzerinde birebir sınanır (dış yüz −100/6100, net
+  mahal 2950/3050, kapı kenarları 1000/1900); kademelendirme ve **aynı
+  baseline yasağı** negatif testle doğrulanır.
+- **Kayıt:** `DEVELOPMENT_HISTORY.md` içindeki `HD-008`.
+
+<details><summary>Uygulama oncesi plan notu (tarihsel)</summary>
+
+- **Mevcut durum:** `LinearDim`, `DimensionChain`, `ChainLayout` hazır ve
+  `AxisGrid` bunları kullanarak gerçek DXF dimension üretiyor. Ölçü metni tam
+  sayı cm. Bugün ölçü üreten TEK tüketici aks modülü.
+- **Fikir 1 — Oda içi/net ölçü zinciri:** Duvar yüzünden duvar yüzüne net oda
+  ölçüleri ve kapı/pencere konum ölçüleri. Uygulama projesinde (1:50) asıl
+  beklenen ölçülendirme budur; altyapı hazır, eksik olan tüketici.
+- **Fikir 2 — Zincir çakışma çözümü:** Birden fazla zincir aynı kenarda
+  olduğunda otomatik kademelendirme (offset artırma). Bugün `ChainLayout`
+  yalnızca bounds kontrolü yapıyor; çakışan iki zincir üst üste binebilir.
+- **Açık kararlar:** Ölçü zinciri context'ten mi bildirilecek, yoksa duvar
+  geometrisinden mi türetilecek? Türetilirse hangi kenarlar ölçülendirilecek?
+
+</details>
+
 ## Modül kataloğu — her modülün plan maddesi
 
 > **Bu bir durum kovası DEĞİLDİR.** Buradaki maddeler modül modül
@@ -609,51 +772,6 @@ ZK-04        <- 2. satir: kat kodu + mahal no
   kılar (alt sınıf gerekmez, veri odaklı).
 - **Açık kararlar:** Hatch deseni ölçekle nasıl ilişkilenecek (1:50 ve 1:100'de
   aynı desen okunaklı olmayabilir)?
-
-### DEV-015 — `axis/` — aks sistemi genişletmesi
-
-- **Durum:** PLANNED
-- **Mevcut durum:** Tamamlandı: kesikli AKS layer'ı, sabit RGB, baloncuk
-  teğetliği, cephelere `axis_source` ile izdüşüm, gerçek DXF ölçü zincirleri.
-  Aks konumları context'ten geliyor ve tüm katlarda sabit.
-- **Fikir 1 — Kolon rasterine göre otomatik aks:** Kök kurallar, kolon
-  yerleşimi projeye girdiğinde aks sayısı/sıklığının kolon rasterine göre
-  yeniden belirlenmesini öngörüyor. `DEV-010` ile birlikte ele alınmalı.
-- **Fikir 2 — Ara aks ve kısmi aks:** `1'`, `2'` gibi ara akslar ve yalnızca
-  belirli bir bölgede uzanan kısmi akslar. Bugün her aks tüm yapı boyunca
-  uzanıyor.
-- **Açık kararlar:** Ara aks etiketleme kuralı (`1'` mi `1A` mı)?
-
-### DEV-016 — `openings/` — açıklık varyantları
-
-- **Durum:** PLANNED
-- **Mevcut durum:** `Opening`/`Door`/`Window` tipli, host-wall ve genişlik
-  doğrulaması aktif, `OpeningSymbolStyle` Protocol'ü hazır. Ancak pratikte tek
-  stil var (`DefaultPlanOpeningStyle`) ve schema'da varyant/swing alanı YOK —
-  açıklıklar tek kanat, tek yönlü çiziliyor.
-- **Fikir 1 — Varyant sembolleri:** Çift kanat, sürme, katlanır ve döner kapı
-  sembolleri. Protocol zaten var, yeni stil eklemek mevcut mimariyle uyumlu.
-- **Fikir 2 — Swing/menteşe yönü:** Kapının hangi tarafa ve hangi yöne
-  açıldığını veriden almak. Bugün yön geometriden sabit türetiliyor; gerçek
-  projede kaçış yönü ve mobilya çakışması için kritik (`DEV-009` ile ilişkili).
-- **Açık kararlar:** `variant` ve `swing` schema alanları ne zaman eklenecek?
-  Konum duvar başlangıcına göre mi, merkeze göre mi tanımlanacak?
-
-### DEV-017 — `dimensions/` — ölçülendirme genişletmesi
-
-- **Durum:** PLANNED
-- **Mevcut durum:** `LinearDim`, `DimensionChain`, `ChainLayout` hazır ve
-  `AxisGrid` bunları kullanarak gerçek DXF dimension üretiyor. Ölçü metni tam
-  sayı cm. Bugün ölçü üreten TEK tüketici aks modülü.
-- **Fikir 1 — Oda içi/net ölçü zinciri:** Duvar yüzünden duvar yüzüne net oda
-  ölçüleri ve kapı/pencere konum ölçüleri. Uygulama projesinde (1:50) asıl
-  beklenen ölçülendirme budur; altyapı hazır, eksik olan tüketici.
-- **Fikir 2 — Zincir çakışma çözümü:** Birden fazla zincir aynı kenarda
-  olduğunda otomatik kademelendirme (offset artırma). Bugün `ChainLayout`
-  yalnızca bounds kontrolü yapıyor; çakışan iki zincir üst üste binebilir.
-- **Açık kararlar:** Ölçü zinciri context'ten mi bildirilecek, yoksa duvar
-  geometrisinden mi türetilecek? Türetilirse hangi kenarlar ölçülendirilecek?
-
 
 ### DEV-018 — DXF `BLOCK` entity kullanımı (modüller arası)
 

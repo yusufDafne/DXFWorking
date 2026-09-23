@@ -172,16 +172,29 @@ def rule_room_labels(doc, context: dict) -> list[str]:
 
 
 def rule_opening_symbols(doc, context: dict) -> list[str]:
-    """Her kapi bir yay (ARC) sembolu uretir. Kapi sembolu kaybolsa veya
-    pencere kapiya donsa entity TURU degisir ama toplam sayi sabit
-    kalabilir - bu kural farki yakalar."""
+    """Kapi sembolleri VARYANTA gore beklenen sayida yay (ARC) uretir.
+
+    Kapi sembolu kaybolsa veya pencere kapiya donsa entity TURU degisir ama
+    toplam sayi sabit kalabilir - bu kural farki yakalar.
+
+    rev-13 (DEV-016): kural "her kapi = 1 ARC" varsayiyordu; cift kanat 2,
+    surme ve katlanir 0 yay uretir. Beklenen sayi artik
+    `openings.ARCS_PER_VARIANT` tablosundan okunur - kural ile cizim ayni
+    kaynaga bakar ve sessizce ayrisamaz."""
+    from openings import ARCS_PER_VARIANT, VARIANT_SINGLE
+
     msp = doc.modelspace()
     arcs = len(msp.query("ARC"))
-    doors = sum(1 for floor in context["floors"]
-                for opening in floor["openings"] if opening["type"] == "door")
-    if arcs != doors:
-        return [f"Kapi sembolu sayisi tutmuyor: {doors} kapi bildirildi, "
-                f"{arcs} ARC cizildi."]
+    expected = 0
+    for floor in context["floors"]:
+        for opening in floor["openings"]:
+            if opening["type"] != "door":
+                continue
+            variant = opening.get("variant", VARIANT_SINGLE)
+            expected += ARCS_PER_VARIANT.get(variant, 1)
+    if arcs != expected:
+        return [f"Kapi sembolu sayisi tutmuyor: varyantlara gore {expected} "
+                f"ARC beklendi, {arcs} cizildi."]
     return []
 
 

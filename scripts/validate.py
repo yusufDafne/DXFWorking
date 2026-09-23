@@ -49,6 +49,7 @@ sys.path.insert(0, str(SCRIPTS_ROOT))
 # ayni Sutherland-Hodgman kirpmasinin bir KOPYASI burada duruyordu; iki kopya
 # zamanla ayrisir ve "oda cakismasi" ile "tefris cakismasi" farkli cevaplar
 # vermeye baslardi.
+from axis import check_labels as check_axis_labels  # noqa: E402
 from collision import check_context as check_collisions  # noqa: E402
 from collision.geometry import (  # noqa: E402
     polygon_intersection_area,
@@ -287,6 +288,11 @@ def run_validation(context_path: Path = DEFAULT_CONTEXT_PATH) -> bool:
     all_errors: list[str] = []
 
     all_errors += check_floor_codes(context["floors"])
+    # Aks etiketleme kurali (DEV-015): dusey numerik, yatay alfabetik, ara aks
+    # kesme isaretiyle. '1A' yasaktir - yatay aks ailesiyle ve kolon
+    # adlandirmasiyla (B2) carpisir.
+    all_errors += check_axis_labels(context["grid"]["vertical_axes"],
+                                    context["grid"]["horizontal_axes"])
 
     for floor in context["floors"]:
         all_errors += check_floor(units, floor)

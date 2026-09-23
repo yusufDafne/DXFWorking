@@ -1,0 +1,204 @@
+{
+  "meta": {
+    "project_name": "Golden - Aciklik Varyantlari",
+    "schema_version": "1.0.0",
+    "units": "mm",
+    "scale": "1:50",
+    "project_type": "MIMARI_UYGULAMA",
+    "fonts": {
+      "default": "arialn.ttf",
+      "room_label": "arialn.ttf"
+    },
+    "dimensions": {
+      "enabled": true,
+      "levels": ["aciklik", "mahal", "toplam"]
+    },
+    "cover": {
+      "signature_fields": ["MIMAR", "BELEDIYE"]
+    },
+    "floor_width": 12000.0,
+    "floor_depth": 9000.0
+  },
+  "layers": [
+    {
+      "name": "DUVARLAR",
+      "color": 7
+    },
+    {
+      "name": "KAPI-PENCERE",
+      "color": 5
+    },
+    {
+      "name": "METIN",
+      "color": 7
+    },
+    {
+      "name": "CERCEVE",
+      "color": 8
+    },
+    {
+      "name": "OLCU",
+      "color": 3
+    }
+  ],
+  "grid": {
+    "vertical_axes": [
+      {
+        "label": "1",
+        "position": 0.0
+      },
+      {
+        "label": "2'",
+        "position": 6000.0,
+        "extent": [3000.0, 9000.0]
+      },
+      {
+        "label": "3",
+        "position": 12000.0
+      }
+    ],
+    "horizontal_axes": [
+      {
+        "label": "A",
+        "position": 0.0
+      },
+      {
+        "label": "B",
+        "position": 9000.0
+      }
+    ]
+  },
+  "floors": [
+    {
+      "id": "kat1",
+      "label": "VARYANT KATI",
+      "code": "K1",
+      "rooms": [
+        {
+          "id": "salon",
+          "name": "Salon",
+          "no": "01",
+          "area_m2": 103.84,
+          "polygon": [
+            [100, 100],
+            [11900, 100],
+            [11900, 8900],
+            [100, 8900]
+          ]
+        }
+      ],
+      "walls": [
+        {
+          "id": "w_alt",
+          "start": [0, 0],
+          "end": [12000.0, 0],
+          "thickness": 200.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "w_sag",
+          "start": [12000.0, 0],
+          "end": [12000.0, 9000.0],
+          "thickness": 200.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "w_ust",
+          "start": [12000.0, 9000.0],
+          "end": [0, 9000.0],
+          "thickness": 200.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "w_sol",
+          "start": [0, 9000.0],
+          "end": [0, 0],
+          "thickness": 200.0,
+          "layer": "DUVARLAR"
+        }
+      ],
+      "openings": [
+        {
+          "id": "k_tek",
+          "type": "door",
+          "wall_id": "w_alt",
+          "position_from_start": 1450.0,
+          "width": 900.0,
+          "layer": "KAPI-PENCERE",
+          "variant": "single",
+          "swing": "left"
+        },
+        {
+          "id": "k_cift",
+          "type": "door",
+          "wall_id": "w_alt",
+          "position_from_start": 4100.0,
+          "width": 1200.0,
+          "layer": "KAPI-PENCERE",
+          "variant": "double"
+        },
+        {
+          "id": "k_surme",
+          "type": "door",
+          "wall_id": "w_alt",
+          "position_from_start": 7250.0,
+          "width": 1500.0,
+          "layer": "KAPI-PENCERE",
+          "variant": "sliding"
+        },
+        {
+          "id": "k_katlanir",
+          "type": "door",
+          "wall_id": "w_alt",
+          "position_from_start": 9950.0,
+          "width": 900.0,
+          "layer": "KAPI-PENCERE",
+          "variant": "folding",
+          "swing": "right"
+        },
+        {
+          "id": "k_ters",
+          "type": "door",
+          "wall_id": "w_ust",
+          "position_from_start": 2000.0,
+          "width": 900.0,
+          "layer": "KAPI-PENCERE",
+          "variant": "single",
+          "swing": "left"
+        },
+        {
+          "id": "p_sag",
+          "type": "window",
+          "wall_id": "w_sag",
+          "position_from_start": 4500.0,
+          "width": 1800.0,
+          "layer": "KAPI-PENCERE"
+        }
+      ],
+      "labels": []
+    }
+  ],
+  "elevations": [
+    {
+      "id": "on_cephe",
+      "label": "ON CEPHE",
+      "width": 12000.0,
+      "axis_source": "vertical",
+      "levels": [
+        {
+          "label": "ZEMIN KAT",
+          "height": 3000.0,
+          "window_count": 2,
+          "door": true
+        }
+      ]
+    }
+  ],
+  "rev_history": [
+    {
+      "rev": 1,
+      "ts": "2026-09-23T00:00:00Z",
+      "summary": "rev-13 golden referansi: DEV-015 (ara/kismi aks), DEV-016 (kapi varyantlari ve acilim yonu) ve DEV-017 (olcu zinciri yigini) birlikte sinanir. Dort kapi varyanti (tek/cift/surme/katlanir), ucu ters verilmis duvarlar (yay yonu -X/-Y'de de 90 derece kalmali), kesme isaretli KISMI aks (2', y=0'a ulasmadigi icin guney olcu zincirine girmez) ve acik olcu yigini. Bina 12000x9000: 1:50'de A4 kapak blogu 14850 yuksek oldugundan icerigin dusey acikligi en az 8150 olmalidir."
+    }
+  ]
+}

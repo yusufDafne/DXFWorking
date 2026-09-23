@@ -1,222 +1,54 @@
-"""Deterministic architectural axis-grid drawing primitives."""
+"""Aks (grid) modulu: kesikli aks cizgisi, tegetli baloncuk, olcu zinciri,
+KISMI aks ve kolon rasteri kapsama raporu.
+
+rev-13 (DEV-015) ile eklenenler:
+
+- **Kismi aks** (`grid.*_axes[].extent`): bir aks artik yapinin tamamini kat
+  etmek zorunda degildir. Kismi bir aks kenar olcu zincirine GIRMEZ - o kenara
+  ulasmayan bir aksi olculuyormus gibi gostermek yaniltici olurdu.
+- **Ara aks etiketi** `1'` olarak KARARA BAGLANDI (`naming.py`); `1A`
+  yasaktir cunku yatay aks ailesiyle (A, B, C) ve kolon adlandirmasiyla
+  (`B2`) carpisir. Kural `validate.py` icinde mekanik olarak denetlenir.
+- **`AxisCoverageReport`** (Fikir 1): kolon rasterinde aks'siz kalan hizalari
+  SALT OKUNUR olarak bildirir; aks EKLEMEZ, context'e yazmaz.
+- Aks olcu zinciri artik `dimensions` yiginin **DISINDA** durur; ofset ve
+  uzama `generate_dxf.py` tarafindan `DimensionSettings`e sorularak verilir
+  (iki modul birbirini import etmez).
+
+Detay: `scripts/axis/CLAUDE.md`.
+"""
 from __future__ import annotations
 
-from dataclasses import dataclass
-import math
-
-import ezdxf
-from ezdxf.enums import TextEntityAlignment
-try:
-    from ..dimensions import ChainLayout, DimensionChain, DimensionStyle
-except ImportError:
-    from dimensions import ChainLayout, DimensionChain, DimensionStyle
-
-AXIS_LAYER = "AKS"
-AXIS_LINETYPE = "DASHED"
-AXIS_RGB = (67, 77, 88)
-
-
-@dataclass(frozen=True)
-class AxisDrawingStandard:
-    """Code-owned drawing constants; never loaded from project context."""
-
-    extension: float = 1200.0
-    bubble_radius: float = 450.0
-    dimension_offset: float = 400.0
-    dimension_text_height: float = 120.0
-    dimension_extension: float = 150.0
-    dimension_gap: float = 80.0
-    dimension_arrow_size: float = 84.0
-    linetype: str = AXIS_LINETYPE
-    layer: str = AXIS_LAYER
-    rgb: tuple[int, int, int] = AXIS_RGB
-
-
-def _subtract(p1, p2):
-    return (p1[0] - p2[0], p1[1] - p2[1])
-
-
-def _length(vector) -> float:
-    return math.hypot(vector[0], vector[1])
-
-
-def _normalize(vector):
-    length = _length(vector)
-    if length == 0:
-        return (0.0, 0.0)
-    return (vector[0] / length, vector[1] / length)
-
-
-def _add(point, vector):
-    return (point[0] + vector[0], point[1] + vector[1])
-
-
-def _scale(vector, factor):
-    return (vector[0] * factor, vector[1] * factor)
-
-
-def _add_text(msp, content: str, position, height: float, layer: str, align=TextEntityAlignment.LEFT):
-    text = msp.add_text(content, dxfattribs={"layer": layer, "height": height})
-    text.set_placement(position, align=align)
-    return text
-
-
-def ensure_dashed_linetype(doc, standard: AxisDrawingStandard | None = None) -> None:
-    standard = standard or AxisDrawingStandard()
-    if standard.linetype not in doc.linetypes:
-        doc.linetypes.add(
-            standard.linetype,
-            pattern=[750.0, 500.0, -250.0],
-            description="Aks kesikli cizgi",
-        )
-
-
-def ensure_axis_layer(doc, standard: AxisDrawingStandard | None = None) -> None:
-    """Create or normalize the code-owned axis layer and linetype."""
-    standard = standard or AxisDrawingStandard()
-    ensure_dashed_linetype(doc, standard)
-    if standard.layer in doc.layers:
-        layer = doc.layers.get(standard.layer)
-    else:
-        layer = doc.layers.add(standard.layer)
-    layer.dxf.linetype = standard.linetype
-    layer.dxf.color = 8
-    layer.dxf.true_color = ezdxf.colors.rgb2int(standard.rgb)
-
-
-class AxisGrid:
-    """Draw the shared floor/elevation axis grid and temporary dimensions."""
-
-    def __init__(
-        self,
-        vertical_axes: list[dict],
-        horizontal_axes: list[dict],
-        text_height: float,
-        standard: AxisDrawingStandard | None = None,
-    ):
-        self.vertical_axes = sorted(vertical_axes, key=lambda axis: axis["position"])
-        self.horizontal_axes = sorted(horizontal_axes, key=lambda axis: axis["position"])
-        self.text_height = text_height
-        self.standard = standard or AxisDrawingStandard()
-
-    def _bubble(self, msp, point, label: str) -> None:
-        msp.add_circle(
-            point,
-            self.standard.bubble_radius,
-            dxfattribs={"layer": self.standard.layer},
-        )
-        _add_text(
-            msp,
-            label,
-            point,
-            self.text_height,
-            self.standard.layer,
-            align=TextEntityAlignment.MIDDLE_CENTER,
-        )
-
-    def _line_with_bubbles(self, msp, p1, p2, label: str) -> None:
-        total_len = _length(_subtract(p2, p1))
-        if total_len > 2 * self.standard.bubble_radius:
-            direction = _normalize(_subtract(p2, p1))
-            line_p1 = _add(p1, _scale(direction, self.standard.bubble_radius))
-            line_p2 = _add(p2, _scale(direction, -self.standard.bubble_radius))
-        else:
-            line_p1, line_p2 = p1, p2
-        msp.add_line(
-            line_p1,
-            line_p2,
-            dxfattribs={"layer": self.standard.layer, "linetype": self.standard.linetype},
-        )
-        self._bubble(msp, p1, label)
-        self._bubble(msp, p2, label)
-
-    def _dimension_style(self) -> DimensionStyle:
-        return DimensionStyle(
-            layer=self.standard.layer,
-            text_height=self.standard.dimension_text_height,
-            arrow_size=self.standard.dimension_arrow_size,
-            extension=self.standard.dimension_extension,
-            gap=self.standard.dimension_gap,
-        )
-
-    def _dim_chain_x(self, msp, xs: list[float], edge_y: float, dim_y: float) -> None:
-        chain = DimensionChain.horizontal(xs, edge_y, dim_y, self._dimension_style())
-        ChainLayout.place(
-            [chain],
-            (min(xs) - self.standard.dimension_extension, dim_y - self.standard.dimension_extension,
-             max(xs) + self.standard.dimension_extension, edge_y + self.standard.dimension_extension),
-        )[0].render(msp, edge_y)
-
-    def _dim_chain_y(self, msp, ys: list[float], edge_x: float, dim_x: float) -> None:
-        chain = DimensionChain.vertical(ys, edge_x, dim_x, self._dimension_style())
-        ChainLayout.place(
-            [chain],
-            (dim_x - self.standard.dimension_extension, min(ys) - self.standard.dimension_extension,
-             edge_x + self.standard.dimension_extension, max(ys) + self.standard.dimension_extension),
-        )[0].render(msp, edge_x)
-
-    def draw_on_floor(self, msp, dx: float, floor_width: float, floor_depth: float) -> None:
-        y0, y1 = -self.standard.extension, floor_depth + self.standard.extension
-        for axis in self.vertical_axes:
-            x = dx + axis["position"]
-            self._line_with_bubbles(msp, (x, y0), (x, y1), axis["label"])
-
-        x0, x1 = dx - self.standard.extension, dx + floor_width + self.standard.extension
-        for axis in self.horizontal_axes:
-            y = axis["position"]
-            self._line_with_bubbles(msp, (x0, y), (x1, y), axis["label"])
-
-        self._dim_chain_x(
-            msp,
-            [dx + axis["position"] for axis in self.vertical_axes],
-            edge_y=0.0,
-            dim_y=-self.standard.dimension_offset,
-        )
-        self._dim_chain_y(
-            msp,
-            [axis["position"] for axis in self.horizontal_axes],
-            edge_x=dx,
-            dim_x=dx - self.standard.dimension_offset,
-        )
-
-    def draw_on_elevation(
-        self,
-        msp,
-        dx: float,
-        axis_source: str | None,
-        y_bottom: float,
-        y_top: float,
-    ) -> None:
-        if axis_source == "vertical":
-            axes = self.vertical_axes
-        elif axis_source == "horizontal":
-            axes = self.horizontal_axes
-        else:
-            return
-
-        y0, y1 = y_bottom - self.standard.extension, y_top + self.standard.extension
-        for axis in axes:
-            x = dx + axis["position"]
-            self._line_with_bubbles(msp, (x, y0), (x, y1), axis["label"])
-
-        self._dim_chain_x(
-            msp,
-            [dx + axis["position"] for axis in axes],
-            edge_y=y_bottom,
-            dim_y=y_bottom - self.standard.dimension_offset,
-        )
-
+from .axis import INTERMEDIATE_SUFFIX, Axis, axes_from_context
+from .grid import AxisGrid
+from .naming import check_labels
+from .report import AxisCoverageReport
+from .standard import (
+    AXIS_LAYER,
+    AXIS_LINETYPE,
+    AXIS_RGB,
+    AxisDrawingStandard,
+    ensure_axis_layer,
+    ensure_dashed_linetype,
+)
 
 # Bu modulun CONTEXT SOZLESMESI surumu (DEV-020). KOD surumu DEGILDIR:
 # yalnizca bu modulun context.json'dan OKUDUGU alanlar degistiginde artar;
-# refactor artirmaz. Bkz. scripts/version.py
-CONTRACT_VERSION = "1.0"
+# refactor artirmaz. rev-13'te `grid.*_axes[].extent` okunmaya baslandigi icin
+# 1.0 -> 1.1 (geriye uyumlu: alan opsiyonel).
+CONTRACT_VERSION = "1.1"
 
 __all__ = [
     "AXIS_LAYER",
     "AXIS_LINETYPE",
     "AXIS_RGB",
+    "INTERMEDIATE_SUFFIX",
+    "Axis",
+    "AxisCoverageReport",
     "AxisDrawingStandard",
     "AxisGrid",
+    "axes_from_context",
+    "check_labels",
     "ensure_axis_layer",
+    "ensure_dashed_linetype",
 ]

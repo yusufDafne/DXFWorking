@@ -60,6 +60,9 @@ Bu iki gereksinim BİRLİKTE geçerlidir ve biri diğerini iptal etmez:
    | Çapraz nokta | Risk |
    |--------------|------|
    | tefriş ↔ duvar / kapı açılımı | mobilya duvara veya kapı yayına girer |
+   | çizilen kapı yayı ↔ denetlenen sektör | ikisi ayrı hesaplanırsa sessizce ayrışır (rev-13'te gerçekten oldu: sektör yarım genişlik kayıktı) |
+   | ölçü yığını ↔ aks baloncuğu | aynı kenarı paylaşırlar; biri büyürse diğeri üstüne biner |
+   | ölçü yığını ↔ pafta padding'i | yığın büyüyünce içerik yatayda çerçeveyi aşar |
    | kolon ↔ aks | kolon aks kesişiminden kayar |
    | kolon ↔ duvar / tefriş | taşıyıcı başka elemanla çakışır |
    | mahal etiketi ↔ oda sınırı | etiket odadan taşar |
@@ -162,10 +165,10 @@ Ortak desen (pafta + walls ile kanitlandi):
 | ------------- | -------------------------------------------------------------------------- | -------------------------------------------------------------- |
 | `pafta/`      | `Sheet`, `PaperSizePlanner`, `CoverBlock`, `PaftaOverflowError`             | UYGULANDI; uniform template + keyplan bekliyor                 |
 | `walls/`      | `Wall`, `WallNetwork`, `WallCatalog`, `RoomPolygonScanner`                  | UYGULANDI (ilk surum)                                          |
-| `axis/`       | `AxisGrid`, `AxisDrawingStandard`                                           | UYGULANDI; davranis korunarak tasindi                          |
-| `openings/`   | `Opening`, `Door`, `Window`, `OpeningSymbolStyle`, `OpeningSchedule`        | UYGULANDI; variant/swing schema alanlari YOK (DEV-016)         |
+| `axis/`       | `AxisGrid`, `AxisDrawingStandard`, `Axis`, `AxisCoverageReport`, `check_labels` | UYGULANDI; kismi/ara aks + etiket kurali (rev-13)          |
+| `openings/`   | `Opening`, `Door`, `Window`, `OpeningSymbolStyle`, `OpeningSchedule`, `SwingGeometry`, `swing_geometry`, `DOOR_SYMBOLS`, `ARCS_PER_VARIANT` | UYGULANDI; 4 varyant + swing/host_side (rev-13) |
 | `rooms/`      | `Room`, `RoomLabeler`, `PolygonOps`, `RoomPolygonScanner`                   | UYGULANDI; 3 satirli mahal etiketi (rev-9)                     |
-| `dimensions/` | `DimensionChain`, `LinearDim`, `ChainLayout`, `DimensionStyle`              | UYGULANDI; tam sayi cm, AxisGrid tuketiyor                     |
+| `dimensions/` | `DimensionChain`, `LinearDim`, `ChainLayout`, `ChainStack`, `DimensionStyle`, `FloorOrdinates`, `FloorDimensionPlanner`, `DimensionSettings` | UYGULANDI; turetilen 3 kademeli olcu yigini (rev-13) |
 | `typography/` | `TextStyles`                                                                | UYGULANDI; proje fontu Arial Narrow (rev-9)                    |
 | `furniture/`  | `FurnitureCatalog`, `FurnitureBlocks`, `FurnitureRenderer`, `FurnitureSpec`, `FurnitureItem`, `FurnitureGroup`, `FurnitureSchedule` | UYGULANDI; tefris = DXF BLOCK (rev-10) |
 | `columns/`    | `Column`, `ColumnGrid`, `ColumnRenderer`, `ColumnSection`, `ColumnSectionCatalog`, `ColumnHatchStyle`, `ColumnLabelStyle` | UYGULANDI; tarali kolon ANSI33/3.0 (rev-10) |

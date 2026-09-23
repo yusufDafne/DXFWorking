@@ -28,17 +28,23 @@ from ezdxf.fonts import fonts
 MAX_TITLE_BOX_WIDTH_MM = 8000.0
 MAX_TITLE_BOX_HEIGHT_MM = 1200.0
 
-# CONTENT_PADDING: paftanin IC cizgisinden itibaren gercek cizime (aks
-# baloncugu + baslik kutusu dahil) birakilan bosluk. Sag-alt kosede HEM aks
-# baloncugu HEM baslik kutusu bulunabildiginden, (padding+frame_gap) su
-# ikisinin toplamini + bir tampon payi rahatça icine alacak kadar buyuk
-# olmalidir: AxisGrid'in ulasabilecegi en uzak nokta (generate_dxf.py'deki
-# AXIS_EXTENSION+AXIS_BUBBLE_RADIUS = 1200+450=1650) + MAX_TITLE_BOX_HEIGHT_MM
-# (1200) + tampon (~350) = ~3200 (iki kaynagin - pafta modulu + aks modulu -
-# sabitlerini bilerek secildi, bkz. scripts/pafta/CLAUDE.md). Bu deger
-# kucuk dusurulursa aks baloncugu ile baslik kutusu gorsel olarak cakisir -
-# bu gercekten yasandi ve boylece duzeltildi.
-CONTENT_PADDING = 3200.0
+# CONTENT_PADDING: paftanin IC cizgisinden itibaren gercek cizime (olcu
+# zinciri + aks baloncugu + baslik kutusu dahil) birakilan bosluk. Sag-alt
+# kosede HEM aks baloncugu HEM baslik kutusu bulunabildiginden, (padding +
+# frame_gap) bunlarin toplamini + bir tampon payi rahatça icine alacak kadar
+# buyuk olmalidir. Bu deger kucuk dusurulurse aks baloncugu ile baslik kutusu
+# gorsel olarak cakisir - bu gercekten yasandi ve boylece duzeltildi.
+#
+# rev-13 (DEV-017): 3200 -> 4000. Olcu zinciri yigini eklenince aks
+# baloncuklari DISA itildi (detay zincirleri yapiya yakin, aks zinciri en
+# dista durmalidir) ve icerik YATAYDA gercekten genisledi. 3200 ile uretim
+# `PaftaOverflowError` ile DURDU - yani bu artis tahminle degil, taşma
+# korumasinin YAKALADIGI gercek bir olcuyle yapildi:
+#   aks olcu ofseti 2350 + baloncuk yaricapi 450 + pay 400 = uzama 3200
+#   + baloncuk yaricapi 450 = 3650 > 3200 + FRAME_GAP 150 = 3350.
+# Pafta GENISLIGINDE ust sinir yoktur (bkz. kok CLAUDE.md); yukseklik ise
+# 1:50'de 67.0 -> 70.2 cm'e cikar ve 90'lik rulonun 88 cm netine sigar.
+CONTENT_PADDING = 4000.0
 FRAME_GAP = 150.0                # cift cizgili cerceve (ic/dis hat) arasi mesafe
 # Metin sigdirma olcumlerinde kullanilan font. CIZILEN fontla AYNI olmak
 # zorundadir (bkz. scripts/typography/CLAUDE.md), bu yuzden burada ikinci bir

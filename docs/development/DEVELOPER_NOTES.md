@@ -48,6 +48,19 @@ sistem mimarı direktifi güncellenir.
   YETKİLİ 1 / YETKİLİ 2, 2×2) ve kapak eteğine üretim damgası eklendi
   (`URETIM: <tarih saat>` / `SISTEM: <schema sürümü>`). `preview.py` aynı
   yerleşimi yansıtır.
+- **Ölçü zinciri AÇIK (rev-13):** `meta.dimensions` ile kat paftalarında üç
+  kademeli ölçü yığını (`aciklik` / `mahal` / `toplam`) çiziliyor. Ölçü
+  sayıları **geometriden türetilir**, context'te yazılı değildir. Aks ölçü
+  zinciri yığının dışına taşındı; `pafta::CONTENT_PADDING` 3200 → 4000 oldu
+  (taşma korumasının verdiği ölçüyle) ve pafta 67.0 → 70.2 cm'e çıktı.
+- **Kısmi/ara aks (rev-13):** `grid.*_axes[].extent` ile bir aks yalnızca
+  bildirilen aralıkta uzanabiliyor; ara aks `1'` yazılıyor ve etiket kuralı
+  `validate.py` tarafından denetleniyor.
+- **Kapı varyantları (rev-13):** `variant` / `swing` / `host_side`. Üçünün de
+  varsayılanı rev-12 davranışı olduğu için mevcut proje aynı çizimi üretir.
+  Çakışma matrisinde **kapı ↔ kapı artık HATA**.
+- **Dört self-test var** ve üretimden sonra hepsi çalıştırılmalıdır:
+  `collision`, `dimensions`, `axis`, `openings`.
 
 ## Sıradaki iş
 
@@ -68,12 +81,18 @@ rev-12 durumu:
   arite-2+ motorda; motor çizim modüllerini import etmez (`HD-007`).
 - `DEV-020` **COMPLETED (rev-12)** — `scripts/version.py`; kapı/teşhis/kayıt
   ayrımı, `output/provenance.json` (`HD-007`).
-- `DEV-011` … `DEV-018` PLANNED.
+- `DEV-015` **COMPLETED (rev-13)** — kısmi/ara aks, etiket kuralı, kolon
+  rasteri kapsama raporu (`HD-008`).
+- `DEV-016` **COMPLETED (rev-13)** — 4 kapı varyantı + açılım yönü; iki gerçek
+  hata düzeltildi (270°'lik yay, yarım genişlik kayık sektör) (`HD-008`).
+- `DEV-017` **COMPLETED (rev-13)** — türetilen 3 kademeli ölçü yığını +
+  kademelendirme (`HD-008`).
+- `DEV-011`, `DEV-012`, `DEV-013`, `DEV-014`, `DEV-018` PLANNED.
 
 **Önemli işletim notu:** Üretimden sonra artık
 `python scripts/golden_report.py output/plan.dxf --rules context.json`,
-`python scripts/golden_report.py --golden-set` ve
-`python scripts/collision/selftest.py` da çalıştırılmalıdır. Ölçüm raporunun
+`python scripts/golden_report.py --golden-set` ve **dört modül self-test'i**
+(`collision`, `dimensions`, `axis`, `openings`) da çalıştırılmalıdır. Ölçüm raporunun
 tek başına yetmediği rev-10'da somut olarak gösterildi; çakışma motorunun
 "temiz döndü" çıktısı da tek başına hiçbir şey kanıtlamaz (motor hiç
 çalışmasa da temiz dönerdi), bu yüzden self-test kasıtlı bozulmuş bir kat
@@ -81,9 +100,9 @@ tek başına yetmediği rev-10'da somut olarak gösterildi; çakışma motorunun
 
 Sıradaki iş için sistem mimarı açık direktif vermelidir. Sıralama önerisi:
 `DEV-018` (blok yaygınlaştırma) `DEV-011`den önce ele alınırsa iş tekrarı
-önlenir; `DEV-019` ile `DEV-020` ise artık karar beklemediği için herhangi bir
-anda başlatılabilir. Sistem mimarı açıkça başlatmadan kod değişikliği yapılmaz.
-Başlangıçta görev kilidi alınmalıdır.
+önlenir — artık 3 golden referansı ve 4 self-test olduğu için bloklara geçişin
+etkisi ölçülebilir durumda. Sistem mimarı açıkça başlatmadan kod değişikliği
+yapılmaz. Başlangıçta görev kilidi alınmalıdır.
 
 ## İlk okuma sırası
 
@@ -128,9 +147,14 @@ uyumlu değilse uygulamayı durdur ve sistem mimarı kararı iste.
   (çakışma) denetim `scripts/collision/` motorunda; motor çizim modüllerini
   import etmez. Duvar ayak izi merkez çizgi + kalınlık oldu, kapı sektörü 8
   sabit parçayla yaklaşılıyor.
-- Kapı açılım **YÖNÜ** schema'da yok; bu yüzden "iki kapı birbirine açılıyor"
-  kontrolü MUAF bırakıldı. `DEV-016` swing alanını eklediğinde HATA'ya
-  çekilmelidir.
+- ~~Kapı açılım yönü schema'da yok.~~ **rev-13'te kapandı** (`DEV-016`);
+  kapı ↔ kapı kontrolü artık HATA.
+- Ölçü yığını bugün yalnızca **güney ve batı** kenarında çiziliyor. Dört kenar
+  istenirse ayrı bir karar (ve yığın yönü) gerekir.
+- Eğik duvarlar ölçülendirmeye girmiyor; eksen hizalı olmayan bir yapı
+  geldiğinde bu yeniden ele alınmalıdır.
+- Katlanır kapı sembolü tek kırılma noktalıdır; gerçek akordeon panel sayısı
+  modellenmiyor.
 - `PROVENANCE_TEMPLATE.json` ile `output/provenance.json` şu anda İKİ AYRI
   şemadır; şablon `DEV-005`ten kalma kabul/rol alanlarını da taşıyor.
   Birleştirilecek mi, yoksa şablon kabul kaydı olarak ayrı mı kalacak?

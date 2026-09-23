@@ -224,6 +224,23 @@ kaydıdır ve sistem tarafından yazılır (bkz. `scripts/version.py`,
 İmza alanları rev-12'de dörde sabitlendi (MIMAR / BELEDIYE / YETKILI 1 /
 YETKILI 2) ve 2×2 yerleşir.
 
+## `CONTENT_PADDING` 3200 → 4000 (rev-13, DEV-017)
+
+Ölçü zinciri yığını eklenince aks baloncukları dışa itildi (detay zincirleri
+yapıya yakın, aks zinciri en dışta durmalıdır) ve içerik **yatayda** gerçekten
+genişledi.
+
+Bu artış tahminle değil, **taşma korumasının yakaladığı ölçüyle** yapıldı:
+3200 ile üretim `PaftaOverflowError` ile durdu (`sol=300 sag=300`), çünkü
+
+```
+aks olcu ofseti 2350 + baloncuk yaricapi 450 + pay 400 = uzama 3200
+uzama 3200 + baloncuk yaricapi 450 = 3650  >  3200 + FRAME_GAP 150 = 3350
+```
+
+Pafta **genişliğinde** üst sınır yoktur (bkz. kök `CLAUDE.md`); yükseklik ise
+1:50'de 67.0 → 70.2 cm'e çıktı ve 90'lık rulonun 88 cm netine sığıyor.
+
 ## Bilinen sınırlamalar / gelecek işler
 
 - **Uniform sheet template (öncelikli):** Paftamız şu an içeriği SIKI SARAN

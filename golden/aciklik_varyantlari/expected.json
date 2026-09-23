@@ -1,0 +1,30 @@
+{
+  "source": "golden/aciklik_varyantlari",
+  "entity_count": 150,
+  "entity_types": {
+    "ARC": 4,
+    "CIRCLE": 16,
+    "DIMENSION": 21,
+    "LINE": 58,
+    "LWPOLYLINE": 14,
+    "TEXT": 37
+  },
+  "layers": {
+    "AKS": 44,
+    "CERCEVE": 17,
+    "DUVARLAR": 33,
+    "KAPI-PENCERE": 17,
+    "METIN": 20,
+    "OLCU": 19
+  },
+  "modelspace_bbox": [
+    -500.0,
+    -4150.0,
+    50600.0,
+    13150.0
+  ],
+  "blocks": [
+    "_CLOSEDFILLED"
+  ],
+  "block_inserts": {}
+}

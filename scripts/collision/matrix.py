@@ -89,10 +89,11 @@ DEFAULT_PAIRS: dict[frozenset[str], Policy] = {
     frozenset({TAG_WALL}): Policy.IGNORE,
     # acilim yayi zaten duvardan baslar
     frozenset({TAG_WALL, TAG_DOOR_SWING}): Policy.IGNORE,
-    # iki kapinin birbirine acilmasi gercek bir sorundur ama bugun swing yonu
-    # schema'da YOK (varsayilan tarafa cizilir), bu yuzden yanlis-pozitif
-    # uretirdi. `DEV-016` swing alanini eklediginde FORBID'e cekilmelidir.
-    frozenset({TAG_DOOR_SWING}): Policy.IGNORE,
+    # rev-13 (DEV-016): swing yonu artik SCHEMA'DA -> iki kapinin birbirine
+    # acilmasi gercekten tespit edilebilir ve HATADIR. rev-12'de bu cift
+    # IGNORE birakilmisti cunku yay sabit bir varsayilan tarafa ciziliyordu ve
+    # kontrol yanlis-pozitif uretirdi.
+    frozenset({TAG_DOOR_SWING}): Policy.FORBID,
 }
 
 # Tefris, katindaki odalardan EN AZ BIRININ icinde tamamen kalmalidir.

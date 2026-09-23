@@ -56,7 +56,19 @@
           "description": "Duvarin baslangic noktasindan itibaren acikligin ortasina olan mesafe"
         },
         "width": { "type": "number", "exclusiveMinimum": 0 },
-        "layer": { "type": "string" }
+        "layer": { "type": "string" },
+        "variant": {
+          "type": "string", "enum": ["single", "double", "sliding", "folding"],
+          "description": "Kapi varyanti (DEV-016). Varsayilan 'single' = rev-12 davranisi. 'sliding' surme kapidir ve ACILIM ALANI GEREKTIRMEZ - cakisma denetimi de onun icin sektor uretmez."
+        },
+        "swing": {
+          "type": "string", "enum": ["left", "right"],
+          "description": "Mentese duvarin BASLANGICINDA mi (left) yoksa SONUNDA mi (right). Varsayilan 'left' = rev-12 davranisi."
+        },
+        "host_side": {
+          "type": "string", "enum": ["pos", "neg"],
+          "description": "Kanadin acildigi taraf: duvar normalinin pozitif ('pos') veya negatif ('neg') yonu. Varsayilan 'pos' = rev-12 davranisi. Gercek projede kacis yonu ve tefris cakismasi icin kritiktir."
+        }
       }
     },
     "label": {
@@ -190,8 +202,13 @@
       "required": ["label", "position"],
       "additionalProperties": false,
       "properties": {
-        "label": { "type": "string" },
-        "position": { "type": "number" }
+        "label": { "type": "string", "description": "Dusey akslar NUMERIK (1,2,3...), yatay akslar ALFABETIK (A,B,C...). Ara aks KESME ISARETIYLE yazilir (2', B'); '1A' gibi bir etiket YASAKTIR cunku yatay aks ailesiyle ve kolon adlandirmasiyla (B2) carpisir. Kural validate.py icinde denetlenir (scripts/axis/naming.py)." },
+        "position": { "type": "number" },
+        "extent": {
+          "type": "array", "minItems": 2, "maxItems": 2,
+          "items": { "type": "number" },
+          "description": "KISMI aks (DEV-015): aks yalnizca bu aralikta uzanir. Dusey akslarda Y araligi, yatay akslarda X araligi. Verilmezse aks yapinin TAMAMINI kat eder. Kismi bir aks, ulasmadigi kenarin olcu zincirine GIRMEZ."
+        }
       }
     },
     "grid": {
@@ -249,6 +266,23 @@
             "scale": { "type": "number", "exclusiveMinimum": 0 },
             "angle": { "type": "number" },
             "enabled": { "type": "boolean" }
+          }
+        },
+        "dimensions": {
+          "type": "object",
+          "description": "Olcu zinciri SUNUM ayari (scripts/dimensions::DimensionSettings, DEV-017). Olcu SAYISI buradan gelmez - context geometrisinden TURETILIR; buradan yalnizca HANGI kenarin hangi kademede olculenecegi bildirilir. Varsayilan KAPALI.",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": { "type": "boolean", "description": "Kat paftalarinda olcu zinciri cizilsin mi." },
+            "levels": {
+              "type": "array", "minItems": 1, "maxItems": 3,
+              "items": { "type": "string", "enum": ["aciklik", "mahal", "toplam"] },
+              "description": "Kademeler ICTEN DISA dogru: 'aciklik' cephedeki kapi/pencere kenarlari, 'mahal' dik duvarlarin YUZLERI (net mahal + kalinlik), 'toplam' yapinin dis yuzden dis yuze olcusu."
+            },
+            "offset": { "type": "number", "exclusiveMinimum": 0, "description": "Yapi kenarindan ILK zincire mesafe (mm)." },
+            "step": { "type": "number", "exclusiveMinimum": 0, "description": "Kademeler arasi mesafe (mm)." },
+            "text_scale": { "type": "number", "exclusiveMinimum": 0, "description": "Detay zinciri metninin aks zincirine gore orani." },
+            "layer": { "type": "string", "description": "Zincirlerin yazilacagi katman (varsayilan OLCU)." }
           }
         },
         "column_label": {

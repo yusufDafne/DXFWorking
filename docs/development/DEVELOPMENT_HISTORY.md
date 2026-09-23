@@ -4,6 +4,106 @@ Aktif geçmiş kapasitesi: **50 kayıt**. En eski tamamlanmış kayıt, 51. kay�
 alınırken silinir. Ayrıntılı teknik değişiklikler git geçmişi ve ilgili proje
 provenance kayıtlarıyla ilişkilendirilir.
 
+## HD-008 — Ölçü zinciri, kısmi aks ve açıklık varyantları
+
+- **Durum:** COMPLETED
+- **Tamamlanma:** 2026-09-23
+- **Görevler:** `DEV-017` → `DEV-015` → `DEV-016` (bu sırayla).
+- **Kapsam:** `scripts/dimensions/` (bölündü + genişletildi), `scripts/axis/`
+  (bölündü + genişletildi), `scripts/openings/` (bölündü + genişletildi),
+  `scripts/collision/matrix.py`, `scripts/collision/selftest.py`,
+  `scripts/pafta/__init__.py`, `scripts/golden_report.py`, `validate.py`,
+  `generate_dxf.py`, `preview.py`, `schema/design.schema.json`,
+  `context.json`, `golden/aciklik_varyantlari/` (yeni).
+
+### Sıra neden bu
+
+`dimensions` ÜRETİCİ, `axis` onun tek tüketicisiydi. Üretici önce
+genişletilince aks, gelişmiş API'yi bir kez devraldı; tersi sırada iki kez
+dokunmak gerekirdi. `openings` üçüncü seçildi çünkü rev-12'de **kendi
+yazdığım bilinen sınırlamayı** kapatıyor: çakışma motoru "iki kapı birbirine
+açılıyor" kontrolünü, açılım yönü schema'da olmadığı için muaf bırakmıştı.
+
+### DEV-017 — ölçü zinciri
+
+- `FloorOrdinates` üç kademede ordinat türetir: `aciklik` (cephedeki kapı/
+  pencere kenarları), `mahal` (dik duvarların YÜZLERİ → net mahal + kalınlık),
+  `toplam` (dıştan dışa). Üçü aynı ordinatlarda başlayıp biter.
+- **Karar: ölçü TÜRETİLİR.** Ölçü sayısı tasarım verisi değil, geometrinin
+  ölçüsüdür; elle yazmak aynı bilgiyi iki yerde tutmak olur ve ayrışır.
+  Hangi kenarın ölçüleneceği ise sunum kararıdır (`meta.dimensions`).
+- `ChainStack` kademelendirme yapar; `ChainLayout.verify_no_overlap` aynı
+  baseline'a oturan iki zinciri artık **hata** sayar (önceden sessizce üst
+  üste binerlerdi).
+- **Çapraz nokta:** ölçü yığını ile aks baloncukları aynı kenarı paylaşır.
+  Aks ölçü zinciri yığının DIŞINA taşındı (mimari sıra: içeride ayrıntılı,
+  dışarıda kaba). İki modül birbirini import etmez; baloncuk yarıçapı
+  parametre olarak verilir.
+- **`CONTENT_PADDING` 3200 → 4000, ölçülerek.** İlk denemede üretim
+  `PaftaOverflowError` ile durdu (`sol=300 sag=300`); artış tahminle değil,
+  taşma korumasının verdiği sayıyla yapıldı. Pafta 67.0 → 70.2 cm.
+
+### DEV-015 — kısmi/ara aks
+
+- `Axis` tipli nesne oldu ve `extent` taşıyor. Kısmi aks kendi aralığında
+  uzanır, uçlarına kendi baloncukları gelir ve **ulaşmadığı kenarın ölçü
+  zincirine girmez**.
+- **Karar: ara aks `1'`, `1A` değil.** Gerekçe çatışma: yatay aile zaten
+  `A, B, C`; `1A` "1 ve A kesişimi" gibi okunur ve `on_axis_report`un ürettiği
+  kolon adıyla (`B2`) çarpışır. Kural `naming.py`de yazılıp `validate.py`ye
+  bağlandı.
+- `AxisCoverageReport` salt okunur: aks'sız kolon hizalarını bildirir, aks
+  EKLEMEZ.
+
+### DEV-016 — açıklık varyantları
+
+- Dört varyant (`single`/`double`/`sliding`/`folding`) + `swing` +
+  `host_side`. **Üçünün de varsayılanı rev-12 davranışıdır.**
+- **İki gerçek hata bulundu:**
+  1. Açılım yayı `min/max` ile hesaplandığı için −X yönlü bir duvarda **270°**
+     olurdu. `golden/minimal`da ucu ters verilmiş iki duvar zaten vardı; oraya
+     bir kapı konduğu anda ortaya çıkacaktı. Yön artık çapraz çarpımla
+     belirleniyor.
+  2. `openings/collision.py`, `position_from_start`i açıklığın BAŞLANGICI
+     sanıyordu; oysa MERKEZİDİR. Denetlenen sektör çizilen yaydan **yarım
+     genişlik** (900'lük kapıda 450 mm) kayıktı. Artık boşluk aralığı çizimle
+     aynı fonksiyondan (`walls.gaps_for_wall`) alınıyor.
+- `geometry.py::swing_geometry` açılım yayının **tek sahibi**; çizim ve
+  denetim aynı kaynaktan okur.
+- Çakışma matrisinde **kapı ↔ kapı artık HATA**; sürme kapı açılım alanı
+  üretmez. `rule_opening_symbols` varyant farkındası oldu ve beklenen yay
+  sayısını `ARCS_PER_VARIANT` tablosundan okuyor.
+
+### Doğrulama
+
+- Dört self-test: `collision`, `dimensions`, `axis`, `openings` — hepsi
+  negatif testlerle (kasıtlı bozma) ve yanlış-pozitif testleriyle.
+- `py_compile`, `validate`, `generate`, `preview`, 5 semantik kural,
+  3 golden referans, `doc_check` — hepsi temiz.
+- **Yeni golden referansı `golden/aciklik_varyantlari`**: dört kapı varyantı,
+  ucu ters verilmiş duvarlar, kesme işaretli kısmi aks (`2'`) ve açık ölçü
+  yığını tek bir referansta birlikte sınanır.
+
+### Golden output etkisi
+
+`CONTENT_PADDING` değişikliği tüm paftaların bbox'ını, ölçü zincirleri ise
+`minimal` dışındaki entity sayılarını değiştirdi; fark açıklanabilir olduğu
+için `expected.json` dosyaları `--update` ile yenilendi.
+`output/plan.dxf` 2228 → 2630 entity (+402 `DIMENSION`, layer `OLCU`).
+
+### Bilinen sınırlamalar
+
+- Eğik duvarlar ölçülendirmeye girmez (eksen hizalı bir zincire anlamlı
+  ordinat veremezler).
+- Ölçü yığını yalnızca **güney ve batı** kenarında çizilir; dört kenar için
+  ayrı bir karar gerekir.
+- Kısmi aks cephe izdüşümünde uygulanmaz (cephe o aksı yine de görür).
+- Katlanır kapı sembolü tek kırılma noktalıdır; gerçek akordeon panel sayısı
+  modellenmez.
+
+- **Sonraki direktif:** `DEV-018` (DXF `BLOCK` yaygınlaştırma) veya `DEV-011`
+  (`elevations/`) görevlerinden birini sistem mimarı açıkça başlatmalıdır.
+
 ## HD-007 — Çakışma denetimi motoru, sürüm kapısı ve provenance
 
 - **Durum:** COMPLETED

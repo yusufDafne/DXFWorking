@@ -64,7 +64,7 @@ Benzetme: bir fizik motoru arabayı ve ağacı tanımaz, yalnızca collider tan�
 | kolon ↔ kolon | **FORBID** | |
 | kolon ↔ kapı açılımı | **FORBID** | kapı önünde kolon olmaz |
 | duvar ↔ duvar, duvar ↔ kapı açılımı | **IGNORE** | gönye birleşim / yay zaten duvardan başlar |
-| kapı ↔ kapı | **IGNORE** (bugün) | swing yönü schema'da YOK; `DEV-016` sonrası FORBID'e çekilmelidir |
+| kapı ↔ kapı | **FORBID** (rev-13) | açılım yönü artık schema'da; iki kapının birbirine açılması gerçekten tespit edilebilir. Sürme kapı sektör üretmediği için doğal olarak muaftır |
 
 Matriste **tanımsız** bir çift `IGNORE` alır — yeni bir modülün eklenmesi
 üretimi durdurmasın diye. Sessiz kalma riskini `doc_check.py` kapatır.
@@ -138,8 +138,11 @@ değiştirmez. Yalnızca rapor üretir; kabul kararını `validate.py` verir.
   Sabittir ve ölçeğe bağlı değildir; deterministik üretim ilkesi gereği aynı
   context her zaman aynı raporu vermelidir. Çokgen gerçek yaydan biraz
   KÜÇÜKTÜR, yani kenarda kalan bir tefriş kaçabilir.
-- **Kapı açılım YÖNÜ schema'da yok.** Yay, `walls.render` ile aynı varsayılan
-  tarafa çizilir; gerçek menteşe/yön verisi `DEV-016` ile gelecektir.
+- ~~Kapı açılım yönü schema'da yok.~~ **rev-13'te (DEV-016) kapandı:**
+  `swing` ve `host_side` artık veriden gelir ve sektör, çizilen yayla **aynı
+  kaynaktan** (`openings.geometry.swing_geometry`) hesaplanır. Bu düzeltme
+  gerçek bir hatayı da kapattı: sektör, `position_from_start` açıklığın
+  başlangıcı sanıldığı için çizilen yaydan **yarım genişlik** kayıktı.
 - **`counters[]` denetlenmez.** Mutfak tezgahı hâlâ `generate_dxf.py` içinde
   ad-hoc çizilmektedir ve ayak izi üretmez (bkz. `scripts/furniture/CLAUDE.md`
   "çifte sorumluluk").
