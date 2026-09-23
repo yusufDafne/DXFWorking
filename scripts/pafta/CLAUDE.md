@@ -10,6 +10,7 @@ mümkün olduğunca **kendi kendine yeterli** olacak şekilde yazılmıştır.
 ## Bu modül ne yapar
 
 `pafta/__init__.py` şunlardan sorumludur:
+
 1. **`Sheet`** — bir paftanın (çizim sayfasının) çift çizgili çerçevesini
    (dış hat + iç hat) ve sağ-alt köşedeki standart iki satırlı başlık
    kutusunu (üst: ölçek, alt: pafta adı) çizer. **Tüm paftalar (kat planı +
@@ -192,6 +193,7 @@ edilir, yani `Sheet.draw`'ın taşma kontrolünden geçer.
 Bu modülde regresyon test dosyası yok (proje küçük ölçekli, elle görsel
 doğrulama yapılıyor). Bu modülde değişiklik yapan bir ajan şunu
 doğrulamalı:
+
 1. `python scripts/generate_dxf.py` hatasız tamamlanmalı (özellikle
    `PaftaOverflowError` fırlamamalı).
 2. Üretilen `output/plan.dxf`'te her paftanın başlık kutusundaki metinlerin

@@ -4,6 +4,43 @@ Aktif geçmiş kapasitesi: **50 kayıt**. En eski tamamlanmış kayıt, 51. kay�
 alınırken silinir. Ayrıntılı teknik değişiklikler git geçmişi ve ilgili proje
 provenance kayıtlarıyla ilişkilendirilir.
 
+## HD-004 — Tip-A kapak paftası (`CoverBlock`) ve `Sheet` özel-pafta desteği
+
+- **Durum:** COMPLETED
+- **Tamamlanma:** 2026-09-23
+- **Kapsam:** `scripts/pafta/` (`CoverBlock`, `Sheet.draw` genişletmesi),
+  `scripts/generate_dxf.py`, `scripts/preview.py`, `schema/design.schema.json`.
+- **Sonuç:** ISO 7200 Tip-A kapak bloğu `CoverBlock` olarak uygulandı; ölçüler
+  `to_modelspace(...)` ile projenin ölçeğinden türetilir, böylece kapak ölçekli
+  çıktıda her zaman tam A4 (210x297mm) basar. Kapak paftası **özel pafta**
+  olarak tanımlandı: dış çerçeve genişliği kapak genişliğine eşittir
+  (`padding=0`), blok paftanın sağ-altına sabitlenir, Tip-B şerit anteti
+  çizilmez ve kapak çerçevesi her kenardan eşit offsetlidir. `Sheet.draw`
+  bunun için `title_box`, `padding` ve `frame_gap` override'ları aldı;
+  `CoverBlock.draw` ise `outer_frame` parametresiyle çift çizimi önler.
+  `schema`ya `meta.cover` eklendi (`architect_name`, `date`,
+  `signature_fields`).
+- **Doğrulama:** `py_compile`, `python scripts/validate.py`,
+  `python scripts/generate_dxf.py`, `python scripts/preview.py` ve semantic
+  golden karşılaştırması başarılı. Ek olarak DXF geometrisi üzerinden 9
+  otomatik kontrol (pafta genişliği = kapak genişliği, A4 panel ölçüsü, eşit
+  offset, antet yokluğu, pafta bitişikliği, ortak yükseklik, çift çizim
+  olmaması) ve 4 farklı ölçekte (1:20/1:50/1:100/1:200) "çıktıda 210x297mm"
+  doğrulaması yapıldı. 1:200 ile kapak paftaya sığmadığında üretimin
+  `PaftaOverflowError` ile durduğu, sessiz hatalı DXF üretilmediği test edildi.
+- **Golden output etkisi:** `output/plan.dxf` yeniden üretildi ve semantic
+  golden raporu güncellendi; mevcut kat planı/görünüş geometrisi korunmuştur.
+- **Açık sınır:** Kapağın resmi verisi (`architect_name`, `date`, ayrılmış iki
+  imza alanının unvanı) kullanıcıdan gelmedi; uydurulmadı, elle doldurulacak
+  çizgi olarak bırakıldı (`DEV-007`). Kapak **tasarımı** için kullanıcı ayrı
+  bir talep paylaşacak — o talepte geometri (A4, sağ-alt sabitleme, eşit
+  offset, antetsiz pafta) değişmemelidir. Çok küçük ölçeklerde kapak bloğu
+  için otomatik yeniden yerleşim stratejisi yoktur; yalnızca taşma hatası
+  verilir.
+- **Sonraki direktif:** `DEV-006 Golden fixture katalogu` görevini sistem
+  mimarı onayıyla başlatmak; `DEV-008 RoomLabeler yapısı` PLANNED olarak
+  beklemektedir.
+
 ## HD-002 — Agentic kontrol ve kabul altyapısı
 
 - **Durum:** COMPLETED
