@@ -4,6 +4,105 @@ Aktif geçmiş kapasitesi: **50 kayıt**. En eski tamamlanmış kayıt, 51. kay�
 alınırken silinir. Ayrıntılı teknik değişiklikler git geçmişi ve ilgili proje
 provenance kayıtlarıyla ilişkilendirilir.
 
+## HD-007 — Çakışma denetimi motoru, sürüm kapısı ve provenance
+
+- **Durum:** COMPLETED
+- **Tamamlanma:** 2026-09-23
+- **Kapsam:** `scripts/collision/` (yeni), `scripts/version.py` (yeni),
+  `scripts/<modül>/collision.py` (5 sağlayıcı), `validate.py`,
+  `generate_dxf.py`, `preview.py`, `pafta::CoverBlock`, `doc_check.py`,
+  `schema/design.schema.json`, `context.json`, `golden/*`.
+- **Görevler:** `DEV-019` ve `DEV-020`.
+
+### DEV-019 — çakışma denetimi
+
+- **Karar:** "Ayrı modül mü, her modül kendi mi" sorusu **arite** ile
+  ayrıldı. Arite-1 ("kendi verim geçerli mi") ilgili modülde kaldı; arite-2+
+  ("iki FARKLI eleman aynı yeri mi işgal ediyor") `scripts/collision/`
+  motoruna gitti. Endüstri karşılığı: BIM'de modelleme aracı kendi disiplinini
+  denetler, disiplinler arası clash ayrı bir araçtır (Navisworks *Clash
+  Detective*, Solibri *Model Checker*).
+- **Kritik tasarım — bağımlılık tersine çevrildi:** Motor hiçbir çizim
+  modülünü import etmez; yalnızca anonim `CollisionShape(tag, id, polygon)`
+  tanır. Her modül kendi ayak izini `collision.py::footprints(floor, context)`
+  ile verir. Böylece **ayak izinin sahibi modül, çakışma kuralının sahibi
+  motor** oldu ve modül bağımsızlığı korunurken kural tek yerde toplandı.
+- **Kapının yeri:** `validate.py`, üretimden ÖNCE. Sebep hata mesajının
+  dilidir: context seviyesinde rapor `f_koltuk3 ile f_koltuk2 cakisiyor
+  (~1.360 m2, derinlik 850 mm)` der ve `context.json`'da düzeltilir; DXF
+  seviyesinde `handle 2F4` derdi ve düzeltilemezdi.
+- **Tolerans ALAN değil DERİNLİK:** 2100 mm'lik bir koltuk duvara 5 mm girse
+  kesişim alanı 10500 mm² olur — alan eşiği eleman boyuyla ölçeklendiği için
+  anlamsızdır. Kesişim çokgeninin kısa kenarına bakılır (`min_extent`);
+  `CONTACT_TOLERANCE = 5 mm` altındaki girişim **temas**tır.
+- **`golden_report.py`ye EKLENMEDİ:** Golden "çıktı değişti mi", çakışma
+  "tasarım doğru mu" sorar. Birleştirilseydi bir golden referansı asla kasıtlı
+  çakışma içeremezdi ve motorun kendisi test edilemezdi.
+- **Yan kazanç — kopya kaldırıldı:** Sutherland–Hodgman kırpmasının bir
+  KOPYASI `validate.py` içinde duruyordu. `collision/geometry.py` poligon
+  matematiğinin tek sahibi oldu; iki kopya ayrışsa "oda çakışması" ile "tefriş
+  çakışması" farklı cevaplar vermeye başlardı.
+
+### DEV-020 — sürüm uyumu
+
+- **Karar:** Kullanıcı modül bazlı eğilimini bildirdi; ayrım **amaca göre**
+  yapıldı. **Sürümlenecek şey kod değil SÖZLEŞMEDİR** — rev-11'de `furniture/`
+  beş dosyaya bölündü, etkilenen proje sıfır; oysa `furniture[].position`
+  yeniden adlandırılsa her proje kırılır. Modül bazlı semver bir **paket
+  deposunun** modelidir (bağımsız yayın temposu gerekir); burada modüller tek
+  commit'te birlikte gider.
+- **Sonuç:** `meta.schema_version` **kapı** (MAJOR farkta üretim durur, modül
+  sözleşmelerinin türevi), modül `CONTRACT_VERSION` **teşhis**,
+  `output/provenance.json` **kayıt**. İstenen şey aslında teşhisti ("koptu mu,
+  neden") ve onu provenance yanıtlar, versioning değil.
+- **Migrasyon asla otomatik değil:** otomatik migrasyon
+  `requests.jsonl`/`rev_history` zincirini kırar ve provenance yalan söylemeye
+  başlar. Major kırılımda proje normal bir revizyon olarak güncellenir.
+- **Kademeli giriş:** alan bugün opsiyonel (yoksa `1.0.0` + uyarı); tüm
+  context'ler taşıdıktan sonra `required` yapılacaktır.
+
+### Kapak (kullanıcı talebi, `DEV-007`in çözülen kısmı)
+
+- İmza alanları dörde sabitlendi: **MİMAR / BELEDİYE / YETKİLİ 1 / YETKİLİ 2**
+  (2×2 yerleşim). Daha önce ikisi boş (`(UNVAN)`) bırakılmıştı.
+- Kapak eteğine **üretim damgası** eklendi: solda `URETIM: <tarih saat>`,
+  sağda `SISTEM: <schema sürümü>`. Damga, bilgi satırlarındaki `TARIH` ile
+  AYNI ŞEY DEĞİLDİR — o proje/onay tarihidir, context'ten gelir ve uydurulmaz.
+  Damga imza bandının altındaki boş şeride (iç çerçeveden 10 mm) oturur;
+  ölçülerek doğrulandı (imza bandı alt kenarı −7850, damga −8350, iç çerçeve
+  −8850 → her iki yandan 10'ar mm).
+- `preview.py` aynı yerleşimi birebir yansıtır.
+
+### Doğrulama
+
+- `python scripts/collision/selftest.py` — kasıtlı bozulmuş katta tam 3 HATA
+  + 1 UYARI; yanlış-pozitif testi ayrıca geçti. Kesişim ölçüsü elle
+  doğrulanabilir (800 × 750 = 600000 mm², derinlik 750).
+- Boru hattı negatif testleri: çakışma → `exit 1`, oda dışı → `exit 1`,
+  MAJOR sürüm farkı → `exit 1`, MINOR fark → `exit 0` + uyarı.
+- `doc_check.py`ye üç yeni kontrol eklendi (çakışma kapsamı, bayat
+  `COLLISION_EXEMPT`, sözleşme sürümü); **üçü de kasıtlı bozmayla** sınandı.
+- `validate` + `generate` + 5 semantik kural + 2 golden referans temiz.
+
+### Golden output etkisi
+
+Kapak altbilgisi her paftaya değil yalnızca kapağa eklendiği için her golden
+referansında **tam +2 `TEXT`** (layer `METIN`) farkı oluştu; `modelspace_bbox`
+değişmedi. Fark birebir açıklanabildiği için `expected.json` dosyaları
+`--update` ile yenilendi (`minimal` 111→113, `tefris_kolon` 176→178).
+
+### Bilinen sınırlamalar
+
+- Çakışma yalnızca AYNI kat içinde aranır; katlar arası düşey hizalama
+  denetlenmez.
+- Kapı açılım **yönü** schema'da yok; iki kapının birbirine açılması bu yüzden
+  `IGNORE` bırakıldı ve `DEV-016` sonrası `FORBID`e çekilmelidir.
+- `counters[]` ayak izi üretmez (hâlâ `generate_dxf.py` içinde ad-hoc).
+- Kapı sektörü 8 doğru parçasıyla yaklaşılır; gerçek yaydan biraz küçüktür.
+
+- **Sonraki direktif:** Sistem mimarı `DEV-018` (DXF `BLOCK` yaygınlaştırma)
+  veya `DEV-011` (`elevations/`) görevlerinden birini açıkça başlatmalıdır.
+
 ## HD-006 — Golden fixture kataloğu, tefriş modülü ve taralı kolonlar
 
 > **rev-11 terminoloji notu:** Bu kayıttaki "fixture" artık **golden referans

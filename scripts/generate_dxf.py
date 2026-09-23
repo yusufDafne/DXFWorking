@@ -79,6 +79,12 @@ from columns import (  # noqa: E402
     ensure_column_layers,
 )
 from openings import Opening, OpeningSchedule  # noqa: E402
+from version import (  # noqa: E402
+    SCHEMA_VERSION,
+    format_timestamp,
+    generation_timestamp,
+    provenance,
+)
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_CONTEXT_PATH = PROJECT_ROOT / "context.json"
@@ -173,7 +179,8 @@ def draw_labels(msp, labels: list[dict], default_height: float) -> None:
         text.dxf.insert = tuple(label["position"])
 
 
-def draw_cover_sheet(msp, context: dict, dx: float, sheet: Sheet) -> float:
+def draw_cover_sheet(msp, context: dict, dx: float, sheet: Sheet,
+                     generated_at: str = "") -> float:
     """Kapak paftasi (OZEL pafta) - paftanin DIS cercevesinin sag kenarini
     (mutlak X) dondurur.
 
@@ -188,6 +195,10 @@ def draw_cover_sheet(msp, context: dict, dx: float, sheet: Sheet) -> float:
       tam A4 genisliginde olur ve duzgun katlanir (DIN 824).
     - Kapak, paftanin ALTINA oturur; ustte kalan bolum bos birakilir.
     - Bu paftada Tip-B serit anteti CIZILMEZ - kapagin kendisi o islevi gorur.
+    - Sayfa eteginde bir URETIM DAMGASI bulunur (kullanici talebi): ciktinin
+      uretildigi tarih-saat ve uretildigi sistem sozlesme surumu. Bu, bilgi
+      satirlarindaki `TARIH` ile AYNI SEY DEGILDIR - o proje/onay tarihidir,
+      context.json'dan gelir ve uydurulmaz; damga ise uretimin kaydidir.
     """
     content_start = len(msp)
     meta = context["meta"]
@@ -214,6 +225,8 @@ def draw_cover_sheet(msp, context: dict, dx: float, sheet: Sheet) -> float:
         info_rows=info_rows,
         signature_labels=cover_meta.get("signature_fields", []),
         outer_frame=False,   # dis/ic hat paftanin kendi cercevesinden gelir
+        footer_left=f"URETIM: {generated_at}" if generated_at else "",
+        footer_right=f"SISTEM: {SCHEMA_VERSION}",
     )
 
     # Bu pafta, TUM paftalarla paylasilan mutlak Y araligini oldugu gibi
@@ -467,6 +480,10 @@ def generate(context_path: Path = DEFAULT_CONTEXT_PATH, output_path: Path = DEFA
         elevation_level_labels, available_width=CONTENT_PADDING - 600.0, max_height=text_height,
     )
 
+    # Uretim ani TEK bir yerde uretilir: kapaktaki damga ile
+    # provenance kaydinin ayni saniyeyi gostermesi gerekir.
+    moment = generation_timestamp()
+
     planner = PaperSizePlanner(scale)
     paper_plan = planner.select(sheet.outer_height)
     if paper_plan["fits"]:
@@ -499,7 +516,8 @@ def generate(context_path: Path = DEFAULT_CONTEXT_PATH, output_path: Path = DEFA
     # Kapak paftasinin dis cercevesi kapak genisligi kadardir (padding yok),
     # bu yuzden ilerleme diger paftalardan farkli hesaplanir: bir sonraki
     # paftanin dis hatti, kapak paftasinin dis hattina TAM oturur.
-    cover_outer_x1 = draw_cover_sheet(msp, context, cursor, sheet)
+    cover_outer_x1 = draw_cover_sheet(msp, context, cursor, sheet,
+                                      generated_at=format_timestamp(moment))
     cursor = cover_outer_x1 + frame_half_width
 
     for floor in floors:
@@ -517,7 +535,28 @@ def generate(context_path: Path = DEFAULT_CONTEXT_PATH, output_path: Path = DEFA
         cursor += elevation["width"] + 2 * frame_half_width
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    return save_with_fallback(lambda p: doc.saveas(p), output_path)
+    written = save_with_fallback(lambda p: doc.saveas(p), output_path)
+
+    # Provenance KAYDI (DEV-020): bloklamaz, yalnizca "bu cikti neyle
+    # uretildi" sorusunu yanitlar. context.json'a YAZILMAZ - orasi proje
+    # TASARIM verisidir ve her uretimde kirletilmemelidir.
+    write_provenance(context, written, moment)
+    return written
+
+
+def write_provenance(context: dict, output_path: Path, moment) -> Path:
+    """`output/provenance.json` yazar (DEV-020).
+
+    Nihai DXF'in yanina konur: hangi schema surumu, hangi modul
+    sozlesmeleri ve hangi commit ile uretildigi buradan okunur. Bir proje
+    eski bir sistem surumuyle uretilip moduller degistiginde,
+    'entegrasyon koptu mu, koptuysa neyden' sorusu bu kayitla yanitlanir.
+    """
+    record = provenance(context, output_path=output_path.name, moment=moment)
+    target = output_path.parent / "provenance.json"
+    payload = json.dumps(record, ensure_ascii=False, indent=2) + "\n"
+    return save_with_fallback(
+        lambda p: Path(p).write_text(payload, encoding="utf-8"), target)
 
 
 def main() -> int:

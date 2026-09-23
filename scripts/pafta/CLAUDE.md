@@ -209,6 +209,21 @@ doğrulamalı:
    sonrakinin `min(xs)`'ine eşit) doğrulamalı — bunlar geçmişte bozulmuş ve
    düzeltilmiş iki gerçek regresyon noktasıdır.
 
+## Kapak üretim damgası (rev-12)
+
+`CoverBlock.draw(..., footer_left=..., footer_right=...)` kapağın eteğine,
+**imza bandının altındaki boş şeride** (iç çerçeveden 10 mm) iki küçük satır
+yazar: solda `URETIM: <tarih saat>`, sağda `SISTEM: <schema sürümü>`.
+
+Bu damga, bilgi satırlarındaki `TARIH` ile **aynı şey değildir**: `TARIH`
+proje/onay tarihidir, `context.json`'dan gelir ve yoksa UYDURULMAZ (doldurma
+çizgisi bırakılır); damga ise çıktının ne zaman ve neyle üretildiğinin
+kaydıdır ve sistem tarafından yazılır (bkz. `scripts/version.py`,
+`output/provenance.json`). `preview.py` aynı yerleşimi birebir yansıtır.
+
+İmza alanları rev-12'de dörde sabitlendi (MIMAR / BELEDIYE / YETKILI 1 /
+YETKILI 2) ve 2×2 yerleşir.
+
 ## Bilinen sınırlamalar / gelecek işler
 
 - **Uniform sheet template (öncelikli):** Paftamız şu an içeriği SIKI SARAN

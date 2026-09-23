@@ -15,6 +15,13 @@ Yaptigi kontroller:
        genisligi o duvarin uzunlugundan kucuk mu, duvar sinirlari icinde mi
      - Iki oda poligonu birbiriyle cakisiyor mu (convex/dikdortgen varsayimiyla)
   3) Her cephe gorunusu (elevations[]) icin hafif tutarlilik kontrolleri.
+  4) SURUM KAPISI (DEV-020): meta.schema_version ile sistemin SCHEMA_VERSION'u
+     arasinda MAJOR fark varsa uretim DURUR. Bkz. scripts/version.py.
+  5) CAKISMA DENETIMI (DEV-019): moduller arasi girisim - tefris odanin
+     disinda mi, duvara/kolona/kapi acilim yayina giriyor mu. Cift ("iki
+     FARKLI eleman ayni yeri mi isgal ediyor") kontroller scripts/collision/
+     motorunda yasar; bu dosyadaki check_* fonksiyonlari ise TEKIL ("kendi
+     verim gecerli mi") kontrollerdir. Ayrim ARITEDIR, bkz. DEV-019.
 
 Cikis kodu: basarili -> 0, basarisiz -> 1.
 Bu script FAIL ile bitiyorsa generate_dxf.py CALISTIRILMAMALIDIR.
@@ -33,8 +40,25 @@ except ImportError:
     import jsonschema
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
+SCRIPTS_ROOT = Path(__file__).resolve().parent
 SCHEMA_PATH = PROJECT_ROOT / "schema" / "design.schema.json"
 DEFAULT_CONTEXT_PATH = PROJECT_ROOT / "context.json"
+
+sys.path.insert(0, str(SCRIPTS_ROOT))
+# Poligon matematiginin TEK sahibi collision.geometry'dir. rev-12'den once
+# ayni Sutherland-Hodgman kirpmasinin bir KOPYASI burada duruyordu; iki kopya
+# zamanla ayrisir ve "oda cakismasi" ile "tefris cakismasi" farkli cevaplar
+# vermeye baslardi.
+from collision import check_context as check_collisions  # noqa: E402
+from collision.geometry import (  # noqa: E402
+    polygon_intersection_area,
+    shoelace_area,
+)
+from version import (  # noqa: E402
+    SCHEMA_VERSION,
+    check_compatibility,
+    project_schema_version,
+)
 
 AREA_TOLERANCE_RATIO = 0.03  # oda alani vs poligon alani icin tolerans
 
@@ -50,72 +74,12 @@ def validate_schema(context: dict, schema: dict) -> list[str]:
     return [f"Schema hatasi at {'/'.join(str(p) for p in e.path) or '<root>'}: {e.message}" for e in errors]
 
 
-def shoelace_area(polygon: list[list[float]]) -> float:
-    n = len(polygon)
-    if n < 3:
-        return 0.0
-    total = 0.0
-    for i in range(n):
-        x1, y1 = polygon[i]
-        x2, y2 = polygon[(i + 1) % n]
-        total += x1 * y2 - x2 * y1
-    return abs(total) / 2.0
-
-
 def to_m2(raw_area: float, units: str) -> float:
     if units == "mm":
         return raw_area / 1_000_000.0
     if units == "m":
         return raw_area
     raise ValueError(f"Bilinmeyen birim: {units}")
-
-
-def polygon_intersection_area(subject: list[list[float]], clip: list[list[float]]) -> float:
-    """Sutherland-Hodgman polygon clipping ile kesisim alani.
-
-    NOT: `clip` poligonunun convex (disbukey) olmasi gerekir. Bu araçtaki
-    odalar tipik olarak dikdortgen/convex kabul edilir; karmasik ic-bukey
-    oda seklinde yanlis-negatif verebilir.
-    """
-
-    def inside(p, a, b):
-        return (b[0] - a[0]) * (p[1] - a[1]) - (b[1] - a[1]) * (p[0] - a[0]) >= 0
-
-    def intersect(p1, p2, a, b):
-        a1 = (b[0] - a[0]) * (p1[1] - a[1]) - (b[1] - a[1]) * (p1[0] - a[0])
-        a2 = (b[0] - a[0]) * (p2[1] - a[1]) - (b[1] - a[1]) * (p2[0] - a[0])
-        t = a1 / (a1 - a2)
-        return [p1[0] + t * (p2[0] - p1[0]), p1[1] + t * (p2[1] - p1[1])]
-
-    output = list(subject)
-    clip_area_signed = 0.0
-    for i in range(len(clip)):
-        x1, y1 = clip[i]
-        x2, y2 = clip[(i + 1) % len(clip)]
-        clip_area_signed += x1 * y2 - x2 * y1
-    clip_pts = clip if clip_area_signed >= 0 else list(reversed(clip))
-
-    for i in range(len(clip_pts)):
-        if not output:
-            break
-        a = clip_pts[i]
-        b = clip_pts[(i + 1) % len(clip_pts)]
-        input_list = output
-        output = []
-        for j in range(len(input_list)):
-            current = input_list[j]
-            prev = input_list[j - 1]
-            current_in = inside(current, a, b)
-            prev_in = inside(prev, a, b)
-            if current_in:
-                if not prev_in:
-                    output.append(intersect(prev, current, a, b))
-                output.append(current)
-            elif prev_in:
-                output.append(intersect(prev, current, a, b))
-    if len(output) < 3:
-        return 0.0
-    return shoelace_area(output)
 
 
 def round_point(pt: list[float], units: str) -> tuple[float, float]:
@@ -309,6 +273,16 @@ def run_validation(context_path: Path = DEFAULT_CONTEXT_PATH) -> bool:
             print(f"  - {e}")
         return False
 
+    # --- Surum kapisi (DEV-020): schema gectikten SONRA, geometriden ONCE.
+    version_errors, version_warnings = check_compatibility(context)
+    for warning in version_warnings:
+        print(f"UYARI (surum): {warning}")
+    if version_errors:
+        print("DOGRULAMA BASARISIZ (surum uyumu):")
+        for e in version_errors:
+            print(f"  - {e}")
+        return False
+
     units = context["meta"]["units"]
     all_errors: list[str] = []
 
@@ -326,9 +300,25 @@ def run_validation(context_path: Path = DEFAULT_CONTEXT_PATH) -> bool:
             print(f"  - {e}")
         return False
 
+    # --- Cakisma denetimi (DEV-019): moduller arasi girisim.
+    # Bilincli olarak EN SONDA calisir: tekil geometri bozuksa (kapanmayan
+    # duvar agi, gecersiz poligon) cakisma raporu zaten anlamsiz olurdu.
+    clash_report = check_collisions(context)
+    for line in clash_report.warning_lines():
+        print(f"UYARI (cakisma): {line}")
+    if not clash_report.ok:
+        print("DOGRULAMA BASARISIZ (cakisma):")
+        for line in clash_report.error_lines():
+            print(f"  - {line}")
+        return False
+
+    declared, _ = project_schema_version(context)
     print(
-        f"DOGRULAMA BASARILI: context.json semaya uygun, "
-        f"{len(context['floors'])} kat + {len(context['elevations'])} cephe saglik kontrollerinden gecti."
+        f"DOGRULAMA BASARILI: context.json semaya uygun (schema_version "
+        f"{declared} / sistem {SCHEMA_VERSION}), "
+        f"{len(context['floors'])} kat + {len(context['elevations'])} cephe saglik "
+        f"kontrollerinden ve cakisma denetiminden gecti "
+        f"({len(clash_report.warnings)} uyari)."
     )
     return True
 

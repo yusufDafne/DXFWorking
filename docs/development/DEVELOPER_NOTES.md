@@ -34,13 +34,27 @@ sistem mimarı direktifi güncellenir.
   ölçüsünde) çiziyor; önizleme pafta sırası DXF ile birebir.
 - Mahal adları ve `area_m2` mevcut `RoomLabeler` ile çizilmeye devam ediyor;
   yapısının geliştirilmesi `DEV-008` olarak planlandı (kullanıcı talebi).
+- **`scripts/collision/` eklendi (rev-12):** çakışma denetimi artık
+  `validate.py` içinde, üretimden ÖNCE çalışan BLOKLAYICI bir kapıdır. Motor
+  hiçbir çizim modülünü import etmez; `rooms`, `walls`, `columns`, `openings`
+  ve `furniture` kendi `collision.py` ayak izi sağlayıcılarını taşır.
+  `collision/geometry.py` poligon matematiğinin tek sahibi oldu —
+  `validate.py` içindeki Sutherland–Hodgman kopyası kaldırıldı.
+- **`scripts/version.py` eklendi (rev-12):** `meta.schema_version` bloklayıcı
+  KAPI (MAJOR farkta üretim durur), modül `CONTRACT_VERSION` TEŞHİS,
+  `output/provenance.json` KAYIT. Alan bugün opsiyonel; yoksa `1.0.0`
+  varsayılır ve UYARI basılır.
+- **Kapak (rev-12):** imza alanları dörde sabitlendi (MİMAR / BELEDİYE /
+  YETKİLİ 1 / YETKİLİ 2, 2×2) ve kapak eteğine üretim damgası eklendi
+  (`URETIM: <tarih saat>` / `SISTEM: <schema sürümü>`). `preview.py` aynı
+  yerleşimi yansıtır.
 
 ## Sıradaki iş
 
 `DEVELOPMENT_TASKS.md` artık **her modül için ayrı plan maddesi** tutuyor
 (`DEV-007` … `DEV-017`) ve her maddede seçilmek üzere **iki fikir** var.
 
-rev-10 durumu:
+rev-12 durumu:
 
 - `DEV-006` **COMPLETED** — golden artık üç katmanlı (ölçüm + semantik kural +
   golden referans koşucusu), bkz. `HD-006`.
@@ -48,17 +62,28 @@ rev-10 durumu:
 - `DEV-009` **COMPLETED** — tefriş modülü, tefriş = DXF `BLOCK` (`HD-006`).
 - `DEV-010` **COMPLETED** — taralı kolon, dinamik hatch (`HD-006`).
 - `DEV-007` **BLOCKED** — yalnızca kullanıcıdan gelecek mimar adı / tarih /
-  unvan bekleniyor.
+  unvan bekleniyor. Kullanıcı rev-12'de "konusunu tekrar açma, plan olarak
+  kalsın" dedi; bu madde SORULMAZ, kullanıcı kendisi açacaktır.
+- `DEV-019` **COMPLETED (rev-12)** — `scripts/collision/`; arite-1 modülde,
+  arite-2+ motorda; motor çizim modüllerini import etmez (`HD-007`).
+- `DEV-020` **COMPLETED (rev-12)** — `scripts/version.py`; kapı/teşhis/kayıt
+  ayrımı, `output/provenance.json` (`HD-007`).
 - `DEV-011` … `DEV-018` PLANNED.
 
 **Önemli işletim notu:** Üretimden sonra artık
-`python scripts/golden_report.py output/plan.dxf --rules context.json` ve
-`python scripts/golden_report.py --golden-set` da çalıştırılmalıdır. Ölçüm
-raporunun tek başına yetmediği rev-10'da somut olarak gösterildi.
+`python scripts/golden_report.py output/plan.dxf --rules context.json`,
+`python scripts/golden_report.py --golden-set` ve
+`python scripts/collision/selftest.py` da çalıştırılmalıdır. Ölçüm raporunun
+tek başına yetmediği rev-10'da somut olarak gösterildi; çakışma motorunun
+"temiz döndü" çıktısı da tek başına hiçbir şey kanıtlamaz (motor hiç
+çalışmasa da temiz dönerdi), bu yüzden self-test kasıtlı bozulmuş bir kat
+üzerinde beklenen bulguların TAM OLARAK üretildiğini sınar.
 
-Sıradaki iş için sistem mimarı açık direktif vermelidir; `DEV-018` (blok
-yaygınlaştırma) `DEV-011`den önce ele alınırsa iş tekrarı önlenir. Sistem mimarı açıkça
-başlatmadan kod değişikliği yapılmaz. Başlangıçta görev kilidi alınmalıdır.
+Sıradaki iş için sistem mimarı açık direktif vermelidir. Sıralama önerisi:
+`DEV-018` (blok yaygınlaştırma) `DEV-011`den önce ele alınırsa iş tekrarı
+önlenir; `DEV-019` ile `DEV-020` ise artık karar beklemediği için herhangi bir
+anda başlatılabilir. Sistem mimarı açıkça başlatmadan kod değişikliği yapılmaz.
+Başlangıçta görev kilidi alınmalıdır.
 
 ## İlk okuma sırası
 
@@ -88,15 +113,29 @@ uyumlu değilse uygulamayı durdur ve sistem mimarı kararı iste.
 - Reviewer raporu hangi ayrı çalışma çağrısında üretilecek?
 - `meta.cover.architect_name` ve `meta.cover.date` değerleri ne olacak?
   (Kapak çizilir durumda; bu iki alan boş doldurma çizgisi olarak çıkıyor.)
-- Ayrılmış iki imza alanının unvanı ne olacak?
+  **Kullanıcı rev-12'de bu konunun AÇILMAMASINI istedi** — agent sormaz,
+  kullanıcı kendisi verecektir.
+- ~~Ayrılmış iki imza alanının unvanı ne olacak?~~ **rev-12'de çözüldü:**
+  dört alan — MİMAR / BELEDİYE / YETKİLİ 1 / YETKİLİ 2.
 - Kapakta ruhsat/onay alanları da gerekli mi?
 - Kapak TASARIMI için kullanıcıdan ayrı bir talep bekleniyor (geometri
   sabit kalmalı: A4, sağ-alt sabit, eşit offset, antetsiz).
 - Mahal etiketi de blok + `ATTRIB` olacak mı (`DEV-018`)?
 - `counters[]` (mutfak tezgahı) `furniture/` modülüne devredilecek mi?
   Bugün iki yol da mümkün, bu bir çifte sorumluluktur.
-- Tefriş/kolon için çakışma kontrolü (duvar, oda sınırı, kapı açılım alanı)
-  bloklayıcı hata mı, uyarı mı olacak?
+- ~~Çakışma denetimi ayrı modül mü, her modül kendi mi?~~ **rev-12'de
+  UYGULANDI** (`HD-007`): arite ile ayrılır — tekil doğrulama modülde, çift
+  (çakışma) denetim `scripts/collision/` motorunda; motor çizim modüllerini
+  import etmez. Duvar ayak izi merkez çizgi + kalınlık oldu, kapı sektörü 8
+  sabit parçayla yaklaşılıyor.
+- Kapı açılım **YÖNÜ** schema'da yok; bu yüzden "iki kapı birbirine açılıyor"
+  kontrolü MUAF bırakıldı. `DEV-016` swing alanını eklediğinde HATA'ya
+  çekilmelidir.
+- `PROVENANCE_TEMPLATE.json` ile `output/provenance.json` şu anda İKİ AYRI
+  şemadır; şablon `DEV-005`ten kalma kabul/rol alanlarını da taşıyor.
+  Birleştirilecek mi, yoksa şablon kabul kaydı olarak ayrı mı kalacak?
+- `meta.schema_version` ne zaman `required` yapılacak? (Bugün opsiyonel ve
+  eksikse uyarı basılıyor; tüm context'ler alanı taşıyor.)
 - Kolonlarda katlar arası düşey hizalama zorunlu tutulacak mı?
 - "Mahal ismi blok olarak işlensin" büyük harf olarak uygulandı; kullanıcı
   DXF `BLOCK` entity'si kastettiyse bu yeniden ele alınmalı.

@@ -79,6 +79,7 @@ PRINTED_COVER_FRAME_GAP_MM = 10.0
 PRINTED_COVER_TITLE_MM = 7.0
 PRINTED_COVER_TEXT_MM = 3.5
 PRINTED_COVER_LABEL_MM = 2.5
+PRINTED_COVER_FOOTER_MM = 2.2
 
 # Rulo kagit: BRUT (nominal) yukseklik -> NET kullanilabilir yukseklik (mm),
 # ust/alt 10mm pay dusulmus haliyle. Kullanicinin "45/60/90'lik kagit"
@@ -275,6 +276,10 @@ class CoverBlock:
     SIGNATURE_BAND_TOP_MM = 130.0
     SIGNATURE_COLUMNS = 2
     SIGNATURE_GAP_MM = 10.0
+    # Uretim damgasi: imza bandinin ALTINDA kalan serit (0..20mm).
+    # Damga bir ANTET ALANI degil, bir URETIM KAYDIDIR; bu yuzden bilgi
+    # satirlarinin arasina degil, sayfa etegine kucuk puntoyla yazilir.
+    FOOTER_Y_MM = 10.0
     TEXT_PAD_MM = 4.0          # ic marj hattina bitisik metin birakilmaz
     UNVAN_PLACEHOLDER = "(UNVAN)"
 
@@ -302,7 +307,8 @@ class CoverBlock:
 
     def draw(self, msp, x0: float, y0: float, title: str,
              info_rows: list[tuple[str, str]], signature_labels: list[str],
-             outer_frame: bool = True) -> None:
+             outer_frame: bool = True, footer_left: str = "",
+             footer_right: str = "") -> None:
         """A4 kapagi sol-alt kosesi (x0, y0) olacak sekilde cizer.
 
         `outer_frame=False`: kapak paftasinin DIS cercevesi zaten bu blogun
@@ -350,6 +356,20 @@ class CoverBlock:
                 # doldurulacak bir cizgi birakilir (bkz. kok CLAUDE.md).
                 fill_y = row_y - mm(2.0)
                 msp.add_line((value_x, fill_y), (fill_x1, fill_y), dxfattribs={"layer": self.frame_layer})
+
+        # Uretim damgasi (kullanici talebi): projenin URETILDIGI tarih-saat ve
+        # uretildigi sistem surumu. Bu, context.json'dan gelen `TARIH` alaniyla
+        # AYNI SEY DEGILDIR - o proje/onay tarihidir ve uydurulmaz; bu ise
+        # ciktinin ne zaman ve neyle uretildiginin kaydidir (bkz.
+        # scripts/version.py, output/provenance.json).
+        footer_height = mm(PRINTED_COVER_FOOTER_MM)
+        footer_y = iy0 + mm(self.FOOTER_Y_MM)
+        if footer_left:
+            add_text(msp, footer_left, (label_x, footer_y), footer_height,
+                     self.text_layer, align=TextEntityAlignment.MIDDLE_LEFT)
+        if footer_right:
+            add_text(msp, footer_right, (fill_x1, footer_y), footer_height,
+                     self.text_layer, align=TextEntityAlignment.MIDDLE_RIGHT)
 
         if not signature_labels:
             return
@@ -504,3 +524,9 @@ class Sheet:
         outer.closed = True
         inner = msp.add_lwpolyline([(ix0, iy0), (ix1, iy0), (ix1, iy1), (ix0, iy1)], dxfattribs={"layer": "CERCEVE"})
         inner.closed = True
+
+
+# Bu modulun CONTEXT SOZLESMESI surumu (DEV-020). KOD surumu DEGILDIR:
+# yalnizca bu modulun context.json'dan OKUDUGU alanlar degistiginde artar;
+# refactor artirmaz. Bkz. scripts/version.py
+CONTRACT_VERSION = "1.0"

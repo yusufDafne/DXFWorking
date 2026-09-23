@@ -114,6 +114,11 @@ class OpeningSchedule:
         return sorted(rows, key=lambda row: (row["type"], row["id"]))
 
 
+# Bu modulun CONTEXT SOZLESMESI surumu (DEV-020). KOD surumu DEGILDIR:
+# yalnizca bu modulun context.json'dan OKUDUGU alanlar degistiginde artar;
+# refactor artirmaz. Bkz. scripts/version.py
+CONTRACT_VERSION = "1.0"
+
 __all__ = [
     "Door",
     "DefaultPlanOpeningStyle",

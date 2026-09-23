@@ -29,6 +29,11 @@ from .standard import (
 )
 from .style import ColumnHatchStyle, ColumnLabelStyle
 
+# Bu modulun CONTEXT SOZLESMESI surumu (DEV-020). KOD surumu DEGILDIR:
+# yalnizca bu modulun context.json'dan OKUDUGU alanlar degistiginde artar;
+# refactor artirmaz. Bkz. scripts/version.py
+CONTRACT_VERSION = "1.0"
+
 __all__ = [
     "COLUMN_HATCH_LAYER",
     "COLUMN_LAYER",

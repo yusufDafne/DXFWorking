@@ -1,6 +1,7 @@
 {
   "meta": {
     "project_name": "Fixture - Tefris ve Kolon",
+    "schema_version": "1.0.0",
     "units": "mm",
     "scale": "1:50",
     "project_type": "MIMARI_UYGULAMA",

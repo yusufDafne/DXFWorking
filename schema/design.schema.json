@@ -219,6 +219,11 @@
       "additionalProperties": false,
       "properties": {
         "project_name": { "type": "string" },
+        "schema_version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+          "description": "Projenin yazildigi CONTEXT SOZLESMESI surumu (DEV-020). scripts/version.py::SCHEMA_VERSION ile MAJOR farki varsa uretim DURUR; minor/patch farki yalnizca uyari verir. Bugun OPSIYONELDIR (verilmezse 1.0.0 varsayilir + uyari); tum context'ler alani tasidiktan sonra required yapilacaktir. OTOMATIK MIGRASYON YOKTUR - major kirilimda proje normal bir revizyon olarak guncellenir."
+        },
         "units": { "type": "string", "enum": ["mm", "m"] },
         "scale": { "type": "string" },
         "project_type": {
@@ -261,11 +266,11 @@
           "additionalProperties": false,
           "properties": {
             "architect_name": { "type": "string", "description": "Proje muellifi mimarin adi. Bilinmiyorsa bu alan VERILMEZ - uydurulmaz." },
-            "date": { "type": "string", "description": "Kapakta gosterilecek proje/onay tarihi. Bilinmiyorsa VERILMEZ." },
+            "date": { "type": "string", "description": "Kapakta gosterilecek PROJE/ONAY tarihi. Bilinmiyorsa VERILMEZ - uydurulmaz. Kapak eteginde yazan URETIM damgasiyla AYNI SEY DEGILDIR; damga ciktinin uretildigi andir ve sistem yazar (scripts/version.py)." },
             "signature_fields": {
               "type": "array", "minItems": 1, "maxItems": 6,
               "items": { "type": "string" },
-              "description": "Imza alani basliklari (orn. \"YONETIM\", \"MIMAR\"). Bos string, unvani SONRA belirlenecek ayrilmis bir imza alani demektir."
+              "description": "Imza alani basliklari (orn. \"MIMAR\", \"BELEDIYE\"). Bos string, unvani SONRA belirlenecek ayrilmis bir imza alani demektir ve kapakta \"(UNVAN)\" olarak isaretlenir. Kac alan olacagi PROJE VERISIDIR; bu projenin karari icin bkz. kok CLAUDE.md."
             }
           }
         },

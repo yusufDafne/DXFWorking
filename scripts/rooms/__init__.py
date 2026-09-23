@@ -211,4 +211,9 @@ class RoomLabeler:
             cursor -= line_height + ROOM_LABEL_LINE_GAP * height
 
 
+# Bu modulun CONTEXT SOZLESMESI surumu (DEV-020). KOD surumu DEGILDIR:
+# yalnizca bu modulun context.json'dan OKUDUGU alanlar degistiginde artar;
+# refactor artirmaz. Bkz. scripts/version.py
+CONTRACT_VERSION = "1.0"
+
 __all__ = ["PolygonOps", "Room", "RoomLabeler", "RoomPolygonScanner"]

@@ -47,6 +47,19 @@ Ileride: DXF'ten duvar okuma (import), oda-duvar tutarlilik kontrolu.
 1. `python scripts/generate_dxf.py` — regresyon yok.
 2. Bir katta rail birlesimlerinin koselerde acik kalmadigini gorsel kontrol.
 
+## Cakisma ayak izi (rev-12)
+
+`walls/collision.py::footprints(floor, context)`, her duvar icin MERKEZ CIZGI
++ KALINLIK dikdortgeni uretir - cizimdeki GONYELENMIS rail cokgeni degil.
+Gerekce: gonye birlesim yalnizca duvar UCLARINI etkiler ve bir tefrisin
+duvara girip girmedigi acisindan fark yaratmaz; buna karsilik `WallNetwork`
+kurmak saglayiciyi duvar cizim SIRASINA bagimli kilardi, oysa cakisma
+denetimi DXF uretilmeden once saf context uzerinde calisir.
+
+Politika: duvar ↔ tefris 5 mm toleransla UYARI (dolap duvara DAYANIR),
+duvar ↔ kolon MUAF, duvar ↔ duvar MUAF (gonye birlesim). Ayrinti:
+`scripts/collision/CLAUDE.md`.
+
 ## Bilinen sinirlar
 
 - Yayli/ cok segmentli duvar yok (tek duz segment).

@@ -72,8 +72,44 @@ Bu iki gereksinim BİRLİKTE geçerlidir ve biri diğerini iptal etmez:
 **Yeni bir modül eklerken:** "bu modül hangi modülle çakışabilir?" sorusu
 açıkça yanıtlanır; yanıt varsa ya bir semantik kural eklenir ya da neden
 eklenmediği modülün `CLAUDE.md`'sinde "bilinen sınırlama" olarak yazılır.
-Çakışma denetiminin ayrı bir modül mü olacağı yoksa her modülün kendi
-kontrolünü mü yapacağı henüz KARARA BAĞLANMADI — bkz. `DEV-019`.
+
+### Çakışma denetimi nerede yaşar (UYGULANDI — rev-12, `DEV-019`)
+
+Soru uzun süre "ayrı modül mü, her modül kendi mi" diye duruyordu. Karar:
+**ikisi de, çünkü iki farklı kontrol sınıfı var.** Ayrım ARİTEDİR:
+
+| Arite | Soru | Sahibi |
+| ----- | ---- | ------ |
+| 1 (tekil) | "Kendi verim geçerli mi?" — poligon kapalı mı, açıklık host duvardan geniş mi | **ilgili modül** (`validate.py` içindeki `check_*`) |
+| 2+ (çift) | "İki FARKLI eleman sınıfı aynı yeri mi işgal ediyor?" | **`scripts/collision/`** |
+
+Endüstri karşılığı: BIM'de modelleme aracı kendi disiplinini denetler,
+disiplinler arası çakışma ayrı bir araçtır (Navisworks *Clash Detective*,
+Solibri *Model Checker*).
+
+**Modül bağımsızlığı şöyle korunur — bağımlılık TERSİNE çevrilir:**
+`scripts/collision/` hiçbir çizim modülünü import etmez; yalnızca anonim
+`CollisionShape(tag, id, polygon)` tanır. Her çizim modülü kendi ayak izini
+`scripts/<modül>/collision.py::footprints(floor, context)` ile verir — bir
+elemanın kapladığı alanı, onu ÇİZEN modül bilir. Böylece **ayak izinin sahibi
+modül, çakışma kuralının sahibi motordur**; sahiplik bölünmez. Politika
+matrisi, tolerans mantığı ve bilinen sınırlamalar için
+`scripts/collision/CLAUDE.md`.
+
+**Bu gereklilik mekaniktir:** `doc_check.py`, geometri üreten her modülün ya
+bir `collision.py` ayak izi sağlayıcısı taşımasını ya da
+`collision/scene.py::COLLISION_EXEMPT` içinde **gerekçesiyle** listelenmesini
+arar. "Bu modül hangi modülle çakışabilir?" sorusu artık cevapsız
+bırakılamaz — düzyazı bir hatırlatma bu hata sınıfını engellemiyordu.
+
+### Sürüm sözleşmesi (UYGULANDI — rev-12, `DEV-020`)
+
+Her modül `__init__.py` içinde bir `CONTRACT_VERSION` taşır. Bu **kod sürümü
+DEĞİLDİR**: yalnızca o modülün `context.json`'dan OKUDUĞU alanlar
+değiştiğinde artar, refactor artırmaz. `scripts/version.py::CONTRACT_MODULES`
+ile birebir örtüşmesi `doc_check.py` tarafından denetlenir; sürümler her
+üretimde `output/provenance.json`a yazılır. Bloklayıcı kapı ise tek bir
+`meta.schema_version` alanıdır.
 
 ## Proje verisi ile kütüphane ayrımı (kullanıcı ilkesi)
 
@@ -136,6 +172,7 @@ Ortak desen (pafta + walls ile kanitlandi):
 | `elevations/` | `ElevationSheet`, `LevelStack`, `FacadeOpeningPlacer`                       | PLANLANAN (DEV-011); sinif adlari onerilmis, kod YOK           |
 | `legend/`     | `TitleBlockLegend`, `LayerSwatch`, `LegendRenderer`                         | PLANLANAN (DEV-012); sinif adlari onerilmis, kod YOK           |
 | `import/`     | `DxfWallScanner`, `ImportReport`, `ImportPatch`                             | PLANLANAN (DEV-013); sinif adlari onerilmis, kod YOK           |
+| `collision/`  | `CollisionShape`, `CollisionPolicy`, `CollisionEngine`, `Clash`, `ClashReport`, `Scene`, `check_context` | UYGULANDI (rev-12); validate.py ONCESI bloklayici kapi |
 
 > Bu tablo `scripts/doc_check.py` tarafindan DENETLENIR: `UYGULANDI` isaretli bir
 > satirda anilan her sinif adi, o modulde gercekten tanimli olmalidir. Yalnizca
@@ -145,6 +182,8 @@ Ortak desen (pafta + walls ile kanitlandi):
 
 Semaya eklenecek opsiyonel alanlar (talep ile, deger uydurulmaz):
 
+- `meta.schema_version` -> proje/sistem uyum KAPISI (tek semver, MAJOR farkta
+  uretim durur). Once opsiyonel, sonra required; bkz. `DEV-020`.
 - `walls[].kind` -> `WallCatalog`
 - `openings[].variant` / `swing` / `host_side`
 - `meta.drawing_standard` -> hangi katalog paketinin yuklenecegi

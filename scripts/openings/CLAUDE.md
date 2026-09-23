@@ -42,6 +42,27 @@ Uygulanan API `Opening.from_context`, `OpeningSchedule.from_openings` ve
 
 Duvar rail/network geometrisi `walls` içinde kalır. Geçici kaynak `walls.render.DefaultPlanOpeningStyle`dır. Yeni opening alanları schema kararı olmadan zorunlu değildir.
 
+## Çakışma ayak izi (rev-12)
+
+`openings/collision.py::footprints(floor, context)` yalnızca **kapı açılım
+sektörünü** üretir. Pencere ayak izi üretmez: pencere duvar düzlemindedir ve
+plan düzleminde hacim işgal etmez.
+
+Bu sağlayıcı `walls`'u tüketir — açılım yayının menteşesi host duvarın merkez
+çizgisi üzerinde, yönü duvarın normalindedir. Bu zaten var olan ve endüstri
+standardıyla uyumlu bir bağımlılıktır (IFC'de `IfcDoor` bir duvardaki
+`IfcOpeningElement`i doldurur); tersi geçerli DEĞİLDİR, `walls` kapıyı bilmez.
+
+Açı hesabı `walls.render.DefaultPlanOpeningStyle` ile **aynıdır**, böylece
+denetlenen alan çizilen yayın ta kendisidir. Çokgen yaklaşımı
+`collision.SECTOR_SEGMENTS` ile SABİT parça sayısındadır (ölçeğe bağlı
+değildir) — deterministik üretim ilkesi gereği aynı context her zaman aynı
+raporu vermelidir.
+
+**Bilinen sınırlama:** açılım YÖNÜ schema'da yoktur; yay varsayılan tarafa
+çizilir. Bu yüzden "iki kapı birbirine açılıyor" kontrolü bugün MUAF
+bırakılmıştır ve `DEV-016` swing alanını eklediğinde HATA'ya çekilmelidir.
+
 ## Kabul
 
 Açıklık boşlukları duvar rails ile tutarlı, sembol stili enjekte edilebilir, schedule verisi deterministik ve mevcut plan çıktısı korunmuş olmalıdır.

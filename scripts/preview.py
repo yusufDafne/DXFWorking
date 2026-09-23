@@ -31,6 +31,11 @@ except ImportError:
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from pafta import CONTENT_PADDING, FRAME_GAP, CoverBlock, Sheet  # noqa: E402  (once sys.path ayarlanmali)
+from version import (  # noqa: E402
+    SCHEMA_VERSION,
+    format_timestamp,
+    generation_timestamp,
+)
 from rooms import RoomLabeler  # noqa: E402
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -121,6 +126,16 @@ def draw_cover(ax, meta: dict, dx: float, sheet) -> float:
                 color="#374151", ha="left", va="center", zorder=5)
         ax.text(inner_x0 + block.mm(55.0), row_y, value or "................",
                 fontsize=4, color="#374151", ha="left", va="center", zorder=5)
+
+    # Uretim damgasi (generate_dxf.py::draw_cover_sheet ile ayni yerde):
+    # ciktinin uretildigi an + sistem sozlesme surumu. Onizleme DXF ile ayni
+    # yerlesimi gostermek zorundadir, bu yuzden burada da cizilir.
+    footer_y = inner_y0 + block.mm(10.0)
+    ax.text(inner_x0 + block.mm(4.0), footer_y,
+            f"URETIM: {format_timestamp(generation_timestamp())}",
+            fontsize=3, color="#6b7280", ha="left", va="center", zorder=5)
+    ax.text(inner_x0 + inner_w - block.mm(4.0), footer_y, f"SISTEM: {SCHEMA_VERSION}",
+            fontsize=3, color="#6b7280", ha="right", va="center", zorder=5)
 
     signature_labels = cover_meta.get("signature_fields", [])
     if signature_labels:

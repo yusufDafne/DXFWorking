@@ -14,7 +14,7 @@ agent kendi başına sıra değiştirmez.
 | DEV-004 | golden output | COMPLETED |
 | DEV-005 | agentic kontrol | COMPLETED |
 | DEV-006 | golden fixture kataloğu | COMPLETED (rev-10) |
-| DEV-007 | `pafta/` | **BLOCKED** — kullanıcı verisi bekliyor |
+| DEV-007 | `pafta/` | **BLOCKED** — yalnızca mimar adı / proje tarihi |
 | DEV-008 | `rooms/` etiket | COMPLETED (rev-9) |
 | DEV-009 | `furniture/` | COMPLETED (rev-10) |
 | DEV-010 | `columns/` | COMPLETED (rev-10) |
@@ -26,8 +26,8 @@ agent kendi başına sıra değiştirmez.
 | DEV-016 | `openings/` | PLANNED |
 | DEV-017 | `dimensions/` | PLANNED |
 | DEV-018 | DXF `BLOCK` (modüller arası) | PLANNED |
-| DEV-019 | çakışma denetimi (modüller arası) | PLANNED |
-| DEV-020 | proje ↔ sistem sürüm uyumu | PLANNED |
+| DEV-019 | `collision/` (modüller arası) | COMPLETED (rev-12) |
+| DEV-020 | sürüm + provenance | COMPLETED (rev-12) |
 
 ## READY
 
@@ -35,6 +35,11 @@ agent kendi başına sıra değiştirmez.
 kataloğundan bir maddeyi (ve varsa bir fikri) açıkça seçip başlatmalıdır.
 Öneri: `DEV-018` modüller arası bir karar olduğu için `DEV-011`den önce ele
 alınırsa iş tekrarı önlenir.
+
+> `DEV-007` kullanıcı talimatıyla (rev-12) **konusu açılmadan** plan olarak
+> bekleyecektir; agent bu madde için veri İSTEMEZ. İmza alanları rev-12'de
+> çözüldü (MİMAR / BELEDİYE / YETKİLİ 1 / YETKİLİ 2); geriye yalnızca mimar
+> adı ve proje tarihi kaldı ve bunları kullanıcı kendisi verecektir.
 
 
 ## COMPLETED
@@ -129,6 +134,241 @@ alınırsa iş tekrarı önlenir.
 - **Açık kararlar:** Fixture'lar `context.json`'dan bağımsız ayrı dosyalar mı
   olacak? Geometrik karşılaştırmada tolerans ne olacak? Beklenti tanımları
   veri (JSON) olarak mı, kod olarak mı yazılacak?
+
+### DEV-019 — Çakışma denetimi (`scripts/collision/`)
+
+- **Durum:** COMPLETED (rev-12)
+- **Sonuç:** `scripts/collision/` kuruldu ve `validate.py` içine **bloklayıcı
+  kapı** olarak bağlandı — üretimden ÖNCE, context seviyesinde çalışır.
+  Modül bağımsızlığı **bağımlılık tersine çevrilerek** korundu: motor hiçbir
+  çizim modülünü import etmez, her modül kendi ayak izini
+  `scripts/<modül>/collision.py::footprints(floor, context)` ile verir
+  (`rooms`, `walls`, `columns`, `openings`, `furniture`). `geometry.py`
+  projedeki poligon matematiğinin tek sahibi oldu; `validate.py` içindeki
+  Sutherland–Hodgman KOPYASI kaldırıldı.
+- **Doğrulama (kasıtlı bozma):** `python scripts/collision/selftest.py` —
+  bozulmuş bir katta tam 3 HATA (iki tefriş üst üste, tefriş oda dışında,
+  tefriş kapı sektöründe) + 1 UYARI (tefriş duvara 50 mm girmiş) beklenir;
+  yanlış-pozitif de sınanır (3 mm girişim TEMAS'tır, kolonun duvarda/odada
+  olması normaldir). Kesişim ölçüsü elle doğrulanabilir: 800 × 750 = 600000
+  mm², derinlik 750. Ayrıca boru hattı seviyesinde dört negatif test
+  çalıştırıldı: çakışma → `exit 1`, oda dışı → `exit 1`, MAJOR sürüm farkı →
+  `exit 1`, MINOR fark → `exit 0` + uyarı.
+- **Mekanik hale getirilen kural:** "Yeni bir modül eklendiğinde 'bu modül
+  hangi modülle çakışabilir?' sorusu açıkça yanıtlanır" kuralı artık düzyazı
+  değil: `doc_check.py`, geometri üreten her modülün ya `collision.py`si
+  olmasını ya da `COLLISION_EXEMPT` içinde **gerekçesiyle** listelenmesini
+  arar. Üç yeni kontrolün hepsi kasıtlı bozma testinden geçti.
+- **Kayıt:** `DEVELOPMENT_HISTORY.md` içindeki `HD-007`.
+- **Problem:** Bugün çizim **doğrulanmıyor, sadece üretiliyor.** Bir koltuk
+  duvarın içine, kapı açılım yayının üstüne veya odanın tamamen dışına
+  konabilir; kolon bir odanın ortasında durabilir. Ne `validate.py` ne golden
+  raporu bunu görür — golden'ın işi "çıktı beklenmedik şekilde değişti mi",
+  "çizim doğru mu" değil. Bu ikisi farklı sorulardır ve karıştırılması
+  kolaydır.
+
+#### KARAR (rev-12): ayrı modül — ama modüllerin geometrisini BİLMEDEN
+
+Soru "ayrı modül mü, her modül kendi mi" biçiminde sorulduğunda iki cevap da
+kısmen doğrudur, çünkü ortada **tek bir kontrol sınıfı yoktur, iki tane
+vardır.** Ayrım aritedir:
+
+| Arite | Soru | Sahibi | Bugünkü durum |
+| ----- | ---- | ------ | ------------- |
+| 1 (tekil) | "Kendi verim geçerli mi?" — oda poligonu kapalı mı, açıklık host duvardan geniş mi, kolon kesiti katalogda var mı | **ilgili modül** | kısmen var (`validate.py::check_rooms` / `check_walls` / `check_openings`) |
+| 2+ (çift) | "İki FARKLI eleman sınıfı aynı yeri mi işgal ediyor?" — tefriş ↔ duvar, tefriş ↔ kapı yayı, kolon ↔ tefriş | **`scripts/collision/`** | YOK |
+
+**Endüstri karşılığı nettir.** BIM'de modelleme aracı kendi disiplininin
+tutarlılığını denetler; **disiplinler arası çakışma denetimi ayrı bir
+araçtır** — Navisworks *Clash Detective*, Solibri *Model Checker*. Hiçbir BIM
+aracı "mimari model mekanik modeli de denetlesin" demez, çünkü o zaman kural N
+modüle dağılır ve hiçbiri bütünü göremez. Aynı sebeple burada da tekil
+doğrulama modülde, çift doğrulama ayrı motorda kalır.
+
+**Modül bağımsızlığı nasıl korunuyor (kararın kritik noktası):**
+`scripts/collision/` **hiçbir çizim modülünü import etmez.** Bağımlılık
+TERSİNE çevrilir:
+
+- `collision/` yalnızca **anonim şekil** tanır: `CollisionShape(tag, id,
+  polygon)`. Koltuğun ne olduğunu bilmez, yalnızca bir çokgen ve bir etiket
+  görür.
+- Her çizim modülü **kendi ayak izini** üretir:
+  `scripts/<modül>/collision.py::footprints(floor, context) -> list[CollisionShape]`.
+  Bir elemanın kapladığı alanı, onu ÇİZEN modül bilir — tefrişin rotasyonunu
+  ve katalog ölçüsünü `furniture/`, kapı açılım sektörünü `openings/`, kolon
+  kesitini `columns/` bilir. Bu bilgi başka yere kopyalanmaz.
+- Böylece "sahiplik belirsizleşir" itirazı ortadan kalkar: **ayak izinin
+  sahibi modül, çakışma kuralının sahibi motordur.** İkisi çakışmaz.
+
+Benzetme: bir fizik motoru arabayı ve ağacı tanımaz, yalnızca collider tanır.
+
+**Dosya düzeni:**
+
+```
+scripts/collision/
+  __init__.py   public API (walls/ ve furniture/ deseni — sadece dışa açılan)
+  shapes.py     CollisionShape + dikdörtgen / çokgen / yay-sektörü üreticileri
+  matrix.py     CollisionPolicy: (tag_a, tag_b) -> FORBID | WARN | IGNORE + tolerans
+  engine.py     kaba faz (AABB) -> ince faz (çokgen kesişim alanı) -> Clash kayıtları
+  report.py     ClashReport: önem sırası, metin çıktısı, çıkış kodu
+  scene.py      Scene.from_context(context): ayak izi sağlayıcılarını çağırır
+  CLAUDE.md
+```
+
+`scene.py`, tüm sağlayıcıları bilen TEK dosyadır ve bu liste **açıktır** —
+import-time kayıt sihri yoktur, çünkü sessizce kaybolan bir kayıt sessizce
+denetlenmeyen bir modül demektir. Yeni modül eklemek = bu listeye bir satır.
+
+**Politika matrisi (varsayılan; `matrix.py`):**
+
+| Çift | Politika | Gerekçe |
+| ---- | -------- | ------- |
+| tefriş ↔ tefriş | **FORBID** | iki mobilya aynı yerde duramaz |
+| tefriş ↔ kolon | **FORBID** | taşıyıcı geçilemez |
+| tefriş ↔ kapı açılım sektörü | **FORBID** | kapı açılamaz hale gelir |
+| tefriş oda sınırının DIŞINDA | **FORBID** | yerleşim yanlış mahalde |
+| tefriş ↔ duvar | **WARN**, tolerans üstünde FORBID | dolap duvara DAYANIR; mm ölçeğinde temas normaldir |
+| kolon ↔ duvar | **IGNORE** | kolonun duvar içinde olması TASARIMDIR, hata değil |
+| kolon ↔ oda | **IGNORE** | kolon bir odanın içinde durabilir |
+| kolon ↔ kolon | **FORBID** | |
+| her şey ↔ aks | **IGNORE** | aks bir referans çizgisidir, madde değildir |
+
+`CONTACT_TOLERANCE = 5 mm`: bunun altındaki örtüşme **temas**tır, çakışma
+değil. Katalog ölçüsü yuvarlaması ve duvara dayalı yerleşim bu bandın içinde
+kalır; tolerans olmadan her normal yerleşim hata üretirdi.
+
+**Nerede çalışır: `validate.py` içinde, ÜRETİMDEN ÖNCE.** Sebep, hata
+mesajının hangi dilde olduğudur. Context seviyesinde rapor şunu der:
+`K1 katinda f_koltuk3 (koltuk_3lu) w12 duvariyla 0.42 m2 cakisiyor` — bu
+doğrudan `context.json`da düzeltilir. Aynı hata DXF seviyesinde
+`handle 2F4 ile handle 3A1 kesisiyor` olurdu ve düzeltilemezdi. Kök
+`CLAUDE.md` zaten "Doğrulama geçmeden DXF üretilmez" diyor; bloklayıcı kapı
+oraya aittir.
+
+**Neden `golden_report.py`ye kural olarak EKLENMEDİ (eski Fikir 2 reddedildi):**
+Golden'ın sorusu "çıktı beklenmedik şekilde değişti mi", çakışma denetiminin
+sorusu "tasarım doğru mu". Birleştirmenin somut bedeli şudur: birleştirilirse
+**bir golden referansı asla kasıtlı çakışma içeremez**, çünkü çalıştığı anda
+patlar. Oysa beklenen çıktısı BELİRLİ BİR ÇAKIŞMA LİSTESİ olan bir referans
+(`cakisma_negatif` adında), çakışma motorunun kendisini doğrulamanın tek
+yoludur — projenin beş semantik kuralı da tam olarak böyle, kasıtlı bozma
+testiyle doğrulanmıştı. Ayrı tutulunca bu mümkün olur.
+
+**Uygulama sırası:**
+
+1. `shapes.py` + `engine.py` + negatif testler (elle kurulmuş iki dikdörtgen;
+   kesişim alanı elle hesaplanabilir olmalı).
+2. `furniture/collision.py` + `columns/collision.py` — en somut fayda burada.
+3. `validate.py` entegrasyonu ve politika matrisi; bloklayıcı davranış.
+4. `openings/collision.py` — kapı açılım sektörü.
+5. `cakisma_negatif` golden referansı (beklenen çıktı = belirli çakışma listesi).
+6. `doc_check.py` kuralı (aşağıda).
+
+**`doc_check.py` bağı:** "Yeni bir modül eklendiğinde 'bu modül hangi modülle
+çakışabilir?' sorusu açıkça yanıtlanır" kuralı bugün DÜZYAZIDIR, bu yüzden
+kaçabilir. DEV-019 uygulandığında şu kontrol eklenir: geometri üreten her
+modülün ya `collision.py` dosyası olmalı ya da `collision/scene.py` içindeki
+`COLLISION_EXEMPT` sözlüğünde **gerekçesiyle** listelenmiş olmalıdır. rev-11'de
+düzyazı kuralın mekanikleştirilmesiyle aynı desen.
+
+- **Açık kararlar (uygulamada netleşecek):** Kapı açılım sektörü kaç doğru
+  parçayla yaklaşılacak (deterministiklik için SABİT olmalı, ölçeğe bağlı
+  değil)? Duvarın ayak izi rail çokgeni mi yoksa merkez çizgi + kalınlık mı
+  olacak? Çakışma yalnızca AYNI kat içinde aranır (şimdilik evet; katlar arası
+  düşey hizalama ayrı bir konudur, bkz. `scripts/columns/CLAUDE.md`).
+
+### DEV-020 — Proje ↔ sistem sürüm uyumu
+
+- **Durum:** COMPLETED (rev-12)
+- **Sonuç:** `scripts/version.py` kuruldu. Üç mekanizma AMACA GÖRE ayrıldı:
+  `meta.schema_version` **kapıdır** (tek semver; MAJOR farkta `validate.py`
+  üretimi DURDURUR), modül `CONTRACT_VERSION` **teşhistir** (10 modülün
+  hepsinde bildirildi, bloklamaz), `output/provenance.json` **kayıttır** (her
+  üretimde yazılır: schema sürümleri + modül sözleşmeleri + git commit +
+  zaman damgası). Alan bugün **opsiyoneldir** — yoksa `1.0.0` varsayılır ve
+  UYARI basılır; `context.json` ile iki golden referansı alanı taşıyor.
+- **Doğrulama:** MAJOR farkta `exit 1` ve net gerekçe; MINOR farkta uyarı +
+  `exit 0` (ikisi de çalıştırıldı). `doc_check.py`, `CONTRACT_VERSION` taşıyan
+  her modülün `version.py::CONTRACT_MODULES` ile birebir örtüşmesini denetler
+  — bayat/eksik kayıt üretimi değil dokümanı bozar, ve bu kasıtlı bozmayla
+  sınandı.
+- **Görünür provenance:** Kapak paftasının eteğinde artık `URETIM: <tarih
+  saat>` (sol) ve `SISTEM: <schema sürümü>` (sağ) yazar — çıktının ne zaman ve
+  neyle üretildiği çizimin kendisinden okunur.
+- **Kayıt:** `DEVELOPMENT_HISTORY.md` içindeki `HD-007`.
+- **Kullanıcı gerekçesi:** Her proje diğerlerinden bağımsızdır ve proje verisi
+  (tefriş yerleşimi dahil) kendi dizininde durur. Bir proje eski bir sistem
+  sürümüyle üretildikten sonra modüllerde değişiklik yapılırsa, o projenin
+  sistemle **entegrasyonunun kopup kopmadığı** analiz edilebilmelidir. Sistem
+  olgunlaşınca revizyonlar geriye dönük desteği korur; yalnızca **major**
+  güncellemede eski projelerin güncellenmesi gerekir.
+- **Mevcut durum:** Sürüm bilgisi HİÇ tutulmuyor. `context.json` hangi sistem
+  sürümüyle üretildiğini bilmiyor; `rev_history` yalnızca PROJE revizyonunu
+  sayıyor, sistemin sürümünü değil. Bugün tek proje üzerinden ilerlendiği için
+  sorun görünmüyor — ikinci proje açıldığında görünür olacak.
+
+#### KARAR (rev-12): ikisi de — ama aynı iş için değil
+
+Kullanıcı "sanırım modül bazlı daha iyi olabilir" dedi. Sezgi doğru, ancak
+modül bazlı sürüm **teşhis** için doğrudur, **kapı** için değildir. Üç gerekçe:
+
+**1) Sürümlenecek şey KOD DEĞİL, SÖZLEŞMEDİR.** rev-11'de `furniture/` tek
+dosyadan beş dosyaya bölündü: kod tamamen değişti, etkilenen proje SIFIR. Buna
+karşılık `floors[].furniture[].position` alanı `origin` olarak yeniden
+adlandırılsa tek satır kod değişir ve HER proje kırılır. Modüle `__version__`
+koyup her refactor'da artırmak, hiçbir projeyi ilgilendirmeyen bir sayıyı
+büyütür — ve kısa sürede gürültüye dönüşen bir sayıya kimse bakmaz.
+
+**2) Modül bazlı semver'in ait olduğu yer bir PAKET DEPOSUDUR** (npm, pip):
+orada her paketin bağımsız bir yayın temposu vardır, bu yüzden uyum matrisi
+gerekir. Burada modüller bağımsız yayınlanmaz — hepsi tek repoda, tek
+commit'te, her zaman BİRLİKTE gider. Bağımsız tempo yokken N×N uyum matrisi,
+arkasında gerçek bir karar olmayan bir bakım yüküdür.
+
+**3) İstenen şey aslında bir TEŞHİStir:** "eski proje koptu mu, koptuysa
+neyden?". Bu soruyu **provenance** (ne kullanıldı, kaydet) yanıtlar;
+**versioning** (neyle uyumluyum, beyan et) değil. İkisi farklı mekanizmadır ve
+karıştırılması bu konudaki asıl tuzaktır.
+
+Bu yüzden ayrım **amaca göre** yapılır:
+
+| Mekanizma | Rolü | Bloklar mı | Ne zaman artar |
+| --------- | ---- | ---------- | -------------- |
+| `meta.schema_version` — TEK, semver | **kapı** | MAJOR farkta EVET | `context.json`ın şekli geriye uyumsuz değiştiğinde |
+| modül `CONTRACT_VERSION` | **teşhis** | hayır | o modülün context'ten OKUDUĞU alanlar değiştiğinde |
+| `provenance` bloğu (git commit + modül sözleşme sürümleri + zaman damgası) | **kayıt** | hayır | her üretimde yazılır |
+
+Kapı bağımsız bir sayı DEĞİLDİR: `SCHEMA_VERSION`ın MAJOR'ı, herhangi bir
+modül sözleşmesi geriye uyumsuz değiştiğinde artar — yani modül sözleşmelerinin
+türevidir. Böylece Fikir 1'in tek ve temiz karar noktası ile Fikir 2'nin
+"hangi modül sorumlu" cevabı birlikte elde edilir, Fikir 2'nin uyum matrisi
+maliyeti ödenmeden.
+
+**Migrasyon asla otomatik değildir.** Major kırılımda eski proje sessizce
+dönüştürülmez. Sebep kök `CLAUDE.md`nin kendi kuralıdır: proje verisi
+uydurulmaz ve her değişiklik `requests.jsonl` + `rev_history` üzerinden geçer.
+Otomatik migrasyon bu zinciri kırar ve provenance yalan söylemeye başlar.
+Doğru yol: `scripts/migrate.py --from 1 --to 2 --dry-run` bir RAPOR üretir,
+kullanıcı onaylar, dönüşüm normal bir revizyon olarak işlenir.
+
+**Kademeli giriş (mevcut projeleri kırmadan):** `meta.schema_version` önce
+**opsiyonel** eklenir; yoksa `1.0.0` varsayılır ve UYARI verilir. Mevcut
+`context.json` ile `golden/` altındaki referanslar bir revizyonda alanla
+doldurulur. ANCAK ondan sonra schema'da `required` yapılır — bugün doğrudan
+required yapmak her context'i (iki golden referansı dahil) anında geçersiz
+kılardı.
+
+**`doc_check.py` bağı:** `scripts/version.py::SCHEMA_VERSION` ile
+`schema/design.schema.json`da bildirilen sürüm birebir eşleşmeli;
+`CONTRACT_VERSION` taşıyan her modül mimari tablosunda anılmalıdır. Yine
+düzyazı yerine mekanik kontrol.
+
+- **Açık kararlar:** `provenance` bloğu `context.json` içinde mi, yoksa
+  `output/` yanında ayrı bir dosyada mı dursun (context şişer, ama "proje
+  verisi proje dizininde" ilkesi context'i işaret eder)?
+  `PROVENANCE_TEMPLATE.json` bu şemaya çekilecek mi? Modül sözleşme sürümü
+  modül başına tek sayı mı olacak (şimdilik evet; okunan her alan için ayrı
+  sürüm erken optimizasyon görünüyor)?
 
 ## Modül kataloğu — her modülün plan maddesi
 
@@ -456,68 +696,6 @@ ZK-04        <- 2. satir: kat kodu + mahal no
   olacak? Öznitelikler `ATTRIB` mi olacak yoksa düz `TEXT` mi (öznitelik
   kullanılırsa `validate.py`nin ve golden raporunun bunları okuması gerekir)?
   Ölçekli blokta metin yüksekliği nasıl korunacak?
-
-### DEV-019 — Çakışma denetimi (modüller arası)
-
-- **Durum:** PLANNED (kullanıcı 2026-09-23'te plan olarak istedi)
-- **Problem:** Bugün çizim **doğrulanmıyor, sadece üretiliyor.** Bir koltuk
-  duvarın içine, kapı açılım yayının üstüne veya odanın tamamen dışına
-  konabilir; kolon bir odanın ortasında durabilir. Ne `validate.py` ne golden
-  raporu bunu görür — golden'ın işi "çıktı beklenmedik şekilde değişti mi",
-  "çizim doğru mu" değil. Bu ikisi farklı sorulardır ve karıştırılması
-  kolaydır.
-- **Kapsam adayı:** tefriş ↔ oda sınırı, tefriş ↔ duvar, tefriş ↔ tefriş,
-  tefriş ↔ kapı açılım alanı (swing), tefriş ↔ kolon, kolon ↔ oda, kolon ↔
-  kolon.
-- **KARARA BAĞLANMAMIŞ — kullanıcı ile ayrıca tartışılacak:** Çakışma denetimi
-  **ayrı bir modül mü** olacak (`scripts/collision/`, tüm geometriyi toplayıp
-  merkezî olarak denetleyen), **yoksa her modül kendi çakışma kontrolünü mü**
-  yürütecek (tefriş kendi yerleşimini, kolon kendi konumunu doğrular)?
-  - *Ayrı modül:* çapraz ilişkileri tek yerde görür, kural eklemek kolaydır;
-    ama her modülün geometrisini bilmek zorunda kalır ve modül bağımsızlığını
-    zayıflatır.
-  - *Modül içi:* bağımsızlığı korur; ama "tefriş ↔ kapı" gibi İKİ modülü
-    ilgilendiren kontrolün sahibi belirsizleşir ve kural ikiye bölünür.
-  Bu karar verilmeden uygulamaya geçilmez.
-- **Fikir 1 — Geometrik çakışma çekirdeği:** Poligon kesişimi için zaten
-  `validate.py::polygon_intersection_area` var (oda çakışması için
-  kullanılıyor). Tefriş/kolon için gerçek sınırlar `ezdxf.bbox` ile blok
-  çözülerek alınabilir (INSERT'i doğru çözdüğü doğrulandı). Yani çekirdek
-  hazır; eksik olan hangi çiftlerin denetleneceği ve sonucun bloklayıcı mı
-  uyarı mı olduğu.
-- **Fikir 2 — Semantik kural olarak eklemek:** Ayrı bir modül kurmak yerine
-  `golden_report.py`ye `furniture_inside_room`, `no_furniture_wall_overlap`,
-  `door_swing_clear` kuralları eklemek. Mevcut kural altyapısı ve negatif test
-  deseni hazır; en hızlı yol budur ama "üretim durur mu" kararını vermez.
-- **Açık kararlar:** Çakışma bloklayıcı HATA mı, UYARI mı? Kapı açılım yayı
-  için tolerans ne? Kolonun duvar içinde olması normaldir — hangi çiftler
-  muaf tutulacak?
-
-### DEV-020 — Proje ↔ sistem sürüm uyumu
-
-- **Durum:** PLANNED (kullanıcı 2026-09-23'te ilke olarak bildirdi)
-- **Kullanıcı gerekçesi:** Her proje diğerlerinden bağımsızdır ve proje verisi
-  (tefriş yerleşimi dahil) kendi dizininde durur. Bir proje eski bir sistem
-  sürümüyle üretildikten sonra modüllerde değişiklik yapılırsa, o projenin
-  sistemle **entegrasyonunun kopup kopmadığı** analiz edilebilmelidir. Sistem
-  olgunlaşınca revizyonlar geriye dönük desteği korur; yalnızca **major**
-  güncellemede eski projelerin güncellenmesi gerekir.
-- **Mevcut durum:** Sürüm bilgisi HİÇ tutulmuyor. `context.json` hangi sistem
-  sürümüyle üretildiğini bilmiyor; `rev_history` yalnızca PROJE revizyonunu
-  sayıyor, sistemin sürümünü değil. Bugün tek proje üzerinden ilerlendiği için
-  sorun görünmüyor — ikinci proje açıldığında görünür olacak.
-- **Fikir 1 — Tek sistem sürümü + uyum kapısı:** `meta.system_version`
-  (semver) alanı; `generate_dxf.py` kendi sürümüyle karşılaştırır. Major fark
-  varsa üretim DURUR ve projenin güncellenmesi istenir; minor/patch farkta
-  yalnızca uyarı verir. Basit ve tek karar noktası.
-- **Fikir 2 — Modül bazlı sürüm + uyum matrisi:** Her modül `__version__`
-  taşır, `context.json` üretim anında kullandığı modül sürümlerini kaydeder
-  (provenance). Böylece "bu proje yalnızca `furniture/` değiştiği için mi
-  etkileniyor" sorusu yanıtlanabilir. Daha ayrıntılı ama daha fazla bakım
-  ister.
-- **Açık kararlar:** Sürüm tek mi modül bazlı mı? Major kırılımda eski proje
-  otomatik migrate edilecek mi, yoksa yalnızca raporlanıp kullanıcıya mı
-  bırakılacak? `PROVENANCE_TEMPLATE.json` bu bilgiyi taşıyacak mı?
 
 ## BACKLOG
 

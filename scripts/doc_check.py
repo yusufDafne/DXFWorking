@@ -21,6 +21,15 @@ Kontroller:
 7. `scripts/CLAUDE.md` modul tablosunda UYGULANDI isaretli bir satirda anilan
    her sinif adi o modulde GERCEKTEN tanimli olmali; bir modul tabloda birden
    fazla kez listelenmemelidir.
+8. CAKISMA KAPSAMI (DEV-019): geometri ureten her modulun ya kendi
+   `collision.py` ayak izi saglayicisi olmali, ya da `collision/scene.py`
+   icindeki `COLLISION_EXEMPT` sozlugunde GEREKCESIYLE listelenmis olmalidir.
+   Bu, "yeni bir modul eklendiginde 'bu modul hangi modulle cakisabilir?'
+   sorusu acikca yanitlanir" kuralini duzyazi olmaktan cikarip MEKANIK hale
+   getirir - tipki 6. maddenin yaptigi gibi.
+9. SOZLESME SURUMU (DEV-020): her modul `CONTRACT_VERSION` tasimali ve
+   `version.py::CONTRACT_MODULES` listesiyle BIREBIR ortusmelidir; aksi halde
+   provenance kaydi eksik/bayat cikar.
 
 Kullanim:
     python scripts/doc_check.py
@@ -244,8 +253,107 @@ def check_architecture_table() -> list[str]:
     return errors
 
 
+def _drawing_modules() -> list[Path]:
+    """`scripts/` altindaki gercek moduller (paket olanlar)."""
+    modules = []
+    for module in sorted((ROOT / "scripts").iterdir()):
+        if not module.is_dir() or module.name.startswith(("_", ".")):
+            continue
+        if (module / "__init__.py").exists():
+            modules.append(module)
+    return modules
+
+
+def check_collision_coverage() -> list[str]:
+    """Her modul cakisma denetimine ya KATILIR ya da GEREKCEYLE muaftir.
+
+    `collision` ve `version` saf Python'dur (ezdxf/jsonschema gerektirmez),
+    bu yuzden buradan import edilebilirler; cizim modulleri hala import
+    EDILMEZ (bkz. `module_symbols`, ast ile okur).
+    """
+    errors: list[str] = []
+    sys.path.insert(0, str(ROOT / "scripts"))
+    try:
+        from collision import COLLISION_EXEMPT, FOOTPRINT_PROVIDERS
+    except ImportError as exc:
+        return [f"collision modulu import edilemedi: {exc}"]
+
+    provider_modules = {path.split(".")[0] for path in FOOTPRINT_PROVIDERS}
+
+    for module in _drawing_modules():
+        name = module.name
+        has_provider = (module / "collision.py").exists()
+        is_exempt = name in COLLISION_EXEMPT
+        if has_provider and is_exempt:
+            errors.append(
+                f"scripts/{name}/: hem collision.py var hem COLLISION_EXEMPT "
+                f"icinde listelenmis - biri kaldirilmalidir."
+            )
+        elif not has_provider and not is_exempt:
+            errors.append(
+                f"scripts/{name}/: ne collision.py ayak izi saglayicisi var ne "
+                f"de COLLISION_EXEMPT icinde gerekcesi yazili. 'Bu modul hangi "
+                f"modulle cakisabilir?' sorusu yanitlanmamis (DEV-019)."
+            )
+        if has_provider and name not in provider_modules:
+            errors.append(
+                f"scripts/{name}/collision.py var ama collision/scene.py "
+                f"FOOTPRINT_PROVIDERS listesinde YOK - saglayici hic cagrilmiyor."
+            )
+
+    existing = {m.name for m in _drawing_modules()}
+    for name, reason in sorted(COLLISION_EXEMPT.items()):
+        if name not in existing:
+            errors.append(
+                f"COLLISION_EXEMPT: '{name}' diye bir modul YOK (bayat kayit)."
+            )
+        if not str(reason).strip():
+            errors.append(f"COLLISION_EXEMPT['{name}']: gerekce bos.")
+
+    for path in FOOTPRINT_PROVIDERS:
+        module_name, _, leaf = path.partition(".")
+        if not (ROOT / "scripts" / module_name / f"{leaf}.py").exists():
+            errors.append(
+                f"collision/scene.py: '{path}' saglayicisi listelenmis ama "
+                f"scripts/{module_name}/{leaf}.py bulunamadi."
+            )
+    return errors
+
+
+def check_contract_versions() -> list[str]:
+    """Modul sozlesme surumleri ile `version.CONTRACT_MODULES` ortusuyor mu."""
+    errors: list[str] = []
+    sys.path.insert(0, str(ROOT / "scripts"))
+    try:
+        from version import CONTRACT_MODULES
+    except ImportError as exc:
+        return [f"version modulu import edilemedi: {exc}"]
+
+    declared = set(CONTRACT_MODULES)
+    for module in _drawing_modules():
+        has_version = "CONTRACT_VERSION" in module_symbols(module)
+        if has_version and module.name not in declared:
+            errors.append(
+                f"scripts/{module.name}/: CONTRACT_VERSION tasiyor ama "
+                f"version.py::CONTRACT_MODULES icinde YOK - provenance kaydina "
+                f"girmiyor (DEV-020)."
+            )
+        if not has_version:
+            errors.append(
+                f"scripts/{module.name}/__init__.py: CONTRACT_VERSION "
+                f"bildirmemis (DEV-020)."
+            )
+    for name in sorted(declared - {m.name for m in _drawing_modules()}):
+        errors.append(
+            f"version.py::CONTRACT_MODULES: '{name}' diye bir modul YOK "
+            f"(bayat kayit)."
+        )
+    return errors
+
+
 def run() -> list[str]:
-    return check_tasks() + check_paths() + check_architecture_table()
+    return (check_tasks() + check_paths() + check_architecture_table()
+            + check_collision_coverage() + check_contract_versions())
 
 
 def main() -> int:
@@ -255,8 +363,8 @@ def main() -> int:
         for error in errors:
             print(f"  - {error}")
         return 1
-    print("Dokuman tutarliligi TAMAM: gorev durumlari, ozet tablo, HD atiflari "
-          "ve modul/golden yollari ortusuyor.")
+    print("Dokuman tutarliligi TAMAM: gorev durumlari, ozet tablo, HD atiflari, "
+          "modul/golden yollari, cakisma kapsami ve sozlesme surumleri ortusuyor.")
     return 0
 
 

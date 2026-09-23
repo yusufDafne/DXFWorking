@@ -1,20 +1,20 @@
 {
-  "source": "fixtures/minimal",
-  "entity_count": 111,
+  "source": "golden/minimal",
+  "entity_count": 113,
   "entity_types": {
     "ARC": 1,
     "CIRCLE": 16,
     "DIMENSION": 5,
     "LINE": 37,
     "LWPOLYLINE": 14,
-    "TEXT": 38
+    "TEXT": 40
   },
   "layers": {
     "AKS": 45,
     "CERCEVE": 17,
     "DUVARLAR": 19,
     "KAPI-PENCERE": 7,
-    "METIN": 21,
+    "METIN": 23,
     "OLCU": 2
   },
   "modelspace_bbox": [

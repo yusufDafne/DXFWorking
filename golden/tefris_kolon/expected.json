@@ -1,6 +1,6 @@
 {
-  "source": "fixtures/tefris_kolon",
-  "entity_count": 176,
+  "source": "golden/tefris_kolon",
+  "entity_count": 178,
   "entity_types": {
     "ARC": 2,
     "CIRCLE": 19,
@@ -9,7 +9,7 @@
     "INSERT": 23,
     "LINE": 51,
     "LWPOLYLINE": 23,
-    "TEXT": 43
+    "TEXT": 45
   },
   "layers": {
     "AKS": 51,
@@ -18,7 +18,7 @@
     "KAPI-PENCERE": 12,
     "KOLON": 9,
     "KOLON-TARAMA": 9,
-    "METIN": 24,
+    "METIN": 26,
     "OLCU": 2,
     "TEFRIS-ISLAK": 5,
     "TEFRIS-MUTFAK": 5,

@@ -9,6 +9,11 @@ from .render import DefaultPlanOpeningStyle, OpeningSymbolStyle, draw_wall_netwo
 from .scan import JunctionReport, NetworkTopologyScanner, RoomPolygonScanner, ScannedEdge
 from .wall import Wall
 
+# Bu modulun CONTEXT SOZLESMESI surumu (DEV-020). KOD surumu DEGILDIR:
+# yalnizca bu modulun context.json'dan OKUDUGU alanlar degistiginde artar;
+# refactor artirmaz. Bkz. scripts/version.py
+CONTRACT_VERSION = "1.0"
+
 __all__ = [
     "DEFAULT_WALL_CATALOG",
     "DefaultPlanOpeningStyle",

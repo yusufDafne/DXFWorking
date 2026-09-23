@@ -35,6 +35,11 @@ from .groups import FURNITURE_GROUPS, FurnitureGroup, ensure_furniture_layers
 from .item import FurnitureItem
 from .render import FurnitureBlocks, FurnitureRenderer, FurnitureSchedule
 
+# Bu modulun CONTEXT SOZLESMESI surumu (DEV-020). KOD surumu DEGILDIR:
+# yalnizca bu modulun context.json'dan OKUDUGU alanlar degistiginde artar;
+# refactor artirmaz. Bkz. scripts/version.py
+CONTRACT_VERSION = "1.0"
+
 __all__ = [
     "BLOCK_PREFIX",
     "DEFAULT_FURNITURE_CATALOG",

@@ -32,6 +32,16 @@ kalıcı kurallardır. Aşağıdaki kurallar istisnasız uygulanır.
   ve bugün `scripts/golden_report.py --rules` ile `--golden-set` üzerinden
   yürür. Yeni bir modül eklendiğinde "bu modül hangi modülle çakışabilir?"
   sorusu açıkça yanıtlanır ve gerekiyorsa bir kural eklenir.
+  **Çakışma denetimi rev-12'de UYGULANDI:** tekil ("kendi verim geçerli mi")
+  doğrulama ilgili modülde, çift ("iki farklı eleman aynı yeri mi işgal
+  ediyor") denetim `scripts/collision/` motorunda yaşar. Motor hiçbir çizim
+  modülünü import etmez; her modül kendi ayak izini
+  `collision.py::footprints(floor, context)` ile verir, böylece bağımsızlık
+  korunurken kural tek yerde toplanır. Kapı `validate.py`dedir ve **üretimi
+  durdurur**. Bu gereklilik artık mekaniktir: `doc_check.py`, geometri üreten
+  her modülün ya bir `collision.py`si olmasını ya da
+  `collision/scene.py::COLLISION_EXEMPT` içinde **gerekçesiyle**
+  listelenmesini arar. Ayrıntı: `scripts/collision/CLAUDE.md`.
 - **Her proje diğerlerinden BAĞIMSIZDIR ve proje verisi proje dizininde
   kalır.** Tefriş yerleşimi, oda/duvar geometrisi, mahal numaraları gibi
   **proje bazlı adresler yalnızca o projenin `context.json`'ında** bulunur.
@@ -113,9 +123,13 @@ geliştirme görevleri, tamamlanmış geçmiş, fikirler ve geliştirici notlar�
    olarak uygulanır.
 3. Değişiklik uygulandıktan sonra `scripts/validate.py` ile:
    - JSON Schema (`schema/design.schema.json`) doğrulaması,
+   - **sürüm kapısı** (`meta.schema_version` ↔ `scripts/version.py`;
+     MAJOR farkta üretim DURUR — bkz. "Sürüm uyumu"),
    - geometrik sağlık kontrolleri (kapalı poligon mu, çakışan oda var mı,
      kapı/pencere genişliği ait olduğu duvardan büyük mü, alanlar toplamı
-     mantıklı mı)
+     mantıklı mı),
+   - **çakışma denetimi** (`scripts/collision/`; tefriş odanın dışında mı,
+     duvara/kolona/kapı açılım yayına giriyor mu — bkz. "Çakışma denetimi")
      yapılır. **Doğrulama geçmeden DXF üretilmez.**
 4. Doğrulama başarılıysa `scripts/generate_dxf.py` çalıştırılıp
    `output/plan.dxf` sıfırdan yeniden üretilir.
@@ -131,12 +145,58 @@ geliştirme görevleri, tamamlanmış geçmiş, fikirler ve geliştirici notlar�
      (modüle özel) altındaki küçük, izole referans projelerini baştan üretip
      aynı kontrolleri uygular. Bir modül bozulduğunda hangi modül olduğu
      doğrudan görünür.
-7. **Doküman tutarlılığı:** `python scripts/doc_check.py` çalıştırılır. Bu
+7. **Çakışma motoru self-test'i:** `python scripts/collision/selftest.py`
+   çalıştırılır. Motorun işi hata BULMAKTIR; "temiz döndü" tek başına hiçbir
+   şey kanıtlamaz (motor hiç çalışmasa da temiz dönerdi), bu yüzden kasıtlı
+   bozulmuş bir kat üzerinde beklenen bulguların TAM OLARAK üretildiği
+   sınanır.
+8. **Doküman tutarlılığı:** `python scripts/doc_check.py` çalıştırılır. Bu
    kontrol, "çalışma sonunda dokümanları güncelle" kuralını düzyazı olmaktan
    çıkarıp MEKANİK hale getirir: görev durumu ile bulunduğu bölüm, durum özeti
    tablosu, `HD-xxx` atıfları ve modül/golden yapısı örtüşmüyorsa hata verir.
    Ölçüm raporu tek başına yeterli DEĞİLDİR: bir duvar kaysa veya etiket
    yanlış odaya yazılsa entity sayıları değişmeyebilir.
+
+## Çakışma denetimi (rev-12'den itibaren)
+
+- Çizim artık yalnızca ÜRETİLMİYOR, **doğrulanıyor**. Bir tefrişin duvara,
+  kolona, başka bir tefrişe veya **kapı açılım yayına** girmesi ve bildirilen
+  odaların dışına taşması `validate.py` içinde, **DXF üretilmeden önce**
+  denetlenir. Uygulaması `scripts/collision/`dur; ayrı ad-hoc çakışma kodu
+  yazılmaz.
+- **Ayrım aritedir.** "Kendi verim geçerli mi" (poligon kapalı mı, açıklık
+  host duvardan geniş mi) **ilgili modülün** işidir ve `validate.py::check_*`
+  içinde kalır. "İki FARKLI eleman aynı yeri mi işgal ediyor" ise çakışma
+  motorunun işidir.
+- **Motor çizim modüllerini bilmez.** Yalnızca anonim
+  `CollisionShape(tag, id, polygon)` tanır; her modül kendi ayak izini
+  `scripts/<modül>/collision.py::footprints(floor, context)` ile verir.
+- Politika üç seviyelidir: **FORBID** üretimi durdurur, **WARN** raporlanır,
+  **IGNORE** normaldir. Kolonun duvar veya oda içinde olması TASARIMDIR ve
+  IGNORE'dur; tefrişin duvara 5 mm'den fazla girmesi UYARI, tefrişin tefrişe /
+  kolona / kapı sektörüne girmesi ve oda dışına taşması HATADIR.
+- Tolerans **alan değil derinliktir** (`CONTACT_TOLERANCE = 5 mm`): dolabın
+  duvara dayanması normaldir, duvarın içinden geçmesi değildir.
+
+## Sürüm uyumu ve provenance (rev-12'den itibaren)
+
+- **Sürümlenen şey kod değil, SÖZLEŞMEDİR.** Bir modülün iç yapısının
+  değişmesi hiçbir projeyi etkilemez; `context.json`'dan OKUDUĞU alanların
+  değişmesi etkiler.
+- Üç mekanizma amaca göre ayrılır:
+  - `meta.schema_version` (tek semver) **KAPIDIR**: `scripts/version.py`
+    içindeki `SCHEMA_VERSION` ile MAJOR farkı varsa üretim DURUR.
+    Minor/patch farkı yalnızca uyarı verir. Bugün opsiyoneldir (yoksa
+    `1.0.0` varsayılır + uyarı); tüm context'ler taşıdıktan sonra `required`
+    yapılacaktır.
+  - Her modülün `CONTRACT_VERSION`'u **TEŞHİSTİR** (bloklamaz), yalnızca o
+    modülün context'ten okuduğu alanlar değiştiğinde artar.
+  - `output/provenance.json` **KAYITTIR**: her üretimde schema sürümleri,
+    modül sözleşmeleri, git commit ve zaman damgası yazılır.
+    `context.json`'a YAZILMAZ — orası proje tasarım verisidir.
+- **Otomatik migrasyon YOKTUR.** Major kırılımda eski proje sessizce
+  dönüştürülmez; normal bir revizyon olarak (`requests.jsonl` + `rev_history`)
+  güncellenir. Aksi halde provenance yalan söylemeye başlar.
 
 ## Duvar çizim standardı (Türkiye standardı)
 
@@ -319,13 +379,21 @@ guncellenir.
     sayfa marjı (sol 20 / diğer 10) burada KULLANILMAZ; eşit olmayan bir
     offset görünümü verdiği için kaldırıldı.
   - **İçerik:** Proje adı (başlık), `PROJE TIPI` / `OLCEK` / `MIMAR` /
-    `TARIH` bilgi satırları ve imza alanları. İmza alanları
-    `meta.cover.signature_fields` ile sürülür (bu projede: yönetim, mimar ve
-    unvanı sonra belirlenecek iki ayrılmış alan; başlığı boş olan alan
-    `(UNVAN)` olarak işaretlenir). **Mimar adı ve tarih gibi resmi veriler
-    context.json'da yoksa UYDURULMAZ** — o satıra metin yazılmaz, elle
-    doldurulacak bir çizgi bırakılır. Ayrıntılı kapak TASARIMI ayrı bir
-    talep olarak gelecektir.
+    `TARIH` bilgi satırları ve imza alanları. **Mimar adı ve tarih gibi resmi
+    veriler context.json'da yoksa UYDURULMAZ** — o satıra metin yazılmaz, elle
+    doldurulacak bir çizgi bırakılır. Ayrıntılı kapak TASARIMI ayrı bir talep
+    olarak gelecektir.
+  - **İmza alanları (rev-12'de kullanıcı tarafından sabitlendi):** DÖRT alan
+    vardır ve 2×2 yerleşir — **MIMAR, BELEDIYE, YETKILI 1, YETKILI 2**.
+    `meta.cover.signature_fields` ile sürülür; başlığı boş bırakılan bir alan
+    `(UNVAN)` olarak işaretlenir (artık bu projede kullanılmıyor).
+  - **Üretim damgası (rev-12, kullanıcı talebi):** Kapağın eteğinde, imza
+    bandının ALTINDAKI boş şeritte iki küçük satır bulunur: solda
+    `URETIM: <tarih saat>`, sağda `SISTEM: <schema sürümü>`. Bu damga bilgi
+    satırlarındaki `TARIH` ile **AYNI ŞEY DEĞİLDİR** — o proje/onay tarihidir,
+    context.json'dan gelir ve uydurulmaz; damga ise çıktının NE ZAMAN ve
+    NEYLE üretildiğinin kaydıdır ve sistem tarafından yazılır (bkz.
+    `scripts/version.py`, `output/provenance.json`).
 - **Pafta çerçevesi:** Duvar rail mantığına benzer şekilde **çift/ofsetli
   çizgi** (dış hat + iç hat) olarak çizilir (`Sheet._draw_double_frame`),
   tek çizgili basit dikdörtgen değildir.

@@ -97,11 +97,25 @@ taşıyıcı eleman tefrişin altında kalmaz.
 Kolon aks üretmez, duvar/oda geometrisini değiştirmez. Aks kesişim eşlemesi
 yalnızca **rapordur** — kolonu aksa otomatik oturtmaz.
 
+## Çakışma ayak izi (rev-12)
+
+`columns/collision.py::footprints(floor, context)`, her kolon için ayak izini
+üretir. Dikdörtgen kesitte doğrudan `Column.corners()` kullanılır — yani
+denetlenen çokgen, **çizilen konturun ta kendisidir**; ikinci bir kopya
+tutulmaz ve çizim ile denetimin ayrışması (bu modülde en kolay kaçırılacak
+hata) yapısal olarak engellenir. Dairesel kesit 16 parçalı çokgenle
+yaklaşılır (gerçek daireden biraz küçüktür).
+
+Politika: kolon ↔ tefriş, kolon ↔ kolon ve kolon ↔ kapı açılım sektörü
+**HATA**; kolon ↔ duvar ve kolon ↔ oda **MUAF**. Ayrıntı:
+`scripts/collision/CLAUDE.md`.
+
 ## Bilinen sınırlamalar
 
-- **Kolon/duvar ve kolon/tefriş çakışması kontrol EDİLMEZ.** Kolonlar
-  duvar içinde durur (normaldir) ama bir kolon bir odanın ortasına
-  konulabilir ve validator uyarmaz.
+- **Kolon/tefriş ve kolon/kolon çakışması rev-12'de EKLENDİ** (bkz. "Çakışma
+  ayak izi"); artık üretimi durdurur. Kolon ↔ duvar ve kolon ↔ oda bilinçli
+  olarak **muaftır**: kolonun duvarın içinde ya da bir odanın ortasında
+  durması TASARIMDIR, hata değildir.
 - **Katlar arası düşey hizalama kontrol edilmez.** Üst katta kolon kayarsa
   veya kaybolursa hata verilmez; bu bilinçli bir boşluktur (karar alınmadı).
 - Kesit küçültme (üst katta 60x60 → 50x50) **otomatik değildir**; her katın

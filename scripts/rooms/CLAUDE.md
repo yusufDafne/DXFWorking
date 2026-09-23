@@ -68,6 +68,20 @@ olmadan küçük mahallerde (WC, hol) etiket odadan taşardı.
 etiket teorik olarak odadan taşabilir; bu yüzden değişiklik sonrası
 **tüm odalar için** kapsama kontrolü yapılmalıdır (rev-9'da 125/125 doğrulandı).
 
+## Çakışma ayak izi (rev-12)
+
+`rooms/collision.py::footprints(floor, context)`, her odayı `container=True`
+bir `CollisionShape` olarak verir. Oda bir çizim elemanı DEĞİL, bir
+**kapsayıcıdır**: çift-çift çakışma taramasına girmez, başka şekillerin
+(bugün tefrişin) içinde kalması beklenen hacimdir.
+
+İki odanın birbiriyle çakışması bu motorun işi değildir — o, modülün kendi
+verisinin tutarlılığıdır ve `validate.py::check_rooms` içinde kalır (arite-1).
+
+Oda poligonu **içbükey** olabilir (L şeklindeki koridor); bu yüzden içerme
+testi nokta-içinde-çokgen ile yapılır, kırpma ile değil. Ayrıntı:
+`scripts/collision/CLAUDE.md`.
+
 ## Bilinen sınırlamalar — `RoomLabeler`
 
 - İçbükey (L şeklinde) poligonlarda centroid oda dışına düşebilir; alternatif

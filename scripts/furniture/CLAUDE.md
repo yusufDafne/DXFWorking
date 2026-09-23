@@ -35,8 +35,22 @@ verisi ve sembol stilini, `walls/` ise rail boşluğunu sahiplenir. Tefriş
 modülü kapı çizmez ve kapı verisine dokunmaz.
 
 Tek bağlantı noktası şudur: **kapı açılım alanı (swing) tefriş yerleşimini
-kısıtlar.** Bu bir *doğrulama* konusudur (ileride bir çakışma kontrolü),
-sahiplik konusu değildir — bkz. "Bilinen sınırlamalar".
+kısıtlar.** Bu bir *doğrulama* konusudur, sahiplik konusu değildir. rev-12'de
+uygulandı: denetim `scripts/collision/` motoruna aittir; bu modülün tek
+sorumluluğu **kendi ayak izini** üretmektir — bkz. "Çakışma ayak izi".
+
+## Çakışma ayak izi (rev-12)
+
+`furniture/collision.py::footprints(floor, context)`, her yerleşim için
+dönmüş bir dikdörtgen `CollisionShape` üretir. Ölçü **katalogdan**, konum ve
+rotasyon **context'ten** gelir; ekleme noktası sol-alt köşedir ve dönme o
+nokta etrafındadır — yani ayak izi, çizilen blokla **birebir aynı yerdedir**.
+İkinci bir geometri kopyası tutulmaz.
+
+Motor bu modülü import ETMEZ; bağımlılık terstir (bkz.
+`scripts/collision/CLAUDE.md`). Politika: tefriş ↔ tefriş / kolon / kapı
+sektörü ve oda dışına taşma **HATA**, tefriş ↔ duvar 5 mm toleransla
+**UYARI** (dolap duvara dayanır).
 
 ## Tefriş HER ZAMAN blok olarak çizilir
 
@@ -112,11 +126,11 @@ bir karardır.
 
 ## Bilinen sınırlamalar
 
-- **Çakışma kontrolü YOK.** Tefrişin duvara, kolona, başka bir tefrişe veya
-  **kapı açılım alanına** girip girmediği kontrol edilmez. Sadece pafta taşma
-  koruması çalışır. Kapı swing çakışması gerçek projede önemlidir.
-- **Oda içinde kalma kontrolü YOK.** Tefriş, bildirilen odanın dışına
-  yerleştirilebilir; validator bunu yakalamaz.
+- **Çakışma kontrolü rev-12'de EKLENDİ** (yukarıya bakınız); aşağıdaki iki
+  boşluk kapandı: tefrişin duvara/kolona/başka tefrişe/kapı açılım alanına
+  girmesi ve odanın dışına taşması artık `validate.py` içinde üretimi
+  durdurur. Kalan sınırlama: kapı açılım **yönü** schema'da olmadığı için yay
+  varsayılan tarafa çizilir (`DEV-016`).
 - `counters[]` ile bu modül arasında **çifte sorumluluk** vardır: mutfak
   tezgahı hem `counters[]` poligonuyla hem `mutfak_tezgahi` tipiyle
   çizilebilir. Tek yol seçilmelidir.
