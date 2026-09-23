@@ -1,4 +1,4 @@
-# openings modülü — Gelecek faz
+# openings modülü — DEV-001 tamamlandı
 
 ## Sorumluluk
 
@@ -33,6 +33,10 @@
 - Menteşe/swing belirtilmemişse model varsayım yapmaz.
 - `validate.py` öncesi DXF üretilmez; mevcut golden plan ile entity/layer ve
   açıklık boşluğu karşılaştırılır.
+
+Uygulanan API `Opening.from_context`, `OpeningSchedule.from_openings` ve
+`OpeningSymbolStyle.draw_opening` metodudur. `swing`, `variant` ve
+`host_wall_id` mevcut schema'ya eklenmemiş; mevcut `wall_id` korunmuştur.
 
 ## Sınır
 

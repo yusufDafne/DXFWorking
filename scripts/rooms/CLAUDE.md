@@ -1,4 +1,4 @@
-# rooms modülü — Gelecek faz
+# rooms modülü — DEV-002 tamamlandı
 
 ## Sorumluluk
 
@@ -21,7 +21,7 @@ Kapalı oda poligonu, alan/komşuluk, `RoomLabeler`, alan etiketi sığdırma ve
 
 - `Room.from_context(data)` doğrulanmış oda görünümü.
 - `PolygonOps.area`, `centroid`, `is_closed`, `has_self_intersection`.
-- `RoomLabeler.label(room, style)` ve `draw_room_label(...)`.
+- `RoomLabeler.draw(msp, room, max_text_height, units)`.
 - `RoomPolygonScanner.scan_edges(...)` ve `suggest_wall_dicts(...)`.
 
 ## Invariant'lar ve doğrulama

@@ -6,6 +6,10 @@ import math
 
 import ezdxf
 from ezdxf.enums import TextEntityAlignment
+try:
+    from ..dimensions import ChainLayout, DimensionChain, DimensionStyle
+except ImportError:
+    from dimensions import ChainLayout, DimensionChain, DimensionStyle
 
 AXIS_LAYER = "AKS"
 AXIS_LINETYPE = "DASHED"
@@ -126,44 +130,30 @@ class AxisGrid:
         self._bubble(msp, p1, label)
         self._bubble(msp, p2, label)
 
-    def _dim_override(self) -> dict:
-        return {
-            "dimtxt": self.standard.dimension_text_height,
-            "dimasz": self.standard.dimension_arrow_size,
-            "dimexo": self.standard.dimension_extension,
-            "dimexe": self.standard.dimension_extension,
-            "dimgap": self.standard.dimension_gap,
-        }
+    def _dimension_style(self) -> DimensionStyle:
+        return DimensionStyle(
+            layer=self.standard.layer,
+            text_height=self.standard.dimension_text_height,
+            arrow_size=self.standard.dimension_arrow_size,
+            extension=self.standard.dimension_extension,
+            gap=self.standard.dimension_gap,
+        )
 
     def _dim_chain_x(self, msp, xs: list[float], edge_y: float, dim_y: float) -> None:
-        for x1, x2 in zip(xs, xs[1:]):
-            dist_cm = round(abs(x2 - x1) / 10.0)
-            dimension = msp.add_linear_dim(
-                base=(x1, dim_y),
-                p1=(x1, edge_y),
-                p2=(x2, edge_y),
-                angle=0,
-                dimstyle="Standard",
-                override=self._dim_override(),
-                text=str(int(dist_cm)),
-                dxfattribs={"layer": self.standard.layer},
-            )
-            dimension.render()
+        chain = DimensionChain.horizontal(xs, edge_y, dim_y, self._dimension_style())
+        ChainLayout.place(
+            [chain],
+            (min(xs) - self.standard.dimension_extension, dim_y - self.standard.dimension_extension,
+             max(xs) + self.standard.dimension_extension, edge_y + self.standard.dimension_extension),
+        )[0].render(msp, edge_y)
 
     def _dim_chain_y(self, msp, ys: list[float], edge_x: float, dim_x: float) -> None:
-        for y1, y2 in zip(ys, ys[1:]):
-            dist_cm = round(abs(y2 - y1) / 10.0)
-            dimension = msp.add_linear_dim(
-                base=(dim_x, y1),
-                p1=(edge_x, y1),
-                p2=(edge_x, y2),
-                angle=90,
-                dimstyle="Standard",
-                override=self._dim_override(),
-                text=str(int(dist_cm)),
-                dxfattribs={"layer": self.standard.layer},
-            )
-            dimension.render()
+        chain = DimensionChain.vertical(ys, edge_x, dim_x, self._dimension_style())
+        ChainLayout.place(
+            [chain],
+            (dim_x - self.standard.dimension_extension, min(ys) - self.standard.dimension_extension,
+             edge_x + self.standard.dimension_extension, max(ys) + self.standard.dimension_extension),
+        )[0].render(msp, edge_x)
 
     def draw_on_floor(self, msp, dx: float, floor_width: float, floor_depth: float) -> None:
         y0, y1 = -self.standard.extension, floor_depth + self.standard.extension

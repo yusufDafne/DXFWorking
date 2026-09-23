@@ -24,6 +24,25 @@ provenance kayıtlarıyla ilişkilendirilir.
 - **Sonraki direktif:** Sistem mimarı onayıyla `DEV-001 openings` görevini
   kilit alarak başlatmak.
 
+## HD-003 — Openings, Rooms ve Dimensions modülleri
+
+- **Durum:** COMPLETED
+- **Tamamlanma:** 2026-09-23
+- **Kapsam:** `scripts/openings/`, `scripts/rooms/`,
+  `scripts/dimensions/` ve Axis/Wall/Generator entegrasyonları.
+- **Sonuç:** Typed opening görünümü ve schedule, host-wall/açıklık genişliği
+  doğrulaması, units-aware room alan/self-intersection doğrulaması,
+  `RoomLabeler`, `DimensionChain`, `LinearDim`, `DimensionStyle` ve bounds
+  kontrollü `ChainLayout` uygulandı.
+- **Doğrulama:** package import, `py_compile`, `python scripts/validate.py`,
+  `python scripts/generate_dxf.py` ve semantic golden karşılaştırması başarılı.
+- **Golden output etkisi:** `output/plan.dxf` entity/layer/bbox semantic raporuyla
+  eşleşti; mevcut örnek geometrisi korunmuştur.
+- **Açık sınır:** Swing/variant/host_wall_id gibi yeni schema alanları
+  eklenmedi; mevcut `wall_id` sözleşmesi korunmuştur.
+- **Sonraki direktif:** `DEV-006 Golden fixture katalogu` görevini sistem
+  mimarı onayıyla başlatmak.
+
 ## HD-001 — AxisGrid modül izolasyonu
 
 - **Durum:** COMPLETED

@@ -1,4 +1,4 @@
-# dimensions modülü — Gelecek faz
+# dimensions modülü — DEV-003 tamamlandı
 
 ## Sorumluluk
 
@@ -19,6 +19,10 @@
 - `DimensionChain(points, orientation, style)`.
 - `ChainLayout.place(chains, bounds)`.
 - `format_dimension_cm(mm_value)` yalnızca görünür metni biçimlendirir.
+
+`AxisGrid` artık `DimensionChain` ve `ChainLayout` üzerinden gerçek DXF
+dimension üretir; baseline ve kaynak noktaları verilen bounds içinde değilse
+üretim durur.
 
 ## Invariant'lar ve doğrulama
 

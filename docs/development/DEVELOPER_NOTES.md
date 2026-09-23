@@ -16,18 +16,20 @@ sistem mimarı direktifi güncellenir.
   aynı anda iki agent görev alamaz.
 - Golden semantic raporu ve provenance şablonu eklendi; byte hash tek başına
   kabul ölçütü değildir.
+- `openings/`, `rooms/` ve `dimensions/` modülleri generator akışına entegre
+  edildi; pipeline ve semantic golden kontrolü başarılı.
 
 ## Sıradaki iş
 
-`DEV-001 — Openings modülünü oluştur` görevi hazırdır. Sistem mimarı açıkça
+`DEV-006 — Golden fixture katalogu` görevi hazırdır. Sistem mimarı açıkça
 başlatmadan kod değişikliği yapılmaz. Başlangıçta görev kilidi alınmalıdır.
 
 ## İlk okuma sırası
 
 1. Bu dosya.
 2. `DEVELOPMENT_TASKS.md`.
-3. `scripts/openings/CLAUDE.md`.
-4. `scripts/walls/CLAUDE.md`.
+3. `DEVELOPMENT_HISTORY.md`.
+4. `scripts/CLAUDE.md` ve ilgili modül sözleşmesi.
 5. `scripts/generate_dxf.py`, schema ve mevcut golden output.
 6. `docs/development/AGENT_PERMISSIONS.json` ve
    `PROVENANCE_TEMPLATE.json`.

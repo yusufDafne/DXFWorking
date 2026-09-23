@@ -6,22 +6,38 @@ agent kendi başına sıra değiştirmez.
 
 ## READY
 
-### DEV-001 — Openings modülünü oluştur
+### DEV-006 — Golden fixture katalogu
 
 - **Durum:** READY
 - **Öncelik:** 1
-- **Kaynak:** `scripts/walls/render.py::DefaultPlanOpeningStyle` ve
-  `WallNetwork` açıklık boşlukları.
-- **Amaç:** `Opening`, `Door`, `Window`, host wall ilişkisi, plan sembol
-  stili ve schedule sorumluluğunu izole etmek.
-- **Bağımlılıklar:** `walls/` tamamlandı; `axis/` tamamlandı.
-- **Önce okunacaklar:** `scripts/openings/CLAUDE.md`, `scripts/walls/CLAUDE.md`,
-  `scripts/generate_dxf.py`, mevcut schema ve golden output.
-- **Başlamadan önce sistem mimarı kararı:** opening schema alanları,
-  `host_wall_id` semantiği, swing/menteşe eksikliği ve plan/cephe stil
-  kapsamı.
-- **Kabul:** mevcut açıklık rail boşlukları ve sembolleri korunur; focused
-  test, validate ve generate başarılı olur; golden farkları raporlanır.
+- **Amaç:** Semantic golden raporlarını modül bazlı fixture ve kritik sembol
+  beklentileriyle genişletmek.
+
+## COMPLETED
+
+### DEV-001 — Openings modülünü oluştur
+
+- **Durum:** COMPLETED
+- **Sonuç:** Typed `Opening`, `Door`, `Window`, `OpeningSchedule` ve
+  enjekte edilebilir `DefaultPlanOpeningStyle` `scripts/openings/` içine alındı;
+  generator host-wall ve açıklık genişliği doğrulaması yapıyor.
+- **Kayıt:** `DEVELOPMENT_HISTORY.md` içindeki `HD-003`.
+
+### DEV-002 — Room modülü
+
+- **Durum:** COMPLETED
+- **Sonuç:** `Room`, `PolygonOps`, `RoomLabeler` ve scanner sınırı
+  `scripts/rooms/` içinde; kapanış, alan, self-intersection ve units-aware
+  alan doğrulaması aktif.
+- **Kayıt:** `DEVELOPMENT_HISTORY.md` içindeki `HD-003`.
+
+### DEV-003 — DimensionChain modülü
+
+- **Durum:** COMPLETED
+- **Sonuç:** `DimensionChain`, `LinearDim`, `DimensionStyle` ve `ChainLayout`
+  `scripts/dimensions/` içinde; AxisGrid gerçek DXF ölçülerini bu API ile
+  üretir ve baseline bounds kontrolünden geçirir.
+- **Kayıt:** `DEVELOPMENT_HISTORY.md` içindeki `HD-003`.
 
 ## COMPLETED
 
@@ -41,22 +57,6 @@ agent kendi başına sıra değiştirmez.
 - **Kayıt:** `DEVELOPMENT_HISTORY.md` içindeki `HD-002`.
 
 ## PLANNED
-
-### DEV-002 — Room modülü
-
-- **Durum:** PLANNED
-- **Bağımlılık:** `openings/`
-- **Kaynak:** `polygon_centroid`, `draw_room_label`, `RoomPolygonScanner`.
-- **Kabul odağı:** kapalı poligon, alan, komşuluk, etiket fit ve oda-duvar
-  tutarlılığı.
-
-### DEV-003 — DimensionChain modülü
-
-- **Durum:** PLANNED
-- **Bağımlılık:** `axis/`; room/geometry sınırları netleşmiş olmalı.
-- **Kaynak:** `AxisGrid._dim_chain_x/_dim_chain_y`.
-- **Kabul odağı:** gerçek DXF dimension, tam sayı cm metni, chain layout ve
-  pafta taşma kontrolü.
 
 ## BACKLOG
 

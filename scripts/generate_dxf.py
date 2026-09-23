@@ -62,6 +62,8 @@ from pafta import (  # noqa: E402  (once sys.path ayarlanmali)
 from axis import AxisGrid, ensure_axis_layer  # noqa: E402
 from walls import WallNetwork, draw_wall_network  # noqa: E402
 from walls.geometry import vec_add, vec_len, vec_norm, vec_scale, vec_sub  # noqa: E402
+from rooms import RoomLabeler  # noqa: E402
+from openings import Opening, OpeningSchedule  # noqa: E402
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_CONTEXT_PATH = PROJECT_ROOT / "context.json"
@@ -148,38 +150,6 @@ def add_text(msp, content: str, position, height: float, layer: str, align=TextE
     return text
 
 
-def polygon_centroid(polygon: list[list[float]]) -> tuple[float, float]:
-    area = 0.0
-    cx = 0.0
-    cy = 0.0
-    n = len(polygon)
-    for i in range(n):
-        x1, y1 = polygon[i]
-        x2, y2 = polygon[(i + 1) % n]
-        cross = x1 * y2 - x2 * y1
-        area += cross
-        cx += (x1 + x2) * cross
-        cy += (y1 + y2) * cross
-    area *= 0.5
-    if abs(area) < 1e-9:
-        xs = [p[0] for p in polygon]
-        ys = [p[1] for p in polygon]
-        return (sum(xs) / len(xs), sum(ys) / len(ys))
-    cx /= 6 * area
-    cy /= 6 * area
-    return (cx, cy)
-
-
-def draw_room_label(msp, room: dict, max_text_height: float) -> None:
-    cx, cy = polygon_centroid(room["polygon"])
-    content = f"{room['name']} ({room['area_m2']:.1f} m2)"
-    xs = [p[0] for p in room["polygon"]]
-    available_width = max(0.0, (max(xs) - min(xs)) - 200.0)
-    height = fit_text_height(content, available_width, max_text_height, min_height=60.0)
-    text = msp.add_text(content, dxfattribs={"layer": "METIN", "height": height})
-    text.set_placement((cx, cy), align=TextEntityAlignment.MIDDLE_CENTER)
-
-
 def draw_labels(msp, labels: list[dict], default_height: float) -> None:
     for label in labels:
         height = label.get("height", default_height)
@@ -225,11 +195,21 @@ def draw_floor_sheet(msp, floor: dict, dx: float, units: str, floor_width: float
     tfloor = translate_floor(floor, dx)
 
     network = WallNetwork.from_context(tfloor["walls"], units)
-    draw_wall_network(msp, network, tfloor["openings"])
+    wall_by_id = {wall.id: wall for wall in network.walls}
+    openings = [Opening.from_context(data) for data in tfloor["openings"]]
+    for opening in openings:
+        host = wall_by_id.get(opening.wall_id)
+        if host is None:
+            raise ValueError(f"Opening {opening.id} references missing wall {opening.wall_id}")
+        if opening.position_from_start - opening.width / 2.0 < 0 or opening.position_from_start + opening.width / 2.0 > host.length:
+            raise ValueError(f"Opening {opening.id} exceeds host wall {opening.wall_id}")
+    opening_dicts = [opening.as_dict() for opening in openings]
+    OpeningSchedule.from_openings(openings)
+    draw_wall_network(msp, network, opening_dicts)
 
     room_label_height = room_label_height_for_units(units)
     for room in tfloor["rooms"]:
-        draw_room_label(msp, room, room_label_height)
+        RoomLabeler.draw(msp, room, room_label_height, units)
 
     draw_labels(msp, tfloor["labels"], text_height)
 
