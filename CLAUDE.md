@@ -380,14 +380,21 @@ guncellenir.
 
 4. Commit tamamlandığında kullanıcıya sadece commit hash'inin kısa hali ve
    tek satır özeti bildirilir, uzun log çıktısı gösterilmez.
-5. **Git kimliği ve push hesabı:** Bu proje için push işlemi (yalnızca kullanıcı açıkça
-   isterse yapılır) `yusufakcakaya-sketch` hesabıyla yapılmalıdır — SSH host
-   alias'ı `github-personal`, anahtar `~/.ssh/id_ed25519`. Bu makinedeki
-   global git config şu an farklı bir kimlik kullanıyor (`YusufDafne` /
-   `yusufakcakaya@dafneconstruction.com`, `~/.ssh/YusufDafne` anahtarı) —
-   bu proje icin varsayilan olarak kullanilmamali. Global git config
-   değiştirilmez; bir remote eklenmesi gerektiğinde kullanıcıyla birlikte
-   `github-personal` host alias'ı üzerinden yapılandırılır.
+5. **Git kimliği ve push hesabı (rev-8'de gerçeğe göre düzeltildi):** Push
+   işlemi **yalnızca kullanıcı açıkça isterse** yapılır; aksi halde proje
+   tamamen lokal kalır.
+   - **Remote:** `origin` = `https://github.com/yusufDafne/DXFWorking.git`.
+     Bu hedef rev-8'de kullanıcı onayıyla doğrulandı ve kullanıldı.
+   - **ÖNCEKİ KURAL YANLIŞTI:** Bu madde eskiden push'un farklı bir GitHub
+     hesabıyla ve belirli bir SSH alias'ı üzerinden yapılmasını söylüyordu;
+     rev-8'de bunun bu makinedeki gerçek yapılandırmaya uymadığı görüldü ve
+     kural mevcut remote'a çekildi.
+   - **Agent, yerel SSH yapılandırmasını incelemez ve anahtar/hesap envanteri
+     çıkarmaz.** Push hedefi `git remote -v` ile okunur; hedefin değişmesi
+     gerekiyorsa kullanıcıya sorulur, agent remote'u kendi başına değiştirmez.
+   - **Global git config hiçbir zaman değiştirilmez.** Commit kimliği, o
+     komuta özel `GIT_AUTHOR_*` / `GIT_COMMITTER_*` değişkenleriyle verilir
+     (bkz. madde 3).
 
 ## Belirsizlik durumunda
 
