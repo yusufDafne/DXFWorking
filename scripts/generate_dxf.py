@@ -65,6 +65,19 @@ from walls import WallNetwork, draw_wall_network  # noqa: E402
 from walls.geometry import vec_add, vec_len, vec_norm, vec_scale, vec_sub  # noqa: E402
 from rooms import RoomLabeler  # noqa: E402
 from typography import ROLE_ROOM_LABEL, TextStyles  # noqa: E402
+from furniture import (  # noqa: E402
+    FurnitureBlocks,
+    FurnitureCatalog,
+    FurnitureItem,
+    FurnitureRenderer,
+)
+from columns import (  # noqa: E402
+    ColumnGrid,
+    ColumnHatchStyle,
+    ColumnLabelStyle,
+    ColumnSectionCatalog,
+    ensure_column_layers,
+)
 from openings import Opening, OpeningSchedule  # noqa: E402
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -236,12 +249,21 @@ def translate_floor(floor: dict, dx: float) -> dict:
     new_floor["markings"] = [
         {**m, "start": shift_point(m["start"], dx), "end": shift_point(m["end"], dx)} for m in floor.get("markings", [])
     ]
+    new_floor["furniture"] = [
+        {**f, "position": shift_point(f["position"], dx)} for f in floor.get("furniture", [])
+    ]
+    new_floor["columns"] = [
+        {**c, "position": shift_point(c["position"], dx)} for c in floor.get("columns", [])
+    ]
     return new_floor
 
 
 def draw_floor_sheet(msp, floor: dict, dx: float, units: str, floor_width: float, floor_depth: float,
                       text_height: float, sheet: Sheet, axis_grid: AxisGrid,
-                      text_styles: TextStyles) -> None:
+                      text_styles: TextStyles, furniture_catalog: FurnitureCatalog,
+                      column_catalog: ColumnSectionCatalog,
+                      column_hatch_style: ColumnHatchStyle,
+                      column_label_style: ColumnLabelStyle) -> None:
     content_start = len(msp)
 
     # Aks izgarasi HER ZAMAN en once (en altta) cizilir (bkz. kullanici standardi).
@@ -266,11 +288,12 @@ def draw_floor_sheet(msp, floor: dict, dx: float, units: str, floor_width: float
     # context'teki floors[].code'dan gelir (B1/B2/ZK/K1../TR) - turetilmez.
     room_label_height = room_label_height_for_units(units)
     floor_code = floor.get("code", "")
-    label_style = text_styles.style_of(ROLE_ROOM_LABEL)
-    label_font = text_styles.font_of(ROLE_ROOM_LABEL)
+    room_label_style = text_styles.style_of(ROLE_ROOM_LABEL)
+    room_label_font = text_styles.font_of(ROLE_ROOM_LABEL)
     for room in tfloor["rooms"]:
         RoomLabeler.draw(msp, room, room_label_height, units,
-                         floor_code=floor_code, style_name=label_style, font=label_font)
+                         floor_code=floor_code, style_name=room_label_style,
+                         font=room_label_font)
 
     draw_labels(msp, tfloor["labels"], text_height)
 
@@ -280,6 +303,18 @@ def draw_floor_sheet(msp, floor: dict, dx: float, units: str, floor_width: float
 
     for marking in tfloor.get("markings", []):
         msp.add_line(marking["start"], marking["end"], dxfattribs={"layer": marking["layer"]})
+
+    # Kolonlar: tarali kesit (bkz. scripts/columns). Tefristen ONCE cizilir -
+    # tasiyici eleman, tefrisin altinda kalmaz.
+    if tfloor.get("columns"):
+        grid = ColumnGrid.from_context(tfloor["columns"], column_catalog,
+                                       column_hatch_style, column_label_style)
+        grid.draw(msp)
+
+    # Tefris: HER ZAMAN blok olarak (bkz. scripts/furniture).
+    if tfloor.get("furniture"):
+        items = [FurnitureItem.from_context(data) for data in tfloor["furniture"]]
+        FurnitureRenderer.draw(msp, items, furniture_catalog)
 
     content_entities = list(msp)[content_start:]
     sheet.draw(msp, dx, floor_width, 0.0, floor_depth, floor["label"], content_entities=content_entities)
@@ -389,6 +424,18 @@ def generate(context_path: Path = DEFAULT_CONTEXT_PATH, output_path: Path = DEFA
     elevations = context["elevations"]
     text_height = text_height_for_units(units)
 
+    # Tefris ve kolon altyapisi. Tefris blok TANIMLARI, kullanilan tipler
+    # icin bir kere olusturulur; her yerlesim bir INSERT'tir.
+    furniture_catalog = FurnitureCatalog()
+    used_furniture = {item["type"] for floor in floors for item in floor.get("furniture", [])}
+    if used_furniture:
+        FurnitureBlocks.ensure(doc, furniture_catalog, used_furniture)
+    column_catalog = ColumnSectionCatalog()
+    column_hatch_style = ColumnHatchStyle.from_context(context["meta"].get("column_hatch"))
+    column_label_style = ColumnLabelStyle.from_context(context["meta"].get("column_label"))
+    if any(floor.get("columns") for floor in floors):
+        ensure_column_layers(doc, column_hatch_style, column_label_style)
+
     scale = context["meta"].get("scale", "1:100")
     # Kapak paftasinda antet kutusu olmadigi icin adi bu listeye girmez.
     all_labels = [f["label"] for f in floors] + [e["label"] for e in elevations]
@@ -457,7 +504,8 @@ def generate(context_path: Path = DEFAULT_CONTEXT_PATH, output_path: Path = DEFA
 
     for floor in floors:
         draw_floor_sheet(msp, floor, cursor, units, floor_width, floor_depth, text_height,
-                         sheet, axis_grid, text_styles)
+                         sheet, axis_grid, text_styles, furniture_catalog,
+                         column_catalog, column_hatch_style, column_label_style)
         cursor += floor_width + 2 * frame_half_width
 
     for elevation in elevations:

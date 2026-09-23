@@ -1,0 +1,384 @@
+{
+  "meta": {
+    "project_name": "Fixture - Tefris ve Kolon",
+    "units": "mm",
+    "scale": "1:50",
+    "project_type": "MIMARI_UYGULAMA",
+    "fonts": {
+      "default": "arialn.ttf",
+      "room_label": "arialn.ttf"
+    },
+    "column_hatch": {
+      "pattern": "ANSI33",
+      "scale": 3.0
+    },
+    "cover": {
+      "signature_fields": ["YONETIM", "MIMAR"]
+    },
+    "floor_width": 12000.0,
+    "floor_depth": 9000.0
+  },
+  "layers": [
+    {
+      "name": "DUVARLAR",
+      "color": 7
+    },
+    {
+      "name": "KAPI-PENCERE",
+      "color": 5
+    },
+    {
+      "name": "METIN",
+      "color": 7
+    },
+    {
+      "name": "CERCEVE",
+      "color": 8
+    },
+    {
+      "name": "OLCU",
+      "color": 3
+    }
+  ],
+  "grid": {
+    "vertical_axes": [
+      {
+        "label": "1",
+        "position": 0.0
+      },
+      {
+        "label": "2",
+        "position": 6000.0
+      },
+      {
+        "label": "3",
+        "position": 12000.0
+      }
+    ],
+    "horizontal_axes": [
+      {
+        "label": "A",
+        "position": 0.0
+      },
+      {
+        "label": "B",
+        "position": 4500.0
+      },
+      {
+        "label": "C",
+        "position": 9000.0
+      }
+    ]
+  },
+  "floors": [
+    {
+      "id": "kat1",
+      "label": "ORNEK DAIRE",
+      "code": "K1",
+      "rooms": [
+        {
+          "id": "salon",
+          "name": "Salon",
+          "no": "01",
+          "area_m2": 51.04,
+          "polygon": [
+            [100, 100],
+            [5900.0, 100],
+            [5900.0, 8900.0],
+            [100, 8900.0]
+          ]
+        },
+        {
+          "id": "yatak",
+          "name": "Yatak Odasi",
+          "no": "02",
+          "area_m2": 24.94,
+          "polygon": [
+            [6100.0, 4600.0],
+            [11900.0, 4600.0],
+            [11900.0, 8900.0],
+            [6100.0, 8900.0]
+          ]
+        },
+        {
+          "id": "mutfak",
+          "name": "Mutfak ve Banyo",
+          "no": "03",
+          "area_m2": 24.94,
+          "polygon": [
+            [6100.0, 100],
+            [11900.0, 100],
+            [11900.0, 4400.0],
+            [6100.0, 4400.0]
+          ]
+        }
+      ],
+      "walls": [
+        {
+          "id": "w_alt",
+          "start": [0, 0],
+          "end": [12000.0, 0],
+          "thickness": 200.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "w_sag",
+          "start": [12000.0, 0],
+          "end": [12000.0, 9000.0],
+          "thickness": 200.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "w_ust",
+          "start": [12000.0, 9000.0],
+          "end": [0, 9000.0],
+          "thickness": 200.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "w_sol",
+          "start": [0, 9000.0],
+          "end": [0, 0],
+          "thickness": 200.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "w_orta_dusey",
+          "start": [6000.0, 0],
+          "end": [6000.0, 9000.0],
+          "thickness": 200.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "w_orta_yatay",
+          "start": [6000.0, 4500.0],
+          "end": [12000.0, 4500.0],
+          "thickness": 200.0,
+          "layer": "DUVARLAR"
+        }
+      ],
+      "openings": [
+        {
+          "id": "kapi_yatak",
+          "type": "door",
+          "wall_id": "w_orta_dusey",
+          "position_from_start": 6500.0,
+          "width": 900.0,
+          "layer": "KAPI-PENCERE"
+        },
+        {
+          "id": "kapi_mutfak",
+          "type": "door",
+          "wall_id": "w_orta_dusey",
+          "position_from_start": 2000.0,
+          "width": 900.0,
+          "layer": "KAPI-PENCERE"
+        },
+        {
+          "id": "pencere_alt",
+          "type": "window",
+          "wall_id": "w_alt",
+          "position_from_start": 3000.0,
+          "width": 1800.0,
+          "layer": "KAPI-PENCERE"
+        },
+        {
+          "id": "pencere_ust",
+          "type": "window",
+          "wall_id": "w_ust",
+          "position_from_start": 3000.0,
+          "width": 1800.0,
+          "layer": "KAPI-PENCERE"
+        }
+      ],
+      "labels": [],
+      "columns": [
+        {
+          "id": "s1",
+          "position": [0, 0],
+          "section": "S40x40"
+        },
+        {
+          "id": "s2",
+          "position": [6000.0, 0],
+          "section": "S40x40"
+        },
+        {
+          "id": "s3",
+          "position": [12000.0, 0],
+          "section": "S40x40"
+        },
+        {
+          "id": "s4",
+          "position": [0, 4500.0],
+          "section": "S30x60"
+        },
+        {
+          "id": "s5",
+          "position": [12000.0, 4500.0],
+          "section": "S30x60"
+        },
+        {
+          "id": "s6",
+          "position": [0, 9000.0],
+          "section": "S40x40"
+        },
+        {
+          "id": "s7",
+          "position": [6000.0, 9000.0],
+          "section": "S40x40"
+        },
+        {
+          "id": "s8",
+          "position": [12000.0, 9000.0],
+          "section": "S40x40"
+        },
+        {
+          "id": "s9",
+          "position": [6000.0, 4500.0],
+          "section": "D50"
+        }
+      ],
+      "furniture": [
+        {
+          "id": "f_koltuk3",
+          "type": "koltuk_3lu",
+          "position": [500, 7000]
+        },
+        {
+          "id": "f_koltuk2",
+          "type": "koltuk_2li",
+          "position": [3600, 7000]
+        },
+        {
+          "id": "f_sehpa",
+          "type": "sehpa",
+          "position": [1800, 5900]
+        },
+        {
+          "id": "f_tv",
+          "type": "tv_unitesi",
+          "position": [1900, 300]
+        },
+        {
+          "id": "f_masa",
+          "type": "yemek_masasi_6",
+          "position": [2000, 3200]
+        },
+        {
+          "id": "f_sandalye1",
+          "type": "sandalye",
+          "position": [2150, 2600]
+        },
+        {
+          "id": "f_sandalye2",
+          "type": "sandalye",
+          "position": [2900, 2600]
+        },
+        {
+          "id": "f_sandalye3",
+          "type": "sandalye",
+          "position": [1400, 3400]
+        },
+        {
+          "id": "f_sandalye4",
+          "type": "sandalye",
+          "position": [3700, 3400]
+        },
+        {
+          "id": "f_yatak",
+          "type": "yatak_cift",
+          "position": [7200, 5600]
+        },
+        {
+          "id": "f_komodin1",
+          "type": "komodin",
+          "position": [6650, 5600]
+        },
+        {
+          "id": "f_komodin2",
+          "type": "komodin",
+          "position": [8900, 5600]
+        },
+        {
+          "id": "f_gardirop",
+          "type": "gardirop",
+          "position": [9600, 8200]
+        },
+        {
+          "id": "f_tezgah",
+          "type": "mutfak_tezgahi",
+          "position": [6300, 3700]
+        },
+        {
+          "id": "f_ocak",
+          "type": "ocak",
+          "position": [8800, 3700]
+        },
+        {
+          "id": "f_evye",
+          "type": "evye",
+          "position": [9600, 3700]
+        },
+        {
+          "id": "f_buzdolabi",
+          "type": "buzdolabi",
+          "position": [10700, 3600]
+        },
+        {
+          "id": "f_bulasik",
+          "type": "bulasik_makinesi",
+          "position": [6300, 2600]
+        },
+        {
+          "id": "f_lavabo",
+          "type": "lavabo",
+          "position": [6300, 300]
+        },
+        {
+          "id": "f_klozet",
+          "type": "klozet",
+          "position": [7200, 300]
+        },
+        {
+          "id": "f_dus",
+          "type": "dus_teknesi",
+          "position": [8100, 300]
+        },
+        {
+          "id": "f_camasir",
+          "type": "camasir_makinesi",
+          "position": [9300, 300]
+        },
+        {
+          "id": "f_kuvet",
+          "type": "kuvet",
+          "position": [10000, 1400]
+        }
+      ]
+    }
+  ],
+  "elevations": [
+    {
+      "id": "on_cephe",
+      "label": "ON CEPHE",
+      "width": 12000.0,
+      "axis_source": "vertical",
+      "levels": [
+        {
+          "label": "ZEMIN KAT",
+          "height": 3000.0,
+          "window_count": 3,
+          "door": true
+        }
+      ]
+    }
+  ],
+  "rev_history": [
+    {
+      "rev": 1,
+      "ts": "2026-09-23T00:00:00Z",
+      "summary": "DEV-006 fixture: tefris bloklari (DEV-009) ve tarali kolonlar (DEV-010). Gercek projeden BAGIMSIZ; tefris/kolon yetenekleri burada dogrulanir, boylece proje verisine yerlesim uydurmak gerekmez. Bina 12000x9000: 1:50'de A4 kapak blogu icin icerigin dusey acikligi en az 8150 olmali."
+    }
+  ]
+}

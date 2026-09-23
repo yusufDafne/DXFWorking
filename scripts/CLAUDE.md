@@ -39,8 +39,12 @@ kalanını bilmeye ihtiyaç duymadan o modül üzerinde derinlemesine/izole
 - ✅ **`scripts/typography/`** — Proje yazı tipi / DXF text style sahibi
   (bkz. `HD-005`). Çizilen font ile `fit_text_height`'in ölçtüğü font bu
   modül sayesinde tek kaynaktan gelir.
-- ⏳ Kolon, tefriş, cephe, lejant, import — her biri için ayrı plan maddesi
-  `docs/development/DEVELOPMENT_TASKS.md` içindedir (`DEV-009` … `DEV-017`).
+- ✅ **`scripts/furniture/`** — Tefriş kataloğu; her tefriş bir DXF `BLOCK`
+  (bkz. `HD-006`). Kapı bu modülde DEĞİLDİR (bkz. modül CLAUDE.md).
+- ✅ **`scripts/columns/`** — Taralı kolon, dinamik hatch, ileriye dönük
+  isimlendirme (bkz. `HD-006`).
+- ⏳ Cephe, lejant, import — her biri için ayrı plan maddesi
+  `docs/development/DEVELOPMENT_TASKS.md` içindedir (`DEV-011` … `DEV-018`).
 
 ## Kurulu sınıflar (durum: uygulandı)
 
@@ -92,6 +96,8 @@ Ortak desen (pafta + walls ile kanitlandi):
 | 10      | `legend/`     | `TitleBlockLegend`, `LayerSwatch`                          | Opsiyonel pafta lejanti                                        |
 | 11      | `import/`     | `DxfWallScanner`, `PdfUnderlay`                            | Ters yon: mevcut cizimden veri (ileri faz)                     |
 | -       | `typography/` | `TextStyles`                                               | Proje fontu (Arial Narrow) + rol bazli text style; rev-9       |
+| -       | `furniture/`  | `FurnitureCatalog`, `FurnitureBlocks`, `FurnitureRenderer` | Tefris = DXF BLOCK; kahverengi grup layer'lari; rev-10         |
+| -       | `columns/`    | `Column`, `ColumnGrid`, `ColumnHatchStyle`                 | Tarali kolon (ANSI33/3.0); isimlendirme hazir ama kapali       |
 
 Semaya eklenecek opsiyonel alanlar (talep ile, deger uydurulmaz):
 
@@ -104,6 +110,13 @@ rev-9'da semaya EKLENENLER (artik opsiyonel degil, kullanimda):
 - `meta.fonts.default` / `meta.fonts.room_label` -> `typography.TextStyles`
 - `floors[].code` -> kat kodu (B1/B2/ZK/K1../TR), mahal no oneki
 - `rooms[].no` -> mahal no; kat koduyla birlesince benzersiz mahal kimligi
+
+rev-10'da semaya EKLENENLER:
+
+- `floors[].furniture[]` -> tefris yerlesimi (tip + konum + rotasyon)
+- `floors[].columns[]` -> kolon yerlesimi (merkez + kesit + rotasyon + ad)
+- `meta.column_hatch` -> kolon taramasi (varsayilan ANSI33 / 3.0)
+- `meta.column_label` -> kolon adi gosterimi (varsayilan KAPALI)
 
 ## Planlanan sınıflar (durum: henüz yok — fikir notu)
 

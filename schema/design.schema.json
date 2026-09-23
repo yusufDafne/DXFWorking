@@ -72,6 +72,34 @@
         "layer": { "type": "string" }
       }
     },
+    "furniture_item": {
+      "type": "object",
+      "description": "Tefris YERLESIMI (scripts/furniture). Tip katalogdan gelir, olculer koddadir; burada yalnizca konum ve donme tutulur. Tefris her zaman DXF BLOCK olarak cizilir.",
+      "required": ["id", "type", "position"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string" },
+        "type": { "type": "string", "description": "Katalog anahtari, orn. 'koltuk_3lu', 'klozet'. Bilinmeyen tip uretimi durdurur." },
+        "position": { "$ref": "#/definitions/point", "description": "Elemanin SOL-ALT kosesi (blok ekleme noktasi)." },
+        "rotation": { "type": "number", "description": "Derece cinsinden donme; varsayilan 0." }
+      }
+    },
+    "column": {
+      "type": "object",
+      "description": "Kolon yerlesimi (scripts/columns). position kolonun MERKEZIDIR. Kesit ya katalog anahtariyla ('section') ya da width/depth ile verilir.",
+      "required": ["id", "position"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string" },
+        "position": { "$ref": "#/definitions/point" },
+        "section": { "type": "string", "description": "Katalog kesiti, orn. 'S40x60', 'D50'." },
+        "width": { "type": "number", "exclusiveMinimum": 0 },
+        "depth": { "type": "number", "exclusiveMinimum": 0 },
+        "shape": { "type": "string", "enum": ["rect", "circle"] },
+        "rotation": { "type": "number" },
+        "name": { "type": "string", "description": "Kolon adi. Bugun CIZILMEZ (kullanici kolonlari aks kesisimiyle ifade ediyor); meta.column_label.enabled ile acilir." }
+      }
+    },
     "counter": {
       "type": "object",
       "description": "Mutfak tezgahi gibi sabit mobilya elemanlari (dikdortgen poligon)",
@@ -116,6 +144,8 @@
         "openings": { "type": "array", "items": { "$ref": "#/definitions/opening" } },
         "labels": { "type": "array", "items": { "$ref": "#/definitions/label" } },
         "counters": { "type": "array", "items": { "$ref": "#/definitions/counter" } },
+        "furniture": { "type": "array", "items": { "$ref": "#/definitions/furniture_item" } },
+        "columns": { "type": "array", "items": { "$ref": "#/definitions/column" } },
         "markings": { "type": "array", "items": { "$ref": "#/definitions/marking" } }
       }
     },
@@ -203,6 +233,26 @@
           "properties": {
             "default": { "type": "string", "description": "Proje geneli font; 'Standard' text style'ina yazilir, stil verilmeyen tum metinler bunu kullanir." },
             "room_label": { "type": "string", "description": "Mahal etiketi fontu. default ile ayniysa ayri text style kaydedilmez." }
+          }
+        },
+        "column_hatch": {
+          "type": "object",
+          "description": "Kolon taramasi (scripts/columns::ColumnHatchStyle). Verilmezse ANSI33 / olcek 3.0 kullanilir.",
+          "additionalProperties": false,
+          "properties": {
+            "pattern": { "type": "string", "description": "DXF hatch deseni, orn. 'ANSI33'." },
+            "scale": { "type": "number", "exclusiveMinimum": 0 },
+            "angle": { "type": "number" },
+            "enabled": { "type": "boolean" }
+          }
+        },
+        "column_label": {
+          "type": "object",
+          "description": "Kolon adi gosterimi. Kullanici su an istemiyor (aks kesisimiyle ifade ediliyor); varsayilan KAPALI.",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "height": { "type": "number", "exclusiveMinimum": 0 }
           }
         },
         "cover": {

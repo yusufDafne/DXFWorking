@@ -40,18 +40,24 @@ sistem mimarı direktifi güncellenir.
 `DEVELOPMENT_TASKS.md` artık **her modül için ayrı plan maddesi** tutuyor
 (`DEV-007` … `DEV-017`) ve her maddede seçilmek üzere **iki fikir** var.
 
-rev-9 durumu:
+rev-10 durumu:
 
-- `DEV-008` **COMPLETED** — 3 satırlı mahal etiketi + `typography` modülü
-  (bkz. `HD-005`).
-- `DEV-007` **BLOCKED** — çizim tarafında iş kalmadı; yalnızca kullanıcıdan
-  gelecek mimar adı / tarih / unvan bekleniyor.
-- `DEV-006` **READY** — amacı rev-9'da genişletildi (bugünkü golden raporunun
-  neden zayıf olduğu açıkça yazıldı).
-- `DEV-009` (tefriş) kullanıcı talebiyle açıldı, henüz başlatılmadı.
+- `DEV-006` **COMPLETED** — golden artık üç katmanlı (ölçüm + semantik kural +
+  fixture koşucusu), bkz. `HD-006`.
+- `DEV-008` **COMPLETED** — 3 satırlı mahal etiketi + `typography` (`HD-005`).
+- `DEV-009` **COMPLETED** — tefriş modülü, tefriş = DXF `BLOCK` (`HD-006`).
+- `DEV-010` **COMPLETED** — taralı kolon, dinamik hatch (`HD-006`).
+- `DEV-007` **BLOCKED** — yalnızca kullanıcıdan gelecek mimar adı / tarih /
+  unvan bekleniyor.
+- `DEV-011` … `DEV-018` PLANNED.
 
-Sıradaki iş için sistem mimarı `DEV-006` veya `DEV-009`u açıkça
-başlatmalıdır. Diğer modüller PLANNED olarak bekliyor. Sistem mimarı açıkça
+**Önemli işletim notu:** Üretimden sonra artık
+`python scripts/golden_report.py output/plan.dxf --rules context.json` ve
+`python scripts/golden_report.py --fixtures` da çalıştırılmalıdır. Ölçüm
+raporunun tek başına yetmediği rev-10'da somut olarak gösterildi.
+
+Sıradaki iş için sistem mimarı açık direktif vermelidir; `DEV-018` (blok
+yaygınlaştırma) `DEV-011`den önce ele alınırsa iş tekrarı önlenir. Sistem mimarı açıkça
 başlatmadan kod değişikliği yapılmaz. Başlangıçta görev kilidi alınmalıdır.
 
 ## İlk okuma sırası
@@ -86,7 +92,12 @@ uyumlu değilse uygulamayı durdur ve sistem mimarı kararı iste.
 - Kapakta ruhsat/onay alanları da gerekli mi?
 - Kapak TASARIMI için kullanıcıdan ayrı bir talep bekleniyor (geometri
   sabit kalmalı: A4, sağ-alt sabit, eşit offset, antetsiz).
-- Tefriş elemanları DXF `BLOCK` olarak mı tanımlanacak (`DEV-009`)?
+- Mahal etiketi de blok + `ATTRIB` olacak mı (`DEV-018`)?
+- `counters[]` (mutfak tezgahı) `furniture/` modülüne devredilecek mi?
+  Bugün iki yol da mümkün, bu bir çifte sorumluluktur.
+- Tefriş/kolon için çakışma kontrolü (duvar, oda sınırı, kapı açılım alanı)
+  bloklayıcı hata mı, uyarı mı olacak?
+- Kolonlarda katlar arası düşey hizalama zorunlu tutulacak mı?
 - "Mahal ismi blok olarak işlensin" büyük harf olarak uygulandı; kullanıcı
   DXF `BLOCK` entity'si kastettiyse bu yeniden ele alınmalı.
 - Mahal no bugün kat içinde sıralı (`01`, `02`…). Daire bazlı anlamlı bir

@@ -79,6 +79,17 @@ geliştirme görevleri, tamamlanmış geçmiş, fikirler ve geliştirici notlar�
    `output/plan.dxf` sıfırdan yeniden üretilir.
 5. İsteğe bağlı olarak `scripts/preview.py` ile `output/preview.png` üretilip
    kullanıcıya görsel önizleme sunulabilir.
+6. **Golden kontrol (rev-10'dan itibaren):** `scripts/golden_report.py`
+   üç katmanlıdır ve üretimden sonra çalıştırılır:
+   - `--compare <rapor>` — entity/layer/bbox ölçüm karşılaştırması,
+   - `--rules context.json` — **semantik kurallar** (mahal etiketi 3 satır ve
+     oda içinde mi, kapı başına yay var mı, aks çizgisi baloncuğa giriyor mu,
+     tanımsız blok referansı var mı, bildirilmemiş layer kullanılmış mı),
+   - `--fixtures` — `docs/development/fixtures/` altındaki küçük, izole
+     context'leri baştan üretip aynı kontrolleri uygular. Bir modül
+     bozulduğunda hangi modül olduğu doğrudan görünür.
+   Ölçüm raporu tek başına yeterli DEĞİLDİR: bir duvar kaysa veya etiket
+   yanlış odaya yazılsa entity sayıları değişmeyebilir.
 
 ## Duvar çizim standardı (Türkiye standardı)
 
@@ -183,6 +194,31 @@ guncellenir.
     **genişlik hem yükseklik** bakımından sığacak şekilde ölçeklenir.
   - Uygulaması `scripts/rooms::RoomLabeler`dır — ayrı ad-hoc etiket kodu
     yazılmaz.
+- **Tefriş (rev-10'dan itibaren):** Tefriş **her zaman DXF `BLOCK`** olarak
+  çizilir — tip başına bir blok tanımı, yerleşim başına bir `INSERT`.
+  Uygulaması `scripts/furniture::FurnitureCatalog` / `FurnitureBlocks` /
+  `FurnitureRenderer`dır; ayrı ad-hoc tefriş çizimi yazılmaz.
+  - Tefrişin **kendi layer'ları ve renkleri** vardır; renkler **kahverengi
+    ailesinde ve birbirine yakın tonlardadır** (zıt renk kullanılmaz), çünkü
+    tefriş duvar/aks gibi okunması gereken katmanla yarışmamalıdır. Gruplar:
+    `TEFRIS-OTURMA`, `TEFRIS-YEMEK`, `TEFRIS-YATAK`, `TEFRIS-MUTFAK`,
+    `TEFRIS-ISLAK`. Layer'lar kod tarafında zorunlu kılınır (aks gibi),
+    context.json'dan renk alınmaz.
+  - Katalog ölçüleri ofis/katalog standardıdır (çizim sabiti); **yerleşim
+    (konum/rotasyon) proje verisidir** ve `floors[].furniture[]` ile gelir,
+    uydurulmaz. Blok ekleme noktası elemanın **sol-alt köşesidir**.
+  - **Kapı tefriş DEĞİLDİR.** Kapı/pencere bir duvar açıklığıdır ve
+    `openings/` + `walls/` modüllerine aittir (endüstri standardı: IFC'de
+    `IfcDoor` bir `IfcBuildingElement`tir, AIA/NCS'te kapı `A-DOOR` /
+    tefriş `A-FURN`). Ayrıntı: `scripts/furniture/CLAUDE.md`.
+- **Kolonlar (rev-10'dan itibaren):** Kolonlar **taralıdır**. Tarama
+  deseni ve ölçeği dinamiktir (`meta.column_hatch`), varsayılanı **`ANSI33`
+  ve ölçek `3.0`**. Kontur `KOLON`, tarama `KOLON-TARAMA` layer'ındadır.
+  Uygulaması `scripts/columns::ColumnGrid` / `ColumnRenderer`dır.
+  `position` kolonun **merkezidir**. Kolonlar tefrişten ÖNCE çizilir.
+  **Kolon adı bugün çizilmez** — kullanıcı kolonları aks birleşim
+  noktalarıyla ifade ediyor; altyapı (`Column.name`, `ColumnLabelStyle`)
+  hazırdır ve `meta.column_label.enabled` ile kod değişmeden açılır.
 - **Pafta modülü (`scripts/pafta/`, rev-4'te ilk modül olarak kuruldu):**
   Pafta çerçevesi, başlık kutusu, tasma kontrolü ve kağıt boyutu planlaması
   ARTIK `scripts/generate_dxf.py`'de DEĞİL, kendi izole modülünde

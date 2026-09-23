@@ -4,6 +4,50 @@ Aktif geçmiş kapasitesi: **50 kayıt**. En eski tamamlanmış kayıt, 51. kay�
 alınırken silinir. Ayrıntılı teknik değişiklikler git geçmişi ve ilgili proje
 provenance kayıtlarıyla ilişkilendirilir.
 
+## HD-006 — Golden fixture kataloğu, tefriş modülü ve taralı kolonlar
+
+- **Durum:** COMPLETED
+- **Tamamlanma:** 2026-09-23
+- **Kapsam:** `scripts/golden_report.py` (yeniden yazıldı), yeni
+  `scripts/furniture/`, yeni `scripts/columns/`, `scripts/generate_dxf.py`,
+  `schema/design.schema.json`, `docs/development/fixtures/`.
+- **Sonuç — DEV-006:** Golden kontrolü üç katmanlı oldu: ölçüm raporu +
+  semantik kurallar + fixture koşucusu. Beş kural eklendi ve hepsi negatif
+  testle doğrulandı. `entity_bbox` gerçek extent hesabına geçti; önceki sürüm
+  `INSERT` için yalnızca ekleme noktasını döndürdüğü için bloklara geçişte
+  rapor sessizce körleşecekti. İki fixture: `minimal`, `tefris_kolon`.
+- **Sonuç — DEV-009:** 22 tipli konut tefriş kataloğu; tefriş her zaman DXF
+  `BLOCK`. Beş işlevsel grup, her birine kahverengi ailesinden düşük
+  kontrastlı layer rengi. Kapı/pencere sahipliği araştırıldı ve
+  `openings/`+`walls/`ta kalmasına karar verildi (IFC ve AIA/NCS layer
+  standardı).
+- **Sonuç — DEV-010:** Taralı kolon; desen/ölçek dinamik, varsayılan
+  `ANSI33` + `3.0`. Kesit kataloğu, dairesel/dikdörtgen kesit, dönme.
+  İsimlendirme altyapısı hazır ama varsayılan kapalı; `meta.column_label`
+  ile kod değişmeden açılıyor. `on_axis_report` kolonu aks kesişimiyle
+  eşleyen salt-okunur rapor üretiyor.
+- **Doğrulama:** `py_compile`, `validate.py`, `generate_dxf.py`,
+  `preview.py`, golden karşılaştırması ve her iki fixture başarılı. Beş
+  semantik kural tek tek bozularak yakaladıkları teyit edildi. Tefriş
+  bloklarının yeniden kullanımı ölçüldü: 19 tanım → 23 `INSERT`. Hatch
+  parametreleri (`ANSI33`, ölçek 3.0) ve grup renkleri DXF'ten okunarak
+  doğrulandı.
+- **Fixture'ların ilk günde yakaladığı iki gerçek sorun:** (1) Kapak
+  paftasının projeye dayattığı asgari yükseklik (1:50'de içeriğin düşey
+  açıklığı ≥ 8150 olmalı) — belgelenmemişti; (2) `draw_floor_sheet` içinde
+  mahal etiketi `label_style` yerelinin kolon `label_style` parametresini
+  gölgelemesi.
+- **Golden output etkisi:** Gerçek proje çıktısı DEĞİŞMEDİ — tefriş ve kolon
+  verisi `context.json`a eklenmedi (yerleşim proje verisidir ve uydurulmaz).
+  Yetenekler `tefris_kolon` fixture'ında doğrulanır.
+- **Açık sınır:** Tefriş/kolon için çakışma ve oda-içinde-kalma kontrolü YOK;
+  kapı açılım alanı ile tefriş çakışması denetlenmiyor. `counters[]` hâlâ
+  `generate_dxf.py` içinde ad-hoc çiziliyor. Katlar arası kolon hizalaması
+  kontrol edilmiyor.
+- **Sonraki direktif:** `DEV-018` (DXF `BLOCK` yaygınlaştırma — mahal etiketi
+  bloğu/`ATTRIB`) veya `DEV-011 elevations` sistem mimarı onayıyla
+  başlatılabilir.
+
 ## HD-005 — 3 satırlı mahal etiketi ve `typography` modülü
 
 - **Durum:** COMPLETED

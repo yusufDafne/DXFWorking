@@ -8,8 +8,27 @@ agent kendi başına sıra değiştirmez.
 
 ### DEV-006 — Golden fixture kataloğu
 
-- **Durum:** READY
-- **Öncelik:** 1
+- **Durum:** COMPLETED (rev-10)
+- **Sonuç:** `golden_report.py` üç katmanlı hale geldi: ölçüm raporu +
+  **semantik kurallar** + **fixture koşucusu**. Kurallar: `room_labels`
+  (3 satır ve oda içinde), `opening_symbols` (kapı başına ARC),
+  `axis_bubbles` (çizgi baloncuğa girmez), `block_references` (tanımsız blok
+  yok), `declared_layers`. Beş kuralın hepsi **negatif testle** doğrulandı
+  (kasıtlı bozma → kural patladı). `entity_bbox` artık ezdxf'in gerçek extent
+  hesabını kullanıyor; önceki sürüm `INSERT` için yalnızca ekleme noktasını
+  döndürüyordu (blok körlüğü — `DEV-018`de tespit edilmişti) ve `TEXT` için
+  de metin genişliğini görmüyordu. Fixture kataloğu
+  `docs/development/fixtures/` altında: `minimal` ve `tefris_kolon`.
+- **Fixture'ların ilk günde yakaladıkları (gerçek bulgular):**
+  1. **Kapak paftası projeye asgari yükseklik dayatıyor.** 1:50'de A4 kapak
+     14850 yüksek; içeriğin düşey açıklığı 8150'den küçükse üretim
+     `PaftaOverflowError` ile durur. `minimal` fixture 4000 derinlikle
+     yazıldığında hemen patladı. Bu sınır daha önce belgelenmemişti.
+  2. **`draw_floor_sheet` içinde isim çakışması.** Mahal etiketi için
+     kullanılan `label_style` yerel değişkeni, kolon `label_style`
+     parametresini gölgeliyordu; `tefris_kolon` fixture'ı bunu yakaladı.
+- **Kayıt:** `DEVELOPMENT_HISTORY.md` içindeki `HD-006`.
+- **Önceki öncelik:** 1
 - **Bu görev neden var (problem):** Bugünkü `scripts/golden_report.py`
   yalnızca **dört kaba ölçü** karşılaştırıyor: toplam entity sayısı, entity
   tür dağılımı, layer dağılımı ve modelspace bounding box. Bu, bir
@@ -181,13 +200,25 @@ ZK-04        <- 2. satir: kat kodu + mahal no
 
 ### DEV-009 — `furniture/` — tefriş modülü
 
-- **Durum:** PLANNED (kullanıcı 2026-09-23'te talep etti)
-- **Mevcut durum:** Yalnızca `scripts/furniture/CLAUDE.md` sözleşmesi var, kod
-  YOK. Bugün `floor.counters[]` (mutfak tezgahı) doğrudan
-  `generate_dxf.py::draw_floor_sheet` içinde ad-hoc kapalı polyline olarak
-  çiziliyor — modülün ilk işi bu davranışı devralmaktır.
-- **Şartname (kullanıcı):** Standart tefriş elemanlarından oluşan bir set
-  kurulacak.
+- **Durum:** COMPLETED (rev-10)
+- **Sonuç:** `scripts/furniture/` kuruldu. 22 tipli konut tefriş kataloğu
+  (koltuk 3'lü/2'li, berjer, sehpa, TV ünitesi, yemek masası 4/6, sandalye,
+  tek/çift yatak, gardırop, komodin, mutfak tezgahı, ocak, evye, buzdolabı,
+  bulaşık mak., lavabo, klozet, duş teknesi, küvet, çamaşır mak.). Tefriş
+  **her zaman DXF `BLOCK`** olarak çizilir (tip başına bir tanım, yerleşim
+  başına bir `INSERT`). Beş işlevsel grup ve her birine **kahverengi
+  ailesinden düşük kontrastlı** bir layer rengi. `FurnitureSchedule`
+  salt-okunur liste üretir.
+- **Kapı kararı (kullanıcı sordu):** Kapı **tefriş değildir, duvar
+  açıklığıdır** — `openings/` + `walls/` sahiplenir, ki bu projede zaten
+  öyledir. Gerekçe endüstri standardıdır: IFC'de `IfcDoor` bir
+  `IfcBuildingElement`tir (`IfcFurnishingElement` değil), AIA/NCS layer
+  standardında kapı `A-DOOR`, tefriş `A-FURN`; ayrıca kapı geometrisi host
+  duvara bağımlıdır. Ayrıntı: `scripts/furniture/CLAUDE.md` "Kapı kimin?".
+- **Kayıt:** `DEVELOPMENT_HISTORY.md` içindeki `HD-006`.
+- **Uygulanmayan:** `counters[]` (mutfak tezgahı) hâlâ `generate_dxf.py`
+  içinde ad-hoc çiziliyor; bu modüle devri ayrı bir karardır. Tefriş/duvar/
+  kapı-açılımı çakışma kontrolü YOK.
 - **Fikir 1 — Parametrik tefriş kataloğu:** `FurnitureCatalog`, tip adından
   ölçülü bir çizime çözen bir sözlük olur (`WallCatalog` deseni). Context'te
   yalnızca **tip + konum + rotasyon** tutulur, geometri koddan gelir. Aday
@@ -208,9 +239,22 @@ ZK-04        <- 2. satir: kat kodu + mahal no
 
 ### DEV-010 — `columns/` — kolon modülü
 
-- **Durum:** PLANNED
-- **Mevcut durum:** Yalnızca sözleşme dosyası var, kod yok. `axis/` modülü
-  hazır ve kolonların tüketeceği aks verisi mevcut.
+- **Durum:** COMPLETED (rev-10)
+- **Sonuç:** `scripts/columns/` kuruldu. Kolonlar **taralıdır**; tarama
+  deseni/ölçeği dinamiktir (`meta.column_hatch`) ve varsayılanı kullanıcının
+  verdiği değerlerdir: **`ANSI33`, ölçek `3.0`**. Kesit kataloğu
+  (`S30x60`…`D50`) veya doğrudan `width`/`depth`. Kontur `KOLON`, tarama
+  `KOLON-TARAMA` layer'ında (baskı ağırlıkları bağımsız ayarlanabilsin diye).
+  Kolonlar tefrişten ÖNCE çizilir.
+- **İsimlendirme (kullanıcı şimdilik istemedi):** `Column.name` alanı ve
+  `ColumnLabelStyle` hazır, varsayılan **KAPALI**. `meta.column_label.enabled`
+  ile **kod değişikliği olmadan** açılır (test edildi). Ayrıca
+  `ColumnGrid.on_axis_report(...)` her kolonun hangi aks kesişimine oturduğunu
+  (örn. `A1`) salt-okunur raporlar — kullanıcının tercih ettiği "aks
+  kesişimiyle ifade etme" yaklaşımının veri karşılığı.
+- **Kayıt:** `DEVELOPMENT_HISTORY.md` içindeki `HD-006`.
+- **Uygulanmayan:** Katlar arası düşey hizalama ve kolon/duvar-tefriş çakışma
+  kontrolü YOK; kesit küçültme otomatik değildir.
 - **Fikir 1 — Aks kesişimine parametrik kolon:** `ColumnSectionCatalog` ile
   kare/dikdörtgen/dairesel kesitler; `ColumnGrid.from_axes(...)` bildirilen
   aks kesişimlerine kolon oturtur. Üst katlara çıkıldıkça kesit küçültme

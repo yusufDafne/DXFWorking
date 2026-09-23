@@ -1,0 +1,30 @@
+{
+  "source": "minimal",
+  "entity_count": 111,
+  "entity_types": {
+    "ARC": 1,
+    "CIRCLE": 16,
+    "DIMENSION": 5,
+    "LINE": 37,
+    "LWPOLYLINE": 14,
+    "TEXT": 38
+  },
+  "layers": {
+    "AKS": 45,
+    "CERCEVE": 17,
+    "DUVARLAR": 19,
+    "KAPI-PENCERE": 7,
+    "METIN": 21,
+    "OLCU": 2
+  },
+  "modelspace_bbox": [
+    -500.0,
+    -3350.0,
+    35400.0,
+    12350.0
+  ],
+  "blocks": [
+    "_CLOSEDFILLED"
+  ],
+  "block_inserts": {}
+}

@@ -1,0 +1,177 @@
+{
+  "meta": {
+    "project_name": "Fixture - Minimal Kat",
+    "units": "mm",
+    "scale": "1:50",
+    "project_type": "MIMARI_UYGULAMA",
+    "fonts": {
+      "default": "arialn.ttf",
+      "room_label": "arialn.ttf"
+    },
+    "cover": {
+      "signature_fields": ["YONETIM", "MIMAR"]
+    },
+    "floor_width": 6000.0,
+    "floor_depth": 9000.0
+  },
+  "layers": [
+    {
+      "name": "DUVARLAR",
+      "color": 7
+    },
+    {
+      "name": "KAPI-PENCERE",
+      "color": 5
+    },
+    {
+      "name": "METIN",
+      "color": 7
+    },
+    {
+      "name": "CERCEVE",
+      "color": 8
+    },
+    {
+      "name": "OLCU",
+      "color": 3
+    }
+  ],
+  "grid": {
+    "vertical_axes": [
+      {
+        "label": "1",
+        "position": 0.0
+      },
+      {
+        "label": "2",
+        "position": 3000.0
+      },
+      {
+        "label": "3",
+        "position": 6000.0
+      }
+    ],
+    "horizontal_axes": [
+      {
+        "label": "A",
+        "position": 0.0
+      },
+      {
+        "label": "B",
+        "position": 9000.0
+      }
+    ]
+  },
+  "floors": [
+    {
+      "id": "kat1",
+      "label": "ORNEK KAT",
+      "code": "K1",
+      "rooms": [
+        {
+          "id": "oda_sol",
+          "name": "Oda Sol",
+          "no": "01",
+          "area_m2": 24.64,
+          "polygon": [
+            [100, 100],
+            [2900, 100],
+            [2900, 8900.0],
+            [100, 8900.0]
+          ]
+        },
+        {
+          "id": "oda_sag",
+          "name": "Oda Sag",
+          "no": "02",
+          "area_m2": 24.64,
+          "polygon": [
+            [3100, 100],
+            [5900, 100],
+            [5900, 8900.0],
+            [3100, 8900.0]
+          ]
+        }
+      ],
+      "walls": [
+        {
+          "id": "w_alt",
+          "start": [0, 0],
+          "end": [6000.0, 0],
+          "thickness": 200.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "w_sag",
+          "start": [6000.0, 0],
+          "end": [6000.0, 9000.0],
+          "thickness": 200.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "w_ust",
+          "start": [6000.0, 9000.0],
+          "end": [0, 9000.0],
+          "thickness": 200.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "w_sol",
+          "start": [0, 9000.0],
+          "end": [0, 0],
+          "thickness": 200.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "w_orta",
+          "start": [3000.0, 0],
+          "end": [3000.0, 9000.0],
+          "thickness": 200.0,
+          "layer": "DUVARLAR"
+        }
+      ],
+      "openings": [
+        {
+          "id": "kapi_orta",
+          "type": "door",
+          "wall_id": "w_orta",
+          "position_from_start": 4500.0,
+          "width": 900.0,
+          "layer": "KAPI-PENCERE"
+        },
+        {
+          "id": "pencere_alt",
+          "type": "window",
+          "wall_id": "w_alt",
+          "position_from_start": 1500.0,
+          "width": 1200.0,
+          "layer": "KAPI-PENCERE"
+        }
+      ],
+      "labels": []
+    }
+  ],
+  "elevations": [
+    {
+      "id": "on_cephe",
+      "label": "ON CEPHE",
+      "width": 6000.0,
+      "axis_source": "vertical",
+      "levels": [
+        {
+          "label": "ZEMIN KAT",
+          "height": 3000.0,
+          "window_count": 2,
+          "door": true
+        }
+      ]
+    }
+  ],
+  "rev_history": [
+    {
+      "rev": 1,
+      "ts": "2026-09-23T00:00:00Z",
+      "summary": "DEV-006 fixture: kapak + tek kat (2 oda, 5 duvar, 1 kapi, 1 pencere) + aks/olcu + tek seviyeli cephe. Gercek projeden BAGIMSIZ, kucuk ve elle dogrulanabilir bir referanstir. Bina 6000x9000 secildi: 1:50'de A4 kapak blogu 14850 yuksek oldugundan icerigin dusey acikligi en az 8150 olmali, aksi halde kapak paftaya sigmaz."
+    }
+  ]
+}

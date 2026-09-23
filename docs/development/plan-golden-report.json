@@ -1,6 +1,6 @@
 {
   "source": "output\\plan.dxf",
-  "sha256": "28d46d0c5cbbbdee0a67191e79a39fa771668b1a6f214047a6839832cbbfa8db",
+  "sha256": "3756682fb5a1ee4424f152bc579024190d17fe1f1e95ca9cbd63eaab6d918ba1",
   "entity_count": 2226,
   "entity_types": {
     "ARC": 105,
@@ -25,5 +25,9 @@
     -9350.0,
     301200.0,
     24150.0
-  ]
+  ],
+  "blocks": [
+    "_CLOSEDFILLED"
+  ],
+  "block_inserts": {}
 }
