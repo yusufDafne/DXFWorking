@@ -51,6 +51,11 @@ mümkün olduğunca **kendi kendine yeterli** olacak şekilde yazılmıştır.
    ölçeğin o proje tipi için mevzuaten (`PROJECT_TYPES`) izinli olup
    olmadığını doğrular ve varsa ihlali açıklayan bir metin döner.
 
+`CoverBlock` (rev-8) ise SADECE kapak paftasında kullanılan, kağıt
+üzerinde tam A4 (ISO 7200 Tip-A) bir kapak bloğudur — `Sheet`in her paftada
+çizdiği küçük Tip-B şerit antetiyle karıştırılmamalıdır. Ayrıntı için
+aşağıdaki "Uygulanan / uygulanmayan kısımlar" bölümüne bakınız.
+
 ## Mevzuat kaynağı (rev-4, "PAFTA_MEVZUATI" araştırması)
 
 Kullanıcı, başka bir ajandan aldığı detaylı bir TMMOB/imar yönetmeliği +
@@ -71,10 +76,33 @@ birebir kopyalanmadı. Uygulanan / uygulanmayan kısımlar:
   kağıda oturan bir tuval değil (bkz. "Bilinen sınırlamalar"). Tipik
   ölçeklerimizde (1:50, 1:100) bu tavan hep devreye girer; sadece çok küçük
   ölçekli (DETAY, 1:5 vb.) paftalarda gerçek değer kullanılabilir.
-- ❌ **Tip-A kapak paftası** (ISO 7200, tapu/imza/müellif bilgileri):
-  UYGULANMADI — bizim hiçbir zaman bu tür yasal/resmi veriye erişimimiz yok
-  ve context.json'da böyle bir veri modeli hiç yok. Sadece fikir olarak
-  not edildi.
+- ✅ **Tip-A kapak bloğu** (ISO 7200, A4): rev-8'de `CoverBlock` sınıfı olarak
+  UYGULANDI. Kapak, basılı kağıt üzerinde **her zaman tam A4 (210x297mm)**
+  olur; modelspace karşılığı `to_modelspace(...)` ile ölçeğe göre türetilir
+  (1:50 → 10500x14850, 1:100 → 21000x29700 — ikisi de çıktıda 210x297mm
+  basar). Çıktı daima ölçekli alındığı için doğru davranış budur.
+  - **Konum:** paftanın **sağ-altına** sabitlenir — proje katlandığında
+    (DIN 824) bu bölge en üste gelsin diye.
+  - **Pafta:** kapak paftasının **DIŞ ÇERÇEVE genişliği kapak genişliğine
+    EŞİTTİR** — pafta dış hattı kapak bloğunun dış hattıyla çakışır. Bu
+    yüzden `Sheet.draw`'a `padding=0` ve `frame_gap=block.frame_gap` verilir;
+    aksi halde çerçeve iki yandan `CONTENT_PADDING+FRAME_GAP` kadar büyür ve
+    basılı pafta A4 genişliğinde olmaz. Tip-B şerit anteti de çizilmez
+    (`title_box=False`); yükseklik ortak mutlak aralığı korur, kapak bloğu
+    alta oturur ve A4 panelinin üst kenarı çift çizgiyle kapatılır.
+  - **Çift çizim yok:** Pafta çerçevesi ile kapak bloğunun dış/iç hatları
+    aynı yerde olduğundan `CoverBlock.draw(..., outer_frame=False)` ile blok
+    kendi dikdörtgenlerini çizmez, yalnızca A4 panelinin üst kenarını ekler.
+  - **Çerçeve:** `Sheet`in çift çizgili çerçevesi gibi **her kenardan EŞİT**
+    offsetli (kağıt üzerinde 10mm, `PRINTED_COVER_FRAME_GAP_MM`). Önceki
+    sürümdeki DIN/ISO sayfa marjı (sol 20 / diğer 10) eşit olmayan bir
+    görünüm verdiği için KALDIRILDI.
+  - **İçerik:** proje adı (başlık), `PROJE TIPI`/`OLCEK`/`MIMAR`/`TARIH`
+    bilgi satırları ve `meta.cover.signature_fields` ile sürülen imza
+    kutuları (2 sütunlu ızgara, başlığı boş gelen alan `(UNVAN)`).
+  - **Veri uydurulmaz:** `architect_name`/`date` context.json'da yoksa metin
+    yazılmaz, elle doldurulacak bir çizgi bırakılır. Ayrıntılı kapak
+    TASARIMI ayrı bir talep olarak gelecektir.
 - ❌ **Parçalı pafta + Keyplan** (bina aks/dilatasyon hatlarından bölünüp
   her parçaya 1:500/1:1000 taranmış bir konum planı eklenmesi): HENÜZ
   UYGULANMADI (büyük bir özellik) — şu anki projemiz zaten tek parça
@@ -126,6 +154,39 @@ sheet.draw(msp, dx, width, y_bottom, y_top, label, content_entities=[...bu pafta
 başlamadan önce `start = len(msp)`, bitirdikten sonra
 `content_entities = list(msp)[start:]`.
 
+**Kapak paftası (Tip-A, rev-8):**
+
+```python
+from pafta import CoverBlock
+
+block = CoverBlock(scale)          # A4 olculeri olcege gore turetilir
+gap = block.frame_gap
+# Pafta DIS cercevesi = kapak genisligi. padding=0 oldugu icin dx, paftanin
+# IC cizgisinin sol kenaridir; dis hat bunun `gap` kadar disindan gecer ve
+# kapak blogu tam o dis hattan baslar.
+sheet_width = block.width - 2 * gap
+x0 = dx - gap
+y0 = sheet.frame_y0
+block.draw(
+    msp, x0, y0,
+    title=meta["project_name"],
+    info_rows=[("PROJE TIPI", ...), ("OLCEK", ...), ("MIMAR", ...), ("TARIH", ...)],
+    signature_labels=meta["cover"]["signature_fields"],
+    outer_frame=False,     # dis/ic hat paftanin kendi cercevesinden gelir
+)
+# info_rows'ta degeri BOS gelen satir icin metin UYDURULMAZ: elle doldurulacak
+# bir cizgi cizilir. signature_labels'ta basligi bos olan alan "(UNVAN)" olur.
+```
+
+Kapak paftası çizilirken `Sheet.draw`'a `width=sheet_width`,
+`title_box=False`, `padding=0.0` ve `frame_gap=gap` verilir; `y_bottom`/
+`y_top` olarak paylaşılan aralık (`frame_y0 + gap`, `frame_y1 - gap`)
+geçilir ki bu pafta ortak yüksekliği bozmasın. Ardışık paftaya geçerken
+genel `width + 2*(padding+frame_gap)` formülü bu pafta için GEÇERSİZDİR;
+`draw_cover_sheet` dış çerçevenin sağ kenarını döndürür ve sonraki pafta
+doğrudan oraya oturtulur. Kapak bloğu da diğer her içerik gibi `content_entities`'e dahil
+edilir, yani `Sheet.draw`'ın taşma kontrolünden geçer.
+
 ## Test/doğrulama yaklaşımı
 
 Bu modülde regresyon test dosyası yok (proje küçük ölçekli, elle görsel
@@ -158,8 +219,20 @@ doğrulamalı:
   bunun yerine yapılması gereken şey): büyük bir özellik, henüz yok. Bina
   aks/dilatasyon hatlarından bölünür, her parçaya küçük ölçekli
   (1:500/1:1000) taranmış bir konum (keyplan) eklenir.
-- **Tip-A kapak paftası** (ISO 7200): context.json'da hiç veri modeli yok,
-  henüz uygulanmadı.
+- **Tip-A kapak VERİSİ** (ISO 7200): kapağın kendisi çizilir, ama müellif
+  (`meta.cover.architect_name`), tarih (`meta.cover.date`) ve ayrılmış iki
+  imza alanının unvanı henüz kullanıcı tarafından verilmedi; bu alanlar
+  şimdilik boş doldurma çizgisi olarak çıkar (bkz. `DEV-007`). Ruhsat/onay
+  alanlarının gerekip gerekmediği de ayrı bir karardır.
+- **Kapak bloğunun ölçek/boyut sınırı:** `CoverBlock` A4'ü ölçeğe göre
+  büyüttüğü için çok küçük ölçekli (büyük paydalı) projelerde blok, paftanın
+  içerik alanından yüksek kalabilir; benzer şekilde `floor_width`, A4
+  genişliğinden darsa blok yanlara taşar. Taşma `Sheet.draw` içindeki
+  `verify_within_frame` ile yakalanır ve `PaftaOverflowError` fırlatılır —
+  sessiz hatalı çıktı üretilmez (1:200 ile doğrulandı) — ancak otomatik bir
+  küçültme/yeniden yerleşim stratejisi YOKTUR. Ayrıca bu kontrol DIŞ
+  çerçeveye göre yapılır: blok `CONTENT_PADDING` alanına girse de, dış
+  çerçeveyi aşmadığı sürece hata vermez.
 - **Sayfa marjı çizimi** (20mm sol / 10mm sağ-üst-alt, gerçek kağıt
   sınırını modelspace'te göstermek): sabitler kayıtlı ama çizilmiyor.
 - **`PaperSizePlanner`, proje tipi henüz SEÇİLMEMİŞ yeni bir proje için**

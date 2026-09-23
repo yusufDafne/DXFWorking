@@ -30,7 +30,7 @@ except ImportError:
     from matplotlib.patches import Polygon as MplPolygon
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from pafta import CONTENT_PADDING, FRAME_GAP  # noqa: E402  (once sys.path ayarlanmali)
+from pafta import CONTENT_PADDING, FRAME_GAP, CoverBlock, Sheet  # noqa: E402  (once sys.path ayarlanmali)
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_CONTEXT_PATH = PROJECT_ROOT / "context.json"
@@ -78,6 +78,68 @@ def save_with_fallback(save_fn, output_path: Path, max_attempts: int = 50) -> Pa
 
     cleanup_fallback_files(output_path)
     return output_path
+
+
+def draw_cover(ax, meta: dict, dx: float, sheet) -> float:
+    """generate_dxf.py::draw_cover_sheet'in onizleme karsiligi; paftanin DIS
+    cercevesinin sag kenarini (mutlak X) dondurur.
+
+    Kapak paftasinin DIS CERCEVE GENISLIGI kapak genisligine ESITTIR (padding
+    yok), kapak blogu paftanin ALTINA oturur ve bu paftada antet kutusu
+    yoktur."""
+    block = CoverBlock(meta.get("scale", "1:100"))
+    gap = block.frame_gap
+    sheet_width = block.width - 2 * gap
+    x0, y0 = dx - gap, sheet.frame_y0
+    y1 = sheet.frame_y1
+
+    # Pafta cift cercevesi (kapak blogunun dis hattiyla cakisir)
+    ax.add_patch(plt.Rectangle((x0, y0), block.width, y1 - y0, facecolor="white",
+                               edgecolor="#111827", linewidth=0.9, zorder=3))
+    ax.add_patch(plt.Rectangle((dx, y0 + gap), sheet_width, (y1 - y0) - 2 * gap,
+                               facecolor="none", edgecolor="#6b7280", linewidth=0.5, zorder=4))
+    # A4 panelini yukaridan kapatan ust kenar
+    ax.plot([x0, x0 + block.width], [y0 + block.height] * 2, color="#111827", lw=0.9, zorder=4)
+    ax.plot([dx, dx + sheet_width], [y0 + block.height - gap] * 2, color="#6b7280", lw=0.5, zorder=4)
+
+    inner_x0, inner_y0 = dx, y0 + gap
+    inner_w = sheet_width
+    ax.text(inner_x0 + inner_w / 2.0, inner_y0 + block.mm(247.0),
+            meta.get("project_name", "MIMARI PROJE"),
+            fontsize=6, color="#111827", ha="center", va="center", zorder=5)
+    cover_meta = meta.get("cover", {})
+    rows = [
+        ("PROJE TIPI", meta.get("project_type", "")),
+        ("OLCEK", meta.get("scale", "")),
+        ("MIMAR", cover_meta.get("architect_name", "")),
+        ("TARIH", cover_meta.get("date", "")),
+    ]
+    for index, (label, value) in enumerate(rows):
+        row_y = inner_y0 + block.mm(214.0 - 15.0 * index)
+        ax.text(inner_x0 + block.mm(4.0), row_y, f"{label} :", fontsize=4,
+                color="#374151", ha="left", va="center", zorder=5)
+        ax.text(inner_x0 + block.mm(55.0), row_y, value or "................",
+                fontsize=4, color="#374151", ha="left", va="center", zorder=5)
+
+    signature_labels = cover_meta.get("signature_fields", [])
+    if signature_labels:
+        columns = 2
+        sig_rows = -(-len(signature_labels) // columns)
+        sig_gap = block.mm(10.0)
+        band = block.mm(110.0)
+        cell_w = (inner_w - sig_gap * (columns - 1)) / columns
+        cell_h = (band - sig_gap * (sig_rows - 1)) / sig_rows
+        for index, label in enumerate(signature_labels):
+            column, row = index % columns, index // columns
+            bx0 = inner_x0 + column * (cell_w + sig_gap)
+            by0 = inner_y0 + block.mm(20.0) + (sig_rows - 1 - row) * (cell_h + sig_gap)
+            ax.add_patch(plt.Rectangle((bx0, by0), cell_w, cell_h, facecolor="none",
+                                       edgecolor="#6b7280", linewidth=0.5, zorder=4))
+            ax.text(bx0 + block.mm(4.0), by0 + block.mm(5.0), label or "(UNVAN)",
+                    fontsize=3.5, color="#6b7280", ha="left", va="center", zorder=5)
+
+    ax.text(dx, -600, "KAPAK PAFTASI", fontsize=7, color="#111827", ha="left", va="top")
+    return dx + sheet_width + gap
 
 
 def draw_floor(ax, floor: dict, dx: float) -> None:
@@ -205,6 +267,15 @@ def generate_preview(context_path: Path = DEFAULT_CONTEXT_PATH, output_path: Pat
         # Paftalar dis cizgilerinden bitisiktir (bkz. scripts/pafta/CLAUDE.md) -
         # generate_dxf.py ile ayni formul kullanilir, aralarinda ekstra bosluk yok.
         cursor = 0.0
+        # Kapak paftasi, DXF'te oldugu gibi ilk paftadir (bkz. generate_dxf.py::generate).
+        # Kapak blogunun dusey konumu paylasilan mutlak pafta araligina baglidir,
+        # bu yuzden Sheet ayni content_ranges ile burada da kurulur.
+        content_ranges = [(0.0, floor_depth) for _ in context["floors"]]
+        for elevation in context["elevations"]:
+            content_ranges.append(elevation_vertical_extent(elevation))
+        sheet = Sheet(meta.get("scale", "1:100"), 350.0, [], content_ranges)
+        # Kapak paftasinin dis cercevesi kapak genisligi kadardir (padding yok).
+        cursor = draw_cover(ax, meta, cursor, sheet) + FRAME_HALF_WIDTH
         for floor in context["floors"]:
             draw_floor(ax, floor, cursor)
             if grid:

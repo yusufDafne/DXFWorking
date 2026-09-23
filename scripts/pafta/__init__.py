@@ -12,6 +12,8 @@ buraya KARISMAZ (onlar kendi modullerinde/yerlerinde kalir).
 """
 from __future__ import annotations
 
+import math
+
 import ezdxf
 import ezdxf.bbox as bbox_mod
 from ezdxf.enums import TextEntityAlignment
@@ -51,6 +53,23 @@ PRINTED_TITLE_TEXT_MM = 3.5
 PRINTED_LABEL_TEXT_MM = 2.5
 PRINTED_MARGIN_LEFT_MM = 20.0           # cilt/zimba payi (bilgi amacli, henuz cizilmiyor)
 PRINTED_MARGIN_MM = 10.0                # sag/ust/alt (bilgi amacli, henuz cizilmiyor)
+
+# --- ISO 7200 Tip-A (kapak / resmi onay) anteti - kagit uzerinde (PRINTED) mm.
+# Kullanicinin mevzuat arastirmasi Tip-A icin 190x277mm veya 210x297mm (A4)
+# verir; burada A4 kullanilir. Tip-B (serit antet, yukarida) her paftanin
+# sag-alt kosesindeki kucuk kutudur - Tip-A ise SADECE kapak paftasinda,
+# paftanin EN ALTINA yerlestirilen tam bir A4 kapak blogudur.
+PRINTED_COVER_WIDTH_MM = 210.0
+PRINTED_COVER_HEIGHT_MM = 297.0
+# Kapak cercevesi, Sheet._draw_double_frame gibi HER KENARDAN ESIT offsetli
+# cift cizgidir. (Onceki surumde DIN/ISO 5457 sayfa marjlari uygulaniyordu -
+# sol 20mm, diger 10mm - bu ESIT OLMAYAN bir offset gorunumu veriyordu ve
+# kullanici bunu duzelttirdi. Cilt payi, kapak blogunun kendi icinde degil,
+# paftanin genelinde ele alinir.)
+PRINTED_COVER_FRAME_GAP_MM = 10.0
+PRINTED_COVER_TITLE_MM = 7.0
+PRINTED_COVER_TEXT_MM = 3.5
+PRINTED_COVER_LABEL_MM = 2.5
 
 # Rulo kagit: BRUT (nominal) yukseklik -> NET kullanilabilir yukseklik (mm),
 # ust/alt 10mm pay dusulmus haliyle. Kullanicinin "45/60/90'lik kagit"
@@ -220,6 +239,135 @@ class PaperSizePlanner:
         )
 
 
+class CoverBlock:
+    """ISO 7200 **Tip-A kapak** blogu: kapak paftasinin EN ALTINA yerlestirilen,
+    kagit uzerinde tam A4 (210x297mm) olculerinde bir kapak.
+
+    Tip-B (`Sheet`in sag-alt kosedeki iki satirlik serit anteti) HER paftada
+    bulunur; Tip-A ise SADECE kapak paftasinda, bir kere cizilir. Olculer
+    kagit-uzerinde (PRINTED) mm cinsinden tanimlanir ve `to_modelspace(...)`
+    ile projenin OLCEGINE gore turetilir - yani ayni A4 kapak 1:50'de
+    10500x14850mm, 1:100'de 21000x29700mm modelspace alani kaplar.
+
+    **Veri uydurulmaz:** `info_rows`'ta degeri bos gelen bir alan (orn. mimar
+    adi veya tarih context.json'da yoksa) metin olarak UYDURULMAZ; yerine elle
+    doldurulacak bir **doldurma cizgisi** cizilir. Imza alanlari da bos
+    birakilir; basligi bos gelen bir imza alani `UNVAN_PLACEHOLDER` ile
+    "sonra belirlenecek" olarak isaretlenir."""
+
+    # Ic alana (marjlarin icine) gore, kagit uzerinde mm cinsinden yerlesim.
+    TITLE_Y_MM = 247.0
+    RULE_Y_MM = 234.0
+    INFO_TOP_Y_MM = 214.0
+    INFO_STEP_MM = 15.0
+    INFO_VALUE_X_MM = 55.0
+    SIGNATURE_HEAD_Y_MM = 145.0
+    SIGNATURE_BAND_BOTTOM_MM = 20.0
+    SIGNATURE_BAND_TOP_MM = 130.0
+    SIGNATURE_COLUMNS = 2
+    SIGNATURE_GAP_MM = 10.0
+    TEXT_PAD_MM = 4.0          # ic marj hattina bitisik metin birakilmaz
+    UNVAN_PLACEHOLDER = "(UNVAN)"
+
+    def __init__(self, scale: str, frame_layer: str = "CERCEVE", text_layer: str = "METIN"):
+        self.scale = scale
+        self.scale_denominator = parse_scale_denominator(scale)
+        self.frame_layer = frame_layer
+        self.text_layer = text_layer
+        self.width = self.mm(PRINTED_COVER_WIDTH_MM)
+        self.height = self.mm(PRINTED_COVER_HEIGHT_MM)
+        # Kapak paftasinin cerceve boslugu da budur: pafta DIS cercevesi kapak
+        # blogunun dis hattiyla CAKISIR (bkz. draw(..., outer_frame=False)).
+        self.frame_gap = self.mm(PRINTED_COVER_FRAME_GAP_MM)
+
+    def mm(self, printed_mm: float) -> float:
+        """Kagit-uzerinde mm -> modelspace birimi (projenin olcegine gore)."""
+        return to_modelspace(printed_mm, self.scale_denominator)
+
+    def _rect(self, msp, x0: float, y0: float, x1: float, y1: float):
+        poly = msp.add_lwpolyline(
+            [(x0, y0), (x1, y0), (x1, y1), (x0, y1)], dxfattribs={"layer": self.frame_layer}
+        )
+        poly.closed = True
+        return poly
+
+    def draw(self, msp, x0: float, y0: float, title: str,
+             info_rows: list[tuple[str, str]], signature_labels: list[str],
+             outer_frame: bool = True) -> None:
+        """A4 kapagi sol-alt kosesi (x0, y0) olacak sekilde cizer.
+
+        `outer_frame=False`: kapak paftasinin DIS cercevesi zaten bu blogun
+        dis hattiyla ayni yerde oldugundan (pafta genisligi = kapak genisligi)
+        cift cizim yapilmaz; yalnizca A4 panelini yukaridan kapatan ust kenar
+        cizgileri cizilir."""
+        mm = self.mm
+        # Dis A4 hatti + ic hat: Sheet._draw_double_frame ile ayni "cift/
+        # ofsetli cizgi" yaklasimi, HER KENARDAN ESIT offsetle.
+        gap = self.frame_gap
+        ix0, iy0 = x0 + gap, y0 + gap
+        ix1, iy1 = x0 + self.width - gap, y0 + self.height - gap
+        if outer_frame:
+            self._rect(msp, x0, y0, x0 + self.width, y0 + self.height)
+            self._rect(msp, ix0, iy0, ix1, iy1)
+        else:
+            # Sol/sag/alt kenarlar paftanin cift cercevesinden geliyor; burada
+            # sadece A4 panelinin UST kenari (ayni cift hat mantigiyla) eklenir.
+            msp.add_line((x0, y0 + self.height), (x0 + self.width, y0 + self.height),
+                         dxfattribs={"layer": self.frame_layer})
+            msp.add_line((ix0, iy1), (ix1, iy1), dxfattribs={"layer": self.frame_layer})
+        inner_width = ix1 - ix0
+
+        title_height = fit_text_height(title, inner_width - mm(10.0), mm(PRINTED_COVER_TITLE_MM))
+        add_text(msp, title, (ix0 + inner_width / 2.0, iy0 + mm(self.TITLE_Y_MM)),
+                 title_height, self.text_layer, align=TextEntityAlignment.MIDDLE_CENTER)
+        rule_y = iy0 + mm(self.RULE_Y_MM)
+        msp.add_line((ix0, rule_y), (ix1, rule_y), dxfattribs={"layer": self.frame_layer})
+
+        text_height = mm(PRINTED_COVER_TEXT_MM)
+        text_pad = mm(self.TEXT_PAD_MM)
+        label_x = ix0 + text_pad
+        fill_x1 = ix1 - text_pad
+        value_x = ix0 + mm(self.INFO_VALUE_X_MM)
+        for index, (label, value) in enumerate(info_rows):
+            row_y = iy0 + mm(self.INFO_TOP_Y_MM - self.INFO_STEP_MM * index)
+            add_text(msp, f"{label} :", (label_x, row_y), text_height, self.text_layer,
+                     align=TextEntityAlignment.MIDDLE_LEFT)
+            if value:
+                add_text(msp, value, (value_x, row_y),
+                         fit_text_height(value, fill_x1 - value_x, text_height),
+                         self.text_layer, align=TextEntityAlignment.MIDDLE_LEFT)
+            else:
+                # Deger context.json'da YOK - metin uydurulmaz, elle
+                # doldurulacak bir cizgi birakilir (bkz. kok CLAUDE.md).
+                fill_y = row_y - mm(2.0)
+                msp.add_line((value_x, fill_y), (fill_x1, fill_y), dxfattribs={"layer": self.frame_layer})
+
+        if not signature_labels:
+            return
+        add_text(msp, "IMZA ALANLARI", (label_x, iy0 + mm(self.SIGNATURE_HEAD_Y_MM)),
+                 text_height, self.text_layer, align=TextEntityAlignment.MIDDLE_LEFT)
+
+        columns = self.SIGNATURE_COLUMNS
+        rows = math.ceil(len(signature_labels) / columns)
+        gap = mm(self.SIGNATURE_GAP_MM)
+        band_height = mm(self.SIGNATURE_BAND_TOP_MM - self.SIGNATURE_BAND_BOTTOM_MM)
+        cell_width = (inner_width - gap * (columns - 1)) / columns
+        cell_height = (band_height - gap * (rows - 1)) / rows
+        label_height = mm(PRINTED_COVER_LABEL_MM)
+        for index, label in enumerate(signature_labels):
+            column = index % columns
+            row = index // columns
+            bx0 = ix0 + column * (cell_width + gap)
+            # ilk satir EN USTTE dursun diye satir sirasi yukaridan asagiya
+            by0 = iy0 + mm(self.SIGNATURE_BAND_BOTTOM_MM) + (rows - 1 - row) * (cell_height + gap)
+            self._rect(msp, bx0, by0, bx0 + cell_width, by0 + cell_height)
+            caption = label or self.UNVAN_PLACEHOLDER
+            add_text(msp, caption,
+                     (bx0 + mm(4.0), by0 + mm(5.0)),
+                     fit_text_height(caption, cell_width - mm(8.0), label_height, min_height=label_height * 0.5),
+                     self.text_layer, align=TextEntityAlignment.MIDDLE_LEFT)
+
+
 class Sheet:
     """Pafta cercevesi + standart sag-alt kose baslik kutusu (bkz. kok
     CLAUDE.md 'Pafta başlık kutusu' standardi). Cerceve, duvar rail mantigina
@@ -291,25 +439,36 @@ class Sheet:
         self.outer_height = self.frame_y1 - self.frame_y0
 
     def draw(self, msp, dx: float, width: float, y_bottom: float, y_top: float,
-              label: str, content_entities=None) -> None:
+              label: str, content_entities=None, title_box: bool = True,
+              padding: float | None = None, frame_gap: float | None = None) -> None:
         # Bu paftanin kendi (y_bottom, y_top) icerigi, TUM projede paylasilan
         # mutlak frame_y0/frame_y1 araligina yerlesir - her paftanin kendi
         # merkezine gore simetrik padding YAPILMAZ (bu, farkli "merkezli"
         # paftalar - ornegin kat plani vs gorunus - arasinda dusey kaymaya
         # yol acardi). Sadece guvenlik icin, bu paftanin icerigi kurulumda
         # bildirilenden buyukse (olmamasi gerekir) araligi genislet.
-        pads = self.padding + self.frame_gap
+        # padding/frame_gap normalde sinif genelindedir; KAPAK PAFTASI gibi
+        # ozel paftalar bunlari override edebilir (orada pafta dis cercevesi
+        # kapak blogunun dis hattiyla cakistigi icin padding 0'dir).
+        pad = self.padding if padding is None else padding
+        gap = self.frame_gap if frame_gap is None else frame_gap
+        pads = pad + gap
         outer_y0 = min(self.frame_y0, y_bottom - pads)
         outer_y1 = max(self.frame_y1, y_top + pads)
 
-        inner_x0, inner_x1 = dx - self.padding, dx + width + self.padding
-        outer_x0, outer_x1 = inner_x0 - self.frame_gap, inner_x1 + self.frame_gap
-        inner_y0, inner_y1 = outer_y0 + self.frame_gap, outer_y1 - self.frame_gap
+        inner_x0, inner_x1 = dx - pad, dx + width + pad
+        outer_x0, outer_x1 = inner_x0 - gap, inner_x1 + gap
+        inner_y0, inner_y1 = outer_y0 + gap, outer_y1 - gap
 
         if content_entities is not None:
             verify_within_frame(content_entities, outer_x0, outer_y0, outer_x1, outer_y1, label)
 
         self._draw_double_frame(msp, outer_x0, outer_y0, outer_x1, outer_y1, inner_x0, inner_y0, inner_x1, inner_y1)
+
+        # KAPAK PAFTASI ozel bir paftadir: sag-alt kosesini Tip-A kapak blogu
+        # kapladigi icin Tip-B serit anteti CIZILMEZ (title_box=False).
+        if not title_box:
+            return
 
         # Baslik kutusu: IC cizginin sag-alt kosesinde BITER (ona tasmaz/
         # ustune binmez), oradan sola/yukari dogru cizilir. Boyutlari

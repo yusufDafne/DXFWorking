@@ -52,6 +52,7 @@ except ImportError:
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from pafta import (  # noqa: E402  (once sys.path ayarlanmali)
     CONTENT_PADDING,
+    CoverBlock,
     FRAME_GAP,
     PaftaOverflowError,
     PaperSizePlanner,
@@ -156,6 +157,58 @@ def draw_labels(msp, labels: list[dict], default_height: float) -> None:
         layer = label.get("layer", "METIN")
         text = msp.add_text(label["text"], dxfattribs={"layer": layer, "height": height})
         text.dxf.insert = tuple(label["position"])
+
+
+def draw_cover_sheet(msp, context: dict, dx: float, sheet: Sheet) -> float:
+    """Kapak paftasi (OZEL pafta) - paftanin DIS cercevesinin sag kenarini
+    (mutlak X) dondurur.
+
+    Kurallar (bkz. kok CLAUDE.md 'Kapak paftasi'):
+    - Kapak blogu kagit uzerinde tam A4'tur; modelspace olcusu projenin
+      OLCEGINE gore turetilir (1:50 -> 10500x14850mm), boylece cikti HANGI
+      olcekte alinirsa alinsin kagitta 210x297mm olur.
+    - Paftanin DIS CERCEVE GENISLIGI kapak genisligine ESITTIR: pafta dis
+      hatti, kapak blogunun dis hattiyla cakisir. Bu yuzden bu paftada
+      CONTENT_PADDING uygulanmaz (padding=0) ve cerceve boslugu kapagin
+      kendi esit offseti (`block.frame_gap`) olur - boylece basili pafta
+      tam A4 genisliginde olur ve duzgun katlanir (DIN 824).
+    - Kapak, paftanin ALTINA oturur; ustte kalan bolum bos birakilir.
+    - Bu paftada Tip-B serit anteti CIZILMEZ - kapagin kendisi o islevi gorur.
+    """
+    content_start = len(msp)
+    meta = context["meta"]
+    cover_meta = meta.get("cover", {})
+    block = CoverBlock(meta.get("scale", "1:100"))
+    gap = block.frame_gap
+
+    # dx = paftanin IC cizgisinin sol kenari (padding=0 oldugu icin icerik
+    # origini). Dis cerceve bunun `gap` kadar disindan gecer ve kapak blogu
+    # tam o dis hattan baslar.
+    sheet_width = block.width - 2 * gap
+    block_x0 = dx - gap
+    block_y0 = sheet.frame_y0
+
+    info_rows = [
+        ("PROJE TIPI", meta.get("project_type", "")),
+        ("OLCEK", meta.get("scale", "")),
+        ("MIMAR", cover_meta.get("architect_name", "")),
+        ("TARIH", cover_meta.get("date", "")),
+    ]
+    block.draw(
+        msp, block_x0, block_y0,
+        title=meta.get("project_name", "MIMARI PROJE"),
+        info_rows=info_rows,
+        signature_labels=cover_meta.get("signature_fields", []),
+        outer_frame=False,   # dis/ic hat paftanin kendi cercevesinden gelir
+    )
+
+    # Bu pafta, TUM paftalarla paylasilan mutlak Y araligini oldugu gibi
+    # kullanir (kendi araligini bildirip ortak cerceveyi bozmaz).
+    content_entities = list(msp)[content_start:]
+    sheet.draw(msp, dx, sheet_width, sheet.frame_y0 + gap, sheet.frame_y1 - gap,
+               "KAPAK PAFTASI", content_entities=content_entities,
+               title_box=False, padding=0.0, frame_gap=gap)
+    return dx + sheet_width + gap
 
 
 def shift_point(pt, dx: float):
@@ -323,6 +376,7 @@ def generate(context_path: Path = DEFAULT_CONTEXT_PATH, output_path: Path = DEFA
     text_height = text_height_for_units(units)
 
     scale = context["meta"].get("scale", "1:100")
+    # Kapak paftasinda antet kutusu olmadigi icin adi bu listeye girmez.
     all_labels = [f["label"] for f in floors] + [e["label"] for e in elevations]
 
     # Tum paftalarin (kat plani + gorunus) AYNI MUTLAK dis-cerceve Y-araligini
@@ -330,6 +384,10 @@ def generate(context_path: Path = DEFAULT_CONTEXT_PATH, output_path: Path = DEFA
     # paftanin kendi HAM (y_bottom, y_top) araligi toplanir; Sheet bunlarin
     # en genisini kapsayan TEK bir mutlak aralik hesaplar (bkz.
     # scripts/pafta/CLAUDE.md - genislik ise her pafta icin serbesttir).
+    # Kapak paftasi buraya KENDI araligini bildirmez: kapak blogu ortak
+    # aralik hesaplandiktan SONRA paftanin sag-altina hizalanir (konumu
+    # frame_y0'a, yani bu hesabin sonucuna baglidir). Blok ortak aralaga
+    # sigmazsa Sheet.draw icindeki verify_within_frame hata firlatir.
     content_ranges = [(0.0, floor_depth) for _ in floors]
     for elevation in elevations:
         content_ranges.append(elevation_vertical_extent(elevation))
@@ -377,6 +435,12 @@ def generate(context_path: Path = DEFAULT_CONTEXT_PATH, output_path: Path = DEFA
     frame_half_width = CONTENT_PADDING + FRAME_GAP
 
     cursor = 0.0
+    # Kapak paftasinin dis cercevesi kapak genisligi kadardir (padding yok),
+    # bu yuzden ilerleme diger paftalardan farkli hesaplanir: bir sonraki
+    # paftanin dis hatti, kapak paftasinin dis hattina TAM oturur.
+    cover_outer_x1 = draw_cover_sheet(msp, context, cursor, sheet)
+    cursor = cover_outer_x1 + frame_half_width
+
     for floor in floors:
         draw_floor_sheet(msp, floor, cursor, units, floor_width, floor_depth, text_height, sheet, axis_grid)
         cursor += floor_width + 2 * frame_half_width

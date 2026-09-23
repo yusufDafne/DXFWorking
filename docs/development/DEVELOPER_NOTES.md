@@ -10,18 +10,35 @@ sistem mimarı direktifi güncellenir.
 - `AxisGrid` generator'dan `scripts/axis/` içine taşındı.
 - Faz dosyaları kalıcı çalışma kaydı olarak kullanılmaz; tamamlanan işler
   `DEVELOPMENT_HISTORY.md`ye eklenir.
-- Proje örneğinin 1:100 mevzuat uyarısı tarihsel bir durumdur; sistem
-  geliştirmesini bloke etmez.
+- Proje örneğinin 1:100 mevzuat uyarısı rev-8'de giderildi (ölçek 1:50);
+  geçmiş HD kayıtlarındaki 1:100 notları tarihsel bağlamdır.
 - Görev eşzamanlılığına karşı `development_control.py` atomik kilidi eklendi;
   aynı anda iki agent görev alamaz.
 - Golden semantic raporu ve provenance şablonu eklendi; byte hash tek başına
   kabul ölçütü değildir.
 - `openings/`, `rooms/` ve `dimensions/` modülleri generator akışına entegre
   edildi; pipeline ve semantic golden kontrolü başarılı.
+- Proje `1:50` mevzuat ölçeğine geçirildi; `classify_violation(...)` artık
+  uyarı üretmiyor ve en yüksek pafta (67.0 cm) 90'lık rulonun 88 cm net
+  yüksekliğine sığıyor.
+- `pafta::CoverBlock` eklendi: kapak paftası ÖZEL paftadır — kapak bloğu
+  paftanın iç çizgisinin sağ-alt köşesine sabitlenir (katlandığında üste
+  gelsin diye), pafta genişliği kapak genişliğine eşitlenir, bu paftada
+  Tip-B antet çizilmez (`Sheet.draw(..., title_box=False)`) ve kapak
+  çerçevesi her kenardan eşit offsetlidir. Blok, çıktı hangi ölçekte
+  alınırsa alınsın kağıtta tam A4 basar (4 ölçekte doğrulandı).
+  `meta.cover` (opsiyonel `architect_name`, `date`, `signature_fields`)
+  schema'ya eklendi; verilmeyen resmi alanlar uydurulmaz, doldurma çizgisi
+  olarak bırakılır.
+- `scripts/preview.py` artık kapak paftasını da (aynı sırada ve aynı A4
+  ölçüsünde) çiziyor; önizleme pafta sırası DXF ile birebir.
+- Mahal adları ve `area_m2` mevcut `RoomLabeler` ile çizilmeye devam ediyor;
+  yapısının geliştirilmesi `DEV-008` olarak planlandı (kullanıcı talebi).
 
 ## Sıradaki iş
 
-`DEV-006 — Golden fixture katalogu` görevi hazırdır. Sistem mimarı açıkça
+`DEV-006 — Golden fixture katalogu` görevi hazırdır; `DEV-007` (Tip-A kapak
+verisi) ve `DEV-008` (RoomLabeler yapısı) PLANNED durumundadır. Sistem mimarı açıkça
 başlatmadan kod değişikliği yapılmaz. Başlangıçta görev kilidi alınmalıdır.
 
 ## İlk okuma sırası
@@ -50,6 +67,14 @@ uyumlu değilse uygulamayı durdur ve sistem mimarı kararı iste.
 - Cephe açıklıkları plan opening stilini mi tüketir, ayrı bir stil mi kullanır?
 - İlk golden-output otomasyonu hangi entity ve geometrik alanları kapsar?
 - Reviewer raporu hangi ayrı çalışma çağrısında üretilecek?
+- `meta.cover.architect_name` ve `meta.cover.date` değerleri ne olacak?
+  (Kapak çizilir durumda; bu iki alan boş doldurma çizgisi olarak çıkıyor.)
+- Ayrılmış iki imza alanının unvanı ne olacak?
+- Kapakta ruhsat/onay alanları da gerekli mi?
+- Kapak TASARIMI için kullanıcıdan ayrı bir talep bekleniyor (geometri
+  sabit kalmalı: A4, sağ-alt sabit, eşit offset, antetsiz).
+- `RoomLabeler` etiket bloğu kaç satır olacak ve hangi alanları taşıyacak
+  (`DEV-008`)?
 
 ## Çalışma kuralı
 

@@ -169,6 +169,49 @@ guncellenir.
   şekilde bir kere hesaplanır ve tüm paftalarda AYNEN uygulanır. Uygulaması
   `scripts/pafta::Sheet` sınıfıdır — yeni pafta türleri de bu sınıf
   üzerinden çizilir, ayrı ad-hoc başlık kodu yazılmaz.
+- **Kapak paftası (ISO 7200 Tip-A, rev-8'den itibaren):** Projenin İLK
+  paftası bir kapak paftasıdır ve **özel bir paftadır** — aşağıdaki kurallar
+  yalnızca bu paftaya uygulanır. Uygulaması `scripts/pafta::CoverBlock`
+  sınıfıdır; ayrı ad-hoc kapak kodu yazılmaz.
+  - **Ölçü:** Kapak bloğu **basılı kağıt üzerinde her zaman tam A4
+    (210x297mm)** olur. Modelspace ölçüsü bu yüzden projenin ölçeğine göre
+    türetilir (`to_modelspace`): 1:50'de 10500x14850mm, 1:100'de
+    21000x29700mm çizilir ve **her iki durumda da çıktıda 210x297mm**
+    basar. Çıktı daima ölçekli alındığı için doğru olan budur —
+    modelspace'e birebir 210x297 yazmak ölçekli çıktıda kapağı
+    4.2x5.9mm yapardı.
+  - **Konum:** Kapak bloğu paftanın **SAĞ-ALTINA sabitlenir**. Pafta
+    genişliği kapak genişliğine eşit olduğu için bu pratikte "en alta oturur"
+    demektir. Sebep fizikseldir: proje çıktı alınıp katlandığında (DIN 824)
+    bu bölge en üste gelir.
+  - **Pafta genişliği:** Kapak paftasının **DIŞ ÇERÇEVE genişliği kapak
+    genişliğine EŞİTTİR** — yani pafta dış hattı, kapak bloğunun dış hattıyla
+    çakışır (1:50'de 10500mm = çıktıda 210mm). Bunun için bu paftada
+    `CONTENT_PADDING` **uygulanmaz** (`padding=0`) ve çerçeve boşluğu kapağın
+    kendi eşit offseti olur; aksi halde çerçeve iki yandan 3350'şer büyüyüp
+    pafta 17200 (534mm) olurdu ve basılı pafta A4 genişliğinde katlanmazdı.
+    Yüksekliği ise diğer tüm paftalarla ortak mutlak Y aralığını korur;
+    kapak bloğu paftanın **altına** oturur, üstte kalan bölüm boştur ve A4
+    panelinin üst kenarı çift çizgiyle kapatılır.
+  - **Bitişiklik istisnası:** Kapak paftasında padding olmadığı için ardışık
+    pafta X-ofseti genel `width + 2*(CONTENT_PADDING+FRAME_GAP)` formülüyle
+    hesaplanmaz; bir sonraki paftanın dış hattı doğrudan kapak paftasının dış
+    hattına oturtulur (`generate_dxf.py::generate`).
+  - **Antet yok:** Bu paftada sağ-alt köşedeki iki satırlık Tip-B şerit
+    anteti **çizilmez** (`Sheet.draw(..., title_box=False)`) — o köşeyi kapak
+    bloğu kaplar ve kapağın kendisi antet işlevini görür.
+  - **Çerçeve:** Kapağın kendi çerçevesi de `Sheet`in çift çizgili çerçevesi
+    gibi **her kenardan EŞİT offsetlidir** (kağıt üzerinde 10mm). DIN/ISO
+    sayfa marjı (sol 20 / diğer 10) burada KULLANILMAZ; eşit olmayan bir
+    offset görünümü verdiği için kaldırıldı.
+  - **İçerik:** Proje adı (başlık), `PROJE TIPI` / `OLCEK` / `MIMAR` /
+    `TARIH` bilgi satırları ve imza alanları. İmza alanları
+    `meta.cover.signature_fields` ile sürülür (bu projede: yönetim, mimar ve
+    unvanı sonra belirlenecek iki ayrılmış alan; başlığı boş olan alan
+    `(UNVAN)` olarak işaretlenir). **Mimar adı ve tarih gibi resmi veriler
+    context.json'da yoksa UYDURULMAZ** — o satıra metin yazılmaz, elle
+    doldurulacak bir çizgi bırakılır. Ayrıntılı kapak TASARIMI ayrı bir
+    talep olarak gelecektir.
 - **Pafta çerçevesi:** Duvar rail mantığına benzer şekilde **çift/ofsetli
   çizgi** (dış hat + iç hat) olarak çizilir (`Sheet._draw_double_frame`),
   tek çizgili basit dikdörtgen değildir.
@@ -239,11 +282,12 @@ guncellenir.
     bkz. `scripts/pafta/CLAUDE.md` "Bilinen sınırlamalar"). Tip-A (kapak
     paftası, ISO 7200) henüz hiç uygulanmadı, sadece fikir olarak not
     edildi.
-  - **Bu örneğin tarihsel mevzuat uyarısı:** Bu çalışma sistem geliştirmesi
-    başlamadan önce oluşturulduğu için bina oturumu ve kullanılan `1:100`
-    ölçek mevcut mevzuat sınıflandırmasıyla uyumsuz kalabilir. Bu durum örnek
-    çıktının tarihsel niteliğidir; sistem geliştirmesini veya generic mimariyi
-    bloke etmez. Yeni projelerde mevzuat kontrolü yine validator ve
+  - **Bu örneğin mevzuat durumu (rev-8'de giderildi):** Örnek proje sistem
+    geliştirmesi başlamadan önce üretildiği için uzun süre `1:100` ölçekte
+    kaldı ve `MIMARI_UYGULAMA` sınıfıyla uyumsuz bir mevzuat uyarısı taşıdı.
+    rev-8'de ölçek `1:50`'ye çekildi; `classify_violation(...)` artık uyarı
+    üretmiyor ve en yüksek pafta (67.0 cm) 90'lık rulonun 88 cm net
+    yüksekliğine sığıyor. Yeni projelerde mevzuat kontrolü yine validator ve
     `PaperSizePlanner` üzerinden uygulanır.
 - **Aks (grid) sistemi:** Bina, `context.json`'ın üst seviye `grid` alanında
   tanımlanan bir aks ızgarasına oturur:

@@ -37,6 +37,25 @@ Kapalı oda poligonu, alan/komşuluk, `RoomLabeler`, alan etiketi sığdırma ve
 
 `RoomPolygonScanner` yalnızca öneri üretir; kullanıcı veya validator onayı olmadan context'e yazmaz. Pafta `fit_text_height` kullanılır, yeni ölçü/koordinat uydurulmaz.
 
+## Bilinen sınırlamalar — `RoomLabeler` (DEV-008 ile ele alınacak)
+
+rev-8 kullanıcı talebiyle `RoomLabeler`ın yapısının geliştirilmesi planlandı.
+Mevcut davranış: tek satır, sabit biçim `"{ad} ({alan} m2)"`, centroid'e
+`MIDDLE_CENTER` yerleşim, yalnızca oda **genişliğine** göre `fit_text_height`.
+
+- Çok satırlı etiket (ad / alan ayrı satır) yok; uzun mahal adları dar
+  odalarda `min_height=60` tabanına kadar küçülüyor.
+- Oda **yüksekliği** sığdırmada hiç kullanılmıyor.
+- İçbükey (L şeklinde) poligonlarda centroid oda dışına düşebilir; alternatif
+  yerleşim veya leader çizgisi yok.
+- Etiket içeriği enjekte edilebilir bir stil/Protocol değil (karşılaştır:
+  `openings::OpeningSymbolStyle`); mahal no / mahal tipi gibi alanlar
+  eklenemiyor.
+
+Ayrıntı ve başlatma öncesi kararlar: `docs/development/DEVELOPMENT_TASKS.md`
+içindeki `DEV-008`. Bu bölüm bir uygulama izni değildir; sistem mimarı görevi
+açıkça başlatmadan `RoomLabeler` davranışı değiştirilmez.
+
 ## Kabul
 
 Poligonlar kapalı, alanlar deterministik, etiketler pafta dışına taşmıyor ve mevcut oda çıktısı korunuyor olmalıdır.
