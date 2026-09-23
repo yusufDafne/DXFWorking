@@ -64,6 +64,7 @@ from axis import AxisGrid, ensure_axis_layer  # noqa: E402
 from walls import WallNetwork, draw_wall_network  # noqa: E402
 from walls.geometry import vec_add, vec_len, vec_norm, vec_scale, vec_sub  # noqa: E402
 from rooms import RoomLabeler  # noqa: E402
+from typography import ROLE_ROOM_LABEL, TextStyles  # noqa: E402
 from openings import Opening, OpeningSchedule  # noqa: E402
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -239,7 +240,8 @@ def translate_floor(floor: dict, dx: float) -> dict:
 
 
 def draw_floor_sheet(msp, floor: dict, dx: float, units: str, floor_width: float, floor_depth: float,
-                      text_height: float, sheet: Sheet, axis_grid: AxisGrid) -> None:
+                      text_height: float, sheet: Sheet, axis_grid: AxisGrid,
+                      text_styles: TextStyles) -> None:
     content_start = len(msp)
 
     # Aks izgarasi HER ZAMAN en once (en altta) cizilir (bkz. kullanici standardi).
@@ -260,9 +262,15 @@ def draw_floor_sheet(msp, floor: dict, dx: float, units: str, floor_width: float
     OpeningSchedule.from_openings(openings)
     draw_wall_network(msp, network, opening_dicts)
 
+    # Mahal etiketi: 3 satir (ad / kat kodu-mahal no / alan). Kat kodu
+    # context'teki floors[].code'dan gelir (B1/B2/ZK/K1../TR) - turetilmez.
     room_label_height = room_label_height_for_units(units)
+    floor_code = floor.get("code", "")
+    label_style = text_styles.style_of(ROLE_ROOM_LABEL)
+    label_font = text_styles.font_of(ROLE_ROOM_LABEL)
     for room in tfloor["rooms"]:
-        RoomLabeler.draw(msp, room, room_label_height, units)
+        RoomLabeler.draw(msp, room, room_label_height, units,
+                         floor_code=floor_code, style_name=label_style, font=label_font)
 
     draw_labels(msp, tfloor["labels"], text_height)
 
@@ -367,6 +375,12 @@ def generate(context_path: Path = DEFAULT_CONTEXT_PATH, output_path: Path = DEFA
 
     doc = ezdxf.new(dxfversion="R2010")
     doc.header["$INSUNITS"] = ezdxf.units.MM if units == "mm" else ezdxf.units.M
+    # Proje fontu (Arial Narrow) 'Standard' text style'ina yazilir; boylece
+    # stil verilmeyen TUM metinler - antet, aks, cephe etiketi, olcu metni -
+    # otomatik olarak proje fontunu kullanir (bkz. scripts/typography).
+    # Herhangi bir metin cizilmeden ONCE calismalidir.
+    text_styles = TextStyles.from_context(context["meta"])
+    text_styles.ensure(doc)
     ensure_axis_layer(doc)
     setup_layers(doc, context["layers"])
     msp = doc.modelspace()
@@ -442,7 +456,8 @@ def generate(context_path: Path = DEFAULT_CONTEXT_PATH, output_path: Path = DEFA
     cursor = cover_outer_x1 + frame_half_width
 
     for floor in floors:
-        draw_floor_sheet(msp, floor, cursor, units, floor_width, floor_depth, text_height, sheet, axis_grid)
+        draw_floor_sheet(msp, floor, cursor, units, floor_width, floor_depth, text_height,
+                         sheet, axis_grid, text_styles)
         cursor += floor_width + 2 * frame_half_width
 
     for elevation in elevations:

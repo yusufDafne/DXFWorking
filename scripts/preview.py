@@ -31,6 +31,7 @@ except ImportError:
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from pafta import CONTENT_PADDING, FRAME_GAP, CoverBlock, Sheet  # noqa: E402  (once sys.path ayarlanmali)
+from rooms import RoomLabeler  # noqa: E402
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_CONTEXT_PATH = PROJECT_ROOT / "context.json"
@@ -150,9 +151,10 @@ def draw_floor(ax, floor: dict, dx: float) -> None:
         xs = [p[0] for p in polygon]
         ys = [p[1] for p in polygon]
         cx, cy = sum(xs) / len(xs), sum(ys) / len(ys)
+        # DXF ile AYNI 3 satirli mahal etiketi (bkz. rooms::RoomLabeler)
         ax.text(
-            cx, cy, f"{room['name']}\n{room['area_m2']:.1f} m2",
-            ha="center", va="center", fontsize=5, zorder=4,
+            cx, cy, RoomLabeler.content(room, floor.get("code", "")),
+            ha="center", va="center", fontsize=4.5, zorder=4, linespacing=1.4,
         )
 
     for wall in floor["walls"]:

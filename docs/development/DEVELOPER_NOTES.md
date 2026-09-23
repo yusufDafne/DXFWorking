@@ -37,8 +37,21 @@ sistem mimarı direktifi güncellenir.
 
 ## Sıradaki iş
 
-`DEV-006 — Golden fixture katalogu` görevi hazırdır; `DEV-007` (Tip-A kapak
-verisi) ve `DEV-008` (RoomLabeler yapısı) PLANNED durumundadır. Sistem mimarı açıkça
+`DEVELOPMENT_TASKS.md` artık **her modül için ayrı plan maddesi** tutuyor
+(`DEV-007` … `DEV-017`) ve her maddede seçilmek üzere **iki fikir** var.
+
+rev-9 durumu:
+
+- `DEV-008` **COMPLETED** — 3 satırlı mahal etiketi + `typography` modülü
+  (bkz. `HD-005`).
+- `DEV-007` **BLOCKED** — çizim tarafında iş kalmadı; yalnızca kullanıcıdan
+  gelecek mimar adı / tarih / unvan bekleniyor.
+- `DEV-006` **READY** — amacı rev-9'da genişletildi (bugünkü golden raporunun
+  neden zayıf olduğu açıkça yazıldı).
+- `DEV-009` (tefriş) kullanıcı talebiyle açıldı, henüz başlatılmadı.
+
+Sıradaki iş için sistem mimarı `DEV-006` veya `DEV-009`u açıkça
+başlatmalıdır. Diğer modüller PLANNED olarak bekliyor. Sistem mimarı açıkça
 başlatmadan kod değişikliği yapılmaz. Başlangıçta görev kilidi alınmalıdır.
 
 ## İlk okuma sırası
@@ -73,8 +86,15 @@ uyumlu değilse uygulamayı durdur ve sistem mimarı kararı iste.
 - Kapakta ruhsat/onay alanları da gerekli mi?
 - Kapak TASARIMI için kullanıcıdan ayrı bir talep bekleniyor (geometri
   sabit kalmalı: A4, sağ-alt sabit, eşit offset, antetsiz).
-- `RoomLabeler` etiket bloğu kaç satır olacak ve hangi alanları taşıyacak
-  (`DEV-008`)?
+- Tefriş elemanları DXF `BLOCK` olarak mı tanımlanacak (`DEV-009`)?
+- "Mahal ismi blok olarak işlensin" büyük harf olarak uygulandı; kullanıcı
+  DXF `BLOCK` entity'si kastettiyse bu yeniden ele alınmalı.
+- Mahal no bugün kat içinde sıralı (`01`, `02`…). Daire bazlı anlamlı bir
+  numaralandırma (örn. A dairesi 01-09, B dairesi 10-19) istenirse yeniden
+  numaralandırma gerekir.
+- `context.json` programatik yazılırken mevcut biçim korunmalıdır (skaler
+  dizi tek satır, nesne dizisi açılmış). Düz `json.dumps(indent=2)` dosyayı
+  baştan biçimlendirip ~4000 satırlık sahte diff üretir.
 
 ## Çalışma kuralı
 

@@ -152,6 +152,37 @@ guncellenir.
   ondalıklı m değil). Bu SADECE ölçü metninin gösterim formatıdır;
   context.json'daki asıl koordinat/ölçü birimi (`meta.units`) yine mm
   kalır, değişmez.
+- **Yazı tipi (rev-9'dan itibaren):** Projenin tüm metinleri **Arial
+  Narrow**'dur. Uygulaması `scripts/typography::TextStyles`'tir: proje fontu
+  `Standard` text style'ına yazılır, böylece stil verilmeyen HER metin
+  (antet, aks baloncuğu, cephe etiketi, kapak bloğu, ölçü metni) otomatik
+  olarak proje fontunu kullanır. **Kritik:** `pafta.fit_text_height`'in
+  ölçtüğü font ile çizilen font AYNI olmak zorundadır; bu yüzden
+  `pafta.DEFAULT_FONT` ikinci bir sabit tutmaz, `typography`den import eder.
+  Font, **dosya adıyla** verilir (`arialn.ttf`) — `ArialNarrow` gibi bir aile
+  adı ezdxf'te sessizce Arial'e düşer ve ölçüm yanlış çıkar. Mahal etiketi
+  için `meta.fonts.room_label` ile ayrı bir font seçilebilir.
+- **Mahal (oda) etiketi biçimi (rev-9'da uygulandı):**
+  Varsayılan mahal etiketi **üç satırdır**:
+
+  ```
+  SALON        <- 1. satir: mahal adi, BLOK
+  ZK-04        <- 2. satir: kat kodu + mahal no
+  28.9 m2      <- 3. satir: alan
+  ```
+
+  - Mahal adı **blok** (büyük harf) olarak işlenir.
+  - Kat kodu öneki `floors[].code`'dan gelir, etiketten TÜRETİLMEZ:
+    `B1` = 1. bodrum, `B2` = 2. bodrum, `ZK` = zemin kat,
+    `K1`/`K2`/`K3`… = normal katlar, **`TR` = çatı/teras**.
+  - Mahal no `rooms[].no`'dan gelir. Kat kodu ile birleşince proje genelinde
+    **benzersiz** bir mahal kimliği verir (`ZK-04`). `validate.py` hem kat
+    içinde mahal no benzersizliğini hem de kat kodu benzersizliğini kontrol
+    eder.
+  - Etiket, oda poligonunun centroid'ine ortalanır ve oda kutusuna hem
+    **genişlik hem yükseklik** bakımından sığacak şekilde ölçeklenir.
+  - Uygulaması `scripts/rooms::RoomLabeler`dır — ayrı ad-hoc etiket kodu
+    yazılmaz.
 - **Pafta modülü (`scripts/pafta/`, rev-4'te ilk modül olarak kuruldu):**
   Pafta çerçevesi, başlık kutusu, tasma kontrolü ve kağıt boyutu planlaması
   ARTIK `scripts/generate_dxf.py`'de DEĞİL, kendi izole modülünde

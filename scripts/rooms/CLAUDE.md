@@ -37,24 +37,48 @@ Kapalı oda poligonu, alan/komşuluk, `RoomLabeler`, alan etiketi sığdırma ve
 
 `RoomPolygonScanner` yalnızca öneri üretir; kullanıcı veya validator onayı olmadan context'e yazmaz. Pafta `fit_text_height` kullanılır, yeni ölçü/koordinat uydurulmaz.
 
-## Bilinen sınırlamalar — `RoomLabeler` (DEV-008 ile ele alınacak)
+## Mahal etiketi biçimi (kullanıcı şartnamesi — rev-9'da UYGULANDI)
 
-rev-8 kullanıcı talebiyle `RoomLabeler`ın yapısının geliştirilmesi planlandı.
-Mevcut davranış: tek satır, sabit biçim `"{ad} ({alan} m2)"`, centroid'e
-`MIDDLE_CENTER` yerleşim, yalnızca oda **genişliğine** göre `fit_text_height`.
+Etiket **3 satırdır**:
 
-- Çok satırlı etiket (ad / alan ayrı satır) yok; uzun mahal adları dar
-  odalarda `min_height=60` tabanına kadar küçülüyor.
-- Oda **yüksekliği** sığdırmada hiç kullanılmıyor.
+```
+SALON        <- 1. satir: mahal adi, BLOK
+ZK-04        <- 2. satir: kat kodu + mahal no
+28.9 m2      <- 3. satir: alan
+```
+
+- Mahal adı **blok** (büyük harf) olarak işlenir. Yazı tipi proje geneli
+  fontudur (Arial Narrow); `meta.fonts.room_label` ile ayrı seçilebilir
+  (bkz. `scripts/typography/CLAUDE.md`).
+- Kat kodu `floors[].code`'dan, mahal no `rooms[].no`'dan gelir —
+  **hiçbiri türetilmez.** `B1`/`B2` = bodrumlar, `ZK` = zemin,
+  `K1`/`K2`/… = normal katlar, `TR` = çatı/teras.
+- Kat kodu + mahal no, proje genelinde **benzersiz** bir mahal kimliğidir;
+  `validate.py` bunu kontrol eder.
+
+### Sığdırma
+
+Etiket oda poligonunun centroid'ine ortalanır ve oda kutusuna hem **genişlik
+hem yükseklik** bakımından sığacak şekilde ölçeklenir. Genişlik için her satır
+KENDİ yükseklik çarpanıyla ölçülür (ad 1.0, diğerleri 0.78). Tek satırlı
+önceki sürüm yalnızca genişliğe bakıyordu; 3 satırda yükseklik kontrolü
+olmadan küçük mahallerde (WC, hol) etiket odadan taşardı.
+
+`ROOM_LABEL_MIN_HEIGHT` bir okunabilirlik tabanıdır. Taban devreye girerse
+etiket teorik olarak odadan taşabilir; bu yüzden değişiklik sonrası
+**tüm odalar için** kapsama kontrolü yapılmalıdır (rev-9'da 125/125 doğrulandı).
+
+## Bilinen sınırlamalar — `RoomLabeler`
+
 - İçbükey (L şeklinde) poligonlarda centroid oda dışına düşebilir; alternatif
-  yerleşim veya leader çizgisi yok.
-- Etiket içeriği enjekte edilebilir bir stil/Protocol değil (karşılaştır:
-  `openings::OpeningSymbolStyle`); mahal no / mahal tipi gibi alanlar
-  eklenemiyor.
-
-Ayrıntı ve başlatma öncesi kararlar: `docs/development/DEVELOPMENT_TASKS.md`
-içindeki `DEV-008`. Bu bölüm bir uygulama izni değildir; sistem mimarı görevi
-açıkça başlatmadan `RoomLabeler` davranışı değiştirilmez.
+  yerleşim veya leader çizgisi YOK. Bu projedeki odalar dikdörtgen olduğu için
+  bugün sorun çıkarmıyor.
+- Etiket içeriği enjekte edilebilir bir stil/Protocol DEĞİL (karşılaştır:
+  `openings::OpeningSymbolStyle`); farklı bir biçim istenirse kod değişir.
+  `RoomLabelStyle` Protocol'ü `DEV-008`de fikir olarak duruyor, seçilmedi.
+- Mahal adı büyük harfe `str.upper()` ile çevrilir. context.json bugün ASCII
+  olduğu için güvenlidir; Türkçe karakterli ad eklenirse `i` → `I` sorunu
+  için gözden geçirilmelidir.
 
 ## Kabul
 

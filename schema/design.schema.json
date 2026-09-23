@@ -16,6 +16,10 @@
       "properties": {
         "id": { "type": "string" },
         "name": { "type": "string" },
+        "no": {
+          "type": "string",
+          "description": "Mahal no. floors[].code ile birlesince proje genelinde BENZERSIZ bir mahal kimligi verir, orn. 'ZK-04'. Mahal etiketinin 2. satirinda gosterilir; verilmezse o satir cizilmez."
+        },
         "area_m2": { "type": "number", "exclusiveMinimum": 0 },
         "polygon": {
           "type": "array",
@@ -102,6 +106,10 @@
       "properties": {
         "id": { "type": "string" },
         "label": { "type": "string", "description": "Pafta basligi / kat adi, orn. 'ZEMIN KAT'" },
+        "code": {
+          "type": "string",
+          "description": "Kati ifade eden kisa kod; mahal numarasinin onekidir (B1 = 1. bodrum, B2 = 2. bodrum, ZK = zemin kat, K1/K2/... = normal katlar, TR = cati/teras). label'dan TURETILMEZ, veriden gelir."
+        },
         "sheet_note": { "type": "string", "description": "Pafta sag-alt kosesine yazilacak ek not" },
         "rooms": { "type": "array", "items": { "$ref": "#/definitions/room" } },
         "walls": { "type": "array", "items": { "$ref": "#/definitions/wall" } },
@@ -187,6 +195,15 @@
           "type": "string",
           "enum": ["MIMARI_UYGULAMA", "MIMARI_RUHSAT_KUCUK", "STATIK_KALIP", "VAZIYET_PLANI", "DETAY"],
           "description": "TMMOB/imar mevzuati siniflandirmasi - scripts/pafta::PaperSizePlanner.classify_violation bunu meta.scale ile karsilastirip mevzuata uygunlugu raporlar. Opsiyonel; verilmezse kontrol atlanir."
+        },
+        "fonts": {
+          "type": "object",
+          "description": "Cizim yazi tipleri (scripts/typography). Font DOSYA adi verilir ('arialn.ttf'); 'ArialNarrow' gibi bir aile adi ezdxf'te sessizce Arial'e duser ve olcum yanlis cikar. Verilmezse tum roller Arial Narrow olur.",
+          "additionalProperties": false,
+          "properties": {
+            "default": { "type": "string", "description": "Proje geneli font; 'Standard' text style'ina yazilir, stil verilmeyen tum metinler bunu kullanir." },
+            "room_label": { "type": "string", "description": "Mahal etiketi fontu. default ile ayniysa ayri text style kaydedilmez." }
+          }
         },
         "cover": {
           "type": "object",

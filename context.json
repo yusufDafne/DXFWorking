@@ -4,6 +4,10 @@
     "units": "mm",
     "scale": "1:50",
     "project_type": "MIMARI_UYGULAMA",
+    "fonts": {
+      "default": "arialn.ttf",
+      "room_label": "arialn.ttf"
+    },
     "cover": {
       "signature_fields": ["YONETIM", "MIMAR", "", ""]
     },
@@ -89,11 +93,13 @@
     {
       "id": "bodrum2",
       "label": "2. BODRUM KAT (OTOPARK)",
+      "code": "B2",
       "sheet_note": "2 KAT BODRUM OTOPARK",
       "rooms": [
         {
           "id": "elevator",
           "name": "Asansor Kuyusu",
+          "no": "01",
           "area_m2": 3.0,
           "polygon": [
             [0, 14500],
@@ -105,6 +111,7 @@
         {
           "id": "stair",
           "name": "Merdiven",
+          "no": "02",
           "area_m2": 12.0,
           "polygon": [
             [1000, 14500],
@@ -116,6 +123,7 @@
         {
           "id": "band",
           "name": "Rampa",
+          "no": "03",
           "area_m2": 75.0,
           "polygon": [
             [0, 13000],
@@ -129,6 +137,7 @@
         {
           "id": "otopark",
           "name": "Otopark",
+          "no": "04",
           "area_m2": 260.0,
           "polygon": [
             [0, 0],
@@ -291,11 +300,13 @@
     {
       "id": "bodrum1",
       "label": "1. BODRUM KAT (OTOPARK)",
+      "code": "B1",
       "sheet_note": "2 KAT BODRUM OTOPARK",
       "rooms": [
         {
           "id": "elevator",
           "name": "Asansor Kuyusu",
+          "no": "01",
           "area_m2": 3.0,
           "polygon": [
             [0, 14500],
@@ -307,6 +318,7 @@
         {
           "id": "stair",
           "name": "Merdiven",
+          "no": "02",
           "area_m2": 12.0,
           "polygon": [
             [1000, 14500],
@@ -318,6 +330,7 @@
         {
           "id": "band",
           "name": "Rampa",
+          "no": "03",
           "area_m2": 75.0,
           "polygon": [
             [0, 13000],
@@ -331,6 +344,7 @@
         {
           "id": "otopark",
           "name": "Otopark",
+          "no": "04",
           "area_m2": 260.0,
           "polygon": [
             [0, 0],
@@ -493,11 +507,13 @@
     {
       "id": "zemin",
       "label": "ZEMIN KAT (GIRIS + DUKKANLAR)",
+      "code": "ZK",
       "sheet_note": "4 DUKKAN + GIRIS LOBISI",
       "rooms": [
         {
           "id": "elevator",
           "name": "Asansor",
+          "no": "01",
           "area_m2": 3.0,
           "polygon": [
             [0, 14500],
@@ -509,6 +525,7 @@
         {
           "id": "stair",
           "name": "Merdiven",
+          "no": "02",
           "area_m2": 12.0,
           "polygon": [
             [1000, 14500],
@@ -520,6 +537,7 @@
         {
           "id": "band",
           "name": "Koridor",
+          "no": "03",
           "area_m2": 75.0,
           "polygon": [
             [0, 13000],
@@ -533,6 +551,7 @@
         {
           "id": "dukkan1",
           "name": "Dukkan 1",
+          "no": "04",
           "area_m2": 48.75,
           "polygon": [
             [0, 0],
@@ -544,6 +563,7 @@
         {
           "id": "dukkan2",
           "name": "Dukkan 2",
+          "no": "05",
           "area_m2": 48.75,
           "polygon": [
             [3750.0, 0],
@@ -555,6 +575,7 @@
         {
           "id": "lobi",
           "name": "Giris Lobisi",
+          "no": "06",
           "area_m2": 65.0,
           "polygon": [
             [7500.0, 0],
@@ -566,6 +587,7 @@
         {
           "id": "dukkan3",
           "name": "Dukkan 3",
+          "no": "07",
           "area_m2": 48.75,
           "polygon": [
             [12500.0, 0],
@@ -577,6 +599,7 @@
         {
           "id": "dukkan4",
           "name": "Dukkan 4",
+          "no": "08",
           "area_m2": 48.75,
           "polygon": [
             [16250.0, 0],
@@ -737,11 +760,13 @@
     {
       "id": "normal1",
       "label": "1. NORMAL KAT",
+      "code": "K1",
       "sheet_note": "2x 2+1 (100 m2) + 1x 1+1 (60 m2)",
       "rooms": [
         {
           "id": "elevator",
           "name": "Asansor",
+          "no": "01",
           "area_m2": 3.0,
           "polygon": [
             [0, 14500],
@@ -753,6 +778,7 @@
         {
           "id": "stair",
           "name": "Merdiven",
+          "no": "02",
           "area_m2": 12.0,
           "polygon": [
             [1000, 14500],
@@ -764,6 +790,7 @@
         {
           "id": "band",
           "name": "Koridor",
+          "no": "03",
           "area_m2": 75.0,
           "polygon": [
             [0, 13000],
@@ -777,6 +804,7 @@
         {
           "id": "uA_salon",
           "name": "Salon",
+          "no": "04",
           "area_m2": 29.93,
           "polygon": [
             [0.0, 0],
@@ -788,6 +816,7 @@
         {
           "id": "uA_oda1",
           "name": "Oda 1",
+          "no": "05",
           "area_m2": 14.235,
           "polygon": [
             [4100.0, 0],
@@ -799,6 +828,7 @@
         {
           "id": "uA_oda2",
           "name": "Oda 2",
+          "no": "06",
           "area_m2": 12.045,
           "polygon": [
             [6050.0, 0],
@@ -810,6 +840,7 @@
         {
           "id": "uA_mutfak",
           "name": "Mutfak",
+          "no": "07",
           "area_m2": 9.12,
           "polygon": [
             [0.0, 7300.0],
@@ -821,6 +852,7 @@
         {
           "id": "uA_banyo",
           "name": "Banyo",
+          "no": "08",
           "area_m2": 6.84,
           "polygon": [
             [1600.0, 7300.0],
@@ -832,6 +864,7 @@
         {
           "id": "uA_hol",
           "name": "Hol",
+          "no": "09",
           "area_m2": 22.8,
           "polygon": [
             [2800.0, 7300.0],
@@ -843,6 +876,7 @@
         {
           "id": "uA_wc",
           "name": "WC",
+          "no": "10",
           "area_m2": 5.13,
           "polygon": [
             [6800.0, 7300.0],
@@ -854,6 +888,7 @@
         {
           "id": "uB_salon",
           "name": "Salon",
+          "no": "11",
           "area_m2": 29.93,
           "polygon": [
             [7700.0, 0],
@@ -865,6 +900,7 @@
         {
           "id": "uB_oda1",
           "name": "Oda 1",
+          "no": "12",
           "area_m2": 14.235,
           "polygon": [
             [11800.0, 0],
@@ -876,6 +912,7 @@
         {
           "id": "uB_oda2",
           "name": "Oda 2",
+          "no": "13",
           "area_m2": 12.045,
           "polygon": [
             [13750.0, 0],
@@ -887,6 +924,7 @@
         {
           "id": "uB_mutfak",
           "name": "Mutfak",
+          "no": "14",
           "area_m2": 9.12,
           "polygon": [
             [7700.0, 7300.0],
@@ -898,6 +936,7 @@
         {
           "id": "uB_banyo",
           "name": "Banyo",
+          "no": "15",
           "area_m2": 6.84,
           "polygon": [
             [9300.0, 7300.0],
@@ -909,6 +948,7 @@
         {
           "id": "uB_hol",
           "name": "Hol",
+          "no": "16",
           "area_m2": 22.8,
           "polygon": [
             [10500.0, 7300.0],
@@ -920,6 +960,7 @@
         {
           "id": "uB_wc",
           "name": "WC",
+          "no": "17",
           "area_m2": 5.13,
           "polygon": [
             [14500.0, 7300.0],
@@ -931,6 +972,7 @@
         {
           "id": "uC_salon",
           "name": "Salon (Amerikan Mutfak)",
+          "no": "18",
           "area_m2": 32.24,
           "polygon": [
             [15400.0, 0],
@@ -942,6 +984,7 @@
         {
           "id": "uC_oda",
           "name": "Oda",
+          "no": "19",
           "area_m2": 15.6,
           "polygon": [
             [18500.0, 0],
@@ -953,6 +996,7 @@
         {
           "id": "uC_banyo",
           "name": "Banyo",
+          "no": "20",
           "area_m2": 4.94,
           "polygon": [
             [15400.0, 10400.0],
@@ -964,6 +1008,7 @@
         {
           "id": "uC_hol",
           "name": "Hol",
+          "no": "21",
           "area_m2": 7.02,
           "polygon": [
             [17300.0, 10400.0],
@@ -1406,11 +1451,13 @@
     {
       "id": "normal2",
       "label": "2. NORMAL KAT",
+      "code": "K2",
       "sheet_note": "2x 2+1 (100 m2) + 1x 1+1 (60 m2)",
       "rooms": [
         {
           "id": "elevator",
           "name": "Asansor",
+          "no": "01",
           "area_m2": 3.0,
           "polygon": [
             [0, 14500],
@@ -1422,6 +1469,7 @@
         {
           "id": "stair",
           "name": "Merdiven",
+          "no": "02",
           "area_m2": 12.0,
           "polygon": [
             [1000, 14500],
@@ -1433,6 +1481,7 @@
         {
           "id": "band",
           "name": "Koridor",
+          "no": "03",
           "area_m2": 75.0,
           "polygon": [
             [0, 13000],
@@ -1446,6 +1495,7 @@
         {
           "id": "uA_salon",
           "name": "Salon",
+          "no": "04",
           "area_m2": 29.93,
           "polygon": [
             [0.0, 0],
@@ -1457,6 +1507,7 @@
         {
           "id": "uA_oda1",
           "name": "Oda 1",
+          "no": "05",
           "area_m2": 14.235,
           "polygon": [
             [4100.0, 0],
@@ -1468,6 +1519,7 @@
         {
           "id": "uA_oda2",
           "name": "Oda 2",
+          "no": "06",
           "area_m2": 12.045,
           "polygon": [
             [6050.0, 0],
@@ -1479,6 +1531,7 @@
         {
           "id": "uA_mutfak",
           "name": "Mutfak",
+          "no": "07",
           "area_m2": 9.12,
           "polygon": [
             [0.0, 7300.0],
@@ -1490,6 +1543,7 @@
         {
           "id": "uA_banyo",
           "name": "Banyo",
+          "no": "08",
           "area_m2": 6.84,
           "polygon": [
             [1600.0, 7300.0],
@@ -1501,6 +1555,7 @@
         {
           "id": "uA_hol",
           "name": "Hol",
+          "no": "09",
           "area_m2": 22.8,
           "polygon": [
             [2800.0, 7300.0],
@@ -1512,6 +1567,7 @@
         {
           "id": "uA_wc",
           "name": "WC",
+          "no": "10",
           "area_m2": 5.13,
           "polygon": [
             [6800.0, 7300.0],
@@ -1523,6 +1579,7 @@
         {
           "id": "uB_salon",
           "name": "Salon",
+          "no": "11",
           "area_m2": 29.93,
           "polygon": [
             [7700.0, 0],
@@ -1534,6 +1591,7 @@
         {
           "id": "uB_oda1",
           "name": "Oda 1",
+          "no": "12",
           "area_m2": 14.235,
           "polygon": [
             [11800.0, 0],
@@ -1545,6 +1603,7 @@
         {
           "id": "uB_oda2",
           "name": "Oda 2",
+          "no": "13",
           "area_m2": 12.045,
           "polygon": [
             [13750.0, 0],
@@ -1556,6 +1615,7 @@
         {
           "id": "uB_mutfak",
           "name": "Mutfak",
+          "no": "14",
           "area_m2": 9.12,
           "polygon": [
             [7700.0, 7300.0],
@@ -1567,6 +1627,7 @@
         {
           "id": "uB_banyo",
           "name": "Banyo",
+          "no": "15",
           "area_m2": 6.84,
           "polygon": [
             [9300.0, 7300.0],
@@ -1578,6 +1639,7 @@
         {
           "id": "uB_hol",
           "name": "Hol",
+          "no": "16",
           "area_m2": 22.8,
           "polygon": [
             [10500.0, 7300.0],
@@ -1589,6 +1651,7 @@
         {
           "id": "uB_wc",
           "name": "WC",
+          "no": "17",
           "area_m2": 5.13,
           "polygon": [
             [14500.0, 7300.0],
@@ -1600,6 +1663,7 @@
         {
           "id": "uC_salon",
           "name": "Salon (Amerikan Mutfak)",
+          "no": "18",
           "area_m2": 32.24,
           "polygon": [
             [15400.0, 0],
@@ -1611,6 +1675,7 @@
         {
           "id": "uC_oda",
           "name": "Oda",
+          "no": "19",
           "area_m2": 15.6,
           "polygon": [
             [18500.0, 0],
@@ -1622,6 +1687,7 @@
         {
           "id": "uC_banyo",
           "name": "Banyo",
+          "no": "20",
           "area_m2": 4.94,
           "polygon": [
             [15400.0, 10400.0],
@@ -1633,6 +1699,7 @@
         {
           "id": "uC_hol",
           "name": "Hol",
+          "no": "21",
           "area_m2": 7.02,
           "polygon": [
             [17300.0, 10400.0],
@@ -2075,11 +2142,13 @@
     {
       "id": "normal3",
       "label": "3. NORMAL KAT",
+      "code": "K3",
       "sheet_note": "2x 2+1 (100 m2) + 1x 1+1 (60 m2)",
       "rooms": [
         {
           "id": "elevator",
           "name": "Asansor",
+          "no": "01",
           "area_m2": 3.0,
           "polygon": [
             [0, 14500],
@@ -2091,6 +2160,7 @@
         {
           "id": "stair",
           "name": "Merdiven",
+          "no": "02",
           "area_m2": 12.0,
           "polygon": [
             [1000, 14500],
@@ -2102,6 +2172,7 @@
         {
           "id": "band",
           "name": "Koridor",
+          "no": "03",
           "area_m2": 75.0,
           "polygon": [
             [0, 13000],
@@ -2115,6 +2186,7 @@
         {
           "id": "uA_salon",
           "name": "Salon",
+          "no": "04",
           "area_m2": 29.93,
           "polygon": [
             [0.0, 0],
@@ -2126,6 +2198,7 @@
         {
           "id": "uA_oda1",
           "name": "Oda 1",
+          "no": "05",
           "area_m2": 14.235,
           "polygon": [
             [4100.0, 0],
@@ -2137,6 +2210,7 @@
         {
           "id": "uA_oda2",
           "name": "Oda 2",
+          "no": "06",
           "area_m2": 12.045,
           "polygon": [
             [6050.0, 0],
@@ -2148,6 +2222,7 @@
         {
           "id": "uA_mutfak",
           "name": "Mutfak",
+          "no": "07",
           "area_m2": 9.12,
           "polygon": [
             [0.0, 7300.0],
@@ -2159,6 +2234,7 @@
         {
           "id": "uA_banyo",
           "name": "Banyo",
+          "no": "08",
           "area_m2": 6.84,
           "polygon": [
             [1600.0, 7300.0],
@@ -2170,6 +2246,7 @@
         {
           "id": "uA_hol",
           "name": "Hol",
+          "no": "09",
           "area_m2": 22.8,
           "polygon": [
             [2800.0, 7300.0],
@@ -2181,6 +2258,7 @@
         {
           "id": "uA_wc",
           "name": "WC",
+          "no": "10",
           "area_m2": 5.13,
           "polygon": [
             [6800.0, 7300.0],
@@ -2192,6 +2270,7 @@
         {
           "id": "uB_salon",
           "name": "Salon",
+          "no": "11",
           "area_m2": 29.93,
           "polygon": [
             [7700.0, 0],
@@ -2203,6 +2282,7 @@
         {
           "id": "uB_oda1",
           "name": "Oda 1",
+          "no": "12",
           "area_m2": 14.235,
           "polygon": [
             [11800.0, 0],
@@ -2214,6 +2294,7 @@
         {
           "id": "uB_oda2",
           "name": "Oda 2",
+          "no": "13",
           "area_m2": 12.045,
           "polygon": [
             [13750.0, 0],
@@ -2225,6 +2306,7 @@
         {
           "id": "uB_mutfak",
           "name": "Mutfak",
+          "no": "14",
           "area_m2": 9.12,
           "polygon": [
             [7700.0, 7300.0],
@@ -2236,6 +2318,7 @@
         {
           "id": "uB_banyo",
           "name": "Banyo",
+          "no": "15",
           "area_m2": 6.84,
           "polygon": [
             [9300.0, 7300.0],
@@ -2247,6 +2330,7 @@
         {
           "id": "uB_hol",
           "name": "Hol",
+          "no": "16",
           "area_m2": 22.8,
           "polygon": [
             [10500.0, 7300.0],
@@ -2258,6 +2342,7 @@
         {
           "id": "uB_wc",
           "name": "WC",
+          "no": "17",
           "area_m2": 5.13,
           "polygon": [
             [14500.0, 7300.0],
@@ -2269,6 +2354,7 @@
         {
           "id": "uC_salon",
           "name": "Salon (Amerikan Mutfak)",
+          "no": "18",
           "area_m2": 32.24,
           "polygon": [
             [15400.0, 0],
@@ -2280,6 +2366,7 @@
         {
           "id": "uC_oda",
           "name": "Oda",
+          "no": "19",
           "area_m2": 15.6,
           "polygon": [
             [18500.0, 0],
@@ -2291,6 +2378,7 @@
         {
           "id": "uC_banyo",
           "name": "Banyo",
+          "no": "20",
           "area_m2": 4.94,
           "polygon": [
             [15400.0, 10400.0],
@@ -2302,6 +2390,7 @@
         {
           "id": "uC_hol",
           "name": "Hol",
+          "no": "21",
           "area_m2": 7.02,
           "polygon": [
             [17300.0, 10400.0],
@@ -2744,11 +2833,13 @@
     {
       "id": "normal4",
       "label": "4. NORMAL KAT",
+      "code": "K4",
       "sheet_note": "2x 2+1 (100 m2) + 1x 1+1 (60 m2)",
       "rooms": [
         {
           "id": "elevator",
           "name": "Asansor",
+          "no": "01",
           "area_m2": 3.0,
           "polygon": [
             [0, 14500],
@@ -2760,6 +2851,7 @@
         {
           "id": "stair",
           "name": "Merdiven",
+          "no": "02",
           "area_m2": 12.0,
           "polygon": [
             [1000, 14500],
@@ -2771,6 +2863,7 @@
         {
           "id": "band",
           "name": "Koridor",
+          "no": "03",
           "area_m2": 75.0,
           "polygon": [
             [0, 13000],
@@ -2784,6 +2877,7 @@
         {
           "id": "uA_salon",
           "name": "Salon",
+          "no": "04",
           "area_m2": 29.93,
           "polygon": [
             [0.0, 0],
@@ -2795,6 +2889,7 @@
         {
           "id": "uA_oda1",
           "name": "Oda 1",
+          "no": "05",
           "area_m2": 14.235,
           "polygon": [
             [4100.0, 0],
@@ -2806,6 +2901,7 @@
         {
           "id": "uA_oda2",
           "name": "Oda 2",
+          "no": "06",
           "area_m2": 12.045,
           "polygon": [
             [6050.0, 0],
@@ -2817,6 +2913,7 @@
         {
           "id": "uA_mutfak",
           "name": "Mutfak",
+          "no": "07",
           "area_m2": 9.12,
           "polygon": [
             [0.0, 7300.0],
@@ -2828,6 +2925,7 @@
         {
           "id": "uA_banyo",
           "name": "Banyo",
+          "no": "08",
           "area_m2": 6.84,
           "polygon": [
             [1600.0, 7300.0],
@@ -2839,6 +2937,7 @@
         {
           "id": "uA_hol",
           "name": "Hol",
+          "no": "09",
           "area_m2": 22.8,
           "polygon": [
             [2800.0, 7300.0],
@@ -2850,6 +2949,7 @@
         {
           "id": "uA_wc",
           "name": "WC",
+          "no": "10",
           "area_m2": 5.13,
           "polygon": [
             [6800.0, 7300.0],
@@ -2861,6 +2961,7 @@
         {
           "id": "uB_salon",
           "name": "Salon",
+          "no": "11",
           "area_m2": 29.93,
           "polygon": [
             [7700.0, 0],
@@ -2872,6 +2973,7 @@
         {
           "id": "uB_oda1",
           "name": "Oda 1",
+          "no": "12",
           "area_m2": 14.235,
           "polygon": [
             [11800.0, 0],
@@ -2883,6 +2985,7 @@
         {
           "id": "uB_oda2",
           "name": "Oda 2",
+          "no": "13",
           "area_m2": 12.045,
           "polygon": [
             [13750.0, 0],
@@ -2894,6 +2997,7 @@
         {
           "id": "uB_mutfak",
           "name": "Mutfak",
+          "no": "14",
           "area_m2": 9.12,
           "polygon": [
             [7700.0, 7300.0],
@@ -2905,6 +3009,7 @@
         {
           "id": "uB_banyo",
           "name": "Banyo",
+          "no": "15",
           "area_m2": 6.84,
           "polygon": [
             [9300.0, 7300.0],
@@ -2916,6 +3021,7 @@
         {
           "id": "uB_hol",
           "name": "Hol",
+          "no": "16",
           "area_m2": 22.8,
           "polygon": [
             [10500.0, 7300.0],
@@ -2927,6 +3033,7 @@
         {
           "id": "uB_wc",
           "name": "WC",
+          "no": "17",
           "area_m2": 5.13,
           "polygon": [
             [14500.0, 7300.0],
@@ -2938,6 +3045,7 @@
         {
           "id": "uC_salon",
           "name": "Salon (Amerikan Mutfak)",
+          "no": "18",
           "area_m2": 32.24,
           "polygon": [
             [15400.0, 0],
@@ -2949,6 +3057,7 @@
         {
           "id": "uC_oda",
           "name": "Oda",
+          "no": "19",
           "area_m2": 15.6,
           "polygon": [
             [18500.0, 0],
@@ -2960,6 +3069,7 @@
         {
           "id": "uC_banyo",
           "name": "Banyo",
+          "no": "20",
           "area_m2": 4.94,
           "polygon": [
             [15400.0, 10400.0],
@@ -2971,6 +3081,7 @@
         {
           "id": "uC_hol",
           "name": "Hol",
+          "no": "21",
           "area_m2": 7.02,
           "polygon": [
             [17300.0, 10400.0],
@@ -3413,11 +3524,13 @@
     {
       "id": "normal5",
       "label": "5. NORMAL KAT",
+      "code": "K5",
       "sheet_note": "2x 2+1 (100 m2) + 1x 1+1 (60 m2)",
       "rooms": [
         {
           "id": "elevator",
           "name": "Asansor",
+          "no": "01",
           "area_m2": 3.0,
           "polygon": [
             [0, 14500],
@@ -3429,6 +3542,7 @@
         {
           "id": "stair",
           "name": "Merdiven",
+          "no": "02",
           "area_m2": 12.0,
           "polygon": [
             [1000, 14500],
@@ -3440,6 +3554,7 @@
         {
           "id": "band",
           "name": "Koridor",
+          "no": "03",
           "area_m2": 75.0,
           "polygon": [
             [0, 13000],
@@ -3453,6 +3568,7 @@
         {
           "id": "uA_salon",
           "name": "Salon",
+          "no": "04",
           "area_m2": 29.93,
           "polygon": [
             [0.0, 0],
@@ -3464,6 +3580,7 @@
         {
           "id": "uA_oda1",
           "name": "Oda 1",
+          "no": "05",
           "area_m2": 14.235,
           "polygon": [
             [4100.0, 0],
@@ -3475,6 +3592,7 @@
         {
           "id": "uA_oda2",
           "name": "Oda 2",
+          "no": "06",
           "area_m2": 12.045,
           "polygon": [
             [6050.0, 0],
@@ -3486,6 +3604,7 @@
         {
           "id": "uA_mutfak",
           "name": "Mutfak",
+          "no": "07",
           "area_m2": 9.12,
           "polygon": [
             [0.0, 7300.0],
@@ -3497,6 +3616,7 @@
         {
           "id": "uA_banyo",
           "name": "Banyo",
+          "no": "08",
           "area_m2": 6.84,
           "polygon": [
             [1600.0, 7300.0],
@@ -3508,6 +3628,7 @@
         {
           "id": "uA_hol",
           "name": "Hol",
+          "no": "09",
           "area_m2": 22.8,
           "polygon": [
             [2800.0, 7300.0],
@@ -3519,6 +3640,7 @@
         {
           "id": "uA_wc",
           "name": "WC",
+          "no": "10",
           "area_m2": 5.13,
           "polygon": [
             [6800.0, 7300.0],
@@ -3530,6 +3652,7 @@
         {
           "id": "uB_salon",
           "name": "Salon",
+          "no": "11",
           "area_m2": 29.93,
           "polygon": [
             [7700.0, 0],
@@ -3541,6 +3664,7 @@
         {
           "id": "uB_oda1",
           "name": "Oda 1",
+          "no": "12",
           "area_m2": 14.235,
           "polygon": [
             [11800.0, 0],
@@ -3552,6 +3676,7 @@
         {
           "id": "uB_oda2",
           "name": "Oda 2",
+          "no": "13",
           "area_m2": 12.045,
           "polygon": [
             [13750.0, 0],
@@ -3563,6 +3688,7 @@
         {
           "id": "uB_mutfak",
           "name": "Mutfak",
+          "no": "14",
           "area_m2": 9.12,
           "polygon": [
             [7700.0, 7300.0],
@@ -3574,6 +3700,7 @@
         {
           "id": "uB_banyo",
           "name": "Banyo",
+          "no": "15",
           "area_m2": 6.84,
           "polygon": [
             [9300.0, 7300.0],
@@ -3585,6 +3712,7 @@
         {
           "id": "uB_hol",
           "name": "Hol",
+          "no": "16",
           "area_m2": 22.8,
           "polygon": [
             [10500.0, 7300.0],
@@ -3596,6 +3724,7 @@
         {
           "id": "uB_wc",
           "name": "WC",
+          "no": "17",
           "area_m2": 5.13,
           "polygon": [
             [14500.0, 7300.0],
@@ -3607,6 +3736,7 @@
         {
           "id": "uC_salon",
           "name": "Salon (Amerikan Mutfak)",
+          "no": "18",
           "area_m2": 32.24,
           "polygon": [
             [15400.0, 0],
@@ -3618,6 +3748,7 @@
         {
           "id": "uC_oda",
           "name": "Oda",
+          "no": "19",
           "area_m2": 15.6,
           "polygon": [
             [18500.0, 0],
@@ -3629,6 +3760,7 @@
         {
           "id": "uC_banyo",
           "name": "Banyo",
+          "no": "20",
           "area_m2": 4.94,
           "polygon": [
             [15400.0, 10400.0],
@@ -3640,6 +3772,7 @@
         {
           "id": "uC_hol",
           "name": "Hol",
+          "no": "21",
           "area_m2": 7.02,
           "polygon": [
             [17300.0, 10400.0],
@@ -4082,11 +4215,13 @@
     {
       "id": "cati",
       "label": "CATI KATI",
+      "code": "TR",
       "sheet_note": "ASANSOR MAKINE DAIRESI",
       "rooms": [
         {
           "id": "elevator",
           "name": "Asansor Makine Dairesi",
+          "no": "01",
           "area_m2": 3.0,
           "polygon": [
             [0, 14500],
@@ -4098,6 +4233,7 @@
         {
           "id": "stair",
           "name": "Cati Cikisi",
+          "no": "02",
           "area_m2": 12.0,
           "polygon": [
             [1000, 14500],
@@ -4109,6 +4245,7 @@
         {
           "id": "band",
           "name": "Cati Terasi",
+          "no": "03",
           "area_m2": 75.0,
           "polygon": [
             [0, 13000],
@@ -4122,6 +4259,7 @@
         {
           "id": "terrace_main",
           "name": "Cati Terasi",
+          "no": "04",
           "area_m2": 260.0,
           "polygon": [
             [0, 0],
@@ -4338,6 +4476,11 @@
       "rev": 8,
       "ts": "2026-09-23T06:30:00Z",
       "summary": "Mevzuat revizyonu + ISO 7200 Tip-A kapak paftasi. (1) MIMARI_UYGULAMA sinifinin zorunlu olcegi uygulandi: meta.scale 1:100 -> 1:50; PaperSizePlanner.classify_violation artik uyari uretmiyor ve en yuksek pafta 67.0 cm ile 90'lik rulonun 88 cm net yuksekligine sigiyor. (2) Projenin ILK paftasi olarak KAPAK PAFTASI eklendi. Kapak blogu kagit uzerinde tam A4'tur; modelspace olcusu OLCEGE GORE turetilir (1:50 -> 10500x14850mm), boylece cikti hangi olcekte alinirsa alinsin kagitta 210x297mm olur (1:100 -> 21000x29700, yine 210x297 basar). Uygulamasi yeni scripts/pafta::CoverBlock sinifidir. (3) Kapak paftasi OZEL paftadir: paftanin DIS CERCEVE genisligi kapak genisligine ESITTIR (10500 = ciktida 210mm) - pafta dis hatti kapak blogunun dis hattiyla cakisir. Bunun icin bu paftada CONTENT_PADDING uygulanmaz (Sheet.draw padding=0, frame_gap=block.frame_gap); aksi halde cerceve iki yandan 3350'ser buyuyup pafta 17200 (534mm) olur ve basili pafta A4 genisliginde katlanmazdi. Kapak blogu paftanin SAG-ALTINA oturur (proje katlandiginda bu bolge en uste gelir - DIN 824), ustte kalan bolum bostur ve A4 panelinin ust kenari cift cizgiyle kapatilir. Bu paftada Tip-B serit anteti CIZILMEZ (title_box=False) ve cift cizim olmasin diye kapak blogu kendi dikdortgenlerini cizmez (CoverBlock.draw outer_frame=False). Ardisik pafta X-ofseti de bu pafta icin genel formulle degil, dis cerceve sag kenarina oturtularak hesaplanir. Kapak cercevesi, Sheet'in cift-cizgili cercevesi gibi HER KENARDAN ESIT offsetlidir (10mm kagit uzerinde); onceki surumdeki DIN/ISO sayfa marji (sol 20 / diger 10) esit olmayan bir offset verdigi icin kaldirildi. (4) Kapak icerigi: proje adi basligi, PROJE TIPI / OLCEK / MIMAR / TARIH bilgi satirlari ve imza kutulari. schema'ya meta.cover eklendi (opsiyonel architect_name, date, signature_fields); bu projede signature_fields = [YONETIM, MIMAR, '', ''] - son iki alan unvani sonra belirlenecek ayrilmis imza alanlaridir ve (UNVAN) olarak isaretlenir. architect_name ve date VERILMEDI: resmi veri uydurulmaz, o satirlara elle doldurulacak cizgi birakilir (bkz. DEV-007). Ayrintili kapak TASARIMI icin kullanici ayrica ozel bir talep paylasacak. (5) scripts/preview.py kapak paftasini ayni sira, olcu ve yerlesimle ciziyor. (6) Mahaller mevcut rooms[].name + area_m2 ile RoomLabeler tarafindan cizilmeye devam ediyor; kullanici talebi uzerine RoomLabeler YAPISININ gelistirilmesi DEV-008 olarak planlandi (bu revizyonda cizim degistirilmedi). Golden semantic rapor yeniden uretildi."
+    },
+    {
+      "rev": 9,
+      "ts": "2026-09-23T10:55:00Z",
+      "summary": "Mahal etiketi 3 satira gecti ve proje fontu Arial Narrow oldu. (1) Yeni scripts/typography modulu: proje fontu 'Standard' text style'ina yazilarak tek noktadan TUM metinlere uygulanir (antet, aks, cephe, kapak, olcu metni dahil); pafta.DEFAULT_FONT ikinci bir sabit tutmaz, bu modulden import eder - boylece CIZILEN font ile fit_text_height'in OLCTUGU font ayrisamaz. Font dosya adiyla verilir (arialn.ttf); 'ArialNarrow' aile adi ezdxf'te sessizce Arial'e duser (olculerek teyit edildi). (2) RoomLabeler 3 satir uretir: mahal adi (BLOK) / kat kodu-mahal no / alan. Sigdirma artik hem genislige hem YUKSEKLIGE bakar. (3) schema'ya meta.fonts (default, room_label), floors[].code ve rooms[].no eklendi. Kat kodlari: B2, B1, ZK, K1..K5, TR (cati/teras - kullanici karari). 125 mahale kat icinde sirali no verildi; kat kodu + mahal no proje genelinde benzersiz mahal kimligidir (orn. ZK-04). (4) validate.py'ye mahal no (kat icinde) ve kat kodu benzersizlik kontrolleri eklendi, negatif testle dogrulandi. (5) Dogrulama: 125/125 mahal etiketi gercek font metrikleriyle olculup kendi oda poligonunun icinde kaldigi teyit edildi. Golden: TEXT 339 -> 589 (+250 = 125 oda x 2 ek satir), entity 1976 -> 2226; geometri degismedi. (6) DEVELOPMENT_TASKS.md her modul icin ayri plan maddesine gecti (DEV-007..017), her maddede iki fikir; DEV-006'nin amaci genisletildi, DEV-009 (tefris modulu) kullanici talebiyle acildi. (7) DXF BLOCK entity kullanimi DEV-018 olarak planlandi (moduller arasi karar): cizimde su an hic BLOCK yok (INSERT sayisi 0). Olculerek tespit edildi ki golden_report.entity_bbox bir INSERT icin yalnizca ekleme noktasini donduruyor, blok icerigini gormuyor - bloklara gecilirse golden bbox sessizce kuculur, bu DEV-006 ile birlikte cozulmeli. Buna karsilik pafta tasma korumasi (verify_within_frame -> ezdxf.bbox.extents) INSERT'i dogru cozuyor, risk yok."
     }
   ]
 }

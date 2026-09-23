@@ -4,6 +4,40 @@ Aktif geçmiş kapasitesi: **50 kayıt**. En eski tamamlanmış kayıt, 51. kay�
 alınırken silinir. Ayrıntılı teknik değişiklikler git geçmişi ve ilgili proje
 provenance kayıtlarıyla ilişkilendirilir.
 
+## HD-005 — 3 satırlı mahal etiketi ve `typography` modülü
+
+- **Durum:** COMPLETED
+- **Tamamlanma:** 2026-09-23
+- **Kapsam:** yeni `scripts/typography/`, `scripts/rooms/`,
+  `scripts/pafta/` (font kaynağı), `scripts/generate_dxf.py`,
+  `scripts/validate.py`, `schema/design.schema.json`, `context.json`.
+- **Sonuç:** Mahal etiketi kullanıcı şartnamesine göre **3 satır** oldu
+  (mahal adı BLOK / kat kodu-mahal no / alan). Kat kodu `floors[].code`'dan,
+  mahal no `rooms[].no`'dan gelir; ikisi de türetilmez. Sığdırma artık hem
+  genişliğe hem **yüksekliğe** bakıyor. Proje fontu Arial Narrow'a geçti:
+  yeni `typography` modülü fontu `Standard` text style'ına yazarak tek
+  noktadan tüm metinlere uyguluyor, `pafta.DEFAULT_FONT` ise ikinci bir sabit
+  tutmak yerine bu modülden import ediyor (çizilen font ile ölçülen fontun
+  ayrışması engellendi). `meta.fonts.room_label` ile mahal etiketine ayrı
+  font seçilebilir.
+- **Doğrulama:** `py_compile`, `validate.py`, `generate_dxf.py`,
+  `preview.py` ve semantic golden karşılaştırması başarılı. **125/125 mahal
+  etiketinin** gerçek font metrikleriyle ölçülen bounding box'ı kendi oda
+  poligonunun içinde kaldı. Mahal no ve kat kodu benzersizlik kontrolleri
+  `validate.py`ye eklendi ve negatif testle (kasıtlı çakışma) doğrulandı.
+  `arialn.ttf` ile `arial.ttf` ölçümlerinin farklı olduğu, `"ArialNarrow"`
+  aile adının ise sessizce Arial'e düştüğü ölçülerek teyit edildi.
+- **Golden output etkisi:** TEXT 339 → 589 (+250 = 125 oda × 2 ek satır),
+  `METIN` layer 177 → 427, toplam entity 1976 → 2226. Geometri (duvar,
+  açıklık, aks, çerçeve) değişmedi.
+- **Açık sınır:** `RoomLabelStyle` Protocol'ü ve leader'lı yerleşim
+  uygulanmadı (kullanıcı fikirlerden birini seçmedi, şartname doğrudan
+  uygulandı). Arial Narrow bir TTF'tir; çizimi açan makinede font yoksa
+  metin genişlikleri kayar — bu bilinen bir sınırdır.
+- **Sonraki direktif:** `DEV-006 Golden fixture kataloğu` (amacı rev-9'da
+  genişletildi) veya `DEV-009 tefriş modülü` sistem mimarı onayıyla
+  başlatılabilir.
+
 ## HD-004 — Tip-A kapak paftası (`CoverBlock`) ve `Sheet` özel-pafta desteği
 
 - **Durum:** COMPLETED

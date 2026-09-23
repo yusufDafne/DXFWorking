@@ -173,6 +173,21 @@ def check_rooms(units: str, rooms: list[dict]) -> list[str]:
                     f"(kesisim alani ~{inter_m2:.2f} m^2)."
                 )
 
+    # Mahal no, kat icinde benzersiz olmali: kat kodu ile birleserek proje
+    # genelinde tekil bir mahal kimligi olusturur (orn. 'ZK-04').
+    seen_numbers: dict[str, str] = {}
+    for room in rooms:
+        number = str(room.get("no", "") or "").strip()
+        if not number:
+            continue
+        if number in seen_numbers:
+            errors.append(
+                f"Mahal no '{number}' ayni katta iki kez kullanilmis: "
+                f"'{seen_numbers[number]}' ve '{room['id']}'."
+            )
+        else:
+            seen_numbers[number] = room["id"]
+
     return errors
 
 
@@ -244,6 +259,25 @@ def check_openings(openings: list[dict], walls: list[dict]) -> list[str]:
     return errors
 
 
+def check_floor_codes(floors: list[dict]) -> list[str]:
+    """Kat kodlari (floors[].code) birbirinden farkli olmali; ayni kod iki
+    katta kullanilirsa mahal kimligi ('ZK-04') artik benzersiz olmaz."""
+    errors: list[str] = []
+    seen: dict[str, str] = {}
+    for floor in floors:
+        code = str(floor.get("code", "") or "").strip()
+        if not code:
+            continue
+        if code in seen:
+            errors.append(
+                f"Kat kodu '{code}' iki katta kullanilmis: "
+                f"'{seen[code]}' ve '{floor['id']}'."
+            )
+        else:
+            seen[code] = floor["id"]
+    return errors
+
+
 def check_floor(units: str, floor: dict) -> list[str]:
     errors: list[str] = []
     prefix = f"[{floor['id']}] "
@@ -277,6 +311,8 @@ def run_validation(context_path: Path = DEFAULT_CONTEXT_PATH) -> bool:
 
     units = context["meta"]["units"]
     all_errors: list[str] = []
+
+    all_errors += check_floor_codes(context["floors"])
 
     for floor in context["floors"]:
         all_errors += check_floor(units, floor)

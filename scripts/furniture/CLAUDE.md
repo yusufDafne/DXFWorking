@@ -1,4 +1,15 @@
-# furniture modülü — Gelecek faz
+# furniture modülü (tefriş) — DEV-009 ile planlandı
+
+Kullanıcı 2026-09-23'te bu modülün kurulmasını ve **standart tefriş
+elemanlarından oluşan bir set** oluşturulmasını talep etti. Plan maddesi ve
+iki uygulama fikri için `docs/development/DEVELOPMENT_TASKS.md` içindeki
+`DEV-009`a bakınız. Bu dosya bir uygulama izni değildir; sistem mimarı görevi
+açıkça başlatmadan kod yazılmaz.
+
+**İlk iş:** Bugün `floor.counters[]` (mutfak tezgahı) doğrudan
+`generate_dxf.py::draw_floor_sheet` içinde ad-hoc kapalı polyline olarak
+çiziliyor. Modülün ilk görevi bu davranışı davranış korunarak devralmaktır
+(`axis/` modülünün `AxisGrid`i devralmasıyla aynı desen).
 
 ## Sorumluluk
 

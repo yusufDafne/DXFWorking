@@ -13,6 +13,8 @@ buraya KARISMAZ (onlar kendi modullerinde/yerlerinde kalir).
 from __future__ import annotations
 
 import math
+import sys
+from pathlib import Path
 
 import ezdxf
 import ezdxf.bbox as bbox_mod
@@ -38,7 +40,14 @@ MAX_TITLE_BOX_HEIGHT_MM = 1200.0
 # bu gercekten yasandi ve boylece duzeltildi.
 CONTENT_PADDING = 3200.0
 FRAME_GAP = 150.0                # cift cizgili cerceve (ic/dis hat) arasi mesafe
-DEFAULT_FONT = "txt"             # ezdxf 'Standard' text style'in varsayilan SHX fontu
+# Metin sigdirma olcumlerinde kullanilan font. CIZILEN fontla AYNI olmak
+# zorundadir (bkz. scripts/typography/CLAUDE.md), bu yuzden burada ikinci bir
+# sabit TUTULMAZ - proje fontu typography modulunden alinir.
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+try:
+    from ..typography import DEFAULT_FONT_FILE as DEFAULT_FONT
+except ImportError:  # dogrudan scripts/ uzerinden calistirildiginda
+    from typography import DEFAULT_FONT_FILE as DEFAULT_FONT
 
 # --- Kagit-uzerinde (PRINTED) mm standartlari - DIN/ISO 5457 + TMMOB/imar
 # mevzuati arastirmasindan alinmistir (bkz. scripts/pafta/CLAUDE.md). Bunlar

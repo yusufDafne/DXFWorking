@@ -30,10 +30,17 @@ kalanını bilmeye ihtiyaç duymadan o modül üzerinde derinlemesine/izole
 - ✅ **`scripts/axis/`** — `AxisGrid`, `AxisDrawingStandard` ve
   `ensure_axis_layer` taşındı; tamamlanma kaydı
   `docs/development/DEVELOPMENT_HISTORY.md` içindedir.
-- ⏳ **`scripts/openings/`** — Kapı/pencere sembolleri + cetvel (simdilik
-  `walls.render.DefaultPlanOpeningStyle`).
-- ⏳ **`scripts/rooms/`** — Oda poligonu, etiket, alan (simdilik generate_dxf).
-- ⏳ Kolon, ölçü zinciri (`DimensionChain`), lejant — fikir/asagida.
+- ✅ **`scripts/openings/`** — `Opening`/`Door`/`Window`,
+  `OpeningSymbolStyle`, `OpeningSchedule` (bkz. `HD-003`).
+- ✅ **`scripts/rooms/`** — `Room`, `PolygonOps`, `RoomLabeler` (3 satırlı
+  mahal etiketi, bkz. `HD-005`).
+- ✅ **`scripts/dimensions/`** — `DimensionChain`, `LinearDim`,
+  `ChainLayout` (bkz. `HD-003`).
+- ✅ **`scripts/typography/`** — Proje yazı tipi / DXF text style sahibi
+  (bkz. `HD-005`). Çizilen font ile `fit_text_height`'in ölçtüğü font bu
+  modül sayesinde tek kaynaktan gelir.
+- ⏳ Kolon, tefriş, cephe, lejant, import — her biri için ayrı plan maddesi
+  `docs/development/DEVELOPMENT_TASKS.md` içindedir (`DEV-009` … `DEV-017`).
 
 ## Kurulu sınıflar (durum: uygulandı)
 
@@ -84,12 +91,19 @@ Ortak desen (pafta + walls ile kanitlandi):
 | 9       | `furniture/`  | `Counter`, `Fixture`                                       | Mutfak tezgahi vb.                                             |
 | 10      | `legend/`     | `TitleBlockLegend`, `LayerSwatch`                          | Opsiyonel pafta lejanti                                        |
 | 11      | `import/`     | `DxfWallScanner`, `PdfUnderlay`                            | Ters yon: mevcut cizimden veri (ileri faz)                     |
+| -       | `typography/` | `TextStyles`                                               | Proje fontu (Arial Narrow) + rol bazli text style; rev-9       |
 
 Semaya eklenecek opsiyonel alanlar (talep ile, deger uydurulmaz):
 
 - `walls[].kind` -> `WallCatalog`
 - `openings[].variant` / `swing` / `host_side`
 - `meta.drawing_standard` -> hangi katalog paketinin yuklenecegi
+
+rev-9'da semaya EKLENENLER (artik opsiyonel degil, kullanimda):
+
+- `meta.fonts.default` / `meta.fonts.room_label` -> `typography.TextStyles`
+- `floors[].code` -> kat kodu (B1/B2/ZK/K1../TR), mahal no oneki
+- `rooms[].no` -> mahal no; kat koduyla birlesince benzersiz mahal kimligi
 
 ## Planlanan sınıflar (durum: henüz yok — fikir notu)
 
