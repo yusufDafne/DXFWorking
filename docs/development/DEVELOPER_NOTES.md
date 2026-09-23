@@ -43,7 +43,7 @@ sistem mimarı direktifi güncellenir.
 rev-10 durumu:
 
 - `DEV-006` **COMPLETED** — golden artık üç katmanlı (ölçüm + semantik kural +
-  fixture koşucusu), bkz. `HD-006`.
+  golden referans koşucusu), bkz. `HD-006`.
 - `DEV-008` **COMPLETED** — 3 satırlı mahal etiketi + `typography` (`HD-005`).
 - `DEV-009` **COMPLETED** — tefriş modülü, tefriş = DXF `BLOCK` (`HD-006`).
 - `DEV-010` **COMPLETED** — taralı kolon, dinamik hatch (`HD-006`).
@@ -53,7 +53,7 @@ rev-10 durumu:
 
 **Önemli işletim notu:** Üretimden sonra artık
 `python scripts/golden_report.py output/plan.dxf --rules context.json` ve
-`python scripts/golden_report.py --fixtures` da çalıştırılmalıdır. Ölçüm
+`python scripts/golden_report.py --golden-set` da çalıştırılmalıdır. Ölçüm
 raporunun tek başına yetmediği rev-10'da somut olarak gösterildi.
 
 Sıradaki iş için sistem mimarı açık direktif vermelidir; `DEV-018` (blok

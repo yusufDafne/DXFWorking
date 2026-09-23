@@ -9,7 +9,7 @@ DEV-006 ile genisletildi. Uc katman vardir:
    ve dogru bicimde mi". Olcum raporunun TAMAMEN kor oldugu hata sinifini
    yakalar: bir duvar kaysa, bir mahal etiketi odasindan tassa veya bir kapi
    sembolu kaybolsa entity sayilari degismeyebilir ama kural patlar.
-3. **Fixture kosucusu** (`run_fixtures`) - kucuk, izole context'ler uzerinde
+3. **Golden referans kosucusu** (`run_golden_set`) - kucuk, izole context'ler uzerinde
    ayni kontrolleri calistirir. Tum projeyi tek parca karsilastirmak yerine
    modul modul bakilir; fark ciktiginda HANGI modulun bozuldugu dogrudan
    gorunur.
@@ -19,8 +19,8 @@ Kullanim:
     python scripts/golden_report.py output/plan.dxf --write <rapor.json>
     python scripts/golden_report.py output/plan.dxf --compare <rapor.json>
     python scripts/golden_report.py output/plan.dxf --rules context.json
-    python scripts/golden_report.py --fixtures
-    python scripts/golden_report.py --fixtures --update
+    python scripts/golden_report.py --golden-set
+    python scripts/golden_report.py --golden-set --update
 
 ONEMLI - bounding box: `entity_bbox` artik ezdxf'in gercek extent
 hesabini kullanir. Onceki surum `INSERT` icin yalnizca EKLEME NOKTASINI
@@ -43,7 +43,16 @@ import ezdxf
 import ezdxf.bbox as bbox_mod
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-FIXTURE_ROOT = PROJECT_ROOT / "docs" / "development" / "fixtures"
+# GOLDEN REFERANS PROJELERI. Bunlar dokuman degil, DOGRULAMA VERISIDIR -
+# bu yuzden docs/ altinda degil, schema/ ve output/ gibi proje koku
+# seviyesinde dururlar.
+#
+# ISIM NOTU: rev-11'e kadar bunlara 'fixture' deniyordu. Mimari bir projede
+# 'fixture' sozcugu SABIT TESISAT ELEMANI (lavabo, klozet, vitrifiye)
+# anlamina geldigi icin kullanici hakli olarak bunu tefris sanmisti.
+# Proje zaten 'golden output' terimini kullandigindan ad 'golden' oldu.
+GOLDEN_ROOT = PROJECT_ROOT / "golden"        # proje geneli (entegrasyon)
+MODULE_ROOT = PROJECT_ROOT / "scripts"       # scripts/<modul>/golden/<ad>
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
@@ -264,33 +273,54 @@ def print_rule_results(results: dict[str, list[str]]) -> int:
 
 
 # --------------------------------------------------------------------------
-# Fixture kosucusu
+# Golden referans kosucusu
 # --------------------------------------------------------------------------
 
-def fixture_dirs() -> list[Path]:
-    if not FIXTURE_ROOT.exists():
-        return []
-    return sorted(p for p in FIXTURE_ROOT.iterdir()
-                  if p.is_dir() and (p / "context.json").exists())
+def golden_dirs() -> list[Path]:
+    """Golden referans projelerini IKI kokten toplar:
+
+    - `golden/<ad>/` - proje geneli ENTEGRASYON referansi. Tam bir context
+      gerektirir (schema meta/layers/grid/floors/elevations zorunlu kilar),
+      yani tek bir modulle sinirlandirilamaz.
+    - `scripts/<modul>/golden/<ad>/` - bir modulun KENDI referansi. Modul
+      bilesenleri kendi dizininde yasar (bkz. scripts/CLAUDE.md mottosu).
+
+    Her referans dizini: `context.json` (girdi) + `expected.json` (beklenen
+    olcum raporu). Bunlar PROJE DEGILDIR - sistemi sinamak icin uydurulmus,
+    tek kullanimlik mini context'lerdir; gercek proje verisi context.json
+    kokunde yasar.
+    """
+    found: list[Path] = []
+    if GOLDEN_ROOT.exists():
+        found += [p for p in GOLDEN_ROOT.iterdir()
+                  if p.is_dir() and (p / "context.json").exists()]
+    if MODULE_ROOT.exists():
+        for module in sorted(MODULE_ROOT.iterdir()):
+            module_golden = module / "golden"
+            if not module_golden.is_dir():
+                continue
+            found += [p for p in module_golden.iterdir()
+                      if p.is_dir() and (p / "context.json").exists()]
+    return sorted(found)
 
 
-def run_fixtures(update: bool = False) -> int:
-    """Her fixture icin: validate -> generate -> olcum raporu + kurallar."""
+def run_golden_set(update: bool = False) -> int:
+    """Her golden referansi icin: validate -> generate -> rapor + kurallar."""
     import tempfile
 
     import generate_dxf
     import validate as validator
 
     failures = 0
-    fixtures = fixture_dirs()
-    if not fixtures:
-        print("Fixture bulunamadi.")
+    references = golden_dirs()
+    if not references:
+        print("Golden referans projesi bulunamadi.")
         return 1
 
-    for fixture in fixtures:
-        context_path = fixture / "context.json"
-        golden_path = fixture / "golden.json"
-        print(f"\n--- fixture: {fixture.name} ---")
+    for reference in references:
+        context_path = reference / "context.json"
+        expected_path = reference / "expected.json"
+        print(f"\n--- golden: {reference.relative_to(PROJECT_ROOT).as_posix()} ---")
 
         if not validator.run_validation(context_path):
             print("  [HATA] validate basarisiz")
@@ -298,7 +328,7 @@ def run_fixtures(update: bool = False) -> int:
             continue
 
         with tempfile.TemporaryDirectory() as tmp:
-            dxf_path = Path(tmp) / "fixture.dxf"
+            dxf_path = Path(tmp) / "golden.dxf"
             try:
                 generate_dxf.generate(context_path, dxf_path)
             except Exception as exc:
@@ -308,20 +338,20 @@ def run_fixtures(update: bool = False) -> int:
 
             actual = report(dxf_path)
             actual.pop("sha256", None)      # gecici yol/zaman bagimli degil
-            actual["source"] = fixture.name
+            actual["source"] = reference.relative_to(PROJECT_ROOT).as_posix()
 
-            if update or not golden_path.exists():
-                golden_path.write_text(json.dumps(actual, indent=2) + "\n",
-                                       encoding="utf-8")
-                print("  [YAZILDI] golden.json")
+            if update or not expected_path.exists():
+                expected_path.write_text(json.dumps(actual, indent=2) + "\n",
+                                         encoding="utf-8")
+                print("  [YAZILDI] expected.json")
             else:
-                expected = json.loads(golden_path.read_text(encoding="utf-8"))
+                expected = json.loads(expected_path.read_text(encoding="utf-8"))
                 differences = compare(actual, expected)
                 if differences:
-                    print(f"  [HATA] golden farki: {', '.join(differences)}")
+                    print(f"  [HATA] beklenen rapordan farkli: {', '.join(differences)}")
                     failures += 1
                 else:
-                    print("  [OK  ] golden raporu eslesti")
+                    print("  [OK  ] beklenen rapor eslesti")
 
             results = check_rules(dxf_path, context_path)
             failures += print_rule_results(results)
@@ -335,17 +365,19 @@ def main() -> int:
     parser.add_argument("--write", type=Path, help="Semantic golden raporu yaz")
     parser.add_argument("--compare", type=Path, help="Mevcut raporla karsilastir")
     parser.add_argument("--rules", type=Path, help="Semantik kurallari bu context ile kontrol et")
-    parser.add_argument("--fixtures", action="store_true", help="Fixture katalogunu calistir")
-    parser.add_argument("--update", action="store_true", help="--fixtures ile: golden dosyalarini yeniden yaz")
+    parser.add_argument("--golden-set", action="store_true",
+                        help="Golden referans projelerini calistir")
+    parser.add_argument("--update", action="store_true",
+                        help="--golden-set ile: expected.json dosyalarini yeniden yaz")
     args = parser.parse_args()
 
-    if args.fixtures:
-        failures = run_fixtures(update=args.update)
-        print(f"\nFixture sonucu: {'BASARILI' if failures == 0 else f'{failures} BASARISIZ'}")
+    if args.golden_set:
+        failures = run_golden_set(update=args.update)
+        print(f"\nGolden referans sonucu: {'BASARILI' if failures == 0 else f'{failures} BASARISIZ'}")
         return 1 if failures else 0
 
     if args.dxf is None:
-        parser.error("dxf yolu gerekli (veya --fixtures kullanin)")
+        parser.error("dxf yolu gerekli (veya --golden-set kullanin)")
 
     exit_code = 0
     actual = report(args.dxf)

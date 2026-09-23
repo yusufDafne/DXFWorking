@@ -20,6 +20,34 @@ okur.
 - `ACTIVE_TASK.lock`: Aynı anda ikinci agent görev almasını engelleyen geçici
   kilit; elle silinmez, sahibi tarafından serbest bırakılır.
 
+## Bu klasöre NE KONMAZ
+
+Bu klasör yalnızca **agentic yönetişim dokümanı** tutar. Çalışan bileşenler
+burada yaşamaz:
+
+- Modül kodu, modül sözleşmesi ve modüle özel golden referansı →
+  `scripts/<modül>/`
+- Proje geneli (entegrasyon) **golden referans projeleri** → `golden/` (proje
+  kökü, `schema/` ve `output/` gibi bir veri dizini)
+
+rev-11'de `docs/development/fixtures/` bu nedenle proje köküne taşındı ve
+`golden/` olarak yeniden adlandırıldı — mimari bir projede *fixture* sözcüğü
+sabit tesisat elemanı (lavabo, klozet) anlamına geldiği için yanıltıcıydı.
+
+## Doküman tutarlılığı — mekanik kontrol
+
+```text
+python scripts/doc_check.py
+```
+
+"Çalışma sonunda dokümanları güncelle" kuralı uzun süre yalnızca düzyazıydı ve
+gerçekten kaçtı (rev-10: `DEV-006` COMPLETED yapıldı ama `## READY` başlığının
+altında kaldı). `doc_check.py` bunu mekanik hale getirir: görev durumu ile
+bulunduğu bölüm, "Durum özeti" tablosu, `HD-xxx` atıflarının gerçekten var
+olması, yinelenen/eksik DEV kimliği, her modülün kendi `CLAUDE.md`'sinin
+bulunması ve `scripts/CLAUDE.md`de anılması denetlenir. Görev `COMPLETED`
+yazılmadan önce bu kontrol TEMİZ dönmelidir.
+
 ## Görev yaşam döngüsü
 
 `IDEA` → `PLANNED` → `READY` → `IN_PROGRESS` → `VALIDATION` → `COMPLETED`.
@@ -85,7 +113,9 @@ kabul edemez. Final kabulü sistem mimarı veya yetkili kullanıcı verir.
 DXF değişikliklerinden sonra `python scripts/golden_report.py output/plan.dxf`
 ile entity sayısı/türleri, layer dağılımı ve modelspace bounding box raporlanır.
 Kabul edilen referans rapor `--write` ile saklanır ve sonraki üretim
-`--compare` ile kontrol edilir. Her proje revizyonu
+`--compare` ile kontrol edilir. Ölçüm raporu TEK BAŞINA yeterli değildir;
+`--rules context.json` (semantik kurallar) ve `--golden-set` (izole modül
+kontrolü) da çalıştırılır. Her proje revizyonu
 `PROVENANCE_TEMPLATE.json` alanlarını doldurur; byte hash'i tek başına kabul
 ölçütü değildir.
 

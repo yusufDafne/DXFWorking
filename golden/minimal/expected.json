@@ -1,5 +1,5 @@
 {
-  "source": "minimal",
+  "source": "fixtures/minimal",
   "entity_count": 111,
   "entity_types": {
     "ARC": 1,

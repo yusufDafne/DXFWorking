@@ -15,6 +15,48 @@ kalıcı kurallardır. Aşağıdaki kurallar istisnasız uygulanır.
 - `scripts/CLAUDE.md` çizim mimarisi, modül sırası, public API ve modüller arası
   sözleşmelerin otoritesidir. Her `scripts/<modül>/CLAUDE.md` kendi modülünün
   sorumluluk, invariant, test ve bilinen sınırlamalarının otoritesidir.
+- **Agentic dokümanlar birbirine bağlı tek bir bağlam sistemidir.** Kök
+  `CLAUDE.md`, `scripts/CLAUDE.md`, her modülün `CLAUDE.md`'si ve
+  `docs/development/*` kasıtlı olarak birbirine referans verir; amaç, bir
+  agent'ın çalışmaya başlarken bağlamı eksiksiz kurabilmesi ve hiçbir yerde
+  bayat satır kalmamasıdır. **Her çalışmanın sonunda bu dokümanlar
+  güncellenir** — bu bir nezaket değil, sistemin çalışma koşuludur. Kontrolü
+  `python scripts/doc_check.py` yapar; görev `COMPLETED` yazılmadan önce temiz
+  dönmelidir.
+- **Modüller bağımsız çalışır, kritik noktalarda çapraz kontrol edilir.** Her
+  modül kendi klasöründe, kendi sözleşmesiyle ve diğer modülleri bilmeden
+  geliştirilebilir olmalıdır — bir agent tek bir modüle odaklanabilsin diye.
+  Ancak bağımsızlık **izolasyon değildir**: modüller arasında gerçek
+  bağımlılıklar vardır (tefriş duvara/kapı açılımına, kolon aksa, mahal
+  etiketi pafta sınırına). Bu kritik noktalarda **çapraz kontrol zorunludur**
+  ve bugün `scripts/golden_report.py --rules` ile `--golden-set` üzerinden
+  yürür. Yeni bir modül eklendiğinde "bu modül hangi modülle çakışabilir?"
+  sorusu açıkça yanıtlanır ve gerekiyorsa bir kural eklenir.
+- **Her proje diğerlerinden BAĞIMSIZDIR ve proje verisi proje dizininde
+  kalır.** Tefriş yerleşimi, oda/duvar geometrisi, mahal numaraları gibi
+  **proje bazlı adresler yalnızca o projenin `context.json`'ında** bulunur.
+  Modül altında yalnızca **kütüphane** yaşar (tefriş kataloğu, duvar kataloğu,
+  kolon kesitleri). Bu ayrım korunmazsa bir projenin verisi başka bir projeye
+  sızar. `golden/` altındaki referanslar proje DEĞİLDİR; sistemi sınamak için
+  uydurulmuş mini context'lerdir.
+- **`docs/` YALNIZCA agentic yönetişim dokümanı tutar** (görev kuyruğu, geçmiş,
+  fikirler, geliştirici notları, rol izinleri, provenance şablonu). Çalışan
+  bileşenler oraya konmaz:
+  - Bir modülün kodu, sözleşmesi ve **kendi golden referansı** `scripts/<modül>/`
+    altında yaşar.
+  - Proje geneli (entegrasyon) **golden referans projeleri** `golden/`
+    altındadır — `schema/` ve `output/` gibi proje kökü seviyesinde bir VERİ
+    dizinidir, doküman değildir. Bunlar tam bir context gerektirdiği için
+    (schema `meta`, `layers`, `grid`, `floors`, `elevations` zorunlu kılar)
+    tek bir modüle bağlanamazlar. Her referans dizini `context.json` (girdi) +
+    `expected.json` (beklenen ölçüm raporu) tutar.
+  `scripts/golden_report.py --golden-set` her iki kökü de tarar.
+
+  **İsim notu (rev-11):** Bunlara rev-11'e kadar "fixture" deniyordu. Mimari
+  bir projede *fixture* sözcüğü **sabit tesisat elemanı** (lavabo, klozet,
+  vitrifiye) anlamına geldiği için yanıltıcıydı — bir kullanıcı haklı olarak
+  bunu tefriş listesi sandı. Proje zaten "golden output" terimini kullandığı
+  için ad `golden` oldu.
 - Sistem kaynakları ile proje verileri ayrıdır. Her proje kendi proje dizininde
   context, talepler, revizyon kayıtları, doğrulama raporları, preview ve nihai
   DXF çıktısını tutar; bir projenin revizyonu başka projeye yazılmaz.
@@ -85,9 +127,14 @@ geliştirme görevleri, tamamlanmış geçmiş, fikirler ve geliştirici notlar�
    - `--rules context.json` — **semantik kurallar** (mahal etiketi 3 satır ve
      oda içinde mi, kapı başına yay var mı, aks çizgisi baloncuğa giriyor mu,
      tanımsız blok referansı var mı, bildirilmemiş layer kullanılmış mı),
-   - `--fixtures` — `docs/development/fixtures/` altındaki küçük, izole
-     context'leri baştan üretip aynı kontrolleri uygular. Bir modül
-     bozulduğunda hangi modül olduğu doğrudan görünür.
+   - `--golden-set` — `golden/` (proje geneli) ve `scripts/<modül>/golden/`
+     (modüle özel) altındaki küçük, izole referans projelerini baştan üretip
+     aynı kontrolleri uygular. Bir modül bozulduğunda hangi modül olduğu
+     doğrudan görünür.
+7. **Doküman tutarlılığı:** `python scripts/doc_check.py` çalıştırılır. Bu
+   kontrol, "çalışma sonunda dokümanları güncelle" kuralını düzyazı olmaktan
+   çıkarıp MEKANİK hale getirir: görev durumu ile bulunduğu bölüm, durum özeti
+   tablosu, `HD-xxx` atıfları ve modül/golden yapısı örtüşmüyorsa hata verir.
    Ölçüm raporu tek başına yeterli DEĞİLDİR: bir duvar kaysa veya etiket
    yanlış odaya yazılsa entity sayıları değişmeyebilir.
 

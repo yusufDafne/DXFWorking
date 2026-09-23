@@ -46,6 +46,46 @@ kalanını bilmeye ihtiyaç duymadan o modül üzerinde derinlemesine/izole
 - ⏳ Cephe, lejant, import — her biri için ayrı plan maddesi
   `docs/development/DEVELOPMENT_TASKS.md` içindedir (`DEV-011` … `DEV-018`).
 
+## Modül bağımsızlığı ve çapraz kontrol (kullanıcı ilkesi)
+
+Bu iki gereksinim BİRLİKTE geçerlidir ve biri diğerini iptal etmez:
+
+1. **Bağımsız geliştirilebilirlik.** Her modül kendi klasöründe, kendi
+   `CLAUDE.md`'siyle ve diğer modüllerin iç detayını bilmeden geliştirilebilir
+   olmalıdır. Bir agent yalnızca o klasörü açıp derinlemesine çalışabilmelidir.
+   Modüller birbirinin **public API**'sini tüketir, iç yapısını değil.
+2. **Kritik noktalarda çapraz kontrol.** Bağımsızlık izolasyon değildir.
+   Gerçek bağımlılıklar vardır ve bunlar sessizce bozulabilir:
+
+   | Çapraz nokta | Risk |
+   |--------------|------|
+   | tefriş ↔ duvar / kapı açılımı | mobilya duvara veya kapı yayına girer |
+   | kolon ↔ aks | kolon aks kesişiminden kayar |
+   | kolon ↔ duvar / tefriş | taşıyıcı başka elemanla çakışır |
+   | mahal etiketi ↔ oda sınırı | etiket odadan taşar |
+   | her şey ↔ pafta çerçevesi | içerik paftayı aşar |
+   | çizilen font ↔ ölçülen font | metin genişliği kayar, taşma olur |
+
+   Bu kontroller bugün `scripts/golden_report.py --rules` (semantik kurallar)
+   ve `--golden-set` (izole referans projeleri) üzerinden yürür.
+
+**Yeni bir modül eklerken:** "bu modül hangi modülle çakışabilir?" sorusu
+açıkça yanıtlanır; yanıt varsa ya bir semantik kural eklenir ya da neden
+eklenmediği modülün `CLAUDE.md`'sinde "bilinen sınırlama" olarak yazılır.
+Çakışma denetiminin ayrı bir modül mü olacağı yoksa her modülün kendi
+kontrolünü mü yapacağı henüz KARARA BAĞLANMADI — bkz. `DEV-019`.
+
+## Proje verisi ile kütüphane ayrımı (kullanıcı ilkesi)
+
+| Nerede | Ne |
+|--------|-----|
+| `scripts/<modül>/` | **kütüphane** — tefriş kataloğu, duvar kataloğu, kolon kesitleri, çizim fonksiyonları |
+| proje `context.json` | **proje verisi** — tefriş yerleşimi, duvar koordinatı, mahal numarası, kolon konumu |
+
+Her proje diğerlerinden bağımsızdır; bir projenin verisi başka bir projeye
+yazılmaz. Proje bazlı adresler (tefriş nereye konuldu gibi) **yalnızca** o
+projenin dizininde yaşar. `golden/` altındaki referanslar proje değildir.
+
 ## Kurulu sınıflar (durum: uygulandı)
 
 - **`Wall` / `WallNetwork`** — `scripts/walls/` modulunde (rev-1 mantigi +
@@ -82,22 +122,26 @@ Ortak desen (pafta + walls ile kanitlandi):
 - Yeni yonetmelik/ofis std. = yeni katalog/sozluk veya alt `DrawingStandard`,
   cekirdek geometri degismez.
 
-| Oncelik | Modul         | Cekirdek siniflar                                          | Not                                                            |
-| ------- | ------------- | ---------------------------------------------------------- | -------------------------------------------------------------- |
-| 1       | `pafta/`      | `Sheet`, `PaperSizePlanner`                                | Tamam; uniform template + keyplan bekliyor                     |
-| 2       | `walls/`      | `Wall`, `WallNetwork`, `WallCatalog`, scanner              | Tamam (ilk surum)                                              |
-| 3       | `axis/`       | `AxisGrid`, `AxisDrawingStandard`                          | Tamamlandi; davranis korunarak tasindi                         |
-| 4       | `openings/`   | `Opening`, `DoorSymbol`, `WindowSymbol`, `OpeningSchedule` | Siradaki faz; duvar host referansi, mentese, surme, cift kanat |
-| 5       | `rooms/`      | `Room`, `RoomLabeler`, `PolygonOps`                        | Alan, etiket sigrdirma (pafta `fit_text_height`)               |
-| 6       | `dimensions/` | `DimensionChain`, `LinearDim`, `ChainLayout`               | Tam sayi cm; AxisGrid devrani                                  |
-| 7       | `columns/`    | `Column`, `ColumnGrid`                                     | Aks kesisimi; kesit sembolu                                    |
-| 8       | `elevations/` | `ElevationSheet`, `LevelStack`, `FacadeOpeningPlacer`      | Plan-ten bagimsiz basitlestirme bilincli kalabilir             |
-| 9       | `furniture/`  | `Counter`, `Fixture`                                       | Mutfak tezgahi vb.                                             |
-| 10      | `legend/`     | `TitleBlockLegend`, `LayerSwatch`                          | Opsiyonel pafta lejanti                                        |
-| 11      | `import/`     | `DxfWallScanner`, `PdfUnderlay`                            | Ters yon: mevcut cizimden veri (ileri faz)                     |
-| -       | `typography/` | `TextStyles`                                               | Proje fontu (Arial Narrow) + rol bazli text style; rev-9       |
-| -       | `furniture/`  | `FurnitureCatalog`, `FurnitureBlocks`, `FurnitureRenderer` | Tefris = DXF BLOCK; kahverengi grup layer'lari; rev-10         |
-| -       | `columns/`    | `Column`, `ColumnGrid`, `ColumnHatchStyle`                 | Tarali kolon (ANSI33/3.0); isimlendirme hazir ama kapali       |
+| Modul         | Cekirdek siniflar (gercek public API)                                      | Durum                                                          |
+| ------------- | -------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| `pafta/`      | `Sheet`, `PaperSizePlanner`, `CoverBlock`, `PaftaOverflowError`             | UYGULANDI; uniform template + keyplan bekliyor                 |
+| `walls/`      | `Wall`, `WallNetwork`, `WallCatalog`, `RoomPolygonScanner`                  | UYGULANDI (ilk surum)                                          |
+| `axis/`       | `AxisGrid`, `AxisDrawingStandard`                                           | UYGULANDI; davranis korunarak tasindi                          |
+| `openings/`   | `Opening`, `Door`, `Window`, `OpeningSymbolStyle`, `OpeningSchedule`        | UYGULANDI; variant/swing schema alanlari YOK (DEV-016)         |
+| `rooms/`      | `Room`, `RoomLabeler`, `PolygonOps`, `RoomPolygonScanner`                   | UYGULANDI; 3 satirli mahal etiketi (rev-9)                     |
+| `dimensions/` | `DimensionChain`, `LinearDim`, `ChainLayout`, `DimensionStyle`              | UYGULANDI; tam sayi cm, AxisGrid tuketiyor                     |
+| `typography/` | `TextStyles`                                                                | UYGULANDI; proje fontu Arial Narrow (rev-9)                    |
+| `furniture/`  | `FurnitureCatalog`, `FurnitureBlocks`, `FurnitureRenderer`, `FurnitureSpec`, `FurnitureItem`, `FurnitureGroup`, `FurnitureSchedule` | UYGULANDI; tefris = DXF BLOCK (rev-10) |
+| `columns/`    | `Column`, `ColumnGrid`, `ColumnRenderer`, `ColumnSection`, `ColumnSectionCatalog`, `ColumnHatchStyle`, `ColumnLabelStyle` | UYGULANDI; tarali kolon ANSI33/3.0 (rev-10) |
+| `elevations/` | `ElevationSheet`, `LevelStack`, `FacadeOpeningPlacer`                       | PLANLANAN (DEV-011); sinif adlari onerilmis, kod YOK           |
+| `legend/`     | `TitleBlockLegend`, `LayerSwatch`, `LegendRenderer`                         | PLANLANAN (DEV-012); sinif adlari onerilmis, kod YOK           |
+| `import/`     | `DxfWallScanner`, `ImportReport`, `ImportPatch`                             | PLANLANAN (DEV-013); sinif adlari onerilmis, kod YOK           |
+
+> Bu tablo `scripts/doc_check.py` tarafindan DENETLENIR: `UYGULANDI` isaretli bir
+> satirda anilan her sinif adi, o modulde gercekten tanimli olmalidir. Yalnizca
+> `PLANLANAN` satirlarda henuz var olmayan adlar bulunabilir. (rev-11'den once
+> bu tabloda `furniture/` ve `columns/` IKISER kez listelenmisti ve `furniture/`
+> satiri hic var olmayan `Counter`/`Fixture` siniflarini anlatiyordu.)
 
 Semaya eklenecek opsiyonel alanlar (talep ile, deger uydurulmaz):
 

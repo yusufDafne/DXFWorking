@@ -4,59 +4,38 @@ Bu dosya sistem geliştiricisinin sıradaki kontrollü işini gösterir. Aynı a
 tek bir görev `IN_PROGRESS` olabilir. Sistem mimarı `READY` görevi başlatır;
 agent kendi başına sıra değiştirmez.
 
+## Durum özeti
+
+| Görev | Modül | Durum |
+| ----- | ----- | ----- |
+| DEV-001 | `openings/` | COMPLETED |
+| DEV-002 | `rooms/` | COMPLETED |
+| DEV-003 | `dimensions/` | COMPLETED |
+| DEV-004 | golden output | COMPLETED |
+| DEV-005 | agentic kontrol | COMPLETED |
+| DEV-006 | golden fixture kataloğu | COMPLETED (rev-10) |
+| DEV-007 | `pafta/` | **BLOCKED** — kullanıcı verisi bekliyor |
+| DEV-008 | `rooms/` etiket | COMPLETED (rev-9) |
+| DEV-009 | `furniture/` | COMPLETED (rev-10) |
+| DEV-010 | `columns/` | COMPLETED (rev-10) |
+| DEV-011 | `elevations/` | PLANNED |
+| DEV-012 | `legend/` | PLANNED |
+| DEV-013 | `import/` | PLANNED |
+| DEV-014 | `walls/` | PLANNED |
+| DEV-015 | `axis/` | PLANNED |
+| DEV-016 | `openings/` | PLANNED |
+| DEV-017 | `dimensions/` | PLANNED |
+| DEV-018 | DXF `BLOCK` (modüller arası) | PLANNED |
+| DEV-019 | çakışma denetimi (modüller arası) | PLANNED |
+| DEV-020 | proje ↔ sistem sürüm uyumu | PLANNED |
+
 ## READY
 
-### DEV-006 — Golden fixture kataloğu
+**Şu anda `READY` durumda görev YOKTUR.** Sistem mimarı aşağıdaki modül
+kataloğundan bir maddeyi (ve varsa bir fikri) açıkça seçip başlatmalıdır.
+Öneri: `DEV-018` modüller arası bir karar olduğu için `DEV-011`den önce ele
+alınırsa iş tekrarı önlenir.
 
-- **Durum:** COMPLETED (rev-10)
-- **Sonuç:** `golden_report.py` üç katmanlı hale geldi: ölçüm raporu +
-  **semantik kurallar** + **fixture koşucusu**. Kurallar: `room_labels`
-  (3 satır ve oda içinde), `opening_symbols` (kapı başına ARC),
-  `axis_bubbles` (çizgi baloncuğa girmez), `block_references` (tanımsız blok
-  yok), `declared_layers`. Beş kuralın hepsi **negatif testle** doğrulandı
-  (kasıtlı bozma → kural patladı). `entity_bbox` artık ezdxf'in gerçek extent
-  hesabını kullanıyor; önceki sürüm `INSERT` için yalnızca ekleme noktasını
-  döndürüyordu (blok körlüğü — `DEV-018`de tespit edilmişti) ve `TEXT` için
-  de metin genişliğini görmüyordu. Fixture kataloğu
-  `docs/development/fixtures/` altında: `minimal` ve `tefris_kolon`.
-- **Fixture'ların ilk günde yakaladıkları (gerçek bulgular):**
-  1. **Kapak paftası projeye asgari yükseklik dayatıyor.** 1:50'de A4 kapak
-     14850 yüksek; içeriğin düşey açıklığı 8150'den küçükse üretim
-     `PaftaOverflowError` ile durur. `minimal` fixture 4000 derinlikle
-     yazıldığında hemen patladı. Bu sınır daha önce belgelenmemişti.
-  2. **`draw_floor_sheet` içinde isim çakışması.** Mahal etiketi için
-     kullanılan `label_style` yerel değişkeni, kolon `label_style`
-     parametresini gölgeliyordu; `tefris_kolon` fixture'ı bunu yakaladı.
-- **Kayıt:** `DEVELOPMENT_HISTORY.md` içindeki `HD-006`.
-- **Önceki öncelik:** 1
-- **Bu görev neden var (problem):** Bugünkü `scripts/golden_report.py`
-  yalnızca **dört kaba ölçü** karşılaştırıyor: toplam entity sayısı, entity
-  tür dağılımı, layer dağılımı ve modelspace bounding box. Bu, bir
-  regresyonu yakalamak için **zayıftır** — örneğin bir duvar 2 metre kaysa,
-  bir kapı ters yöne açılsa veya bir mahal etiketi yanlış odaya yazılsa
-  entity sayısı ve türleri değişmediği için rapor **"eşleşiyor" der ve
-  hatayı kaçırır**. Bounding box da yalnızca en dış sınırı gördüğü için iç
-  geometrideki kaymaları fark etmez.
-- **Amaç:** Golden kontrolünü "kaç tane var" seviyesinden "doğru yerde ve
-  doğru biçimde mi" seviyesine çıkarmak; bunu tüm projeyi tek parça
-  karşılaştırarak değil, modül bazlı fixture'larla yapmak.
-- **Fikir 1 — Modül bazlı mini fixture'lar:** Her modül için küçük, elle
-  doğrulanmış birer context parçası (tek oda + tek kapı; iki aks + bir ölçü;
-  tek kapak paftası) ve her birinin beklenen çıktısı. Bütün projeyi
-  karşılaştırmak yerine modül modül karşılaştırılır; böylece bir fark
-  çıktığında **hangi modülün** bozulduğu doğrudan görünür. Bugün 2226
-  entity'lik tek bir rapor var ve fark çıktığında nerede olduğu belli olmaz.
-- **Fikir 2 — Kritik sembol/geometri beklentileri:** Sayı yerine kural
-  doğrulamak. Örnek beklentiler: "her kapı açıklığı 1 ARC + 3 LINE üretir",
-  "aks çizgisi baloncuğun içine girmez", "her mahal etiketi 3 TEXT'tir ve
-  tamamı kendi oda poligonunun içinde kalır", "ölçü metni tam sayı cm'dir".
-  Bunlar toleranslı geometrik karşılaştırmalardır ve bugünkü raporun tamamen
-  kör olduğu hata sınıfını yakalar. (Mahal etiketi kuralı `DEV-008`de elle
-  yazılan bir kontrol olarak zaten bir kez uygulandı — 125/125 oda doğrulandı;
-  bu görev onu kalıcı hale getirir.)
-- **Açık kararlar:** Fixture'lar `context.json`'dan bağımsız ayrı dosyalar mı
-  olacak? Geometrik karşılaştırmada tolerans ne olacak? Beklenti tanımları
-  veri (JSON) olarak mı, kod olarak mı yazılacak?
 
 ## COMPLETED
 
@@ -99,7 +78,65 @@ agent kendi başına sıra değiştirmez.
   `AGENT_PERMISSIONS.json` rol izinleri ve `PROVENANCE_TEMPLATE.json` eklendi.
 - **Kayıt:** `DEVELOPMENT_HISTORY.md` içindeki `HD-002`.
 
-## PLANNED — modül bazlı plan maddeleri
+### DEV-006 — Golden fixture kataloğu
+
+- **Durum:** COMPLETED (rev-10)
+- **Sonuç:** `golden_report.py` üç katmanlı hale geldi: ölçüm raporu +
+  **semantik kurallar** + **fixture koşucusu**. Kurallar: `room_labels`
+  (3 satır ve oda içinde), `opening_symbols` (kapı başına ARC),
+  `axis_bubbles` (çizgi baloncuğa girmez), `block_references` (tanımsız blok
+  yok), `declared_layers`. Beş kuralın hepsi **negatif testle** doğrulandı
+  (kasıtlı bozma → kural patladı). `entity_bbox` artık ezdxf'in gerçek extent
+  hesabını kullanıyor; önceki sürüm `INSERT` için yalnızca ekleme noktasını
+  döndürüyordu (blok körlüğü — `DEV-018`de tespit edilmişti) ve `TEXT` için
+  de metin genişliğini görmüyordu. Fixture kataloğu
+  `fixtures/` altında: `fixtures/minimal` ve `fixtures/tefris_kolon`.
+- **Fixture'ların ilk günde yakaladıkları (gerçek bulgular):**
+  1. **Kapak paftası projeye asgari yükseklik dayatıyor.** 1:50'de A4 kapak
+     14850 yüksek; içeriğin düşey açıklığı 8150'den küçükse üretim
+     `PaftaOverflowError` ile durur. `minimal` fixture 4000 derinlikle
+     yazıldığında hemen patladı. Bu sınır daha önce belgelenmemişti.
+  2. **`draw_floor_sheet` içinde isim çakışması.** Mahal etiketi için
+     kullanılan `label_style` yerel değişkeni, kolon `label_style`
+     parametresini gölgeliyordu; `tefris_kolon` fixture'ı bunu yakaladı.
+- **Kayıt:** `DEVELOPMENT_HISTORY.md` içindeki `HD-006`.
+- **Önceki öncelik:** 1
+- **Bu görev neden var (problem):** Bugünkü `scripts/golden_report.py`
+  yalnızca **dört kaba ölçü** karşılaştırıyor: toplam entity sayısı, entity
+  tür dağılımı, layer dağılımı ve modelspace bounding box. Bu, bir
+  regresyonu yakalamak için **zayıftır** — örneğin bir duvar 2 metre kaysa,
+  bir kapı ters yöne açılsa veya bir mahal etiketi yanlış odaya yazılsa
+  entity sayısı ve türleri değişmediği için rapor **"eşleşiyor" der ve
+  hatayı kaçırır**. Bounding box da yalnızca en dış sınırı gördüğü için iç
+  geometrideki kaymaları fark etmez.
+- **Amaç:** Golden kontrolünü "kaç tane var" seviyesinden "doğru yerde ve
+  doğru biçimde mi" seviyesine çıkarmak; bunu tüm projeyi tek parça
+  karşılaştırarak değil, modül bazlı fixture'larla yapmak.
+- **Fikir 1 — Modül bazlı mini fixture'lar:** Her modül için küçük, elle
+  doğrulanmış birer context parçası (tek oda + tek kapı; iki aks + bir ölçü;
+  tek kapak paftası) ve her birinin beklenen çıktısı. Bütün projeyi
+  karşılaştırmak yerine modül modül karşılaştırılır; böylece bir fark
+  çıktığında **hangi modülün** bozulduğu doğrudan görünür. Bugün 2226
+  entity'lik tek bir rapor var ve fark çıktığında nerede olduğu belli olmaz.
+- **Fikir 2 — Kritik sembol/geometri beklentileri:** Sayı yerine kural
+  doğrulamak. Örnek beklentiler: "her kapı açıklığı 1 ARC + 3 LINE üretir",
+  "aks çizgisi baloncuğun içine girmez", "her mahal etiketi 3 TEXT'tir ve
+  tamamı kendi oda poligonunun içinde kalır", "ölçü metni tam sayı cm'dir".
+  Bunlar toleranslı geometrik karşılaştırmalardır ve bugünkü raporun tamamen
+  kör olduğu hata sınıfını yakalar. (Mahal etiketi kuralı `DEV-008`de elle
+  yazılan bir kontrol olarak zaten bir kez uygulandı — 125/125 oda doğrulandı;
+  bu görev onu kalıcı hale getirir.)
+- **Açık kararlar:** Fixture'lar `context.json`'dan bağımsız ayrı dosyalar mı
+  olacak? Geometrik karşılaştırmada tolerans ne olacak? Beklenti tanımları
+  veri (JSON) olarak mı, kod olarak mı yazılacak?
+
+## Modül kataloğu — her modülün plan maddesi
+
+> **Bu bir durum kovası DEĞİLDİR.** Buradaki maddeler modül modül
+> düzenlenmiştir; her maddenin durumu kendi `Durum:` satırındadır ve
+> COMPLETED/BLOCKED/PLANNED olabilir. Tek bakışta durum için yukarıdaki
+> "Durum özeti" tablosuna bakınız.
+
 
 Her modülün kendi plan maddesi vardır. Her maddede **iki fikir** önerilir; bunlar
 uygulama izni DEĞİLDİR — sistem mimarı (kullanıcı) bir fikri seçer, kendi
@@ -420,6 +457,68 @@ ZK-04        <- 2. satir: kat kodu + mahal no
   kullanılırsa `validate.py`nin ve golden raporunun bunları okuması gerekir)?
   Ölçekli blokta metin yüksekliği nasıl korunacak?
 
+### DEV-019 — Çakışma denetimi (modüller arası)
+
+- **Durum:** PLANNED (kullanıcı 2026-09-23'te plan olarak istedi)
+- **Problem:** Bugün çizim **doğrulanmıyor, sadece üretiliyor.** Bir koltuk
+  duvarın içine, kapı açılım yayının üstüne veya odanın tamamen dışına
+  konabilir; kolon bir odanın ortasında durabilir. Ne `validate.py` ne golden
+  raporu bunu görür — golden'ın işi "çıktı beklenmedik şekilde değişti mi",
+  "çizim doğru mu" değil. Bu ikisi farklı sorulardır ve karıştırılması
+  kolaydır.
+- **Kapsam adayı:** tefriş ↔ oda sınırı, tefriş ↔ duvar, tefriş ↔ tefriş,
+  tefriş ↔ kapı açılım alanı (swing), tefriş ↔ kolon, kolon ↔ oda, kolon ↔
+  kolon.
+- **KARARA BAĞLANMAMIŞ — kullanıcı ile ayrıca tartışılacak:** Çakışma denetimi
+  **ayrı bir modül mü** olacak (`scripts/collision/`, tüm geometriyi toplayıp
+  merkezî olarak denetleyen), **yoksa her modül kendi çakışma kontrolünü mü**
+  yürütecek (tefriş kendi yerleşimini, kolon kendi konumunu doğrular)?
+  - *Ayrı modül:* çapraz ilişkileri tek yerde görür, kural eklemek kolaydır;
+    ama her modülün geometrisini bilmek zorunda kalır ve modül bağımsızlığını
+    zayıflatır.
+  - *Modül içi:* bağımsızlığı korur; ama "tefriş ↔ kapı" gibi İKİ modülü
+    ilgilendiren kontrolün sahibi belirsizleşir ve kural ikiye bölünür.
+  Bu karar verilmeden uygulamaya geçilmez.
+- **Fikir 1 — Geometrik çakışma çekirdeği:** Poligon kesişimi için zaten
+  `validate.py::polygon_intersection_area` var (oda çakışması için
+  kullanılıyor). Tefriş/kolon için gerçek sınırlar `ezdxf.bbox` ile blok
+  çözülerek alınabilir (INSERT'i doğru çözdüğü doğrulandı). Yani çekirdek
+  hazır; eksik olan hangi çiftlerin denetleneceği ve sonucun bloklayıcı mı
+  uyarı mı olduğu.
+- **Fikir 2 — Semantik kural olarak eklemek:** Ayrı bir modül kurmak yerine
+  `golden_report.py`ye `furniture_inside_room`, `no_furniture_wall_overlap`,
+  `door_swing_clear` kuralları eklemek. Mevcut kural altyapısı ve negatif test
+  deseni hazır; en hızlı yol budur ama "üretim durur mu" kararını vermez.
+- **Açık kararlar:** Çakışma bloklayıcı HATA mı, UYARI mı? Kapı açılım yayı
+  için tolerans ne? Kolonun duvar içinde olması normaldir — hangi çiftler
+  muaf tutulacak?
+
+### DEV-020 — Proje ↔ sistem sürüm uyumu
+
+- **Durum:** PLANNED (kullanıcı 2026-09-23'te ilke olarak bildirdi)
+- **Kullanıcı gerekçesi:** Her proje diğerlerinden bağımsızdır ve proje verisi
+  (tefriş yerleşimi dahil) kendi dizininde durur. Bir proje eski bir sistem
+  sürümüyle üretildikten sonra modüllerde değişiklik yapılırsa, o projenin
+  sistemle **entegrasyonunun kopup kopmadığı** analiz edilebilmelidir. Sistem
+  olgunlaşınca revizyonlar geriye dönük desteği korur; yalnızca **major**
+  güncellemede eski projelerin güncellenmesi gerekir.
+- **Mevcut durum:** Sürüm bilgisi HİÇ tutulmuyor. `context.json` hangi sistem
+  sürümüyle üretildiğini bilmiyor; `rev_history` yalnızca PROJE revizyonunu
+  sayıyor, sistemin sürümünü değil. Bugün tek proje üzerinden ilerlendiği için
+  sorun görünmüyor — ikinci proje açıldığında görünür olacak.
+- **Fikir 1 — Tek sistem sürümü + uyum kapısı:** `meta.system_version`
+  (semver) alanı; `generate_dxf.py` kendi sürümüyle karşılaştırır. Major fark
+  varsa üretim DURUR ve projenin güncellenmesi istenir; minor/patch farkta
+  yalnızca uyarı verir. Basit ve tek karar noktası.
+- **Fikir 2 — Modül bazlı sürüm + uyum matrisi:** Her modül `__version__`
+  taşır, `context.json` üretim anında kullandığı modül sürümlerini kaydeder
+  (provenance). Böylece "bu proje yalnızca `furniture/` değiştiği için mi
+  etkileniyor" sorusu yanıtlanabilir. Daha ayrıntılı ama daha fazla bakım
+  ister.
+- **Açık kararlar:** Sürüm tek mi modül bazlı mı? Major kırılımda eski proje
+  otomatik migrate edilecek mi, yoksa yalnızca raporlanıp kullanıcıya mı
+  bırakılacak? `PROVENANCE_TEMPLATE.json` bu bilgiyi taşıyacak mı?
+
 ## BACKLOG
 
 Her modülün kendi plan maddesi artık yukarıdaki **PLANNED** bölümündedir
@@ -448,4 +547,16 @@ Bir görev için agent şunları yapmadan `COMPLETED` yazamaz:
 5. Ayrı reviewer/validator çalışmasından kabul raporu almak.
 6. `DEVELOPMENT_HISTORY.md`ye kayıt eklemek.
 7. `DEVELOPER_NOTES.md`yi bir sonraki direktifle güncellemek.
-8. `python scripts/development_control.py release ...` ile görev kilidini bırakmak.
+8. **Görevi doğru bölüme taşımak ve "Durum özeti" tablosunu güncellemek.**
+9. **`python scripts/doc_check.py` çalıştırıp TEMİZ sonuç almak.** Bu adım
+   zorunludur ve 1-8 arasındaki adımların gerçekten yapıldığını mekanik olarak
+   doğrular.
+10. `python scripts/development_control.py release ...` ile görev kilidini
+    bırakmak.
+
+> **Bu kural neden mekanik hale getirildi:** 6-7. maddeler uzun süre yalnızca
+> düzyazıydı ve gerçekten kaçtı — rev-10'da `DEV-006`nın `Durum:` alanı
+> COMPLETED yapıldı ama madde `## READY` başlığının altında kaldı; COMPLETED ve
+> BLOCKED maddeler "PLANNED" başlığı altında birikti. Kullanıcı fark etti.
+> Düzyazı hatırlatma bu hata sınıfını engellemiyor, bu yüzden `doc_check.py`
+> yazıldı ve kontrolleri kasıtlı bozma testleriyle doğrulandı.

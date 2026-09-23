@@ -1,5 +1,5 @@
 {
-  "source": "tefris_kolon",
+  "source": "fixtures/tefris_kolon",
   "entity_count": 176,
   "entity_types": {
     "ARC": 2,

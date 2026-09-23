@@ -6,7 +6,7 @@ Kapalı oda poligonu, alan/komşuluk, `RoomLabeler`, alan etiketi sığdırma ve
 
 ## Faz planı
 
-1. Mevcut `draw_room_label` ve `polygon_centroid` davranışını fixture olarak
+1. Mevcut `draw_room_label` ve `polygon_centroid` davranışını referans olarak
    çıkar.
 2. `Room` veri modelinin mevcut `floors[].rooms[]` sözleşmesiyle ilişkisini
    belirle; schema değişikliğini ayrı karar olarak tut.

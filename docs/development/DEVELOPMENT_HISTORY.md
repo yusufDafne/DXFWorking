@@ -6,11 +6,17 @@ provenance kayıtlarıyla ilişkilendirilir.
 
 ## HD-006 — Golden fixture kataloğu, tefriş modülü ve taralı kolonlar
 
+> **rev-11 terminoloji notu:** Bu kayıttaki "fixture" artık **golden referans
+> projesi** olarak adlandırılır; dizin `fixtures/` → `golden/`, beklenti dosyası
+> `golden.json` → `expected.json`, CLI `--fixtures` → `--golden-set` oldu. Kayıt
+> tarihsel olduğu için metni yeniden yazılmadı.
+
 - **Durum:** COMPLETED
 - **Tamamlanma:** 2026-09-23
 - **Kapsam:** `scripts/golden_report.py` (yeniden yazıldı), yeni
   `scripts/furniture/`, yeni `scripts/columns/`, `scripts/generate_dxf.py`,
-  `schema/design.schema.json`, `docs/development/fixtures/`.
+  `schema/design.schema.json`, `fixtures/` (rev-11'de `docs/` altından
+  proje köküne taşındı).
 - **Sonuç — DEV-006:** Golden kontrolü üç katmanlı oldu: ölçüm raporu +
   semantik kurallar + fixture koşucusu. Beş kural eklendi ve hepsi negatif
   testle doğrulandı. `entity_bbox` gerçek extent hesabına geçti; önceki sürüm

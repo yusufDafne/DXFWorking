@@ -6,7 +6,7 @@
 
 ## Faz planı
 
-1. Mevcut `walls.render.DefaultPlanOpeningStyle` davranışını fixture olarak
+1. Mevcut `walls.render.DefaultPlanOpeningStyle` davranışını referans olarak
    kaydet.
 2. Host wall referansı, açıklık merkezi/konumu ve genişlik doğrulamasını
    tanımla; schema alanları onaylanmadan context sözleşmesini genişletme.

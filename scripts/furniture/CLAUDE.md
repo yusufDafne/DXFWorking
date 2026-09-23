@@ -45,7 +45,7 @@ Her tefriş tipi bir `BLOCK` TANIMIDIR, her yerleşim bir `INSERT`tir
 
 - AutoCAD'de tefriş **tek seçilebilir nesnedir**, yanlışlıkla parçalanmaz.
 - Bir tipin biçimi **tek tanımdan** değişir; 4 sandalye tek tanımdan gelir.
-- Dosya şişmez: fixture'da 19 tanım → 23 `INSERT`.
+- Dosya şişmez: `golden/tefris_kolon` referansında 19 tanım → 23 `INSERT`.
 
 Blok adı `TEFRIS_<TIP>` (örn. `TEFRIS_KOLTUK_3LU`). Blok içindeki geometri
 layer `0`da BYLAYER bırakılır; rengi **`INSERT`in layer'ı** belirler, böylece
