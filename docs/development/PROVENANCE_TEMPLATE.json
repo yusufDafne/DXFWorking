@@ -1,0 +1,34 @@
+{
+  "project_id": "",
+  "revision": null,
+  "request_id": "",
+  "task_id": "",
+  "agent_role": "",
+  "system_revision": "",
+  "schema_sha256": "",
+  "generator_sha256": "",
+  "context_sha256": "",
+  "validation": {
+    "command": "python scripts/validate.py",
+    "status": "",
+    "timestamp": ""
+  },
+  "generation": {
+    "command": "python scripts/generate_dxf.py",
+    "status": "",
+    "timestamp": "",
+    "output_sha256": ""
+  },
+  "golden_report": {
+    "path": "",
+    "status": "",
+    "compared_fields": [
+      "entity_count",
+      "entity_types",
+      "layers",
+      "modelspace_bbox"
+    ]
+  },
+  "accepted_by": "",
+  "accepted_at": ""
+}

@@ -59,6 +59,9 @@ from pafta import (  # noqa: E402  (once sys.path ayarlanmali)
     fit_text_height,
     fit_uniform_text_height,
 )
+from axis import AxisGrid, ensure_axis_layer  # noqa: E402
+from walls import WallNetwork, draw_wall_network  # noqa: E402
+from walls.geometry import vec_add, vec_len, vec_norm, vec_scale, vec_sub  # noqa: E402
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_CONTEXT_PATH = PROJECT_ROOT / "context.json"
@@ -66,19 +69,9 @@ DEFAULT_OUTPUT_PATH = PROJECT_ROOT / "output" / "plan.dxf"
 
 # --- Cizim/sunum sabitleri (tasarim verisi degil) ---
 DEFAULT_LAYER_COLOR = 7
-GAP_EPSILON = 1e-6
 DEFAULT_ELEVATION_WINDOW_SIZE = (1200.0, 1400.0)
 ELEVATION_DOOR_SIZE = (1800.0, 2100.0)
 ELEVATION_LABEL_OFFSET = 300.0   # icerik kenarindan itibaren bilerek birakilmis bosluk (sifir-hizali degil)
-
-# Aks (grid) standardi (bkz. CLAUDE.md "Aks (grid) sistemi")
-AXIS_EXTENSION = 1200.0          # yapi kenarindan aksin uzayacagi mesafe
-AXIS_BUBBLE_RADIUS = 450.0
-AXIS_LINETYPE = "DASHED"
-AXIS_LAYER = "AKS"
-AXIS_RGB = (67, 77, 88)          # kullanici standardi: sabit RGB, ACI degil
-AXIS_DIM_OFFSET = 400.0          # aks-arasi olcu cizgisinin yapi kenarina uzakligi
-AXIS_DIM_TEXT_HEIGHT = 120.0     # aks-arasi olcu metni kucuk olmali
 
 # Pafta cercevesi/baslik/tasma-kontrolu/kagit-boyutu artik scripts/pafta
 # modulunde (bkz. scripts/pafta/CLAUDE.md) - bu script sadece Sheet/
@@ -136,217 +129,6 @@ def room_label_height_for_units(units: str) -> float:
     return 200.0 if units == "mm" else 0.2
 
 
-def vec_sub(a, b):
-    return (a[0] - b[0], a[1] - b[1])
-
-
-def vec_add(a, b):
-    return (a[0] + b[0], a[1] + b[1])
-
-
-def vec_scale(a, s):
-    return (a[0] * s, a[1] * s)
-
-
-def vec_len(a):
-    return math.hypot(a[0], a[1])
-
-
-def vec_norm(a):
-    length = vec_len(a)
-    if length == 0:
-        return (0.0, 0.0)
-    return (a[0] / length, a[1] / length)
-
-
-def vec_perp(a):
-    return (-a[1], a[0])
-
-
-def round_point(pt, units: str) -> tuple[float, float]:
-    precision = 1 if units == "mm" else 4
-    return (round(pt[0], precision), round(pt[1], precision))
-
-
-def point_on_segment(pt, seg_a, seg_b, tol: float) -> bool:
-    ax, ay = seg_a
-    bx, by = seg_b
-    px, py = pt
-    abx, aby = bx - ax, by - ay
-    seg_len = (abx ** 2 + aby ** 2) ** 0.5
-    if seg_len == 0:
-        return False
-    apx, apy = px - ax, py - ay
-    cross = abx * apy - aby * apx
-    dist = abs(cross) / seg_len
-    if dist > tol:
-        return False
-    t = (apx * abx + apy * aby) / (seg_len ** 2)
-    return -1e-6 <= t <= 1 + 1e-6
-
-
-def line_intersection(p1, d1, p2, d2):
-    denom = d1[0] * d2[1] - d1[1] * d2[0]
-    if abs(denom) < 1e-9:
-        return None
-    dx, dy = p2[0] - p1[0], p2[1] - p1[1]
-    t = (dx * d2[1] - dy * d2[0]) / denom
-    return vec_add(p1, vec_scale(d1, t))
-
-
-def project_s(point, origin, direction) -> float:
-    return (point[0] - origin[0]) * direction[0] + (point[1] - origin[1]) * direction[1]
-
-
-class Wall:
-    """Tek bir duvar segmenti: merkez cizgisi + kalinlik (bkz. CLAUDE.md duvar standardi)."""
-
-    def __init__(self, wall_id: str, start, end, thickness: float, layer: str):
-        self.id = wall_id
-        self.start = tuple(start)
-        self.end = tuple(end)
-        self.thickness = thickness
-        self.layer = layer
-        self.length = vec_len(vec_sub(self.end, self.start))
-        self.direction = vec_norm(vec_sub(self.end, self.start))
-        self.normal = vec_perp(self.direction)
-        self.rail_trim = {"pos": [0.0, self.length], "neg": [0.0, self.length]}
-
-    def rail_origin(self, side: str) -> tuple[float, float]:
-        sign = 1.0 if side == "pos" else -1.0
-        return vec_add(self.start, vec_scale(self.normal, sign * self.thickness / 2.0))
-
-    def rail_point(self, side: str, s: float) -> tuple[float, float]:
-        return vec_add(self.rail_origin(side), vec_scale(self.direction, s))
-
-    def rail_line(self, side: str):
-        return self.rail_origin(side), self.direction
-
-    def endpoint_s(self, which: str) -> float:
-        return 0.0 if which == "start" else self.length
-
-    def set_trim(self, side: str, which: str, s: float) -> None:
-        idx = 0 if which == "start" else 1
-        self.rail_trim[side][idx] = s
-
-    def centerline_point(self, s: float) -> tuple[float, float]:
-        return vec_add(self.start, vec_scale(self.direction, s))
-
-
-class WallNetwork:
-    """Duvarlar arasi birlesim (kose / T-kesisimi) cozumlemesi (gonye/miter)."""
-
-    def __init__(self, walls: list[Wall], units: str):
-        self.walls = walls
-        self.units = units
-        self.tol = 1.0 if units == "mm" else 0.001
-        self._resolve_joints()
-
-    def _resolve_joints(self) -> None:
-        endpoint_groups: dict[tuple[float, float], list[tuple[Wall, str]]] = {}
-        for w in self.walls:
-            for which, pt in (("start", w.start), ("end", w.end)):
-                key = round_point(pt, self.units)
-                endpoint_groups.setdefault(key, []).append((w, which))
-
-        handled: set[tuple[str, str]] = set()
-
-        for entries in endpoint_groups.values():
-            if len(entries) < 2:
-                continue
-            for i in range(len(entries)):
-                for j in range(i + 1, len(entries)):
-                    wA, whichA = entries[i]
-                    wB, whichB = entries[j]
-                    self._miter_corner(wA, whichA, wB, whichB)
-            for w, which in entries:
-                handled.add((w.id, which))
-
-        for w in self.walls:
-            for which, pt in (("start", w.start), ("end", w.end)):
-                if (w.id, which) in handled:
-                    continue
-                for other in self.walls:
-                    if other.id == w.id:
-                        continue
-                    if point_on_segment(pt, other.start, other.end, self.tol):
-                        self._trim_stub_at_through(w, which, other)
-                        break
-
-    def _miter_corner(self, wA: Wall, whichA: str, wB: Wall, whichB: str) -> None:
-        for side in ("pos", "neg"):
-            originA, dirA = wA.rail_line(side)
-            originB, dirB = wB.rail_line(side)
-            inter = line_intersection(originA, dirA, originB, dirB)
-            if inter is None:
-                continue
-            wA.set_trim(side, whichA, project_s(inter, originA, dirA))
-            wB.set_trim(side, whichB, project_s(inter, originB, dirB))
-
-    def _trim_stub_at_through(self, stub: Wall, which: str, through: Wall) -> None:
-        far_s = stub.endpoint_s("end" if which == "start" else "start")
-        far_point = stub.centerline_point(far_s)
-        for side in ("pos", "neg"):
-            origin, direction = stub.rail_line(side)
-            candidates = []
-            for t_side in ("pos", "neg"):
-                t_origin, t_dir = through.rail_line(t_side)
-                inter = line_intersection(origin, direction, t_origin, t_dir)
-                if inter is not None:
-                    candidates.append(inter)
-            if not candidates:
-                continue
-            best = min(candidates, key=lambda p: vec_len(vec_sub(p, far_point)))
-            stub.set_trim(side, which, project_s(best, origin, direction))
-
-    def drawable_rail_segments(self, wall: Wall, side: str, openings: list[dict]):
-        s0, s1 = wall.rail_trim[side]
-        if s0 > s1:
-            s0, s1 = s1, s0
-
-        gaps = []
-        for op in openings:
-            if op["wall_id"] != wall.id:
-                continue
-            half = op["width"] / 2.0
-            g_start = max(s0, op["position_from_start"] - half)
-            g_end = min(s1, op["position_from_start"] + half)
-            if g_end > g_start:
-                gaps.append((g_start, g_end))
-        gaps.sort()
-
-        cursor = s0
-        segments = []
-        for g_start, g_end in gaps:
-            if g_start - cursor > GAP_EPSILON:
-                segments.append((cursor, g_start))
-            cursor = max(cursor, g_end)
-        if s1 - cursor > GAP_EPSILON:
-            segments.append((cursor, s1))
-        if not gaps:
-            segments = [(s0, s1)]
-
-        return [
-            (wall.rail_point(side, a), wall.rail_point(side, b))
-            for a, b in segments
-            if b - a > GAP_EPSILON
-        ]
-
-
-def gaps_for_wall(wall: Wall, openings: list[dict]):
-    gaps = []
-    for op in openings:
-        if op["wall_id"] != wall.id:
-            continue
-        half = op["width"] / 2.0
-        g_start = max(0.0, op["position_from_start"] - half)
-        g_end = min(wall.length, op["position_from_start"] + half)
-        if g_end > g_start:
-            gaps.append((g_start, g_end, op))
-    gaps.sort(key=lambda g: g[0])
-    return gaps
-
-
 def setup_layers(doc, layers: list[dict]) -> None:
     for layer in layers:
         name = layer["name"]
@@ -360,165 +142,10 @@ def setup_layers(doc, layers: list[dict]) -> None:
         doc.layers.add(name=name, dxfattribs=attribs or {"color": DEFAULT_LAYER_COLOR})
 
 
-def ensure_dashed_linetype(doc) -> None:
-    if AXIS_LINETYPE not in doc.linetypes:
-        # Pattern: [toplam_uzunluk, cizgi, -bosluk] - mm olcegine gore secildi.
-        doc.linetypes.add(AXIS_LINETYPE, pattern=[750.0, 500.0, -250.0], description="Aks kesikli cizgi")
-
-
-def ensure_axis_layer(doc) -> None:
-    """AKS katmani kod-tarafinda standardize edilir (context.json'dan degil):
-    sabit RGB(67,77,88) + kesikli linetype. DASHED linetype, katmandan once
-    yuklenmelidir (aksi halde ezdxf katmanin linetype/renk atamasini
-    tamamlayamaz)."""
-    ensure_dashed_linetype(doc)
-    if AXIS_LAYER in doc.layers:
-        layer = doc.layers.get(AXIS_LAYER)
-    else:
-        layer = doc.layers.add(AXIS_LAYER)
-    layer.dxf.linetype = AXIS_LINETYPE
-    layer.dxf.color = 8  # ACI yedek (true-color desteklemeyen goruculer icin)
-    layer.dxf.true_color = ezdxf.colors.rgb2int(AXIS_RGB)
-
-
 def add_text(msp, content: str, position, height: float, layer: str, align=TextEntityAlignment.LEFT):
     text = msp.add_text(content, dxfattribs={"layer": layer, "height": height})
     text.set_placement(position, align=align)
     return text
-
-
-class AxisGrid:
-    """Duvar/oda cizimlerinden bagimsiz, binanin tum kat paftalarinda ayni
-    konumda tekrarlanan aks (grid) izgarasi. Duesy akslar (sabit X, numerik
-    etiketli) plan uzerinde dikey cizgi olarak, ayni sekilde on/arka cephede
-    de dikey cizgi olarak izdusurulur; yatay akslar (sabit Y, alfabetik
-    etiketli) planda yatay cizgi, sag/sol cephede ise dikey cizgi olarak
-    izdusurulur (bkz. CLAUDE.md 'Aks (grid) sistemi'). Aks cizgileri,
-    baloncuklarin icine girmeyecek sekilde kisaltilir; aks-arasi mesafeler
-    kucuk metinli, tam sayi cm formatinda DXF linear dimension'lariyla
-    gosterilir."""
-
-    def __init__(self, vertical_axes: list[dict], horizontal_axes: list[dict], text_height: float):
-        self.vertical_axes = sorted(vertical_axes, key=lambda a: a["position"])
-        self.horizontal_axes = sorted(horizontal_axes, key=lambda a: a["position"])
-        self.text_height = text_height
-
-    def _bubble(self, msp, point, label: str) -> None:
-        msp.add_circle(point, AXIS_BUBBLE_RADIUS, dxfattribs={"layer": AXIS_LAYER})
-        add_text(msp, label, point, self.text_height, AXIS_LAYER, align=TextEntityAlignment.MIDDLE_CENTER)
-
-    def _line_with_bubbles(self, msp, p1, p2, label: str) -> None:
-        total_len = vec_len(vec_sub(p2, p1))
-        if total_len > 2 * AXIS_BUBBLE_RADIUS:
-            direction = vec_norm(vec_sub(p2, p1))
-            line_p1 = vec_add(p1, vec_scale(direction, AXIS_BUBBLE_RADIUS))
-            line_p2 = vec_add(p2, vec_scale(direction, -AXIS_BUBBLE_RADIUS))
-        else:
-            line_p1, line_p2 = p1, p2
-        msp.add_line(line_p1, line_p2, dxfattribs={"layer": AXIS_LAYER, "linetype": AXIS_LINETYPE})
-        self._bubble(msp, p1, label)
-        self._bubble(msp, p2, label)
-
-    def _dim_override(self) -> dict:
-        return {
-            "dimtxt": AXIS_DIM_TEXT_HEIGHT,
-            "dimasz": AXIS_DIM_TEXT_HEIGHT * 0.7,
-            "dimexo": 150.0,
-            "dimexe": 150.0,
-            "dimgap": 80.0,
-        }
-
-    def _dim_chain_x(self, msp, xs: list[float], edge_y: float, dim_y: float) -> None:
-        for x1, x2 in zip(xs, xs[1:]):
-            dist_cm = round(abs(x2 - x1) / 10.0)
-            dim = msp.add_linear_dim(
-                base=(x1, dim_y), p1=(x1, edge_y), p2=(x2, edge_y), angle=0,
-                dimstyle="Standard", override=self._dim_override(), text=str(int(dist_cm)),
-                dxfattribs={"layer": AXIS_LAYER},
-            )
-            dim.render()
-
-    def _dim_chain_y(self, msp, ys: list[float], edge_x: float, dim_x: float) -> None:
-        for y1, y2 in zip(ys, ys[1:]):
-            dist_cm = round(abs(y2 - y1) / 10.0)
-            dim = msp.add_linear_dim(
-                base=(dim_x, y1), p1=(edge_x, y1), p2=(edge_x, y2), angle=90,
-                dimstyle="Standard", override=self._dim_override(), text=str(int(dist_cm)),
-                dxfattribs={"layer": AXIS_LAYER},
-            )
-            dim.render()
-
-    def draw_on_floor(self, msp, dx: float, floor_width: float, floor_depth: float) -> None:
-        y0, y1 = -AXIS_EXTENSION, floor_depth + AXIS_EXTENSION
-        for axis in self.vertical_axes:
-            x = dx + axis["position"]
-            self._line_with_bubbles(msp, (x, y0), (x, y1), axis["label"])
-
-        x0, x1 = dx - AXIS_EXTENSION, dx + floor_width + AXIS_EXTENSION
-        for axis in self.horizontal_axes:
-            y = axis["position"]
-            self._line_with_bubbles(msp, (x0, y), (x1, y), axis["label"])
-
-        self._dim_chain_x(msp, [dx + a["position"] for a in self.vertical_axes], edge_y=0.0, dim_y=-AXIS_DIM_OFFSET)
-        self._dim_chain_y(msp, [a["position"] for a in self.horizontal_axes], edge_x=dx, dim_x=dx - AXIS_DIM_OFFSET)
-
-    def draw_on_elevation(self, msp, dx: float, axis_source: str | None, y_bottom: float, y_top: float) -> None:
-        if axis_source == "vertical":
-            axes = self.vertical_axes
-        elif axis_source == "horizontal":
-            axes = self.horizontal_axes
-        else:
-            return
-        y0, y1 = y_bottom - AXIS_EXTENSION, y_top + AXIS_EXTENSION
-        for axis in axes:
-            x = dx + axis["position"]
-            self._line_with_bubbles(msp, (x, y0), (x, y1), axis["label"])
-
-        self._dim_chain_x(msp, [dx + a["position"] for a in axes], edge_y=y_bottom, dim_y=y_bottom - AXIS_DIM_OFFSET)
-
-
-def draw_wall_network(msp, network: WallNetwork, openings: list[dict]) -> None:
-    for wall in network.walls:
-        for side in ("pos", "neg"):
-            for p1, p2 in network.drawable_rail_segments(wall, side, openings):
-                msp.add_line(p1, p2, dxfattribs={"layer": wall.layer})
-
-        perp = wall.normal
-        for g_start, g_end, op in gaps_for_wall(wall, openings):
-            op_layer = op.get("layer", "KAPI-PENCERE")
-
-            for s in (g_start, g_end):
-                msp.add_line(
-                    wall.rail_point("pos", s),
-                    wall.rail_point("neg", s),
-                    dxfattribs={"layer": wall.layer},
-                )
-
-            hinge = wall.centerline_point(g_start)
-            far = wall.centerline_point(g_end)
-            width = g_end - g_start
-
-            if op["type"] == "door":
-                leaf_end = vec_add(hinge, vec_scale(perp, width))
-                msp.add_line(hinge, leaf_end, dxfattribs={"layer": op_layer})
-                start_angle = math.degrees(math.atan2(wall.direction[1], wall.direction[0]))
-                end_angle = math.degrees(math.atan2(perp[1], perp[0]))
-                msp.add_arc(
-                    center=hinge,
-                    radius=width,
-                    start_angle=min(start_angle, end_angle),
-                    end_angle=max(start_angle, end_angle),
-                    dxfattribs={"layer": op_layer},
-                )
-            else:  # window
-                offset = wall.thickness / 4.0
-                for sign in (-1, 1):
-                    off_vec = vec_scale(perp, sign * offset)
-                    msp.add_line(
-                        vec_add(hinge, off_vec),
-                        vec_add(far, off_vec),
-                        dxfattribs={"layer": op_layer},
-                    )
 
 
 def polygon_centroid(polygon: list[list[float]]) -> tuple[float, float]:
@@ -597,11 +224,7 @@ def draw_floor_sheet(msp, floor: dict, dx: float, units: str, floor_width: float
 
     tfloor = translate_floor(floor, dx)
 
-    walls = [
-        Wall(w["id"], w["start"], w["end"], w["thickness"], w["layer"])
-        for w in tfloor["walls"]
-    ]
-    network = WallNetwork(walls, units)
+    network = WallNetwork.from_context(tfloor["walls"], units)
     draw_wall_network(msp, network, tfloor["openings"])
 
     room_label_height = room_label_height_for_units(units)

@@ -11,8 +11,9 @@ yapılandırılır" sorusuna cevap verir — bir backend/CAD-altyapı yol harita
 **ölçek ve boyut parametreleriyle çalışan, tekrar kullanılabilir bir çizim
 sınıfı** etrafında organize olmalı. Yeni bir çizim ihtiyacı doğduğunda önce
 "bunun için bir sınıf mı gerekiyor, yoksa mevcut bir sınıfa mı ekleniyor?"
-sorusu sorulur. Ad-hoc, tek kullanımlık çizim fonksiyonları (örn. eski
-`draw_sheet_frame`) zamanla bir sınıfa terfi ettirilir.
+sorusu sorulur. Ad-hoc, tek kullanımlık çizim fonksiyonları zamanla ilgili
+modülün parametrik sınıfına terfi ettirilir; pafta çizimi artık
+`scripts/pafta/Sheet` içindedir.
 
 ## Modüler mimari (rev-4'te başladı)
 
@@ -24,21 +25,20 @@ kalanını bilmeye ihtiyaç duymadan o modül üzerinde derinlemesine/izole
 **Bu motto TÜM gelecek modüller için geçerlidir.**
 
 - ✅ **`scripts/pafta/`** — İLK modül (rev-4). Kendi `CLAUDE.md`'si var.
-  Detay için oraya bakın; bu dosyada tekrar edilmez.
-- ⏳ **Aks modülü** (henüz `generate_dxf.py` içinde, `AxisGrid` sınıfı) —
-  sıradaki modül adayı.
-- ⏳ **Duvar/oda modülü** (henüz `generate_dxf.py` içinde, `Wall`/
-  `WallNetwork` sınıfları) — modül adayı.
-- ⏳ Kolon, kapı/pencere cetveli, ölçü zinciri (`DimensionChain`) — henüz
-  sınıf bile yok, sadece fikir.
+- ✅ **`scripts/walls/`** — Duvar modülü: `Wall`, `WallNetwork`, katalog,
+  cizim, tarama (bkz. `scripts/walls/CLAUDE.md`).
+- ✅ **`scripts/axis/`** — `AxisGrid`, `AxisDrawingStandard` ve
+  `ensure_axis_layer` taşındı; tamamlanma kaydı
+  `docs/development/DEVELOPMENT_HISTORY.md` içindedir.
+- ⏳ **`scripts/openings/`** — Kapı/pencere sembolleri + cetvel (simdilik
+  `walls.render.DefaultPlanOpeningStyle`).
+- ⏳ **`scripts/rooms/`** — Oda poligonu, etiket, alan (simdilik generate_dxf).
+- ⏳ Kolon, ölçü zinciri (`DimensionChain`), lejant — fikir/asagida.
 
-## Kurulu sınıflar (durum: uygulandı, henüz kendi modülüne taşınmadı)
+## Kurulu sınıflar (durum: uygulandı)
 
-- **`Wall` / `WallNetwork`** (rev-1'de kuruldu, CLAUDE.md'deki "Duvar çizim
-  standardı" bölümüyle eşleşir): Duvarları merkez çizgisi + kalınlıktan iki
-  kenar çizgisine (rail) çevirir, komşu duvarlarla gönye (miter) birleşimi
-  hesaplar. Girdi: wall_id/start/end/thickness/layer listesi. Çıktı: her
-  duvar için çizilebilir rail segmentleri.
+- **`Wall` / `WallNetwork`** — `scripts/walls/` modulunde (rev-1 mantigi +
+  `WallCatalog`, `RoomPolygonScanner`, `OpeningSymbolStyle` genislemesi).
 - **`AxisGrid`** (rev-3'te kuruldu, rev-4'te genişletildi, "Aks (grid)
   sistemi" bölümüyle eşleşir): Düşey (nümerik) ve yatay (alfabetik) aks
   çizgilerini kesikli + sabit RGB(67,77,88) renkte, uç baloncuklu (çizgi
@@ -61,6 +61,35 @@ etiketleri gibi genel-amaçlı metin sığdırma ihtiyaçları da bu modülün
 `fit_text_height` fonksiyonunu yeniden kullanır (henüz ayrı bir "text"
 modülüne çıkarılmadı — küçük bir bilinen tutarsızlık, ileride
 düzeltilebilir).
+
+## Yol haritasi (modul sirasi ve genisletilebilirlik)
+
+Ortak desen (pafta + walls ile kanitlandi):
+
+- **Veri** `context.json` + sema; **standart** kod icinde katalog/protocol;
+  **cizim** parametrik sinif (`scale`, `units`, enjekte edilebilir stil).
+- Yeni yonetmelik/ofis std. = yeni katalog/sozluk veya alt `DrawingStandard`,
+  cekirdek geometri degismez.
+
+| Oncelik | Modul         | Cekirdek siniflar                                          | Not                                                            |
+| ------- | ------------- | ---------------------------------------------------------- | -------------------------------------------------------------- |
+| 1       | `pafta/`      | `Sheet`, `PaperSizePlanner`                                | Tamam; uniform template + keyplan bekliyor                     |
+| 2       | `walls/`      | `Wall`, `WallNetwork`, `WallCatalog`, scanner              | Tamam (ilk surum)                                              |
+| 3       | `axis/`       | `AxisGrid`, `AxisDrawingStandard`                          | Tamamlandi; davranis korunarak tasindi                         |
+| 4       | `openings/`   | `Opening`, `DoorSymbol`, `WindowSymbol`, `OpeningSchedule` | Siradaki faz; duvar host referansi, mentese, surme, cift kanat |
+| 5       | `rooms/`      | `Room`, `RoomLabeler`, `PolygonOps`                        | Alan, etiket sigrdirma (pafta `fit_text_height`)               |
+| 6       | `dimensions/` | `DimensionChain`, `LinearDim`, `ChainLayout`               | Tam sayi cm; AxisGrid devrani                                  |
+| 7       | `columns/`    | `Column`, `ColumnGrid`                                     | Aks kesisimi; kesit sembolu                                    |
+| 8       | `elevations/` | `ElevationSheet`, `LevelStack`, `FacadeOpeningPlacer`      | Plan-ten bagimsiz basitlestirme bilincli kalabilir             |
+| 9       | `furniture/`  | `Counter`, `Fixture`                                       | Mutfak tezgahi vb.                                             |
+| 10      | `legend/`     | `TitleBlockLegend`, `LayerSwatch`                          | Opsiyonel pafta lejanti                                        |
+| 11      | `import/`     | `DxfWallScanner`, `PdfUnderlay`                            | Ters yon: mevcut cizimden veri (ileri faz)                     |
+
+Semaya eklenecek opsiyonel alanlar (talep ile, deger uydurulmaz):
+
+- `walls[].kind` -> `WallCatalog`
+- `openings[].variant` / `swing` / `host_side`
+- `meta.drawing_standard` -> hangi katalog paketinin yuklenecegi
 
 ## Planlanan sınıflar (durum: henüz yok — fikir notu)
 
@@ -110,3 +139,103 @@ taşınıp buradan silinmeli:
    ilk soru "bu sinifin ihtiyac duydugu veri context.json semasinda nerede
    duracak" olmali. Sinifin kendisi tasarim verisi uretmez/uydurmaz, sadece
    context.json'daki veriyi cizim kurallarina gore yorumlar.
+
+## Sistem vizyonu ve teknik otorite
+
+Bu sistem, dil modeli aracılığıyla mimari proje üreten, yöneten, revize eden,
+bölen/parçalayan ve modüler uygulama çıktıları hazırlayan uzun soluklu bir
+mimari araçtır. En uzak vizyon, aracın uzman mimarın bir numaralı çalışma
+aracına ve zamanla mimari kararları güvenilir biçimde taşıyan bir sisteme
+dönüşmesidir.
+
+Dil modeli bu sistemde nihai teknik otorite değildir. Model; yapılandırılmış
+talep, patch ve izinli seçenek önerileri üretir. Ölçü, koordinat, geometri,
+standart veya eksik veri uyduramaz. Nihai kararları Python sınıfları,
+kataloglar, Protocol'ler, schema ve `validate.py` verir. Eksik veya çelişkili
+bilgi varsa akış durur ve karar istenir. Sistem mimarı açıkça sonlandırma
+komutu vermedikçe planlama ve sistemi güçlendirme çalışmaları tamamlanmış
+kabul edilmez.
+
+## Generic Component Contract
+
+Yeni her çizim bileşeni aşağıdaki sözleşmeyi karşılamadan sisteme alınmaz:
+
+1. Sahip olduğu modül ve o modülün izole `CLAUDE.md` dosyası.
+2. `context.json` veri yolu veya bileşenin yalnızca derived/read-only olduğu
+   açık ifadesi; şema ve `additionalProperties` kararı.
+3. Public API, bağımlılık yönü, units/scale davranışı ve veri ile çizim
+   standardı arasındaki sınır.
+4. Katalog, Protocol veya style enjeksiyon noktası; çizim sabitlerinin
+   context'e sızmaması.
+5. Layer ve çizim sırası; pafta yerleşimi, taşma ve geometri invariant'ları.
+6. `validate.py` sorumluluğu, hata ve eksik veri davranışı.
+7. Odaklı test/regresyon komutu, golden-output etkisi ve bilinen sınırlamalar.
+
+Bir bileşen derived geometri üretse bile bunu kullanıcı tasarım verisi gibi
+`context.json` içine yazamaz. Yeni context alanı, schema değişikliği ve yeni
+standart ancak açık sistem mimarı/kullanıcı kararıyla eklenir.
+
+## Agent rolleri ve çalışma yöntemi
+
+Agent rolleri ayrıdır:
+
+- `system-architect/developer`: sistem kodu, schema, kataloglar, modül
+  sözleşmeleri ve merkezi geliştirme dokümanları üzerinde çalışır.
+- `project-operator`: yalnızca onaylı public API ve proje dizini içinde
+  yapılandırılmış proje üretir/revize eder; sistem koduna veya başka projeye
+  yazamaz.
+- `reviewer/validator`: validate sonuçlarını, golden output'u ve sözleşme
+  uyumunu bağımsız denetler; tasarım verisi uydurmaz.
+
+Her geliştirme agent'ı önce en yakın `CLAUDE.md`yi, public APIyi ve komşu
+uygulamayı okur; tek bir falsifiable yerel hipotez ve ucuz bir ayrıştırıcı
+kontrol kurar; en küçük değişikliği yapar; hemen focused validation çalıştırır.
+Sonra gerekli ise `validate.py` ve `generate_dxf.py` çalıştırılır. Modül dışı
+bir karar çıkarsa agent durur ve üst sözleşmeye geri döner.
+
+## Sistem, proje ve çıktı sahipliği
+
+Sistem kodu, schema, kataloglar ve genel geliştirme/kullanım dokümanları proje
+verisinden ayrı tutulur. Her proje kendi dizininde taleplerini, context
+revizyonlarını, doğrulama raporlarını, preview'larını, manifest/provenance
+kayıtlarını ve nihai DXF çıktısını taşır. Projeler birbirlerinin verisine
+yazamaz.
+
+DXF dosyaları nihai çıktıdır; elle düzenlenmez ve yalnızca validate edilmiş
+pipeline ile üretilir. Seçilmiş nihai DXF'ler golden output olarak sistemin
+biçimsel referansıdır. Yeni renderer veya modül değişiklikleri golden
+çıktılarla karşılaştırılır; yalnızca dosya hash'i değil, entity türleri,
+katmanlar, geometrik sınırlar, pafta çerçeveleri, ölçüler ve kritik semboller
+kontrol edilir.
+
+Merkezi `docs/` dizini şu bilgi sınıflarını taşır: sistem geliştirme agent
+talimatları, sistem kullanım/üretim agent talimatları, mimari karar kayıtları,
+golden-output politikası, operasyon kılavuzu ve geliştirme geçmişi/görev
+kayıtları. Proje
+dizinlerine bu belgelerin kopyası yazılmaz; proje yalnızca kullanılan sistem
+sürümü ve ilgili karar referansını kaydeder.
+
+## Güncel modül sırası ve faz kapısı
+
+Sabit geliştirme sırası şöyledir:
+
+1. `pafta/` tamamlandı: `Sheet`, fit, overflow ve kağıt planlama.
+2. `walls/` tamamlandı: rail, network, katalog, render ve scanner.
+3. `axis/` tamamlandı: `AxisGrid` ve `AxisDrawingStandard`,
+   `scripts/axis/` içine davranış korunarak taşındı.
+4. `openings/` sonraki ilk modüldür: kapı/pencere tipleri, host wall, swing
+   ve cetvel.
+5. `rooms/`: oda poligonu, alan, etiket ve oda-duvar tutarlılığı.
+6. `dimensions/`: `DimensionChain`; AxisGrid'in mini zincirlerini devralır.
+7. `columns/`: kolon ve aks kesişimi.
+8. `elevations/`: seviye istifi ve cephe açıklıkları.
+9. `furniture/`: tezgah ve sabit mobilya.
+10. `legend/`: isteğe bağlı lejant.
+11. `import/`: ileri faz DXF/altlık okuma.
+
+Her fazda önce agent sözleşmesi ve public API, sonra davranış korumalı taşıma,
+sonra schema/validator/generator entegrasyonu ve focused validation yapılır.
+Faz devri; mevcut durum, tamamlanan işler, açık kararlar, bilinen riskler ve
+bir sonraki direktif önerisiyle `docs/development/` altındaki geliştirme
+geçmişi ve geliştirici notlarında kayıt altına alınır. Eski tekil faz dosyaları
+kalıcı çalışma kaydı olarak tutulmaz.

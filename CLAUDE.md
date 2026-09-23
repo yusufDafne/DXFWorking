@@ -4,10 +4,47 @@ Bu dosya, bu proje dizininde çalışırken her oturumda otomatik olarak okunaca
 kalıcı kurallardır. Aşağıdaki kurallar istisnasız uygulanır.
 
 ## Kapsam
+
 - Bu proje dışında hiçbir dizine okuma/yazma yapılmaz. Tüm işlemler
   `daire-plani-ai/` içinde kalır.
 
+## Dokümantasyon ve veri sahipliği
+
+- Bu kök dosya proje yönetişiminin otoritesidir: talep kaydı, context-only veri,
+  doğrulama kapısı, çıktı üretimi, belirsizlikte durma, dosya kilidi ve git onayı.
+- `scripts/CLAUDE.md` çizim mimarisi, modül sırası, public API ve modüller arası
+  sözleşmelerin otoritesidir. Her `scripts/<modül>/CLAUDE.md` kendi modülünün
+  sorumluluk, invariant, test ve bilinen sınırlamalarının otoritesidir.
+- Sistem kaynakları ile proje verileri ayrıdır. Her proje kendi proje dizininde
+  context, talepler, revizyon kayıtları, doğrulama raporları, preview ve nihai
+  DXF çıktısını tutar; bir projenin revizyonu başka projeye yazılmaz.
+- DXF dosyaları nihai çıktıdır ve elle düzenlenmez. Yalnızca validate edilmiş
+  pipeline çıktısı nihai kabul edilir; seçilmiş nihai DXF'ler sistem için
+  golden-output referanslarıdır.
+- Sistem geliştirme talimatları ile sistemi kullanarak proje üreten agent
+  talimatları ayrı tutulur. Üretim agent'ı sistem koduna veya başka proje
+  dizinine yazamaz; reviewer/validator agent teknik sonucu bağımsız denetler.
+
+## Deterministik üretim ilkesi
+
+- Dil modeli yalnızca yapılandırılmış talep, patch veya izinli seçenek önerir;
+  ölçü, koordinat, geometri, standart veya eksik veri uyduramaz.
+- Python sınıfları, kataloglar, Protocol'ler, schema ve `validate.py` nihai
+  üretim kararını verir. Eksik veya çelişkili bilgi varsa süreç durur ve karar
+  istenir; varsayım ile DXF üretilmez.
+- Bir proje revizyonunun yaşam döngüsü şöyledir: talep → yapılandırılmış
+  context patch → validate → DXF üretimi → preview/inceleme → kabul → final.
+  Revizyon ve çıktı ilişkisi append-only/provenance kayıtlarıyla korunur.
+
+## Mimari referans
+
+Uzun vadeli sistem vizyonu, generic component contract, agent çalışma yöntemi
+ve modül yol haritası için `scripts/CLAUDE.md`; sistem agent talimatları,
+geliştirme görevleri, tamamlanmış geçmiş, fikirler ve geliştirici notları için
+`docs/` dizini kullanılır.
+
 ## DXF üretim disiplini
+
 - `output/plan.dxf` **asla elle/serbestçe düzenlenmez veya elle yazılmaz**.
   Tek üretim yolu `scripts/generate_dxf.py` script'ini çalıştırmaktır.
 - `context.json` içinde veya kullanıcının verdiği bilgide bulunmayan hiçbir
@@ -15,6 +52,7 @@ kalıcı kurallardır. Aşağıdaki kurallar istisnasız uygulanır.
   yapmak yerine kullanıcıya sorulur.
 
 ## Çıktı dosyası kilitliyse (ör. AutoCAD'de açık)
+
 - `scripts/generate_dxf.py` ve `scripts/preview.py`, `output/plan.dxf` /
   `output/preview.png` dosyasına yazarken `PermissionError` alırsa (dosya
   başka bir programda açık olduğu için) **akışı durdurmaz**: bunun yerine
@@ -26,6 +64,7 @@ kalıcı kurallardır. Aşağıdaki kurallar istisnasız uygulanır.
   oluşmaz.
 
 ## Talep işleme akışı (her talep için sırasıyla)
+
 1. Talep, geldiği ham haliyle `requests.jsonl` dosyasına JSON Lines formatında
    satır olarak eklenir: `{"rev": n, "ts": "...", "request": "..."}`.
 2. Talep, `context.json` üzerinde yapılandırılmış bir değişiklik (patch)
@@ -35,13 +74,14 @@ kalıcı kurallardır. Aşağıdaki kurallar istisnasız uygulanır.
    - geometrik sağlık kontrolleri (kapalı poligon mu, çakışan oda var mı,
      kapı/pencere genişliği ait olduğu duvardan büyük mü, alanlar toplamı
      mantıklı mı)
-   yapılır. **Doğrulama geçmeden DXF üretilmez.**
+     yapılır. **Doğrulama geçmeden DXF üretilmez.**
 4. Doğrulama başarılıysa `scripts/generate_dxf.py` çalıştırılıp
    `output/plan.dxf` sıfırdan yeniden üretilir.
 5. İsteğe bağlı olarak `scripts/preview.py` ile `output/preview.png` üretilip
    kullanıcıya görsel önizleme sunulabilir.
 
 ## Duvar çizim standardı (Türkiye standardı)
+
 - Duvarlar AutoCAD'de **"tek merkez çizgisi + width (kalınlık) özniteliği"**
   yöntemiyle çizilmez — bu yöntem sektörde/Türkiye standartlarında
   kullanılmaz.
@@ -58,17 +98,17 @@ kalıcı kurallardır. Aşağıdaki kurallar istisnasız uygulanır.
   türetilir/kullanılır — duvar çizen yeni kod tekilleştirilmiş bu sınıflar
   üzerinden yazılır, ayrı ayrı ad-hoc çizim mantığı eklenmez.
 
-## Çok katli bina yapisi (rev-2'den itibaren)
+## Çok katli bina yapisi (rev-2 tarihsel notu; güncel pafta kuralları geçerlidir)
+
 - context.json semasi rev-2'de degisti: artik duz (tek daire) yapi degil,
-  `meta.floor_width` / `meta.floor_depth` / `meta.sheet_gap` + `floors[]`
+  `meta.floor_width` / `meta.floor_depth` + `floors[]`
   (her biri kendi rooms/walls/openings/labels/counters/markings listesine
   sahip bir "pafta") + `elevations[]` (basitlestirilmis cephe seviye istifi)
   iceriyor. `schema/design.schema.json` bu yapiyi tanimlar.
-- **Pafta duzeni:** `floors[]` sirayla, sonra `elevations[]` sirayla soldan
-  saga dizilir; her paftanin X-ofseti kendi genisligi + `sheet_gap` kadar
-  ilerler (bkz. `generate_dxf.py::generate`). Her paftanin sag-alt kosesine
-  `CERCEVE` katmaninda bir cerceve ve METIN katmaninda kat adi + "PAFTA n/N"
-  yazilir (`draw_sheet_frame`).
+- **Pafta duzeni:** Güncel davranış `scripts/pafta/CLAUDE.md` ve
+  `generate_dxf.py::generate` içindeki `Sheet` sözleşmesidir: tüm paftalar
+  ortak mutlak Y aralığı kullanır, dış çerçeveler bitişiktir, içerik
+  `CONTENT_PADDING + FRAME_GAP` ile ilerler ve antet iki satırlıdır.
 - **Ortak bina ayak izi:** Tum kat paftalari AYNI `floor_width x floor_depth`
   dikdortgenini kullanir (cikma yok). Derinlik iki banda ayrilir:
   - `y: 0 - 13000` "birim bandi": katin asil islevi (otopark / dukkan+lobi /
@@ -97,6 +137,7 @@ kalıcı kurallardır. Aşağıdaki kurallar istisnasız uygulanır.
   sembolu cizilmez (sadece etiketli kapali oda olarak gosterilir).
 
 ## Çizim standartları (ofis standardı, rev-3'ten itibaren)
+
 Bunlar bir yönetmelik degil, kullanicinin kisisel/ofis standardidir; ileride
 daha detayli yonetmelik-destekli standartlar gelebilir, o zaman bu bolum
 guncellenir.
@@ -198,13 +239,12 @@ guncellenir.
     bkz. `scripts/pafta/CLAUDE.md` "Bilinen sınırlamalar"). Tip-A (kapak
     paftası, ISO 7200) henüz hiç uygulanmadı, sadece fikir olarak not
     edildi.
-  - **Bu projede tespit edilen uyumsuzluk (bilinçli istisna, rev-5):** Bina
-    oturumu 350m² (>300m² istisna sınırı), bu yüzden `MIMARI_UYGULAMA`
-    sınıfına giriyor ve mevzuat SADECE 1:50 ölçeğini kabul ediyor — proje
-    şu an `1:100` kullanıyor. Kullanıcıya soruldu; **kullanıcı bilinçli
-    olarak 1:100'de kalmayı seçti** (uyarı sadece bilgi amaçlı raporlanmaya
-    devam eder, hiçbir şey otomatik değiştirilmez). İleride bu proje resmi
-    ruhsat/uygulama projesine dönüşürse ölçek 1:50'ye çekilmelidir.
+  - **Bu örneğin tarihsel mevzuat uyarısı:** Bu çalışma sistem geliştirmesi
+    başlamadan önce oluşturulduğu için bina oturumu ve kullanılan `1:100`
+    ölçek mevcut mevzuat sınıflandırmasıyla uyumsuz kalabilir. Bu durum örnek
+    çıktının tarihsel niteliğidir; sistem geliştirmesini veya generic mimariyi
+    bloke etmez. Yeni projelerde mevzuat kontrolü yine validator ve
+    `PaperSizePlanner` üzerinden uygulanır.
 - **Aks (grid) sistemi:** Bina, `context.json`'ın üst seviye `grid` alanında
   tanımlanan bir aks ızgarasına oturur:
   - `grid.vertical_axes`: düşey aks çizgileri (sabit X, Y boyunca uzanır),
@@ -225,8 +265,8 @@ guncellenir.
     (mm) ileriye uzanır (`AXIS_EXTENSION`) ve bu uzama + baloncuk yarıçapı,
     pafta çerçevesini (`PAFTA_MARGIN`) KESİNLİKLE aşmayacak şekilde
     `PAFTA_MARGIN` bu mesafeye göre büyük tutulur. Komşu paftaların
-    baloncukları/çerçeveleri çakışmasın diye `meta.sheet_gap` da buna göre
-    yeterince büyük seçilmelidir.
+    baloncukları/çerçeveleri çakışmamalıdır; ardışık pafta yerleşimi güncel
+    `Sheet` ve `generate_dxf.py::generate` sözleşmesine göre yapılır.
   - **Aks arası mesafeler:** Ardışık akslar arasındaki mesafe, gerçek bir
     DXF `LINEAR DIMENSION` (ölçü) varlığıyla, **küçük punto** (`AKS`
     katmanı, ~120mm) ve **tam sayı cm** metniyle gösterilir
@@ -254,9 +294,10 @@ guncellenir.
   tutulur — yeni bir sınıf fikri veya kararı oraya işlenir, buraya değil.
 
 ## Git (güncellendi)
+
 1. Git komutları (`add`, `commit`, `log`, `diff`) SADECE bu proje dizini
    içinde çalıştırılır. Her git komutundan önce `git rev-parse
-   --show-toplevel` ile bulunulan repo kökünün bu projenin dizini olduğu
+--show-toplevel` ile bulunulan repo kökünün bu projenin dizini olduğu
    doğrulanır; eşleşmiyorsa işlem durdurulur ve kullanıcıya bildirilir. Bu
    dizin dışında hiçbir repoya dokunulmaz. Remote (`origin`) eklenmez veya
    `git push` yapılmaz — kullanıcı açıkça istemedikçe proje tamamen lokal
@@ -266,18 +307,20 @@ guncellenir.
    şunlar gösterilip onay istenir:
    - Bu revizyonda context.json'da tam olarak neyin değiştiği (kısa özet)
    - Net bir soru: "Bu değişiklikleri commit'lemem için onaylıyor musun?"
-   Kullanıcı açıkça onay vermeden (örn. "onaylıyorum", "evet", "commit'le")
-   `git add` veya `git commit` çalıştırılmaz. Onay gelmeden başka bir talebe
-   geçilmez.
+     Kullanıcı açıkça onay vermeden (örn. "onaylıyorum", "evet", "commit'le")
+     `git add` veya `git commit` çalıştırılmaz. Onay gelmeden başka bir talebe
+     geçilmez.
 3. Onay geldiğinde ilgili dosyalar (`context.json`, `output/plan.dxf`,
    `output/preview.png`, `requests.jsonl`) `git add` ile stage edilip
    commit'lenir. **Git config (local/global) hiçbir zaman değiştirilmez** —
-   kullanıcı izin verse bile bu kural geçerlidir. Bunun yerine, `git log`'da
-   yazar adının "Claude" görünmesi için her `git commit` komutu şu ortam
-   değişkenleriyle çalıştırılır (sadece o komuta özel, kalıcı config
-   değişikliği yapılmaz):
-   `GIT_AUTHOR_NAME="Claude"`, `GIT_AUTHOR_EMAIL="noreply@anthropic.com"`,
-   `GIT_COMMITTER_NAME="Claude"`, `GIT_COMMITTER_EMAIL="noreply@anthropic.com"`.
+   kullanıcı izin verse bile bu kural geçerlidir. Commit kimliği sabit bir
+   kişi veya agent adına zorlanmaz: hangi agent çalışıyorsa kendi beyan ettiği
+   ad ve e-posta ile imza atar. Agent commit öncesinde `GIT_AUTHOR_NAME`,
+   `GIT_AUTHOR_EMAIL`, `GIT_COMMITTER_NAME` ve `GIT_COMMITTER_EMAIL`
+   değerlerini yalnızca o commit komutuna özel sağlamalıdır. Agent kimliği
+   açıkça mevcut değilse commit durdurulur ve kullanıcıdan kimlik istenir;
+   başka bir agent'ın veya Claude'un kimliği taklit edilmez. Kalıcı Git config
+   değişikliği yapılmaz.
    Commit mesajı formatı sabittir (gelecekte `git log` ile geçmiş taranıp
    belirli bir revizyona hızlıca ulaşılabilsin diye):
 
@@ -290,9 +333,10 @@ guncellenir.
    ```
 
    `<N>` değeri `requests.jsonl`'daki revizyon sayacıyla birebir aynı olmalı.
+
 4. Commit tamamlandığında kullanıcıya sadece commit hash'inin kısa hali ve
    tek satır özeti bildirilir, uzun log çıktısı gösterilmez.
-5. **Git kimliği:** Bu proje için push işlemi (yalnızca kullanıcı açıkça
+5. **Git kimliği ve push hesabı:** Bu proje için push işlemi (yalnızca kullanıcı açıkça
    isterse yapılır) `yusufakcakaya-sketch` hesabıyla yapılmalıdır — SSH host
    alias'ı `github-personal`, anahtar `~/.ssh/id_ed25519`. Bu makinedeki
    global git config şu an farklı bir kimlik kullanıyor (`YusufDafne` /
@@ -302,5 +346,6 @@ guncellenir.
    `github-personal` host alias'ı üzerinden yapılandırılır.
 
 ## Belirsizlik durumunda
+
 - Eksik/belirsiz bilgi varsa varsayım yapıp üretime devam etmek yerine
   kullanıcıya doğrudan soru sorulur.

@@ -1,0 +1,31 @@
+{
+  "system_development": {
+    "roles": ["system-architect", "system-developer"],
+    "read": ["scripts/", "schema/", "docs/", "CLAUDE.md"],
+    "write": ["scripts/", "schema/", "docs/"],
+    "forbidden": ["other-projects/", "project-context-without-directive/"],
+    "requires": ["READY task", "explicit scope", "focused validation"]
+  },
+  "project_operation": {
+    "roles": ["project-operator"],
+    "read": ["assigned-project/", "scripts/approved-public-api/"],
+    "write": ["assigned-project/"],
+    "forbidden": ["scripts/", "schema/", "docs/", "other-projects/"],
+    "requires": [
+      "user-defined patch",
+      "validate before generate",
+      "acceptance before final"
+    ]
+  },
+  "review_validation": {
+    "roles": ["reviewer", "validator"],
+    "read": ["assigned-project/", "scripts/", "schema/", "docs/"],
+    "write": ["assigned-project/review-reports/"],
+    "forbidden": ["context.json", "scripts/", "schema/", "other-projects/"],
+    "requires": [
+      "independent run",
+      "provenance check",
+      "golden semantic report"
+    ]
+  }
+}
