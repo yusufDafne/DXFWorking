@@ -146,8 +146,8 @@ geliştirme görevleri, tamamlanmış geçmiş, fikirler ve geliştirici notlar�
      aynı kontrolleri uygular. Bir modül bozulduğunda hangi modül olduğu
      doğrudan görünür.
 7. **Modül self-test'leri:** `collision`, `dimensions`, `axis`, `openings`,
-   `rooms`, `elevations`, `walls` ve `importer` modüllerinin her birinde bir
-   `selftest.py` vardır ve hepsi çalıştırılır:
+   `rooms`, `elevations`, `walls`, `importer`, `sections` ve `northarrow`
+   modüllerinin her birinde bir `selftest.py` vardır ve hepsi çalıştırılır:
 
    ```
    python scripts/collision/selftest.py
@@ -158,6 +158,8 @@ geliştirme görevleri, tamamlanmış geçmiş, fikirler ve geliştirici notlar�
    python scripts/elevations/selftest.py
    python scripts/walls/selftest.py
    python scripts/importer/selftest.py
+   python scripts/sections/selftest.py
+   python scripts/northarrow/selftest.py
    ```
 
    Ortak disiplin: beklenen değerler ELLE hesaplanabilir tutulur ve kurallar
@@ -238,6 +240,59 @@ geliştirme görevleri, tamamlanmış geçmiş, fikirler ve geliştirici notlar�
   bildirilmeyen veya tanımsız bir duvar **eski düz-rail davranışını
   BİREBİR korur** (`DefaultRailStandard`). Ayrıntı:
   `scripts/walls/CLAUDE.md`.
+
+## Kesit (building section) standardı (rev-17'den itibaren)
+
+- Kesit hattı **HİÇBİR ZAMAN eğik veya kademeli (jogged) alınmaz** —
+  kullanıcı kararı: bu yapılarda bir kesit çizgisi X ve Y eksenindeki
+  akslardan birine **PARALELDİR**. `sections[]`teki `axis_source` alanı
+  `elevations[]`deki alanla **BİREBİR AYNI ANLAMDADIR**: `'vertical'` →
+  kesit hattı sabit Y'de (genişlik = `floor_width`, `on_cephe` ile aynı
+  izdüşüm); `'horizontal'` → sabit X'te (genişlik = `floor_depth`,
+  `sag_cephe` ile aynı izdüşüm). Kesit, binanın **TEK** gerçek düşey kat
+  istifini (`elevations[].levels[]`) `levels_from` ile ödünç alır — kendi
+  kat yüksekliği verisini UYDURMAZ.
+- **Konum operatör tarafından bildirilir.** Bildirilmezse sistem yapının
+  **TAM ORTASINDAN DEĞİL**, ilgili kenarın **1/3 noktasından** varsayılan
+  bir kesit alır (kullanıcı: "amacımız default olarak projenin tam
+  ortasından biraz sağ ya da solundan kesit almaktır"). `sections[]` alanı
+  **HİÇ verilmezse** sistem X ve Y ekseninden **BİRER varsayılan kesit**
+  üretir (`A-A`, `B-B`); boş dizi (`[]`) verilirse bu varsayılan devre
+  dışı kalır ve hiçbir kesit çizilmez.
+- **Plan üzerindeki işaret:** her kat paftasında (aks ızgarasıyla aynı
+  konumda, tüm katlarda ortak) kesit hattı + uçlarında bakış yönünü
+  gösteren birer **üçgen** + üçgenin **sırtına** yazılan kesit harfi
+  bulunur. Bu işaret `AKS` katmanından **BİLEREK farklı** bir katman/
+  linetype/renkte çizilir (`KESIT` katmanı, `KESIT_HATTI` linetype'ı,
+  kırmızımsı) — aks ile karıştırılmaması içindir.
+- **Ayrı bir paftada gösterilir** ve pafta adına kesit harfi verilir
+  (örn. `"A-A KESITI"`), antetin sağ-alt köşesinde görünür.
+- Uygulaması `scripts/sections/` modülündeki `SectionCutLine` ve
+  `SectionSheet` sınıflarıyla kapsüllenir; kat yüksekliği/galeri boşluğu/
+  merdiven kırılması gibi ileri düzey duyarlılıklar için genişletme noktası
+  (`SectionFeatureHook` Protocol'ü) hazırdır ama bugün hiçbir proje verisi
+  bunu tetiklemez. Ayrıntı: `scripts/sections/CLAUDE.md`.
+
+## Kuzey oku ve grafik ölçek çubuğu (rev-17'den itibaren)
+
+- Her kat paftasına, binanın gerçek kuzeye göre yönünü gösteren standart
+  bir **kuzey oku** sembolü çizilir. Veri `meta.north_angle` (derece, saat
+  yönünde, paftanın "yukarı" yönünden gerçek kuzeye) ile gelir; **verilmezse
+  ok HİÇ çizilmez** — yön uydurulmaz.
+- Kuzey okunun **NASIL çizildiği** (`NorthArrowStyle` Protocol'ü,
+  `scripts/northarrow/`) standarttan ayrılmıştır — ileride farklı bir
+  sembol tasarımına geçilmesi `NorthArrow(style=...)` ile enjekte edilir,
+  çağıran taraf (`generate_dxf.py`) değişmez (`RailDrawingStandard` ile
+  AYNI desen, kullanıcı kararı: "entegrasyon zor olmasın").
+- Her ölçekli çizime (kat planı + görünüş + kesit) `meta.scale`den
+  türetilen bir **grafik ölçek çubuğu** çizilir — bu, basılı çıktı
+  küçültülüp/çoğaltılsa bile (fotokopi/PDF) doğru ölçüyü korur, yazılı
+  "ÖLÇEK 1:50" metninin aksine yanıltmaz. Segment uzunluğu hedef basılı
+  genişliğe (~20mm) en yakın "nice" (1-2-5 serisi) bir gerçek-dünya metre
+  değeridir (1:50→1m, 1:100→2m, 1:200→5m, 1:500→10m). Uygulaması
+  `scripts/pafta::ScaleBar`dır (kuzey okundan AYRI bir sorumluluk sınırında
+  olduğu için `pafta/` içinde yaşar, YENİ bir modül gerektirmez). Ayrıntı:
+  `scripts/northarrow/CLAUDE.md`.
 
 ## Çok katli bina yapisi (rev-2 tarihsel notu; güncel pafta kuralları geçerlidir)
 

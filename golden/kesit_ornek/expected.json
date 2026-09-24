@@ -1,0 +1,35 @@
+{
+  "source": "golden/kesit_ornek",
+  "entity_count": 234,
+  "entity_types": {
+    "ATTRIB": 12,
+    "CIRCLE": 26,
+    "DIMENSION": 6,
+    "HATCH": 6,
+    "INSERT": 4,
+    "LINE": 76,
+    "LWPOLYLINE": 24,
+    "TEXT": 80
+  },
+  "layers": {
+    "AKS": 66,
+    "CERCEVE": 57,
+    "DUVARLAR": 28,
+    "KESIT": 10,
+    "METIN": 66,
+    "OLCU": 7
+  },
+  "modelspace_bbox": [
+    -500.0,
+    -4150.0,
+    79200.0,
+    13150.0
+  ],
+  "blocks": [
+    "MAHAL_ETIKET",
+    "_CLOSEDFILLED"
+  ],
+  "block_inserts": {
+    "MAHAL_ETIKET": 4
+  }
+}

@@ -257,8 +257,9 @@ def _code_owned_layers() -> set[str]:
     (aks, tefris gruplari, kolon). Bunlarin rengi/adi modullerin sorumlulugudur."""
     from columns import COLUMN_HATCH_LAYER, COLUMN_LAYER, COLUMN_TEXT_LAYER
     from furniture import FURNITURE_GROUPS
+    from sections import CUT_LAYER
 
-    layers = {"AKS", "0", COLUMN_LAYER, COLUMN_HATCH_LAYER, COLUMN_TEXT_LAYER}
+    layers = {"AKS", "0", COLUMN_LAYER, COLUMN_HATCH_LAYER, COLUMN_TEXT_LAYER, CUT_LAYER}
     layers |= {group.layer for group in FURNITURE_GROUPS.values()}
     return layers
 

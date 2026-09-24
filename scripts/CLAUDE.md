@@ -52,6 +52,15 @@ kalanını bilmeye ihtiyaç duymadan o modül üzerinde derinlemesine/izole
   sırasında `import/` olarak adlandırılmıştı; `import` bir Python anahtar
   kelimesi olduğu için geçerli bir paket adı DEĞİLDİR — `fixture` → `golden`
   (rev-11) ile AYNI kategoride bir düzeltmeyle `importer/`e taşındı.
+- ✅ **`scripts/sections/`** — `SectionSheet`, `SectionCutLine`,
+  `crossing_walls`, `resolve_sections`; bina kesiti, `elevations/`deki
+  `LevelStack`i ödünç alır (bkz. `HD-011`). Kesit hattı HER ZAMAN aks
+  ailesine paraleldir (kullanıcı kararı); veri hiç verilmezse X+Y'den
+  birer varsayılan kesit üretilir.
+- ✅ **`scripts/northarrow/`** — `NorthArrow`, `NorthArrowStyle` Protocol'ü
+  (bkz. `HD-011`). Grafik ölçek çubuğu (`ScaleBar`) AYNI kullanıcı talebinin
+  parçası olsa da farklı bir sorumluluk sınırında olduğu için
+  `scripts/pafta/`e eklendi (bkz. o modülün CLAUDE.md'si).
 
 ## Modül bağımsızlığı ve çapraz kontrol (kullanıcı ilkesi)
 
@@ -170,7 +179,7 @@ Ortak desen (pafta + walls ile kanitlandi):
 
 | Modul         | Cekirdek siniflar (gercek public API)                                      | Durum                                                          |
 | ------------- | -------------------------------------------------------------------------- | -------------------------------------------------------------- |
-| `pafta/`      | `Sheet`, `PaperSizePlanner`, `CoverBlock`, `PaftaOverflowError`             | UYGULANDI; uniform template + keyplan bekliyor                 |
+| `pafta/`      | `Sheet`, `PaperSizePlanner`, `CoverBlock`, `PaftaOverflowError`, `ScaleBar`, `nice_scale_length_m`, `format_scale_value` | UYGULANDI; uniform template + keyplan bekliyor; ScaleBar rev-17 |
 | `walls/`      | `Wall`, `WallNetwork`, `WallCatalog`, `RoomPolygonScanner`, `RailDrawingStandard`, `CatalogRailStandard` | UYGULANDI (rev-15); kind-farkindali rail standardi |
 | `axis/`       | `AxisGrid`, `AxisDrawingStandard`, `Axis`, `AxisCoverageReport`, `check_labels` | UYGULANDI; kismi/ara aks + etiket kurali (rev-13)          |
 | `openings/`   | `Opening`, `Door`, `Window`, `OpeningSymbolStyle`, `OpeningSchedule`, `SwingGeometry`, `swing_geometry`, `DOOR_SYMBOLS`, `ARCS_PER_VARIANT` | UYGULANDI; 4 varyant + swing/host_side (rev-13) |
@@ -183,6 +192,8 @@ Ortak desen (pafta + walls ile kanitlandi):
 | `legend/`     | `OpeningLegend`, `LegendRenderer`, `ScheduleRow`                            | UYGULANDI (rev-14); Fikir 1 (kapi/pencere cetveli) secildi     |
 | `importer/`   | `DxfWallScanner`, `ImportReport`, `WallCandidate`                           | UYGULANDI (rev-15); Fikir 1 - salt-okunur DXF duvar tarayicisi |
 | `collision/`  | `CollisionShape`, `CollisionPolicy`, `CollisionEngine`, `Clash`, `ClashReport`, `Scene`, `check_context` | UYGULANDI (rev-12); validate.py ONCESI bloklayici kapi |
+| `sections/`   | `SectionCutLine`, `SectionSheet`, `SectionFeatureHook`, `DefaultSectionFeatureHook`, `resolve_sections`, `crossing_walls`, `section_vertical_extent`, `draw_cut_marker_on_floor` | UYGULANDI (rev-17); kesit hatti aks ailesine paralel, varsayilan X+Y kesit |
+| `northarrow/` | `NorthArrow`, `NorthArrowStyle`, `DefaultNorthArrowStyle`, `rotate_point` | UYGULANDI (rev-17); Protocol-tabanli, meta.north_angle verilmezse cizilmez |
 
 > Bu tablo `scripts/doc_check.py` tarafindan DENETLENIR: `UYGULANDI` isaretli bir
 > satirda anilan her sinif adi, o modulde gercekten tanimli olmalidir. Yalnizca
@@ -353,6 +364,10 @@ Sabit geliştirme sırası şöyledir:
 10. `legend/`: isteğe bağlı lejant.
 11. `importer/`: DXF/altlık okuma (rev-15'te DXF duvar tarayıcısı olarak
     tamamlandı; altlık kısmı hâlâ ileri faz).
+12. `sections/`: bina kesiti (rev-17'de tamamlandı; `elevations/`deki
+    `LevelStack`i ödünç alır, kesit hattı aks ailesine paralel).
+13. `northarrow/`: kuzey oku (rev-17'de tamamlandı; grafik ölçek çubuğu
+    AYNI kullanıcı talebinin parçası olsa da `pafta/` içinde yaşar).
 
 Her fazda önce agent sözleşmesi ve public API, sonra davranış korumalı taşıma,
 sonra schema/validator/generator entegrasyonu ve focused validation yapılır.

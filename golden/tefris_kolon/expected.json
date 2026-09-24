@@ -1,26 +1,27 @@
 {
   "source": "golden/tefris_kolon",
-  "entity_count": 208,
+  "entity_count": 331,
   "entity_types": {
     "ARC": 2,
     "ATTRIB": 9,
-    "CIRCLE": 19,
-    "DIMENSION": 6,
-    "HATCH": 9,
+    "CIRCLE": 31,
+    "DIMENSION": 10,
+    "HATCH": 14,
     "INSERT": 26,
-    "LINE": 62,
-    "LWPOLYLINE": 23,
-    "TEXT": 52
+    "LINE": 106,
+    "LWPOLYLINE": 33,
+    "TEXT": 100
   },
   "layers": {
-    "AKS": 51,
-    "CERCEVE": 28,
-    "DUVARLAR": 29,
+    "AKS": 85,
+    "CERCEVE": 64,
+    "DUVARLAR": 34,
     "KAPI-PENCERE": 12,
+    "KESIT": 10,
     "KOLON": 9,
     "KOLON-TARAMA": 9,
-    "METIN": 45,
-    "OLCU": 2,
+    "METIN": 75,
+    "OLCU": 10,
     "TEFRIS-ISLAK": 5,
     "TEFRIS-MUTFAK": 5,
     "TEFRIS-OTURMA": 4,
@@ -30,7 +31,7 @@
   "modelspace_bbox": [
     -500.0,
     -4150.0,
-    50600.0,
+    88200.0,
     13150.0
   ],
   "blocks": [

@@ -4,6 +4,139 @@ Aktif geçmiş kapasitesi: **50 kayıt**. En eski tamamlanmış kayıt, 51. kay�
 alınırken silinir. Ayrıntılı teknik değişiklikler git geçmişi ve ilgili proje
 provenance kayıtlarıyla ilişkilendirilir.
 
+## HD-011 — Kesit modülü ve kuzey oku/ölçek çubuğu standardı
+
+- **Durum:** COMPLETED
+- **Tamamlanma:** 2026-09-24
+- **Görevler:** `DEV-021` ve `DEV-025` (kullanıcı: "dev 25, ve dev21 için
+  çalışmaya başlayalım", ardından kesit hattı modeli ve kuzey oku/ölçek
+  çubuğu için ayrıntılı yönlendirme).
+- **Kapsam:** `scripts/sections/` (yeni modül), `scripts/northarrow/`
+  (yeni modül), `scripts/pafta/` (`ScaleBar`, `nice_scale_length_m`,
+  `format_scale_value` eklendi), `scripts/generate_dxf.py`,
+  `scripts/preview.py`, `scripts/validate.py` (`check_sections`),
+  `schema/design.schema.json` (`meta.north_angle`, `sections[]`,
+  `definitions.section`), `scripts/golden_report.py`
+  (`_code_owned_layers` → `KESIT`), `scripts/collision/scene.py`,
+  `scripts/version.py`, `golden/kesit_ornek/` (yeni golden referans).
+
+### DEV-021 — `sections/`: bina kesiti
+
+Kullanıcının kesin kapsam kararı: *"bu yapılarda hiçbir zaman eğik kesit
+ya da atlamalı kesit alınmaz. Bir kesit çizgisi X ve Y eksenindeki
+akslardan birine paraleldir ve konumunu operatör bildirir."* Bu karar
+`sections[].axis_source` alanını `elevations[].axis_source` ile BİREBİR
+AYNI anlama getirdi (`'vertical'` → sabit Y, `'horizontal'` → sabit X) —
+sayesinde `axis_grid.draw_on_elevation` VE `elevations::LevelStack`
+DOĞRUDAN yeniden kullanıldı, ayrı bir "kesit aksı" kavramı icat edilmedi.
+
+- **Varsayılan konum (kullanıcı kararı):** operatör bildirmezse kesit
+  yapının TAM ORTASINDAN değil, ilgili kenarın **1/3 noktasından** alınır
+  (`DEFAULT_POSITION_FRACTION`) — kullanıcı: *"amacımız default olarak
+  projenin tam ortası değil de tam ortasından biraz sağ ya da solundan
+  kesit almaktır."*
+- **Varsayılan kesit sayısı (kullanıcı kararı):** `context['sections']`
+  HİÇ verilmezse sistem X ve Y ekseninden BİRER varsayılan kesit üretir
+  (`resolve_sections`, etiketler `A-A`/`B-B`); boş dizi (`[]`) verilirse bu
+  varsayılan devre dışı kalır. Bu, **gerçek projeyi otomatik olarak
+  değiştirdi**: ana `context.json`'da `sections[]` hiç yok, dolayısıyla
+  `output/plan.dxf` artık 2 YENİ kesit paftası (`A-A KESITI`, `B-B KESITI`)
+  içeriyor — bu FABRİKASYON değil, kullanıcının açıkça verdiği bir sistem
+  standardının doğal sonucudur.
+- **`crossing_walls`:** bir katın duvarlarından kesit hattını KESENLERİ
+  (dik duran ve kesit konumunu Y/X aralığında kapsayan) bulur; kesit
+  hattına PARALEL duran duvarlar (bilinen sınırlama) ve kesit konumuna
+  ULAŞMAYAN kısa duvarlar (negatif test) dışlanır.
+- **Genişletme noktası (kullanıcı talebi):** kesit alınırken kat
+  yükseklikleri, galeri boşlukları veya merdivene denk gelen kısımların
+  "zamanla güçlendirilebilir" olması istendi. Bugün bu senaryolar için
+  PROJE VERİSİ yok; `SectionFeatureHook` Protocol'ü (`RailDrawingStandard`
+  ile AYNI desen) tam olarak bu genişlemenin gireceği noktayı hazır tutar,
+  çekirdek `SectionSheet.draw` değişmeden.
+- **Plan işareti (kullanıcı talebi):** her kat paftasında kesit hattı +
+  uçlarında bakış-yönü üçgeni + üçgenin SIRTINA yazılan kesit harfi
+  (`draw_cut_marker_on_floor`). `AKS`ten BİLEREK farklı katman/linetype/
+  renk (`KESIT`, `KESIT_HATTI`, kırmızımsı) — kullanıcı: *"farklı renkte ve
+  desende çizgi."*
+- **Pafta adı (kullanıcı talebi):** *"pafta ismine kesitin harfi verilir"*
+  → `f"{cut.label} KESITI"` (örn. `"A-A KESITI"`).
+- **`levels_from`:** kesit KENDİ kat yüksekliği istifini uydurmaz, bir
+  `elevations[].id`den ödünç alır (verilmezse `elevations[0]`).
+  **Invariant:** `floors[]` uzunluğu, hedef elevation'ın seviye sayısıyla
+  BİREBİR eşit olmalı (kat↔seviye eşlemesi SIRAYLA yapılır) —
+  `validate.py::check_sections` (açıkça bildirilen kesitler için) ve
+  `SectionSheet.draw` (savunma amaçlı `ValueError`) bunu ikişer yerde
+  denetler.
+
+### DEV-025 — Kuzey oku + grafik ölçek çubuğu
+
+- **Kuzey oku (`scripts/northarrow/`, YENİ modül):** kullanıcı açıkça
+  *"kuzey oku için standart bir tasarım belirle, daha sonra tasarım
+  değişikliğine gidildiğinde entegrasyon zor olmasın"* dedi — bu,
+  `RailDrawingStandard` Protocol desenini DOĞRUDAN çağırdı:
+  `NorthArrowStyle` Protocol'ü + `DefaultNorthArrowStyle` (daire + üçgen
+  ibre + "K" etiketi). `meta.north_angle` (derece, saat yönünde, "yukarı"
+  referansından) verilmezse ok HİÇ çizilmez — ana projede bu alan yok,
+  dolayısıyla gerçek projede kuzey oku GÖRÜNMÜYOR (sıfır görsel etki);
+  yalnızca yeni `golden/kesit_ornek` referansında (`north_angle=25`)
+  sınandı.
+- **Grafik ölçek çubuğu (`scripts/pafta::ScaleBar`, pafta'ya eklendi, YENİ
+  modül GEREKMEDİ):** `meta.scale`den TÜRETİLEN, basılı çıktı küçültülüp/
+  çoğaltılsa bile doğru ölçüyü koruyan standart bir öge. Segment uzunluğu
+  (`nice_scale_length_m`) hedef ~20mm basılı genişliğe en yakın "nice"
+  (1-2-5 serisi) gerçek-dünya metre değeridir (1:50→1m, 1:100→2m,
+  1:200→5m, 1:500→10m, elle hesaplanabilir). **ScaleBar hiçbir opsiyonel
+  veriye ihtiyaç duymadığı için** (sadece `meta.scale`) HER kat/görünüş/
+  kesit paftasında OTOMATİK çizilir — bu da gerçek projeyi görsel olarak
+  değiştirdi (her paftaya küçük bir ölçek cetveli eklendi).
+- **Yerleşim:** her paftanın KUZEY (üst) kenarındaki padding bölgesinde,
+  genişliğin TAM ORTASINDA — bu projede (ve `golden/duvar_standartlari`
+  gibi mevcut fixture'larda) strüktürel akslar genelde kenarlarda olduğu
+  için aks baloncuklarıyla çakışma riski düşüktür; piksel-kesin bir
+  çakışmama GARANTİSİ yoktur (bilinen sınırlama, `pafta::CONTENT_PADDING`
+  artışının çözdüğü rev-13 çakışmasıyla AYNI sınıf pragmatik yaklaşım).
+
+### Doğrulama
+
+- İki yeni self-test (`sections`, `northarrow` — ikincisi `pafta::
+  ScaleBar`ı da sınar) — toplam ON modül self-test'i oldu.
+- `py_compile`, `validate` (ana proje + `golden/kesit_ornek`), `generate`
+  (`PaftaOverflowError` FIRLAMADI), `preview`, 5 semantik kural (`KESIT`
+  katmanı `_code_owned_layers`e eklendi), 5 golden referans (4'ü
+  `--update`, 1'i YENİ), `doc_check` — hepsi temiz.
+
+### Golden output etkisi
+
+- **Ana proje DEĞİŞTİ** (kullanıcının açık standardının doğal sonucu):
+  `output/plan.dxf`e 2 yeni kesit paftası + her paftaya ölçek çubuğu
+  eklendi; `docs/development/plan-golden-report.json` bu yüzden
+  `--write` ile YENİDEN üretildi (rev-14/15'teki "sıfır görsel etki"
+  emsalinin AKSİNE — bu değişiklik bilerek ve gözlemlenerek yapıldı).
+- Mevcut 4 golden referansının TÜMÜ aynı sebeple değişti (`--update`).
+- Yeni `golden/kesit_ornek`: 2 kat, FARKLI bölme duvarı x-konumuna sahip
+  (4500 / 3000) — kesit hattının HER katta kendi duvarını doğru kestiğini
+  (kat-başına bağımsız kesişim) hem elle hesaplanabilir hem entegrasyon
+  seviyesinde kanıtlar; `meta.north_angle=25` ile kuzey oku de burada
+  sınanır.
+
+### Bilinen sınırlamalar
+
+- `sections/`: eğik kesit yok (kullanıcı kararı); kesit hattına paralel
+  duran duvar temsil edilemez; galeri boşluğu/merdiven kırılması için
+  genişletme noktası hazır ama VERİ yok; seviye SIRASI doğrulanmaz (sadece
+  SAYI eşitliği).
+- `northarrow`/`ScaleBar`: aks baloncuklarıyla piksel-kesin çakışmama
+  garantisi yok; elevations/sections'a kuzey oku çizilmez (kavramsal
+  olarak anlamsız — bir düşey görünüşün/kesitin "kuzeyi" yoktur).
+
+- **Sonraki direktif:** Kullanıcı ayrıca "kot (seviye/datum) verme
+  mantığı"nın hem planda hem kesitte kullanılacağı için proje geneline
+  hakim bir mantık olması gerektiğini, ayrı modül mü yoksa mevcut bir
+  modül tarafından mı yönetilmesi gerektiğine karar verilemediğini
+  belirtti. Bu, YENİ bir PLANNED görev olarak `DEV-029` altında
+  `DEVELOPMENT_TASKS.md`ye eklendi (uygulama izni DEĞİLDİR — sistem
+  mimarı açıkça seçmelidir).
+
 ## HD-010 — DXF duvar tarayıcısı ve kind-farkındalı rail standardı
 
 - **Durum:** COMPLETED

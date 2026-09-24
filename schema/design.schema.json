@@ -215,6 +215,37 @@
         }
       }
     },
+    "section": {
+      "type": "object",
+      "description": "Bina kesiti (DEV-021, scripts/sections). Kesit hatti HER ZAMAN aks ailelerinden birine PARALELDIR (egik/kademeli kesit bu yapida hic alinmaz - kullanici karari); 'axis_source', cephe (elevation) tanimindaki AYNI alanla AYNI anlama gelir: 'vertical' -> kesit hatti sabit Y'de (numerik/dusey akslar kesitte gorunur), 'horizontal' -> kesit hatti sabit X'te (alfabetik/yatay akslar kesitte gorunur).",
+      "required": ["id", "axis_source"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string" },
+        "label": {
+          "type": "string",
+          "description": "Kesit harfi, orn. 'A-A'. Verilmezse sirayla A-A, B-B, ... atanir."
+        },
+        "axis_source": {
+          "type": "string",
+          "enum": ["vertical", "horizontal"],
+          "description": "'vertical': kesit hatti sabit Y (numerik akslar gorunur, genislik=floor_width). 'horizontal': kesit hatti sabit X (alfabetik akslar gorunur, genislik=floor_depth)."
+        },
+        "position": {
+          "type": "number",
+          "description": "Kesit hattinin sabit koordinati (axis_source='vertical' ise Y, 'horizontal' ise X). Operator BILDIRMEZSE sistem yapinin TAM ORTASI DEGIL, ilgili kenarin 1/3 noktasindan varsayilan bir kesit alir (kullanici karari: kesit asla tam merkezden alinmaz)."
+        },
+        "look_direction": {
+          "type": "string",
+          "enum": ["positive", "negative"],
+          "description": "Kesit oklarinin (bakis yonu) hangi tarafi gosterdigi: 'positive' (varsayilan) eksenin + yonune bakar. Verilmezse 'positive'."
+        },
+        "levels_from": {
+          "type": "string",
+          "description": "Bu kesidin dusey kat yuksekligi istifini (LevelStack) hangi elevations[].id'den ODUNC ALACAGI. Verilmezse elevations[0] kullanilir - bina TEK bir gercek dusey istife sahiptir, kesit kendi istifini UYDURMAZ."
+        }
+      }
+    },
     "grid": {
       "type": "object",
       "description": "Binanin tum kat paftalarinda ortak, sabit aks izgarasi",
@@ -313,7 +344,11 @@
           }
         },
         "floor_width": { "type": "number", "exclusiveMinimum": 0, "description": "Tum katlarda ortak bina ayak izi genisligi (cikma yok)" },
-        "floor_depth": { "type": "number", "exclusiveMinimum": 0, "description": "Tum katlarda ortak bina ayak izi derinligi" }
+        "floor_depth": { "type": "number", "exclusiveMinimum": 0, "description": "Tum katlarda ortak bina ayak izi derinligi" },
+        "north_angle": {
+          "type": "number",
+          "description": "Kuzey oku (DEV-025, scripts/northarrow). Sac cizgisinin (kat paftasinin +Y yonu, 'yukari') GERCEK KUZEY'e olan saat-yonunde acisi, derece. 0 = kuzey yukarida. Verilmezse ok HIC CIZILMEZ - yon uydurulmaz."
+        }
       }
     },
     "layers": {
@@ -339,6 +374,11 @@
       "type": "array",
       "description": "Kat paftalarindan sonra soldan saga dizilecek cephe gorunusleri",
       "items": { "$ref": "#/definitions/elevation" }
+    },
+    "sections": {
+      "type": "array",
+      "description": "Cephelerden sonra soldan saga dizilecek bina kesitleri (DEV-021). ALAN HIC VERILMEZSE sistem X ve Y ekseninden birer varsayilan kesit uretir (kullanici karari - bkz. scripts/sections/CLAUDE.md); bos dizi ([]) verilirse bu varsayilan devre disi kalir ve HICBIR kesit cizilmez.",
+      "items": { "$ref": "#/definitions/section" }
     },
     "rev_history": {
       "type": "array",

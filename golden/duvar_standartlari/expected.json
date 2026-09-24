@@ -1,29 +1,30 @@
 {
   "source": "golden/duvar_standartlari",
-  "entity_count": 169,
+  "entity_count": 293,
   "entity_types": {
     "ARC": 2,
     "ATTRIB": 9,
-    "CIRCLE": 20,
-    "DIMENSION": 7,
-    "HATCH": 2,
+    "CIRCLE": 32,
+    "DIMENSION": 11,
+    "HATCH": 8,
     "INSERT": 3,
-    "LINE": 57,
-    "LWPOLYLINE": 15,
-    "TEXT": 54
+    "LINE": 101,
+    "LWPOLYLINE": 25,
+    "TEXT": 102
   },
   "layers": {
-    "AKS": 57,
-    "CERCEVE": 28,
-    "DUVARLAR": 27,
+    "AKS": 91,
+    "CERCEVE": 64,
+    "DUVARLAR": 33,
     "KAPI-PENCERE": 10,
-    "METIN": 45,
-    "OLCU": 2
+    "KESIT": 10,
+    "METIN": 75,
+    "OLCU": 10
   },
   "modelspace_bbox": [
     -500.0,
     -4150.0,
-    44600.0,
+    79200.0,
     13150.0
   ],
   "blocks": [

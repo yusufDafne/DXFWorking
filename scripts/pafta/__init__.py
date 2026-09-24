@@ -6,9 +6,15 @@ scripts/generate_dxf.py bu moduldeki `Sheet`, `PaftaOverflowError`,
 `PaperSizePlanner` ve `fit_text_height` isimlerini import eder; modulun kendi
 ic detaylarina (ornegin tam olarak nasil olctugu) bagimli degildir.
 
-SORUMLULUK SINIRI: Bu modul SADECE pafta cercevesi + baslik kutusu + tasma
-kontrolu + kagit boyutu hesaplarindan sorumludur. Duvar/oda/aks cizim mantigi
-buraya KARISMAZ (onlar kendi modullerinde/yerlerinde kalir).
+SORUMLULUK SINIRI: Bu modul pafta cercevesi + baslik kutusu + tasma kontrolu +
+kagit boyutu hesaplarindan sorumludur. Duvar/oda/aks cizim mantigi buraya
+KARISMAZ (onlar kendi modullerinde/yerlerinde kalir). **Tek istisna
+`ScaleBar`dir (DEV-025):** grafik olcek cubugu, `to_modelspace`/`parse_
+scale_denominator` disinda hicbir pafta-ozel bilgiye ihtiyac duymayan, saf
+OLCEK turevi bir sunum ogesidir - kuzey oku (`scripts/northarrow`, farkli
+bir standart/Protocol geregi AYRI moduldedir) ile ayni "sheet furniture"
+ailesindendir ama olcek matematigi zaten burada oldugu icin ayri bir modul
+GEREKMEDEN buraya eklendi.
 """
 from __future__ import annotations
 
@@ -401,6 +407,87 @@ class CoverBlock:
                      (bx0 + mm(4.0), by0 + mm(5.0)),
                      fit_text_height(caption, cell_width - mm(8.0), label_height, min_height=label_height * 0.5),
                      self.text_layer, align=TextEntityAlignment.MIDDLE_LEFT)
+
+
+def nice_scale_length_m(scale_denominator: float, target_printed_mm: float = 20.0) -> float:
+    """`target_printed_mm`ye EN YAKIN, ondan BUYUK/ESIT, {1,2,5}*10^n serisinden
+    (klasik 'nice number' / grafik olcek cubugu yuvarlama kurali) bir GERCEK-
+    DUNYA metre degeri dondurur. Elle dogrulanabilir: 1:50'de hedef 20mm ->
+    gercek 1000mm=1m -> 1.0 (serideki tam deger); 1:100'de 2m; 1:200'de 4m
+    hedefi asan ilk seri degeri 5m; 1:500'de 10m."""
+    raw_m = (target_printed_mm * scale_denominator) / 1000.0
+    if raw_m <= 0:
+        return 1.0
+    exponent = math.floor(math.log10(raw_m))
+    for multiplier in (1.0, 2.0, 5.0, 10.0):
+        candidate = multiplier * (10.0 ** exponent)
+        if candidate >= raw_m - 1e-9:
+            return candidate
+    return 10.0 * (10.0 ** exponent)
+
+
+def format_scale_value(value_m: float) -> str:
+    """Olcek cubugu etiketi: tam sayiysa ondaliksiz ('1'), degilse en fazla
+    2 ondalikla ('0.5') - kok CLAUDE.md'deki olcu metni kurali (tam sayi cm)
+    ile KARISTIRILMAZ; bu bir olcu DEGIL, grafik olcek LEJANTIDIR ve
+    geleneksel olarak metre gosterir."""
+    if abs(value_m - round(value_m)) < 1e-6:
+        return str(int(round(value_m)))
+    return f"{value_m:.2f}".rstrip("0").rstrip(".")
+
+
+class ScaleBar:
+    """Grafik olcek cubugu (DEV-025): basili cikti kucultulup/cogaltilsa bile
+    (fotokopi/PDF) dogru olcuyu koruyan standart bir mimari cizim ogesi -
+    yazili 'OLCEK 1:50' metninin aksine YANILTMAZ.
+
+    Segment uzunlugu (`nice_scale_length_m`) hedef basili genislige (~20mm,
+    `PRINTED_TARGET_SEGMENT_MM`) EN YAKIN 'nice' gercek-dunya degeridir; bu
+    deger context.json'dan GELMEZ, sadece `meta.scale`den TURETILIR - hicbir
+    proje verisi uydurulmaz."""
+
+    SEGMENTS = 5
+    PRINTED_TARGET_SEGMENT_MM = 20.0
+    PRINTED_TICK_HEIGHT_MM = 1.5
+    PRINTED_LABEL_MM = 2.2
+
+    def __init__(self, scale: str, units: str = "mm", layer: str = "CERCEVE", text_layer: str = "METIN"):
+        self.scale = scale
+        self.units = units
+        self.scale_denominator = parse_scale_denominator(scale)
+        self.layer = layer
+        self.text_layer = text_layer
+        self.segment_m = nice_scale_length_m(self.scale_denominator, self.PRINTED_TARGET_SEGMENT_MM)
+        per_meter = 1000.0 if units == "mm" else 1.0
+        self.segment_length = self.segment_m * per_meter
+        self.tick_height = to_modelspace(self.PRINTED_TICK_HEIGHT_MM, self.scale_denominator)
+        self.label_height = to_modelspace(self.PRINTED_LABEL_MM, self.scale_denominator)
+
+    @property
+    def total_length(self) -> float:
+        return self.segment_length * self.SEGMENTS
+
+    @property
+    def total_height(self) -> float:
+        """Cizilen tum varligin (cubuk + tik + etiket) taban cizgisinin
+        USTUNDE kapladigi toplam yukseklik - caller'in yerlesim payi
+        ayirmasi icindir."""
+        return self.tick_height + self.label_height * 1.5
+
+    def draw(self, msp, x0: float, y0: float) -> float:
+        """(x0, y0) = cubugun SOL ucu, taban cizgisi uzerinde. Tum ogeler
+        y0'nin USTUNE (pozitif Y) cizilir. Toplam genisligi dondurur."""
+        msp.add_line((x0, y0), (x0 + self.total_length, y0), dxfattribs={"layer": self.layer})
+        for i in range(self.SEGMENTS + 1):
+            x = x0 + i * self.segment_length
+            msp.add_line((x, y0), (x, y0 + self.tick_height), dxfattribs={"layer": self.layer})
+            value_m = i * self.segment_m
+            label = format_scale_value(value_m)
+            if i == self.SEGMENTS:
+                label = f"{label} m"
+            text = add_text(msp, label, (x, y0 + self.tick_height + self.label_height * 0.3),
+                            self.label_height, self.text_layer, align=TextEntityAlignment.BOTTOM_CENTER)
+        return self.total_length
 
 
 class Sheet:

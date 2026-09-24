@@ -1,31 +1,33 @@
 {
   "source": "output\\plan.dxf",
-  "sha256": "bd2ff4e65ef78726ba1d98aa814c69907681f89a307c2a69b4dc8f4d3193d75b",
-  "entity_count": 2830,
+  "sha256": "b46096a1080a997f10deeb85d9a134f740e2059bc54dc0bc618b63ba832e8167",
+  "entity_count": 3275,
   "entity_types": {
     "ARC": 105,
     "ATTRIB": 375,
-    "CIRCLE": 160,
-    "DIMENSION": 462,
+    "CIRCLE": 176,
+    "DIMENSION": 468,
+    "HATCH": 86,
     "INSERT": 125,
-    "LINE": 1226,
-    "LWPOLYLINE": 105,
-    "TEXT": 272
+    "LINE": 1367,
+    "LWPOLYLINE": 147,
+    "TEXT": 426
   },
   "layers": {
-    "AKS": 460,
-    "CERCEVE": 74,
-    "DUVARLAR": 916,
+    "AKS": 506,
+    "CERCEVE": 173,
+    "DUVARLAR": 1002,
     "KAPI-PENCERE": 321,
-    "METIN": 610,
+    "KESIT": 90,
+    "METIN": 710,
     "MOBILYA": 15,
-    "OLCU": 406,
+    "OLCU": 430,
     "OTOPARK": 28
   },
   "modelspace_bbox": [
     -500.0,
     -10150.0,
-    318800.0,
+    372900.0,
     24950.0
   ],
   "blocks": [

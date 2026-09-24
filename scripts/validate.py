@@ -15,6 +15,9 @@ Yaptigi kontroller:
        genisligi o duvarin uzunlugundan kucuk mu, duvar sinirlari icinde mi
      - Iki oda poligonu birbiriyle cakisiyor mu (convex/dikdortgen varsayimiyla)
   3) Her cephe gorunusu (elevations[]) icin hafif tutarlilik kontrolleri.
+  3b) ACIKCA bildirilmis her kesit (sections[], DEV-021) icin: levels_from
+      gecerli bir elevation'a isaret ediyor mu, o elevation'in seviye sayisi
+      floors[] sayisiyla esit mi, position bina siniri icinde mi.
   4) SURUM KAPISI (DEV-020): meta.schema_version ile sistemin SCHEMA_VERSION'u
      arasinda MAJOR fark varsa uretim DURUR. Bkz. scripts/version.py.
   5) CAKISMA DENETIMI (DEV-019): moduller arasi girisim - tefris odanin
@@ -277,6 +280,58 @@ def check_elevation(elevation: dict) -> list[str]:
     return errors
 
 
+def check_sections(context: dict) -> list[str]:
+    """DEV-021. `context['sections']` HIC verilmemisse (anahtar yok) kontrol
+    ATLANIR - o durumda `resolve_sections` sistem varsayilanini uretir ve
+    zaten gecerli oldugu GARANTIDIR (kullanici verisi degil). ACIKCA
+    verilmis (bos dizi dahil) her kesit icin: (1) levels_from gecerli bir
+    elevations[].id'ye isaret etmeli, (2) o elevation'in seviye SAYISI,
+    floors[] SAYISIYLA birebir esit olmalidir - kat<->seviye eslesmesi
+    SIRAYLA (asagidan yukariya) yapildigi icin (bkz. scripts/sections/
+    CLAUDE.md), boy uyusmazligi kati YANLIS seviyeye baglar ve bu SESSIZ bir
+    hata olurdu. (3) position, bildirilmisse ilgili kenarin [0, span]
+    araligi ICINDE olmalidir - yapinin disinda bir kesit anlamsizdir."""
+    errors: list[str] = []
+    raw = context.get("sections")
+    if raw is None:
+        return errors
+
+    elevations_by_id = {e["id"]: e for e in context["elevations"]}
+    default_levels_from = context["elevations"][0]["id"] if context["elevations"] else None
+    floor_width = context["meta"]["floor_width"]
+    floor_depth = context["meta"]["floor_depth"]
+    num_floors = len(context["floors"])
+
+    seen_ids: set[str] = set()
+    for data in raw:
+        prefix = f"[{data['id']}] "
+        if data["id"] in seen_ids:
+            errors.append(prefix + "kesit id'si ayni context icinde tekrarlanmis.")
+        seen_ids.add(data["id"])
+
+        levels_from = data.get("levels_from") or default_levels_from
+        if levels_from is None or levels_from not in elevations_by_id:
+            errors.append(prefix + f"levels_from '{levels_from}' gecerli bir elevations[].id degil.")
+            continue
+        target_levels = elevations_by_id[levels_from]["levels"]
+        if len(target_levels) != num_floors:
+            errors.append(
+                prefix + f"levels_from='{levels_from}' {len(target_levels)} seviye tasiyor "
+                f"ama floors[] {num_floors} kat iceriyor - kat<->seviye eslesmesi SIRAYLA "
+                f"yapildigi icin bu ikisi AYNI boyda olmalidir."
+            )
+
+        axis_source = data["axis_source"]
+        span = floor_depth if axis_source == "vertical" else floor_width
+        position = data.get("position")
+        if position is not None and not (0.0 <= position <= span):
+            errors.append(
+                prefix + f"position {position}, gecerli aralik [0, {span}] disinda "
+                f"(axis_source='{axis_source}')."
+            )
+    return errors
+
+
 def run_validation(context_path: Path = DEFAULT_CONTEXT_PATH) -> bool:
     context = load_json(context_path)
     schema = load_json(SCHEMA_PATH)
@@ -313,6 +368,8 @@ def run_validation(context_path: Path = DEFAULT_CONTEXT_PATH) -> bool:
 
     for elevation in context["elevations"]:
         all_errors += check_elevation(elevation)
+
+    all_errors += check_sections(context)
 
     if all_errors:
         print("DOGRULAMA BASARISIZ (geometri/mantik):")

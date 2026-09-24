@@ -33,14 +33,15 @@ Tamamlanan işlerin ayrıntılı gerekçesi, karar süreci ve ölçülen etkisi
 | DEV-018 | DXF `BLOCK` (modüller arası) | COMPLETED (rev-14) |
 | DEV-019 | `collision/` (modüller arası) | COMPLETED (rev-12) |
 | DEV-020 | sürüm + provenance | COMPLETED (rev-12) |
-| DEV-021 | `sections/` — kesit modülü | PLANNED |
+| DEV-021 | `sections/` — kesit modülü | COMPLETED (rev-17) |
 | DEV-022 | `stairs/` — merdiven gerçek geometrisi | PLANNED |
 | DEV-023 | `ceiling/` — yansıtılmış tavan planı | PLANNED |
 | DEV-024 | `site/` — vaziyet planı | PLANNED |
-| DEV-025 | Kuzey oku + grafik ölçek çubuğu | PLANNED |
+| DEV-025 | Kuzey oku + grafik ölçek çubuğu | COMPLETED (rev-17) |
 | DEV-026 | `legend/` — alan hesap cetveli | PLANNED |
 | DEV-027 | Kaçış (tahliye) planı | PLANNED |
 | DEV-028 | `legend/` — malzeme/kaplama cetveli | PLANNED |
+| DEV-029 | Kot (seviye/datum) yönetim mantığı — proje geneli | PLANNED |
 
 ## READY
 
@@ -56,18 +57,23 @@ kendi başına seçmez.
 ## PLANLANAN GÖREVLER
 
 Planlanmış modül kataloğunun tamamı (`DEV-011`…`DEV-020`) tamamlandı. Bu
-bölüm artık iki tür maddeyi tutar:
+bölüm artık üç tür maddeyi tutar:
 
 1. **`DEV-007`** — tek gerçek BLOCKED madde, yukarıya bakınız.
-2. **`DEV-021`…`DEV-028`** — bu turda (2026-09-24, kullanıcı talebiyle)
-   eklenen, **endüstri standardı bir mimari çizim setinde bulunan ama bu
-   projede henüz olmayan** modül/geliştirme fikirleri. Bunlar bir mimarın
+2. **`DEV-022`…`DEV-028`** — 2026-09-24'te (kullanıcı talebiyle) eklenen,
+   **endüstri standardı bir mimari çizim setinde bulunan ama bu projede
+   henüz olmayan** modül/geliştirme fikirleri (`DEV-021` ve `DEV-025`
+   rev-17'de seçilip tamamlandı, bkz. `## COMPLETED`). Bunlar bir mimarın
    ufkunu açmak ve gerçekten gözden kaçan bir şey olup olmadığını
    değerlendirmek için yazılmıştır — **uygulama izni DEĞİLDİR**. Her biri
    `PLANNED` seviyesinde bir taslaktır; gerçek Fikir 1/Fikir 2/Açık kararlar
    analizi (mevcut modüllerdeki gibi) o madde açıkça seçildiğinde yapılır.
    Sistem mimarı bir maddeyi seçip kendi yönlendirmesini eklemeden agent
    kod yazmaz.
+3. **`DEV-029`** — rev-17'de `DEV-021`/`DEV-025` çalışması sırasında
+   kullanıcının ayrıca gündeme getirdiği, proje geneline hakim olması
+   gereken bir çapraz-kesit (cross-cutting) konu: kot (seviye/datum) verme
+   mantığı. Aynı "uygulama izni değildir" kuralı geçerlidir.
 
 **Şartname ile fikir farkı:** Bir maddede "Şartname" başlığı varsa, o kısım
 kullanıcı tarafından KESİN olarak verilmiştir ve fikir gibi değerlendirilmez.
@@ -80,7 +86,7 @@ kullanıcı tarafından KESİN olarak verilmiştir ve fikir gibi değerlendirilm
   bkz. `HD-004`). Eksik olan yalnızca resmi veridir (`meta.cover.
   architect_name`, `meta.cover.date`). Ayrıca `PaperSizePlanner`, 90'lık
   ruloya sığmayan bir proje için "pafta bölme + keyplan" gerektiğini
-  raporluyor ama bu henüz uygulanmadı (bkz. `DEV-021`in vaziyet/keyplan
+  raporluyor ama bu henüz uygulanmadı (bkz. `DEV-024`ün vaziyet/keyplan
   notu).
 - **Fikir 1 — Pafta bölme + keyplan:** En büyük rulo yetmediğinde mevzuatın
   tek kabul ettiği çözüm. `PaperSizePlanner.select(...)` zaten `fits=False`
@@ -91,29 +97,6 @@ kullanıcı tarafından KESİN olarak verilmiştir ve fikir gibi değerlendirilm
 - **Açık kararlar:** Kapak **tasarımı** için kullanıcı ayrı bir talep
   paylaşacak; o talepte geometri (A4, sağ-alt sabitleme, eşit offset,
   antetsiz pafta) değişmemelidir.
-
-### DEV-021 — `sections/` — kesit (building section) modülü
-
-- **Durum:** PLANNED
-
-**Neden endüstri standardı bir boşluk:** Bugünkü sistem kat planları
-(`floors[]`) ve cepheler (`elevations[]`) üretiyor ama binayı **düşey
-olarak KESEN** hiçbir çizim yok. Türkiye'de ruhsat başvurusu (ve genel
-olarak her mimari uygulama projesi) en az bir uzunlamasına, bir de enine
-kesit (A-A, B-B) ister — kat yükseklikleri, döşeme kalınlığı, kat
-aralarındaki ilişki ve çatı/parapet detayı SADECE kesitte görünür;
-`elevations/` sadece dış cepheyi (görünüşü) çizer, içeriyi KESMEZ.
-
-**Kapsam taslağı:** `floors[]`in zaten bildirdiği kat yükseklikleri
-(`elevations[].levels[].height`, `below_ground`) ve `floor_width`/
-`floor_depth` kullanılarak, bildirilen bir kesit hattı (`cut_line`, iki
-nokta) boyunca hangi duvarların/odaların kesildiği belirlenir ve düşey bir
-kesit görünümü üretilir. `elevations/`deki `LevelStack` doğrudan yeniden
-kullanılabilir (kat istifi zaten oradaki gibi hesaplanıyor).
-
-**İlişkili modüller:** `elevations/` (kat istifi ortak), `walls/` (kesilen
-duvar kalınlığı), `axis/` (düşey akslar kesitte de görünmeli — cephedeki
-izdüşüm deseniyle aynı).
 
 ### DEV-022 — `stairs/` — merdiven gerçek basamak geometrisi
 
@@ -130,10 +113,15 @@ bir eksiktir.
 **Kapsam taslağı:** `floors[].rooms[]`de merdiven için ayrılmış poligon +
 basamak sayısı/rıht yüksekliği (kat yüksekliğinden türetilebilir) verilirse,
 eşit aralıklı basamak çizgileri + yön oku + kesme çizgisi üretilir. Kesitle
-(`DEV-021`) doğal bir bağlantısı vardır (merdiven kesitte de görünür).
+(`DEV-021`, tamamlandı) doğal bir bağlantısı vardır: `sections::
+SectionFeatureHook` genişletme noktası tam olarak bu senaryo (merdivenin
+kesitte kırılma çizgisiyle gösterilmesi) için hazır tutulmuştur (bkz.
+`scripts/sections/CLAUDE.md` "Genişletme noktası").
 
 **İlişkili modüller:** `rooms/` (merdiven poligonu bugün de var, sadece
-etiketli), `sections/` (DEV-021 açılırsa merdiven kesiti).
+etiketli), `sections/` (tamamlandı — `SectionFeatureHook`e merdiven
+kırılma çizgisi eklenerek genişletilir, çekirdek `SectionSheet.draw`
+değişmeden).
 
 ### DEV-023 — `ceiling/` — yansıtılmış tavan planı (RCP)
 
@@ -170,30 +158,13 @@ AYRILMAZ bir parçasıdır ve bugünkü kat planlarından farklı, daha küçük
 **Kapsam taslağı:** `meta.parcel` gibi yeni bir üst-seviye alan (parsel
 poligonu, çekme mesafeleri, kuzey açısı) + binanın mevcut `floor_width`/
 `floor_depth` oturumunun bu parsel içine 1:200/1:500 ölçekte yerleştirilmesi.
-`DEV-025`teki kuzey oku burada da kullanılır.
+`DEV-025` (tamamlandı) `scripts/northarrow::NorthArrow`i burada da
+kullanır — `meta.north_angle` zaten var, yeni bir kuzey oku mantığı
+YAZILMAZ.
 
 **İlişkili modüller:** `pafta/` (yeni bir pafta türü — `PaperSizePlanner`
-zaten ölçek kısıtını biliyor), `axis/` (bina oturumu aynı ızgara).
-
-### DEV-025 — Kuzey oku ve grafik ölçek çubuğu (pafta/axis genişletmesi)
-
-- **Durum:** PLANNED
-
-**Neden endüstri standardı bir boşluk:** Her mimari plan/vaziyet paftasında
-bulunması beklenen iki küçük ama evrensel standart öğe bugün HİÇBİR
-paftada yok: bir **kuzey oku** (binanın gerçek kuzeye göre yönünü gösterir)
-ve bir **grafik ölçek çubuğu** (basılı çıktı küçültülüp çoğaltılsa bile
-doğru ölçüyü korur — yazılı "1:50" metninin aksine, fotokopi/PDF
-küçültmesinde YANILTMAZ).
-
-**Kapsam taslağı:** `meta.north_angle` (opsiyonel, verilmezse ok çizilmez —
-uydurulmaz) ile her kat/vaziyet paftasına sabit boyutlu bir ok sembolü;
-ölçeğe göre türetilen (`to_modelspace` deseni, `pafta` modülünde zaten var)
-bir grafik ölçek çubuğu. Bu, YENİ bir modül gerektirmez — `pafta/` veya
-`axis/`in küçük bir genişlemesi olarak ele alınabilir.
-
-**İlişkili modüller:** `pafta/` (`to_modelspace` zaten kullanılabilir),
-`axis/` (yön bilgisi aksla akraba).
+zaten ölçek kısıtını biliyor), `axis/` (bina oturumu aynı ızgara),
+`northarrow/` (tamamlandı — kuzey oku doğrudan yeniden kullanılır).
 
 ### DEV-026 — `legend/` genişletmesi: alan hesap cetveli (brüt/net, emsal)
 
@@ -250,6 +221,57 @@ malzeme kodu) eklenip, `legend/`nin AYNI gruplama+tablo deseniyle (bkz.
 
 **İlişkili modüller:** `rooms/` (şema genişlemesi), `legend/` (tablo
 altyapısı hazır).
+
+### DEV-029 — Kot (seviye/datum) yönetim mantığı — proje geneline hakim
+
+- **Durum:** PLANNED
+
+**Kökeni:** `DEV-021`/`DEV-025` çalışması sırasında kullanıcının ayrıca
+gündeme getirdiği bir konu: *"kot verme mantıklarını yöneten bir mantık
+istiyorum... kot organizasyonu hem planda hem kesitte kullanılacaktır...
+bu mantığın projenin geneline hakim olması gerekecektir."*
+
+**Neden endüstri standardı bir boşluk:** Kot (spot/seviye yüksekliği,
+örn. `±0.00`, `+3.00`, `-0.20`) mimari çizimde SEMBOLLE (üçgen/bayrak +
+liderle bağlı metin) gösterilen, gerçek dünya yüksekliğini bildiren
+standart bir anotasyondur — hem KAT PLANINDA (rampa/teras/kademe farkı
+noktalarında) hem GÖRÜNÜŞ/KESİTTE (her kat sınırında) kullanılır. Bugün
+sistemde bu YOK: `elevations::LevelStack` her seviyenin y0/y1'ini zaten
+HESAPLIYOR (kümülatif kat yüksekliği) ama bunu bir "kot" olarak
+FORMATLAYIP çizen hiçbir şey yok; kat planında ise hiçbir seviye/kot
+verisi hiç yok.
+
+**Mimari soru ve öneri (kullanıcının açıkça sorduğu karar):** Ayrı bir
+modül mü, yoksa mevcut bir modül tarafından mı yönetilmeli? Bu görev
+açıkça seçilmeden TAM Fikir 1/Fikir 2 analizi yapılmaz (bkz. dosya başı
+kural), ama kullanıcı doğrudan bir mimari görüş istediği için ön bir
+değerlendirme:
+
+- **Öneri — YENİ, küçük, bağımsız bir modül** (örn. `scripts/levels/` veya
+  `scripts/datum/`), `typography/` ölçeğinde küçük bir kütüphane:
+  - Kot **formatlama/gösterim standardını** (işaret, ondalık sayısı, bayrak/
+    üçgen sembolü — Türkiye standardında tipik olarak `+3.00` gibi 2
+    ondalıklı METRE) ve bir `LevelMark` çizim ilkesini (flag/leader/text,
+    `NorthArrow`/`ScaleBar` gibi ölçeğe göre türeyen) sahiplenir.
+  - **Kat yüksekliği hesabını YENİDEN YAZMAZ** — `elevations::LevelStack`in
+    zaten hesapladığı `y0`/`y1`i TÜKETİR (tek yönlü bağımlılık, `sections`
+    → `elevations` ile AYNI desen).
+  - Neden `elevations/`nin kendisine eklenmesin (Fikir 2 yerine): kot
+    PLAN görünümünde de kullanılır (rampa/teras spot kotu) — bu,
+    `elevations/`nin bugünkü net kapsamının (SADECE cephe istifi) dışında
+    bir sorumluluktur; kot format/sembol standardı ile "seviye istifi
+    hesabı" birbirinden ayrı iki karardır (birini değiştirmek diğerini
+    etkilememeli). Bu tam olarak `sections`/`northarrow`ın `elevations`/
+    `pafta`dan AYRI tutulma gerekçesiyle aynıdır (rev-17, bkz. `HD-011`).
+- **Kapsam taslağı (taslak, henüz onay değil):** `rooms[]`e opsiyonel spot
+  kot alanı (plan için) + `LevelMark.draw(msp, point, value_mm, ...)` +
+  `elevations`/`sections`in her seviye sınırında bunu otomatik çağırması.
+  Kot metni formatı (işaret/ondalık/birim) kullanıcı onayı gerektirir —
+  UYDURULMAZ.
+
+**İlişkili modüller:** `elevations/` (`LevelStack`in y0/y1'i TÜKETİLİR,
+DEĞİŞTİRİLMEZ), `sections/` (aynı istif, kesitte de kot gösterilir),
+`rooms/`+`pafta` (plan tarafı spot kotu, henüz şema yok).
 
 ## COMPLETED
 
@@ -379,6 +401,20 @@ altyapısı hazır).
 - **Durum:** COMPLETED (rev-12)
 - **Özet:** `meta.schema_version` kapı, modül `CONTRACT_VERSION` teşhis,
   `output/provenance.json` kayıt olarak üçe ayrıldı. (`HD-007`)
+
+### DEV-021 — `sections/` — bina kesiti
+
+- **Durum:** COMPLETED (rev-17)
+- **Özet:** Kesit hattı her zaman aks ailesine paralel; veri verilmezse
+  X+Y'den birer varsayılan kesit (1/3 nokta) üretilir; plana kesit
+  hattı+üçgen+harf işareti basılır. (`HD-011`)
+
+### DEV-025 — Kuzey oku ve grafik ölçek çubuğu
+
+- **Durum:** COMPLETED (rev-17)
+- **Özet:** `northarrow::NorthArrow` (Protocol-tabanlı, `meta.north_angle`
+  verilmezse çizilmez) ve `pafta::ScaleBar` (ölçekten türeyen grafik ölçek
+  cetveli) eklendi. (`HD-011`)
 
 ## Görev tamamlama kuralı
 

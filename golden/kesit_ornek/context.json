@@ -1,0 +1,125 @@
+{
+  "meta": {
+    "project_name": "Golden - Kesit ve Kuzey Oku",
+    "schema_version": "1.0.0",
+    "units": "mm",
+    "scale": "1:50",
+    "project_type": "MIMARI_UYGULAMA",
+    "fonts": {
+      "default": "arialn.ttf",
+      "room_label": "arialn.ttf"
+    },
+    "cover": {
+      "signature_fields": ["MIMAR", "BELEDIYE"]
+    },
+    "floor_width": 9000.0,
+    "floor_depth": 9000.0,
+    "north_angle": 25.0
+  },
+  "layers": [
+    { "name": "DUVARLAR", "color": 7 },
+    { "name": "METIN", "color": 7 },
+    { "name": "CERCEVE", "color": 8 },
+    { "name": "OLCU", "color": 3 }
+  ],
+  "grid": {
+    "vertical_axes": [
+      { "label": "1", "position": 0.0 },
+      { "label": "2", "position": 9000.0 }
+    ],
+    "horizontal_axes": [
+      { "label": "A", "position": 0.0 },
+      { "label": "B", "position": 9000.0 }
+    ]
+  },
+  "floors": [
+    {
+      "id": "kat1",
+      "label": "1. KAT",
+      "code": "K1",
+      "rooms": [
+        {
+          "id": "k1_oda_1",
+          "name": "Oda 1",
+          "no": "01",
+          "area_m2": 37.84,
+          "polygon": [[100, 100], [4400, 100], [4400, 8900.0], [100, 8900.0]]
+        },
+        {
+          "id": "k1_oda_2",
+          "name": "Oda 2",
+          "no": "02",
+          "area_m2": 37.84,
+          "polygon": [[4600, 100], [8900, 100], [8900, 8900.0], [4600, 8900.0]]
+        }
+      ],
+      "walls": [
+        { "id": "k1_alt", "start": [0, 0], "end": [9000.0, 0], "thickness": 200.0, "layer": "DUVARLAR" },
+        { "id": "k1_sag", "start": [9000.0, 0], "end": [9000.0, 9000.0], "thickness": 200.0, "layer": "DUVARLAR" },
+        { "id": "k1_ust", "start": [9000.0, 9000.0], "end": [0, 9000.0], "thickness": 200.0, "layer": "DUVARLAR" },
+        { "id": "k1_sol", "start": [0, 9000.0], "end": [0, 0], "thickness": 200.0, "layer": "DUVARLAR" },
+        { "id": "k1_p", "start": [4500.0, 0], "end": [4500.0, 9000.0], "thickness": 150.0, "layer": "DUVARLAR" }
+      ],
+      "openings": [],
+      "labels": []
+    },
+    {
+      "id": "kat2",
+      "label": "2. KAT",
+      "code": "K2",
+      "rooms": [
+        {
+          "id": "k2_oda_1",
+          "name": "Oda 1",
+          "no": "01",
+          "area_m2": 24.64,
+          "polygon": [[100, 100], [2900, 100], [2900, 8900.0], [100, 8900.0]]
+        },
+        {
+          "id": "k2_oda_2",
+          "name": "Oda 2",
+          "no": "02",
+          "area_m2": 51.04,
+          "polygon": [[3100, 100], [8900, 100], [8900, 8900.0], [3100, 8900.0]]
+        }
+      ],
+      "walls": [
+        { "id": "k2_alt", "start": [0, 0], "end": [9000.0, 0], "thickness": 200.0, "layer": "DUVARLAR" },
+        { "id": "k2_sag", "start": [9000.0, 0], "end": [9000.0, 9000.0], "thickness": 200.0, "layer": "DUVARLAR" },
+        { "id": "k2_ust", "start": [9000.0, 9000.0], "end": [0, 9000.0], "thickness": 200.0, "layer": "DUVARLAR" },
+        { "id": "k2_sol", "start": [0, 9000.0], "end": [0, 0], "thickness": 200.0, "layer": "DUVARLAR" },
+        { "id": "k2_p", "start": [3000.0, 0], "end": [3000.0, 9000.0], "thickness": 150.0, "layer": "DUVARLAR" }
+      ],
+      "openings": [],
+      "labels": []
+    }
+  ],
+  "elevations": [
+    {
+      "id": "on_cephe",
+      "label": "ON CEPHE",
+      "width": 9000.0,
+      "axis_source": "vertical",
+      "levels": [
+        { "label": "1. KAT", "height": 3000.0 },
+        { "label": "2. KAT", "height": 3000.0 }
+      ]
+    }
+  ],
+  "sections": [
+    {
+      "id": "kesit_a",
+      "label": "A-A",
+      "axis_source": "vertical",
+      "position": 4000.0,
+      "levels_from": "on_cephe"
+    }
+  ],
+  "rev_history": [
+    {
+      "rev": 1,
+      "ts": "2026-09-24T00:00:00Z",
+      "summary": "DEV-021/DEV-025 golden referansi: kesit A-A (axis_source=vertical, Y=4000) 1. ve 2. katta FARKLI x konumundaki (4500 / 3000) bolme duvarini KENDI katinda dogru kesmelidir (kat-basina bagimsiz kesisim). meta.north_angle=25 ile kuzey oku da bu referansta sinanir - ana projede bu alan yok."
+    }
+  ]
+}

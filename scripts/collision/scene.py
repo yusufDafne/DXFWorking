@@ -54,6 +54,16 @@ COLLISION_EXEMPT: dict[str, str] = {
                 "tarayicisidir (DEV-013); bu projenin plan/kat geometrisiyle "
                 "AYNI koordinat uzayinda YASAMAZ, cakisma kavraminin "
                 "kapsami disindadir.",
+    "sections": "Kesit (section), floors[] duzleminde YENI bir mekansal "
+                "eleman EKLEMEZ - var olan duvarlarin DUSEY bir izdusumunu "
+                "cizer (DEV-021). Bu motor SADECE plan (floors[]) duzleminde "
+                "calisir; kesit sahnesi kendi dikey koordinat eksenindedir "
+                "ve elevations/ ile AYNI gerekceyle kapsam disidir.",
+    "northarrow": "Kuzey oku + olcek cubugu (DEV-025), meta.north_angle/"
+                  "meta.scale'den TURETILEN sabit bir pafta SEMBOLUDUR "
+                  "(basligi/aksi gibi) - proje geometrisiyle (oda/duvar/"
+                  "tefris) hicbir mekansal iliskisi yoktur (axis/typography "
+                  "ile AYNI gerekce, politika matrisinde IGNORE).",
 }
 
 

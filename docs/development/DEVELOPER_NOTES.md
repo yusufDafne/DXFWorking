@@ -61,6 +61,17 @@ sistem mimarı direktifi güncellenir.
   Çakışma matrisinde **kapı ↔ kapı artık HATA**.
 - **Dört self-test var** ve üretimden sonra hepsi çalıştırılmalıdır:
   `collision`, `dimensions`, `axis`, `openings`.
+- **rev-17: `DEV-021` (`sections/`) ve `DEV-025` (`northarrow/` +
+  `pafta::ScaleBar`) tamamlandı (`HD-011`).** Kesit hattı her zaman aks
+  ailesine paralel (kullanıcı kararı); `sections[]` hiç verilmezse X+Y'den
+  birer varsayılan kesit (1/3 nokta, tam merkez DEĞİL) üretilir — bu, ANA
+  PROJEYİ de değiştirdi (2 yeni kesit paftası otomatik çıkıyor). `ScaleBar`
+  sadece `meta.scale`den türediği için HER paftaya (kat+görünüş+kesit)
+  otomatik eklendi. `NorthArrow` `meta.north_angle` yoksa hiç çizilmez —
+  ana projede bu alan yok, kuzey oku GÖRÜNMÜYOR (sadece yeni
+  `golden/kesit_ornek` referansında sınandı). Kullanıcı ayrıca "kot/datum"
+  mantığının proje geneline hakim, çapraz-kesit bir konu olduğunu belirtti;
+  bu `DEV-029` olarak PLANNED eklendi, henüz uygulanmadı.
 
 ## Sıradaki iş
 
@@ -105,22 +116,19 @@ rev-12 durumu:
 
 **Önemli işletim notu:** Üretimden sonra artık
 `python scripts/golden_report.py output/plan.dxf --rules context.json`,
-`python scripts/golden_report.py --golden-set` ve **altı modül self-test'i**
-(`collision`, `dimensions`, `axis`, `openings`, `rooms`, `elevations`) da
-çalıştırılmalıdır. Ölçüm raporunun tek başına yetmediği rev-10'da somut
-olarak gösterildi; çakışma motorunun "temiz döndü" çıktısı da tek başına
-hiçbir şey kanıtlamaz (motor hiç çalışmasa da temiz dönerdi), bu yüzden
-self-test kasıtlı bozulmuş bir kat üzerinde beklenen bulguların TAM OLARAK
-üretildiğini sınar.
+`python scripts/golden_report.py --golden-set` ve **ON modül self-test'i**
+(`collision`, `dimensions`, `axis`, `openings`, `rooms`, `elevations`,
+`walls`, `importer`, `sections`, `northarrow`) da çalıştırılmalıdır. Ölçüm
+raporunun tek başına yetmediği rev-10'da somut olarak gösterildi; çakışma
+motorunun "temiz döndü" çıktısı da tek başına hiçbir şey kanıtlamaz (motor
+hiç çalışmasa da temiz dönerdi), bu yüzden self-test kasıtlı bozulmuş bir
+kat üzerinde beklenen bulguların TAM OLARAK üretildiğini sınar.
 
-Artık SEKİZ modül self-test'i çalıştırılmalıdır — yukarıdaki listeye
-`walls` ve `importer` de eklendi (`python scripts/walls/selftest.py`,
-`python scripts/importer/selftest.py`).
-
-Planlanan modül kataloğunun TAMAMI (`DEV-011`…`DEV-018`) tamamlandı.
-Sıradaki iş için sistem mimarı açık direktif vermelidir: yeni bir modül
-fikri veya mevcut modüllerin ertelenen "Fikir 2"lerinden biri (her modülün
-kendi `CLAUDE.md`'sindeki "Bilinen sınırlamalar"a bakınız). Sistem mimarı
+Planlanan modül kataloğunun TAMAMI (`DEV-011`…`DEV-020`) VE rev-17'de
+seçilen ilk iki "endüstri standardı boşluk" maddesi (`DEV-021`, `DEV-025`)
+tamamlandı. `DEVELOPMENT_TASKS.md::PLANLANAN GÖREVLER` içinde
+`DEV-022`…`DEV-024`, `DEV-026`…`DEV-029` (kot/datum mantığı, rev-17'de
+kullanıcı tarafından eklendi) hâlâ seçilmeyi bekliyor. Sistem mimarı
 açıkça başlatmadan kod değişikliği yapılmaz. Başlangıçta görev kilidi
 alınmalıdır.
 

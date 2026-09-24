@@ -30,7 +30,16 @@ except ImportError:
     from matplotlib.patches import Polygon as MplPolygon
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from pafta import CONTENT_PADDING, FRAME_GAP, CoverBlock, Sheet  # noqa: E402  (once sys.path ayarlanmali)
+from pafta import (  # noqa: E402  (once sys.path ayarlanmali)
+    CONTENT_PADDING,
+    FRAME_GAP,
+    CoverBlock,
+    ScaleBar,
+    Sheet,
+    format_scale_value,
+    parse_scale_denominator,
+    to_modelspace,
+)
 from version import (  # noqa: E402
     SCHEMA_VERSION,
     format_timestamp,
@@ -39,6 +48,13 @@ from version import (  # noqa: E402
 from rooms import RoomLabeler  # noqa: E402
 from elevations import LevelStack, elevation_vertical_extent  # noqa: E402
 from legend import COLUMNS, COLUMN_WEIGHTS, OpeningLegend  # noqa: E402
+from northarrow import NORTH_LABEL, NorthArrow, rotate_point  # noqa: E402
+from sections import (  # noqa: E402
+    SectionCutLine,
+    crossing_walls,
+    resolve_sections,
+    section_vertical_extent,
+)
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_CONTEXT_PATH = PROJECT_ROOT / "context.json"
@@ -307,6 +323,69 @@ def draw_elevation(ax, elevation: dict, dx: float) -> None:
     ax.text(dx, -600, elevation["label"], fontsize=7, color="#111827", ha="left", va="top")
 
 
+def draw_scale_bar_preview(ax, scale_bar: ScaleBar, x0: float, y0: float) -> None:
+    """`scripts/pafta::ScaleBar` ile AYNI olculeri kullanan basit onizleme -
+    gercek DXF cizimini TEKRARLAMAZ, sadece ayni sayilari (segment_m,
+    segment_length) matplotlib ile gosterir (DEV-025)."""
+    ax.plot([x0, x0 + scale_bar.total_length], [y0, y0], color="black", linewidth=0.8, zorder=5)
+    for i in range(scale_bar.SEGMENTS + 1):
+        x = x0 + i * scale_bar.segment_length
+        ax.plot([x, x], [y0, y0 + scale_bar.tick_height], color="black", linewidth=0.8, zorder=5)
+        label = format_scale_value(i * scale_bar.segment_m)
+        if i == scale_bar.SEGMENTS:
+            label = f"{label} m"
+        ax.text(x, y0 + scale_bar.tick_height * 1.6, label, fontsize=3.5, ha="center", va="bottom", zorder=5)
+
+
+def draw_north_arrow_preview(ax, center: tuple[float, float], angle_deg: float, radius: float) -> None:
+    """`scripts/northarrow::NorthArrow` ile AYNI donme yonunu (`rotate_point`)
+    kullanan basit onizleme (DEV-025)."""
+    cx, cy = center
+    ax.add_patch(plt.Circle((cx, cy), radius, fill=False, edgecolor="black", linewidth=0.6, zorder=5))
+    tip = rotate_point(center, radius, angle_deg)
+    ax.plot([cx, tip[0]], [cy, tip[1]], color="black", linewidth=1.2, zorder=5)
+    label_point = rotate_point(center, radius * 1.5, angle_deg)
+    ax.text(label_point[0], label_point[1], NORTH_LABEL, fontsize=5, ha="center", va="center", zorder=5)
+
+
+def draw_cut_marker_preview(ax, cut: SectionCutLine, dx: float, floor_width: float, floor_depth: float) -> None:
+    """Kat plani uzerindeki kesit hatti + ucgen isaretlerin basit onizlemesi
+    (DEV-021) - `scripts/sections::draw_cut_marker_on_floor` ile AYNI
+    cut objesinden ('sections.resolve_sections') beslenir, kendi kopyasini
+    UYDURMAZ."""
+    ext = 400.0
+    if cut.axis_source == "vertical":
+        p1, p2 = (dx - ext, cut.position), (dx + floor_width + ext, cut.position)
+    else:
+        p1, p2 = (dx + cut.position, -ext), (dx + cut.position, floor_depth + ext)
+    ax.plot([p1[0], p2[0]], [p1[1], p2[1]], color="#b91c1c", linewidth=1.0,
+           linestyle=(0, (6, 3, 1, 3)), zorder=5)
+    for point in (p1, p2):
+        ax.text(point[0], point[1], cut.letter, fontsize=5, color="#b91c1c", ha="center", va="center",
+               zorder=6, bbox=dict(boxstyle="circle", fc="white", ec="#b91c1c", linewidth=0.5))
+
+
+def draw_section_preview(ax, cut: SectionCutLine, floors: list[dict],
+                         elevation_lookup: dict[str, dict], dx: float, width: float) -> None:
+    """Bir kesidin basit onizlemesi (DEV-021): her katta KESILEN duvarlar
+    dolu (siyah) dikdortgen, kat sinirlari duz cizgi. `draw_elevation` ile
+    AYNI gorsel dilde (bkz. yukarisi)."""
+    stack = LevelStack.from_context(elevation_lookup[cut.levels_from])
+    placements = stack.placements()
+    for floor, (level, y0, y1) in zip(floors, placements):
+        ax.plot([dx, dx + width], [y0, y0], color="black", linewidth=0.8)
+        for crossing in crossing_walls(floor["walls"], cut.axis_source, cut.position):
+            half = crossing["thickness"] / 2.0
+            local = crossing["at"]
+            ax.add_patch(plt.Rectangle((dx + local - half, y0), crossing["thickness"], y1 - y0,
+                                       facecolor="#374151", edgecolor="none", zorder=3))
+        ax.text(dx - 200, (y0 + y1) / 2, level.label, fontsize=5, ha="right", va="center")
+    stack_top = stack.stack_top()
+    ax.plot([dx, dx + width], [stack_top, stack_top], color="black", linewidth=0.8)
+    ax.plot([dx - 1000, dx + width + 1000], [0, 0], color="#9ca3af", linewidth=0.6)
+    ax.text(dx, -600, f"{cut.label} KESITI", fontsize=7, color="#111827", ha="left", va="top")
+
+
 def generate_preview(context_path: Path = DEFAULT_CONTEXT_PATH, output_path: Path = DEFAULT_OUTPUT_PATH) -> Path:
     context = load_json(context_path)
     meta = context["meta"]
@@ -323,23 +402,54 @@ def generate_preview(context_path: Path = DEFAULT_CONTEXT_PATH, output_path: Pat
         # Kapak paftasi, DXF'te oldugu gibi ilk paftadir (bkz. generate_dxf.py::generate).
         # Kapak blogunun dusey konumu paylasilan mutlak pafta araligina baglidir,
         # bu yuzden Sheet ayni content_ranges ile burada da kurulur.
+        scale = meta.get("scale", "1:100")
+        units = meta.get("units", "mm")
+        sections = resolve_sections(context)
+        elevation_lookup = {e["id"]: e for e in context["elevations"]}
         content_ranges = [(0.0, floor_depth) for _ in context["floors"]]
         for elevation in context["elevations"]:
             content_ranges.append(elevation_vertical_extent(elevation))
-        sheet = Sheet(meta.get("scale", "1:100"), 350.0, [], content_ranges)
+        for cut in sections:
+            content_ranges.append(section_vertical_extent(cut, elevation_lookup))
+        sheet = Sheet(scale, 350.0, [], content_ranges)
+        scale_bar = ScaleBar(scale, units)
+        sheet_margin = to_modelspace(10.0, parse_scale_denominator(scale))
+        north_angle = meta.get("north_angle")
         # Kapak paftasinin dis cercevesi kapak genisligi kadardir (padding yok).
         cursor = draw_cover(ax, meta, cursor, sheet, context["floors"]) + FRAME_HALF_WIDTH
         for floor in context["floors"]:
             draw_floor(ax, floor, cursor)
             if grid:
                 draw_axes_on_floor(ax, grid, cursor, floor_width, floor_depth)
+            for cut in sections:
+                draw_cut_marker_preview(ax, cut, cursor, floor_width, floor_depth)
+            center_x = cursor + floor_width / 2.0
+            bar_y0 = floor_depth + sheet_margin
+            draw_scale_bar_preview(ax, scale_bar, center_x - scale_bar.total_length / 2.0, bar_y0)
+            if north_angle is not None:
+                north_arrow = NorthArrow(scale)
+                arrow_center = (center_x, bar_y0 + scale_bar.total_height + sheet_margin + north_arrow.radius)
+                draw_north_arrow_preview(ax, arrow_center, north_angle, north_arrow.radius)
             cursor += floor_width + 2 * FRAME_HALF_WIDTH
         for elevation in context["elevations"]:
             draw_elevation(ax, elevation, cursor)
+            y_bottom, y_top = elevation_vertical_extent(elevation)
             if grid:
-                y_bottom, y_top = elevation_vertical_extent(elevation)
                 draw_axes_on_elevation(ax, grid, cursor, elevation.get("axis_source"), y_bottom, y_top)
+            draw_scale_bar_preview(
+                ax, scale_bar, cursor + elevation["width"] / 2.0 - scale_bar.total_length / 2.0,
+                y_top + sheet_margin)
             cursor += elevation["width"] + 2 * FRAME_HALF_WIDTH
+        for cut in sections:
+            width = cut.width_for(floor_width, floor_depth)
+            draw_section_preview(ax, cut, context["floors"], elevation_lookup, cursor, width)
+            y_bottom, y_top = section_vertical_extent(cut, elevation_lookup)
+            if grid:
+                draw_axes_on_elevation(ax, grid, cursor, cut.axis_source, y_bottom, y_top)
+            draw_scale_bar_preview(
+                ax, scale_bar, cursor + width / 2.0 - scale_bar.total_length / 2.0,
+                y_top + sheet_margin)
+            cursor += width + 2 * FRAME_HALF_WIDTH
     else:
         # eski tek-daire (duz) sema geriye-donuk uyumluluk
         draw_floor(ax, context, 0.0)
