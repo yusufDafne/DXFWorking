@@ -74,31 +74,60 @@ class AxisGrid:
             gap=self.standard.dimension_gap,
         )
 
+    def _total_offset(self, edge: float, dim: float) -> float:
+        """En uctaki aks-zincirinin baseline'i: aksin KENDI baloncuk/uzama
+        bolgesinin OTESINDE durur (bkz. `AxisDrawingStandard.
+        total_dimension_clearance`), `dim`in `edge`e gore hangi yonde
+        oldugu (isaret) korunarak."""
+        direction = 1.0 if dim >= edge else -1.0
+        return edge + direction * (
+            self.standard.extension + self.standard.bubble_radius
+            + self.standard.total_dimension_clearance
+        )
+
     def _dim_chain_x(self, msp, xs: list[float], edge_y: float, dim_y: float) -> None:
         if len(xs) < 2:
             return
-        chain = DimensionChain.horizontal(xs, edge_y, dim_y, self._dimension_style(),
-                                          label="aks/x")
-        ChainLayout.place(
-            [chain],
-            (min(xs) - self.standard.dimension_extension,
-             min(dim_y, edge_y) - self.standard.dimension_extension,
-             max(xs) + self.standard.dimension_extension,
-             max(dim_y, edge_y) + self.standard.dimension_extension),
-        )[0].render(msp, edge_y)
+        style = self._dimension_style()
+        chains = [DimensionChain.horizontal(xs, edge_y, dim_y, style, label="aks/x")]
+        farthest = dim_y
+        # Ardisik aks mesafeleri ile en uctaki-aks toplami AYNI sayidir
+        # (tek segmentli zincirde) - o zaman ikinci zinciri cizmek gereksiz
+        # tekrar olurdu (kullanici: "akslar arası mesafeler VE ikinci
+        # olarak en uçtaki aksların arasındaki mesafe" - iki farkli bilgi).
+        if len(xs) > 2:
+            total_dim_y = self._total_offset(edge_y, dim_y)
+            chains.append(DimensionChain.horizontal(
+                [min(xs), max(xs)], edge_y, total_dim_y, style, label="aks/x-toplam"))
+            farthest = total_dim_y
+        bounds = (
+            min(xs) - self.standard.dimension_extension,
+            min(farthest, edge_y) - self.standard.dimension_extension,
+            max(xs) + self.standard.dimension_extension,
+            max(farthest, edge_y) + self.standard.dimension_extension,
+        )
+        for chain in ChainLayout.place(chains, bounds):
+            chain.render(msp, edge_y)
 
     def _dim_chain_y(self, msp, ys: list[float], edge_x: float, dim_x: float) -> None:
         if len(ys) < 2:
             return
-        chain = DimensionChain.vertical(ys, edge_x, dim_x, self._dimension_style(),
-                                        label="aks/y")
-        ChainLayout.place(
-            [chain],
-            (min(dim_x, edge_x) - self.standard.dimension_extension,
-             min(ys) - self.standard.dimension_extension,
-             max(dim_x, edge_x) + self.standard.dimension_extension,
-             max(ys) + self.standard.dimension_extension),
-        )[0].render(msp, edge_x)
+        style = self._dimension_style()
+        chains = [DimensionChain.vertical(ys, edge_x, dim_x, style, label="aks/y")]
+        farthest = dim_x
+        if len(ys) > 2:
+            total_dim_x = self._total_offset(edge_x, dim_x)
+            chains.append(DimensionChain.vertical(
+                [min(ys), max(ys)], edge_x, total_dim_x, style, label="aks/y-toplam"))
+            farthest = total_dim_x
+        bounds = (
+            min(farthest, edge_x) - self.standard.dimension_extension,
+            min(ys) - self.standard.dimension_extension,
+            max(farthest, edge_x) + self.standard.dimension_extension,
+            max(ys) + self.standard.dimension_extension,
+        )
+        for chain in ChainLayout.place(chains, bounds):
+            chain.render(msp, edge_x)
 
     def _draw_family(self, msp, axes: list[Axis], full_low: float, full_high: float,
                      to_point) -> None:

@@ -1,24 +1,24 @@
 {
   "source": "golden/minimal",
-  "entity_count": 259,
+  "entity_count": 210,
   "entity_types": {
     "ARC": 1,
     "ATTRIB": 6,
     "CIRCLE": 26,
-    "DIMENSION": 8,
+    "DIMENSION": 11,
     "HATCH": 5,
     "INSERT": 2,
-    "LINE": 91,
+    "LINE": 63,
     "LWPOLYLINE": 24,
-    "TEXT": 96
+    "TEXT": 72
   },
   "layers": {
-    "AKS": 73,
-    "CERCEVE": 64,
+    "AKS": 76,
+    "CERCEVE": 36,
     "DUVARLAR": 24,
     "KAPI-PENCERE": 7,
     "KESIT": 10,
-    "METIN": 71,
+    "METIN": 47,
     "OLCU": 10
   },
   "modelspace_bbox": [

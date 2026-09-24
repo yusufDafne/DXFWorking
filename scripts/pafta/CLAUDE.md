@@ -188,42 +188,27 @@ genel `width + 2*(padding+frame_gap)` formülü bu pafta için GEÇERSİZDİR;
 doğrudan oraya oturtulur. Kapak bloğu da diğer her içerik gibi `content_entities`'e dahil
 edilir, yani `Sheet.draw`'ın taşma kontrolünden geçer.
 
-## `ScaleBar` — grafik ölçek çubuğu (rev-17, DEV-025)
+## `ScaleBar` KALDIRILDI (rev-17'de eklendi, rev-18'de geri alındı)
 
-Modülün TEK istisnası (bkz. dosya başındaki "SORUMLULUK SINIRI" notu):
-duvar/oda/aks çizim mantığı bu modüle KARIŞMAZ ama `ScaleBar`, `meta.scale`
-dışında hiçbir pafta-özel bilgiye ihtiyaç duymayan saf bir ölçek türevi
-olduğu için buraya eklendi (kuzey oku, FARKLI bir standart/Protocol
-gerektirdiği için `scripts/northarrow/`de AYRI bir moduldedir — bkz. o
-modülün `CLAUDE.md`'si "İlişkili özellik" bölümü).
-
-- `nice_scale_length_m(scale_denominator, target_printed_mm)`: hedef basılı
-  genişliğe (~20mm) EN YAKIN "nice" (1-2-5 serisi) gerçek-dünya metre
-  değeri — 1:50→1m, 1:100→2m, 1:200→5m, 1:500→10m (elle hesaplanabilir).
-- `format_scale_value(value_m)`: tam sayıysa ondalıksız ('1'), değilse en
-  fazla 2 ondalık ('0.5') — kök `CLAUDE.md`'deki "ölçü metni tam sayı cm"
-  kuralıyla KARIŞTIRILMAZ, bu bir grafik ölçek LEJANTIDIR, gerçek bir ÖLÇÜ
-  (dimension) metni değildir.
-- `ScaleBar(scale, units)`: 5 segmentlik çubuk; `.draw(msp, x0, y0)` taban
-  çizgisinin `y0`sinin **ÜSTÜNE** (pozitif Y) çizer, toplam genişliği
-  döndürür. Basılı çıktı küçültülüp/çoğaltılsa bile (fotokopi/PDF) doğru
-  ölçüyü korur — yazılı "ÖLÇEK 1:50" metninin aksine YANILTMAZ.
-
-**Yerleşim** (`generate_dxf.py`'nin kararı, kuzey oku ile AYNI mantık):
-her kat/görünüş/kesit paftasının kuzey/üst kenarındaki padding bölgesinde,
-paftanın genişliğinin TAM ORTASINDA — aks baloncuklarından uzak durmak
-için (bkz. `scripts/northarrow/CLAUDE.md` "Yerleşim").
+rev-17'de (DEV-025) burada bir `ScaleBar` (grafik ölçek çubuğu) sınıfı
+vardı: `meta.scale`den türeyen, her pafta üzerine 5 segmentlik bir cetvel
+çizen bir sunum ögesi. Kullanıcı bunu üretilen çıktıda görüp geri
+bildirimde bulundu ("her pafta içerisinde ölçek gibi bir şey var, 0-5 arası
+değerler ile birlikte, onu istemiyorum, kaldır") ve rev-18'de sınıf +
+`nice_scale_length_m`/`format_scale_value` yardımcıları TAMAMEN
+KALDIRILDI (`generate_dxf.py`/`preview.py`'deki çağrı yerleri, ilgili
+selftest grupları ve bu bölüm dahil). Kuzey oku (`scripts/northarrow/`)
+bundan etkilenmedi — bkz. o modülün `CLAUDE.md`'si. Bu modülün
+"SORUMLULUK SINIRI"ndaki eski istisna notu da bu yüzden kaldırıldı; modül
+artık yeniden SADECE pafta çerçevesi + başlık kutusu + taşma kontrolü +
+kağıt boyutu hesaplarından sorumludur.
 
 ## Test/doğrulama yaklaşımı
 
 `Sheet`/`CoverBlock`/`PaperSizePlanner` için regresyon test dosyası yok
 (proje küçük ölçekli, elle görsel doğrulama yapılıyor) — bu HALA geçerli
-bir bilinen boşluktur. `ScaleBar`/`nice_scale_length_m`/`format_scale_
-value` İSTİSNADIR: bunlar `scripts/northarrow/selftest.py` içinde elle
-hesaplanabilir testlerle sınanır (aynı DEV-025 kullanıcı talebinin iki
-parçası olduğu için test dosyası da birlikte tutuldu, bkz. o modülün
-`CLAUDE.md`'si). `Sheet` tarafı için bu modülde değişiklik yapan bir ajan
-şunu doğrulamalı:
+bir bilinen boşluktur. `Sheet` tarafı için bu modülde değişiklik yapan bir
+ajan şunu doğrulamalı:
 
 1. `python scripts/generate_dxf.py` hatasız tamamlanmalı (özellikle
    `PaftaOverflowError` fırlamamalı).

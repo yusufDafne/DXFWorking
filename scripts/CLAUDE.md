@@ -58,9 +58,9 @@ kalanını bilmeye ihtiyaç duymadan o modül üzerinde derinlemesine/izole
   ailesine paraleldir (kullanıcı kararı); veri hiç verilmezse X+Y'den
   birer varsayılan kesit üretilir.
 - ✅ **`scripts/northarrow/`** — `NorthArrow`, `NorthArrowStyle` Protocol'ü
-  (bkz. `HD-011`). Grafik ölçek çubuğu (`ScaleBar`) AYNI kullanıcı talebinin
-  parçası olsa da farklı bir sorumluluk sınırında olduğu için
-  `scripts/pafta/`e eklendi (bkz. o modülün CLAUDE.md'si).
+  (bkz. `HD-011`). rev-17'de AYNI talebin parçası olarak `pafta/`e eklenen
+  grafik ölçek çubuğu (`ScaleBar`), kullanıcı geri bildirimiyle rev-18'de
+  KALDIRILDI (bkz. `HD-012`) — bu modül etkilenmedi.
 
 ## Modül bağımsızlığı ve çapraz kontrol (kullanıcı ilkesi)
 
@@ -179,7 +179,7 @@ Ortak desen (pafta + walls ile kanitlandi):
 
 | Modul         | Cekirdek siniflar (gercek public API)                                      | Durum                                                          |
 | ------------- | -------------------------------------------------------------------------- | -------------------------------------------------------------- |
-| `pafta/`      | `Sheet`, `PaperSizePlanner`, `CoverBlock`, `PaftaOverflowError`, `ScaleBar`, `nice_scale_length_m`, `format_scale_value` | UYGULANDI; uniform template + keyplan bekliyor; ScaleBar rev-17 |
+| `pafta/`      | `Sheet`, `PaperSizePlanner`, `CoverBlock`, `PaftaOverflowError` | UYGULANDI; uniform template + keyplan bekliyor; `ScaleBar` rev-17'de eklendi, rev-18'de kullanici talebiyle KALDIRILDI |
 | `walls/`      | `Wall`, `WallNetwork`, `WallCatalog`, `RoomPolygonScanner`, `RailDrawingStandard`, `CatalogRailStandard` | UYGULANDI (rev-15); kind-farkindali rail standardi |
 | `axis/`       | `AxisGrid`, `AxisDrawingStandard`, `Axis`, `AxisCoverageReport`, `check_labels` | UYGULANDI; kismi/ara aks + etiket kurali (rev-13)          |
 | `openings/`   | `Opening`, `Door`, `Window`, `OpeningSymbolStyle`, `OpeningSchedule`, `SwingGeometry`, `swing_geometry`, `DOOR_SYMBOLS`, `ARCS_PER_VARIANT` | UYGULANDI; 4 varyant + swing/host_side (rev-13) |

@@ -1,8 +1,10 @@
 # northarrow modülü (kuzey oku) — DEV-025 tamamlandı
 
-Kat paftalarına standart bir kuzey yön sembolü çizer. Grafik ölçek çubuğu
-(aynı DEV-025 kullanıcı talebinin İKİNCİ parçası) **bu modülde DEĞİL**,
-`scripts/pafta::ScaleBar`dedir — bkz. "İlişkili özellik: ScaleBar" aşağıda.
+Kat paftalarına standart bir kuzey yön sembolü çizer. rev-17'de AYNI
+DEV-025 talebinin ikinci parçası olarak `scripts/pafta::ScaleBar` (grafik
+ölçek çubuğu) da eklenmişti; kullanıcı geri bildirimiyle rev-18'de
+KALDIRILDI (bkz. `docs/development/DEVELOPMENT_HISTORY.md` HD-012 ve
+`scripts/pafta/CLAUDE.md`). Bu modül ve kuzey oku bundan etkilenmedi.
 
 ## Neden ayrı bir modül (kullanıcı kararı)
 
@@ -54,37 +56,13 @@ benzer bir çakışmayı (rev-13, aks baloncuğu ↔ başlık kutusu) KABA bir
 padding artışıyla çözmüştü, bu modül de aynı sınıf pragmatik yaklaşımı
 izler (per-konum kaçınma yerine "güvenli bölge" seçimi).
 
-## İlişkili özellik: `ScaleBar` (neden `pafta`de, burada değil)
-
-Grafik ölçek çubuğu SADECE `to_modelspace`/`parse_scale_denominator`e
-(yani `meta.scale`ye) ihtiyaç duyar — kuzey yönüyle hiçbir ilgisi yoktur.
-Bu matematik zaten `scripts/pafta/`de yaşadığı için (`CoverBlock`,
-`PaperSizePlanner` ile AYNI "ölçekten türetme" ailesi) yeni bir modül
-GEREKMEDEN oraya eklendi (`ScaleBar`, `nice_scale_length_m`,
-`format_scale_value`). **Test yeri:** `scripts/northarrow/selftest.py`
-İKİSİNİ de sınar (aynı DEV-025 kullanıcı talebinin iki parçası); `pafta`
-modülünün henüz kendi `selftest.py`si yok (mevcut bir boşluk, bu görevle
-açılmadı).
-
-`ScaleBar.segment_m`, hedef basılı genişliğe (~20mm,
-`PRINTED_TARGET_SEGMENT_MM`) EN YAKIN "nice" (1-2-5 serisi) gerçek-dünya
-metre değeridir — 1:50'de 1m, 1:100'de 2m, 1:200'de 5m, 1:500'de 10m (elle
-hesaplanabilir, bkz. `nice_scale_length_m` docstring'i). Etiketler METRE
-gösterir; bu, kök `CLAUDE.md`'deki "ölçü metni tam sayı cm" kuralıyla
-KARIŞTIRILMAZ — o gerçek bir ÖLÇÜ (dimension) metnidir, bu bir grafik ölçek
-LEJANTIDIR (farklı endüstri konvansiyonu).
-
 ## Public API
 
 ```python
 from northarrow import NorthArrow, NorthArrowStyle, DefaultNorthArrowStyle, rotate_point
-from pafta import ScaleBar, nice_scale_length_m, format_scale_value
 
 arrow = NorthArrow(scale)          # varsayilan stil
 arrow.draw(msp, center, angle_deg)
-
-bar = ScaleBar(scale, units)
-bar.draw(msp, x0, y0)              # taban y0'nin USTUNE cizer, toplam genisligi dondurur
 ```
 
 ## Çakışma denetimi
@@ -98,8 +76,7 @@ ilişkisi yoktur.
 `python scripts/northarrow/selftest.py` — `rotate_point` elle hesaplanabilir
 4 kardinal nokta, yarıçapın ölçekle DOĞRUSAL türediği (1:100 = 1:50'nin 2
 katı), varsayılan stilin varlık sayısı, ÖZEL bir stilin enjekte
-edilebildiği (sahte stil test çiftiyle), `nice_scale_length_m`/`ScaleBar`in
-elle hesaplanabilir sonuçları.
+edilebildiği (sahte stil test çiftiyle).
 
 ## Bilinen sınırlamalar
 
@@ -107,6 +84,4 @@ elle hesaplanabilir sonuçları.
   "Yerleşim").
 - **Elevations/sections'a kuzey oku çizilmez** (kullanıcı isteği örtük
   kaldı, ama mantık açık: kuzey bir PLAN/vaziyet kavramıdır, düşey bir
-  görünüşte/kesitte yönü göstermenin standart bir karşılığı yoktur). Grafik
-  ölçek çubuğu ise (ScaleBar) HER ölçekli çizimde (kat planı + görünüş +
-  kesit) çizilir.
+  görünüşte/kesitte yönü göstermenin standart bir karşılığı yoktur).

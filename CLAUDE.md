@@ -273,7 +273,7 @@ geliştirme görevleri, tamamlanmış geçmiş, fikirler ve geliştirici notlar�
   (`SectionFeatureHook` Protocol'ü) hazırdır ama bugün hiçbir proje verisi
   bunu tetiklemez. Ayrıntı: `scripts/sections/CLAUDE.md`.
 
-## Kuzey oku ve grafik ölçek çubuğu (rev-17'den itibaren)
+## Kuzey oku (rev-17'den itibaren)
 
 - Her kat paftasına, binanın gerçek kuzeye göre yönünü gösteren standart
   bir **kuzey oku** sembolü çizilir. Veri `meta.north_angle` (derece, saat
@@ -284,15 +284,12 @@ geliştirme görevleri, tamamlanmış geçmiş, fikirler ve geliştirici notlar�
   sembol tasarımına geçilmesi `NorthArrow(style=...)` ile enjekte edilir,
   çağıran taraf (`generate_dxf.py`) değişmez (`RailDrawingStandard` ile
   AYNI desen, kullanıcı kararı: "entegrasyon zor olmasın").
-- Her ölçekli çizime (kat planı + görünüş + kesit) `meta.scale`den
-  türetilen bir **grafik ölçek çubuğu** çizilir — bu, basılı çıktı
-  küçültülüp/çoğaltılsa bile (fotokopi/PDF) doğru ölçüyü korur, yazılı
-  "ÖLÇEK 1:50" metninin aksine yanıltmaz. Segment uzunluğu hedef basılı
-  genişliğe (~20mm) en yakın "nice" (1-2-5 serisi) bir gerçek-dünya metre
-  değeridir (1:50→1m, 1:100→2m, 1:200→5m, 1:500→10m). Uygulaması
-  `scripts/pafta::ScaleBar`dır (kuzey okundan AYRI bir sorumluluk sınırında
-  olduğu için `pafta/` içinde yaşar, YENİ bir modül gerektirmez). Ayrıntı:
-  `scripts/northarrow/CLAUDE.md`.
+- **rev-18 düzeltmesi:** rev-17'de AYNI talebin parçası olarak eklenen
+  grafik ölçek çubuğu (`pafta::ScaleBar`, her paftaya 0-5 arası basamaklı
+  bir cetvel çizen özellik) kullanıcı geri bildirimiyle ("her pafta
+  içerisinde ölçek gibi bir şey var ... onu istemiyorum, kaldır") TAMAMEN
+  KALDIRILDI — bkz. `docs/development/DEVELOPMENT_HISTORY.md` HD-012. Kuzey
+  oku bundan etkilenmedi. Ayrıntı: `scripts/northarrow/CLAUDE.md`.
 
 ## Çok katli bina yapisi (rev-2 tarihsel notu; güncel pafta kuralları geçerlidir)
 
@@ -358,7 +355,13 @@ guncellenir.
   tutmak olurdu (duvar taşınır, ölçü metni eski kalır). Bu, "ölçü uydurulmaz"
   kuralını DELMEZ — sayı uydurulmuyor, ölçülüyor.
   - **Hangi kenarın ölçüleneceği bir SUNUM kararıdır** ve `meta.dimensions`
-    ile gelir. Varsayılan KAPALIDIR; bu projede açıktır.
+    ile gelir. Varsayılan KAPALIDIR; bu proje rev-13—rev-17 arası açık
+    tuttu, **rev-18'de kullanıcı talebiyle yeniden KAPALIYA çekildi**
+    ("duvar ölçüleri sistem üzerinde şimdilik hiçbir yerde
+    gösterilmeyecek" — bkz. "Aks (grid) sistemi" bölümündeki "Aks arası
+    mesafeler" notu). Özellik KALDIRILMADI, sadece bu projenin sunum
+    ayarı varsayılana döndü; `golden/aciklik_varyantlari` açık haliyle
+    sınamaya devam eder.
   - Üç kademe, **içten dışa doğru kabalaşır**: `aciklik` (cephedeki
     kapı/pencere kenarları) → `mahal` (dik duvarların **yüzleri**: net mahal +
     duvar kalınlığı) → `toplam` (dıştan dışa). Üçü de aynı ordinatlarda
@@ -631,11 +634,30 @@ guncellenir.
     `PAFTA_MARGIN` bu mesafeye göre büyük tutulur. Komşu paftaların
     baloncukları/çerçeveleri çakışmamalıdır; ardışık pafta yerleşimi güncel
     `Sheet` ve `generate_dxf.py::generate` sözleşmesine göre yapılır.
-  - **Aks arası mesafeler:** Ardışık akslar arasındaki mesafe, gerçek bir
-    DXF `LINEAR DIMENSION` (ölçü) varlığıyla, **küçük punto** (`AKS`
-    katmanı, ~120mm) ve **tam sayı cm** metniyle gösterilir
+  - **Aks arası mesafeler (rev-18'de netleştirildi):** Ardışık akslar
+    arasındaki mesafe, gerçek bir DXF `LINEAR DIMENSION` (ölçü) varlığıyla,
+    **küçük punto** (~120mm) ve **tam sayı cm** metniyle gösterilir
     (`AxisGrid._dim_chain_x/_dim_chain_y`). Bu, aks sınıfına ait bir
-    fonksiyondur, ayrı bir "ölçülendirme" akışı değildir.
+    fonksiyondur, ayrı bir "ölçülendirme" akışı değildir. **Kullanıcı
+    kararı (rev-18):** bu ölçü zinciri, çizgileri/oku/metniyle **AKS ile
+    AYNI katmandadır** (`ezdxf`'in `add_linear_dim` render'ının ölçü/uzatma
+    çizgilerini DIMENSION'ın katmanından bağımsız olarak "0" katmanına
+    çizdiği bir kütüphane hatası vardı — render sonrası düzeltilir, bkz.
+    `scripts/dimensions/linear.py::_fix_geometry_block_layer`) ve **iki
+    bilgiyi birlikte gösterir:** (1) ardışık aks-aks mesafeleri, (2) bir
+    kenarda 2'den fazla aks varsa, ayrıca **en uçtaki iki aksın arasındaki
+    TOPLAM mesafe** — bu ikinci zincir aksın kendi baloncuk/uzama
+    bölgesinin ötesinde durur (`AxisDrawingStandard.total_dimension_
+    clearance`). **Duvar/oda ölçüleri (`meta.dimensions` — aciklik/mahal/
+    toplam kademeleri) aks ölçüsünün yanında GÖSTERİLMEZ:** kullanıcı,
+    kademelerden birinin (mahal) ara sıra bir duvarın SADECE kalınlığı
+    kadar bir segment ürettiğini ("duvarların kalınlıklarını ...
+    göstermemeli, bu kafa karıştırır") ve bunun aks ölçüsüyle yan yana
+    kafa karıştırıcı olduğunu bildirdi; bu yüzden bu proje `meta.
+    dimensions.enabled`'ı **`false`ya çekti** (rev-18) — özellik
+    `scripts/dimensions/` içinde hâlâ vardır ve `golden/aciklik_varyantlari`
+    onu sınamaya devam eder, sadece bu projede şimdilik KAPALIDIR
+    ("duvar ölçüleri sistem üzerinde şimdilik hiçbir yerde gösterilmeyecek").
   - Aks konumları **tüm kat paftalarında aynıdır** (bina boyunca sabit) —
     farklı kat tiplerinin iç bölmeleri farklı olsa da (daire/dükkan/otopark)
     dış cephe ve çekirdek (asansör/merdiven) konumu her katta ortak

@@ -166,6 +166,13 @@ def check_section_sheet_entity_count() -> list[str]:
     hatches = list(msp.query("HATCH"))
     if len(hatches) != 4:
         errors.append(f"4 HATCH (2 kat * 2 dis duvar) bekleniyordu, {len(hatches)} bulundu.")
+    # rev-18: `hatch.set_pattern_fill("SOLID")` GERCEK bir solid fill
+    # DEGILDI - "SOLID" adiyla bir PATTERN aranip cok yogun (spacing~0.125)
+    # bir cizgi deseni uygulaniyordu (AutoCAD'in actigi acilan proje icin
+    # "Large, Dense Hatch Patterns" uyarisinin KOKENI). `set_solid_fill()`
+    # dogru API'dir; `dxf.solid_fill` 1 OLMALIDIR.
+    if any(h.dxf.solid_fill != 1 for h in hatches):
+        errors.append("En az bir kesit HATCH'i GERCEK solid_fill DEGIL (yogun cizgi deseni riski).")
     return errors
 
 
@@ -191,7 +198,7 @@ def check_cut_marker_draws_expected_entities() -> list[str]:
         doc.layers.add(name)
     msp = doc.modelspace()
     draw_cut_marker_on_floor(msp, CUT, dx=0.0, floor_width=9000.0, floor_depth=9000.0,
-                             scale="1:50", label_height=150.0)
+                             scale="1:50")
     if len(msp) != 5:
         errors.append(f"5 varlik (1 cizgi + 2 ucgen + 2 metin) bekleniyordu, {len(msp)} bulundu.")
     texts = [e.dxf.text for e in msp.query("TEXT")]

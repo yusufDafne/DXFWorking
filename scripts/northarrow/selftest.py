@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Kuzey oku + grafik olcek cubugu testleri (DEV-025).
+"""Kuzey oku testleri (DEV-025).
+
+rev-18: bu modulun ayni revizyonda tanittigi `pafta::ScaleBar` (grafik
+olcek cubugu) kullanici geri bildirimiyle KALDIRILDI (bkz.
+DEVELOPMENT_HISTORY.md HD-012); bu dosya artik SADECE kuzey okunu sinar.
 
 Kullanim:
     python scripts/northarrow/selftest.py
@@ -15,7 +19,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import ezdxf  # noqa: E402
 
 from northarrow import DefaultNorthArrowStyle, NorthArrow, rotate_point  # noqa: E402
-from pafta import ScaleBar, format_scale_value, nice_scale_length_m  # noqa: E402
 
 TOLERANCE = 1e-6
 
@@ -86,72 +89,12 @@ def check_custom_style_is_injectable() -> list[str]:
     return []
 
 
-def check_nice_scale_length_hand_computable() -> list[str]:
-    """`pafta.nice_scale_length_m`: 1:50/1:100/1:200/1:500 icin elle
-    hesaplanabilir sonuclar (bkz. fonksiyon docstring'i)."""
-    errors: list[str] = []
-    cases = {50.0: 1.0, 100.0: 2.0, 200.0: 5.0, 500.0: 10.0}
-    for denom, expected in cases.items():
-        got = nice_scale_length_m(denom, target_printed_mm=20.0)
-        if abs(got - expected) > TOLERANCE:
-            errors.append(f"denom={denom}: {expected} bekleniyordu, {got} bulundu.")
-    return errors
-
-
-def check_scale_bar_printed_length_matches_target() -> list[str]:
-    """1:50'de segment_m=1.0 -> segment_length=1000mm (units=mm) -> basili
-    karsiligi 1000/50=20mm = HEDEFIN TAM KENDISI (elle hesaplanabilir)."""
-    errors: list[str] = []
-    bar = ScaleBar("1:50", units="mm")
-    if abs(bar.segment_length - 1000.0) > TOLERANCE:
-        errors.append(f"segment_length 1000 bekleniyordu, {bar.segment_length} bulundu.")
-    printed_mm = bar.segment_length / 50.0
-    if abs(printed_mm - 20.0) > TOLERANCE:
-        errors.append(f"basili segment 20mm bekleniyordu, {printed_mm} bulundu.")
-    if abs(bar.total_length - 5000.0) > TOLERANCE:
-        errors.append(f"toplam uzunluk (5 segment) 5000 bekleniyordu, {bar.total_length} bulundu.")
-    return errors
-
-
-def check_scale_bar_draws_expected_entities() -> list[str]:
-    """1 taban cizgisi + 6 tik (0..5 segment ucu) + 6 etiket = 13."""
-    errors: list[str] = []
-    doc = ezdxf.new()
-    doc.layers.add("CERCEVE")
-    doc.layers.add("METIN")
-    msp = doc.modelspace()
-    bar = ScaleBar("1:50", units="mm")
-    bar.draw(msp, 0.0, 0.0)
-    if len(msp) != 13:
-        errors.append(f"13 varlik bekleniyordu, {len(msp)} bulundu.")
-    texts = [e.dxf.text for e in msp.query("TEXT")]
-    if texts[-1] != "5 m":
-        errors.append(f"son etiket '5 m' bekleniyordu, {texts[-1]!r} bulundu.")
-    if texts[0] != "0":
-        errors.append(f"ilk etiket '0' bekleniyordu, {texts[0]!r} bulundu.")
-    return errors
-
-
-def check_format_scale_value() -> list[str]:
-    errors: list[str] = []
-    cases = {0.0: "0", 1.0: "1", 5.0: "5", 0.5: "0.5", 0.2: "0.2"}
-    for value, expected in cases.items():
-        got = format_scale_value(value)
-        if got != expected:
-            errors.append(f"{value}: '{expected}' bekleniyordu, '{got}' bulundu.")
-    return errors
-
-
 def main() -> int:
     groups = (
         ("rotate_point (saat yonu, 4 kardinal nokta)", check_rotate_point_hand_computable()),
         ("NorthArrow yaricapi olcekle dogrusal turer", check_north_arrow_scales_with_denominator()),
         ("NorthArrow varsayilan varlik sayisi", check_north_arrow_draws_expected_entities()),
         ("ozel stil enjekte edilebilir (Protocol)", check_custom_style_is_injectable()),
-        ("nice_scale_length_m elle hesaplanabilir", check_nice_scale_length_hand_computable()),
-        ("ScaleBar basili uzunlugu hedefle esler", check_scale_bar_printed_length_matches_target()),
-        ("ScaleBar varlik sayisi + etiketler", check_scale_bar_draws_expected_entities()),
-        ("format_scale_value", check_format_scale_value()),
     )
     failed = False
     for name, errors in groups:
@@ -163,9 +106,9 @@ def main() -> int:
         else:
             print(f"[OK  ] {name}")
     if failed:
-        print("\nKUZEY OKU / OLCEK CUBUGU SELF-TEST BASARISIZ.")
+        print("\nKUZEY OKU SELF-TEST BASARISIZ.")
         return 1
-    print("\nKuzey oku / olcek cubugu self-test BASARILI.")
+    print("\nKuzey oku self-test BASARILI.")
     return 0
 
 

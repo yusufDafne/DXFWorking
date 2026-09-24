@@ -56,7 +56,6 @@ from pafta import (  # noqa: E402  (once sys.path ayarlanmali)
     FRAME_GAP,
     PaftaOverflowError,
     PaperSizePlanner,
-    ScaleBar,
     Sheet,
     fit_text_height,
     fit_uniform_text_height,
@@ -311,7 +310,7 @@ def draw_floor_sheet(msp, floor: dict, dx: float, units: str, floor_width: float
                       column_hatch_style: ColumnHatchStyle,
                       column_label_style: ColumnLabelStyle,
                       dimension_settings: DimensionSettings,
-                      scale: str, scale_bar: ScaleBar, sheet_margin: float,
+                      scale: str, sheet_margin: float,
                       north_arrow: NorthArrow | None, north_angle: float | None,
                       sections: list) -> None:
     content_start = len(msp)
@@ -376,19 +375,17 @@ def draw_floor_sheet(msp, floor: dict, dx: float, units: str, floor_width: float
     # ama NEREDEN kesildigi HER kat paftasinda (aks izgarasiyla ayni konumda,
     # tum katlarda ortak) bir cizgi + ucgen isaretle gosterilir.
     for cut in sections:
-        draw_cut_marker_on_floor(msp, cut, dx, floor_width, floor_depth, scale,
-                                 label_height=scale_bar.label_height)
+        draw_cut_marker_on_floor(msp, cut, dx, floor_width, floor_depth, scale)
 
-    # Kuzey oku + grafik olcek cubugu (DEV-025): pafta IC cizgisinden itibaren
-    # birakilan bosluga (CONTENT_PADDING), aks baloncuklarindan uzak durmak
-    # icin kat GENISLIGININ ORTASINA (aks konumlari genelde kenar/uctedir,
-    # bkz. scripts/northarrow/CLAUDE.md 'Yerlesim') yerlestirilir.
-    center_x = dx + floor_width / 2.0
-    bar_x0 = center_x - scale_bar.total_length / 2.0
-    bar_y0 = floor_depth + sheet_margin
-    scale_bar.draw(msp, bar_x0, bar_y0)
+    # Kuzey oku (DEV-025): pafta IC cizgisinden itibaren birakilan bosluga
+    # (CONTENT_PADDING), aks baloncuklarindan uzak durmak icin kat
+    # GENISLIGININ ORTASINA (aks konumlari genelde kenar/uctedir, bkz.
+    # scripts/northarrow/CLAUDE.md 'Yerlesim') yerlestirilir. (rev-18: bu
+    # konumdaki grafik olcek cubugu kullanici talebiyle KALDIRILDI - bkz.
+    # DEVELOPMENT_HISTORY.md HD-012.)
     if north_arrow is not None:
-        arrow_center = (center_x, bar_y0 + scale_bar.total_height + sheet_margin + north_arrow.radius)
+        center_x = dx + floor_width / 2.0
+        arrow_center = (center_x, floor_depth + sheet_margin + north_arrow.radius)
         north_arrow.draw(msp, arrow_center, north_angle)
 
     content_entities = list(msp)[content_start:]
@@ -458,10 +455,9 @@ def generate(context_path: Path = DEFAULT_CONTEXT_PATH, output_path: Path = DEFA
 
     sheet = Sheet(scale, text_height, all_labels, content_ranges)
 
-    # Kuzey oku + grafik olcek cubugu (DEV-025): olcek cubugu HER ZAMAN
-    # cizilir (sadece meta.scale'den turetilir, veri uydurulmaz); kuzey oku
-    # SADECE meta.north_angle bildirilmisse cizilir (yon uydurulmaz).
-    scale_bar = ScaleBar(scale, units)
+    # Kuzey oku (DEV-025): SADECE meta.north_angle bildirilmisse cizilir
+    # (yon uydurulmaz). rev-18: bu ozelligin yaninda cizilen grafik olcek
+    # cubugu (ScaleBar) kullanici talebiyle KALDIRILDI.
     sheet_margin = to_modelspace(10.0, parse_scale_denominator(scale))
     north_angle = context["meta"].get("north_angle")
     north_arrow = NorthArrow(scale) if north_angle is not None else None
@@ -545,18 +541,14 @@ def generate(context_path: Path = DEFAULT_CONTEXT_PATH, output_path: Path = DEFA
         draw_floor_sheet(msp, floor, cursor, units, floor_width, floor_depth, text_height,
                          sheet, axis_grid, text_styles, furniture_catalog,
                          column_catalog, column_hatch_style, column_label_style,
-                         dimension_settings, scale, scale_bar, sheet_margin,
+                         dimension_settings, scale, sheet_margin,
                          north_arrow, north_angle, sections)
         cursor += floor_width + 2 * frame_half_width
 
     for elevation in elevations:
         content_start = len(msp)
         ElevationSheet.draw(msp, elevation, cursor, text_height, axis_grid, elevation_label_height)
-        # Grafik olcek cubugu (DEV-025): gorunusler de OLCEKLI cizimdir,
-        # bu yuzden kat paftalariyla AYNI standart burada da uygulanir.
         y_bottom, y_top = elevation_vertical_extent(elevation)
-        scale_bar.draw(msp, cursor + elevation["width"] / 2.0 - scale_bar.total_length / 2.0,
-                      y_top + sheet_margin)
         content_entities = list(msp)[content_start:]
         sheet.draw(msp, cursor, elevation["width"], y_bottom, y_top, elevation["label"], content_entities=content_entities)
         cursor += elevation["width"] + 2 * frame_half_width
@@ -567,8 +559,6 @@ def generate(context_path: Path = DEFAULT_CONTEXT_PATH, output_path: Path = DEFA
         SectionSheet.draw(msp, cut, floors, elevation_lookup, cursor, width,
                           elevation_label_height, axis_grid)
         y_bottom, y_top = section_vertical_extent(cut, elevation_lookup)
-        scale_bar.draw(msp, cursor + width / 2.0 - scale_bar.total_length / 2.0,
-                      y_top + sheet_margin)
         content_entities = list(msp)[content_start:]
         sheet.draw(msp, cursor, width, y_bottom, y_top, f"{cut.label} KESITI", content_entities=content_entities)
         cursor += width + 2 * frame_half_width

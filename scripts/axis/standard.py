@@ -34,6 +34,14 @@ class AxisDrawingStandard:
     # bir yere isaret ediyormus gibi okunur. Yalnizca baloncugun geometrinin
     # uzerine binmemesi kadar bir pay birakilir.
     partial_extension: float = 600.0
+    # En uctaki aksların arasindaki TOPLAM mesafe (rev-18, kullanici karari:
+    # "akslar arası mesafeler ve ikinci olarak en uçtaki aksların arasındaki
+    # mesafeyi vermeli"). Bu ikinci zincir, aksin KENDI baloncugunu/uzamasini
+    # (extension + bubble_radius) asip bu kadar OTESINDE durur - aksi halde
+    # bir kenarda uc aks varsa toplam zincirin uc ciziklerinin bubble'a
+    # girmesi riski olurdu (elle dogrulandi: extension+bubble_radius=1650,
+    # varsayilan dimension_offset*2=800 bunun ICINDE kalirdi).
+    total_dimension_clearance: float = 300.0
     linetype: str = AXIS_LINETYPE
     layer: str = AXIS_LAYER
     rgb: tuple[int, int, int] = AXIS_RGB

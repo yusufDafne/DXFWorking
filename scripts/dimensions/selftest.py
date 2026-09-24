@@ -17,6 +17,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+import ezdxf  # noqa: E402
+
 from dimensions import (  # noqa: E402
     AXIS_X,
     AXIS_Y,
@@ -24,8 +26,10 @@ from dimensions import (  # noqa: E402
     ChainStack,
     DimensionChain,
     DimensionSettings,
+    DimensionStyle,
     FloorDimensionPlanner,
     FloorOrdinates,
+    LinearDim,
     format_dimension_cm,
     merge_ordinates,
 )
@@ -187,11 +191,40 @@ def check_planner() -> list[str]:
     return errors
 
 
+def check_rendered_layer() -> list[str]:
+    """rev-18: ezdxf 1.4.4'un `BaseDimensionRenderer.add_line`'i, katman
+    dahil BIRLESMIS `attribs` sozlugunu hesaplayip ATAR ama geometri
+    BLOK'una orijinal (katmansiz) `dxfattribs`'i gecirir - sonuc, olcu/
+    uzatma cizgilerinin DIMENSION'in kendi katmanindan BAGIMSIZ olarak hep
+    '0' katmaninda cizilmesidir (kullanici sikayeti: 'aks çizgileri
+    ölçüleri aks çizgileri ile aynı layerda olmalı'). `LinearDim.render`
+    render SONRASI bir duzeltme uygular; bu test o duzeltmeyi GERCEK bir
+    ezdxf DIMENSION uzerinde dogrular - duzeltme kaldirilirsa bu test
+    YAKALAR (elle: LINE/ARC/INSERT/MTEXT hepsi 'AKS_TEST' olmali,
+    Defpoints ise KENDI ozel katmaninda kalmali)."""
+    errors: list[str] = []
+    doc = ezdxf.new()
+    doc.layers.add("AKS_TEST")
+    msp = doc.modelspace()
+    style = DimensionStyle(layer="AKS_TEST")
+    dimension = LinearDim((0.0, 0.0), (1000.0, 0.0), (0.0, -400.0), 0, style).render(msp)
+    block = doc.blocks.get(dimension.dxf.geometry)
+    stray = [e.dxftype() for e in block
+             if e.dxf.layer not in ("AKS_TEST", "Defpoints")]
+    if stray:
+        errors.append(f"Geometri blogunda AKS_TEST/Defpoints DISINDA katmanli "
+                      f"varlik bulundu: {stray}")
+    if not any(e.dxf.layer == "Defpoints" for e in block):
+        errors.append("Defpoints (tanim noktasi) katmani hic bulunamadi.")
+    return errors
+
+
 def main() -> int:
     groups = (
         ("ordinat turetme", check_ordinates()),
         ("kademelendirme (negatif test)", check_stack()),
         ("planlayici ve capraz nokta", check_planner()),
+        ("render sonrasi katman duzeltmesi (ezdxf hatasi)", check_rendered_layer()),
     )
     failed = False
     for name, errors in groups:

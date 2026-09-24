@@ -235,7 +235,7 @@ class SectionSheet:
                 half = crossing["thickness"] / 2.0
                 local = crossing["at"]
                 hatch = msp.add_hatch(dxfattribs={"layer": SECTION_LAYER})
-                hatch.set_pattern_fill("SOLID")
+                hatch.set_solid_fill()
                 quad = [(dx + local - half, y0), (dx + local + half, y0),
                         (dx + local + half, y1), (dx + local - half, y1)]
                 hatch.paths.add_polyline_path(quad, is_closed=True)
@@ -269,17 +269,20 @@ def _triangle(msp, base_center: tuple[float, float], point_dir: tuple[float, flo
 
 
 def draw_cut_marker_on_floor(msp, cut: SectionCutLine, dx: float, floor_width: float,
-                              floor_depth: float, scale: str, label_height: float) -> None:
+                              floor_depth: float, scale: str) -> None:
     """HER kat paftasinda (aks izgarasiyla AYNI konumda, tum katlarda ortak)
     kesit hattini + bakis yonu ucgenlerini + kesit harfini cizer (kullanici
     talebi: 'kesit çizgilerinin uçlarına ok işaretler (üçgenler) eklenir ve
     üçgenlerin sırtına da kesitin harfi yazılır'). Ucgenler kesit hattinin
     bina kenarindan disari tasan kisa bir 'stub'unun UCUNDA durur ve bina
     icine dogru (bakis yonu) isaret eder; harf, ucgenin SIRTINA (uctan
-    UZAK, disari bakan) yazilir."""
+    UZAK, disari bakan) yazilir. Etiket yuksekligi bu modulun KENDI olcek
+    turevidir (`PRINTED_MARKER_LABEL_MM`) - baska bir modulden (ScaleBar
+    vb.) ODUNC ALINMAZ, boylece bu fonksiyon tek basina cagrilabilir."""
     scale_denominator = parse_scale_denominator(scale)
     ext = to_modelspace(PRINTED_MARKER_EXTENSION_MM, scale_denominator)
     size = to_modelspace(PRINTED_MARKER_SIZE_MM, scale_denominator)
+    label_height = to_modelspace(PRINTED_MARKER_LABEL_MM, scale_denominator)
     ensure_section_cut_layer(msp.doc)
 
     if cut.axis_source == "vertical":

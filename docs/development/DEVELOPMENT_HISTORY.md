@@ -4,6 +4,118 @@ Aktif geçmiş kapasitesi: **50 kayıt**. En eski tamamlanmış kayıt, 51. kay�
 alınırken silinir. Ayrıntılı teknik değişiklikler git geçmişi ve ilgili proje
 provenance kayıtlarıyla ilişkilendirilir.
 
+## HD-012 — AutoCAD hatch uyarısı + aks ölçüsü düzeltmeleri, ScaleBar geri alındı
+
+- **Durum:** COMPLETED
+- **Tamamlanma:** 2026-09-24
+- **Kökeni:** Kullanıcı gerçek projeyi AutoCAD'de açtığında "Hatch - Large,
+  Dense Hatch Patterns" uyarısı aldığını bildirdi (ekran görüntüsüyle) ve
+  ayrıca üç ayrı düzeltme istedi: (1) her paftadaki 0-5 arası basamaklı
+  "ölçek gibi bir şey"in kaldırılması, (2) aks ölçü zincirinin AKS ile aynı
+  katmanda olması ve sadece aks-aks + en-uçtaki-toplam mesafeyi göstermesi,
+  (3) duvar kalınlığı gösteren ölçülerin aks ölçüsünün yanında (ve
+  şimdilik sistemde hiçbir yerde) gösterilmemesi.
+- **Kapsam:** `scripts/sections/__init__.py`, `scripts/dimensions/linear.py`,
+  `scripts/dimensions/selftest.py`, `scripts/axis/standard.py`,
+  `scripts/axis/grid.py`, `scripts/axis/selftest.py`,
+  `scripts/pafta/__init__.py`, `scripts/generate_dxf.py`,
+  `scripts/preview.py`, `scripts/northarrow/selftest.py`, `context.json`
+  (`meta.dimensions.enabled` → `false`).
+
+### Kök neden 1 — sahte "SOLID" hatch (AutoCAD uyarısının kaynağı)
+
+`scripts/sections/__init__.py`'deki kesit-duvar kesişimi dolgusu
+`hatch.set_pattern_fill("SOLID")` çağırıyordu — bu, GERÇEK bir solid-fill
+API'si DEĞİLDİR (`ezdxf`de o `hatch.set_solid_fill()`dür); `"SOLID"` bir
+PATTERN adı olarak arandı ve `pattern_scale=1.0`'da yaklaşık 0.125 birim
+(mm) aralıklı bir çizgi deseni uygulandı. Gerçek projedeki 86 kesit-dolgusu
+(250×4000mm'lik dikdörtgenler) bu yüzden HER BİRİ ~32.000 paralel çizgi
+gerektiriyordu — AutoCAD'in "Large, Dense Hatch Patterns" uyarısının
+BİREBİR kökeni buydu (elle doğrulanmış: `dxf.solid_fill=0`, `hatch.pattern`
+içinde `(-0.088, 0.088)` ofsetli tek bir çizgi tanımı). Düzeltme:
+`hatch.set_solid_fill()`. Regresyon testi:
+`scripts/sections/selftest.py::check_section_sheet_entity_count`
+(`dxf.solid_fill == 1` kontrolü).
+
+### Kök neden 2 — `ezdxf` 1.4.4'ün katman hatası (aks ölçüsü "0" katmanında)
+
+Kullanıcı "aks çizgileri ölçüleri aks çizgileri ile aynı layerda olmalı"
+dedi; incelemede aks (AKS) DIMENSION'larının OK ve METİN'i doğru katmanda
+ama ÖLÇÜ/UZATMA ÇİZGİLERİNİN hep `"0"` katmanında olduğu görüldü.
+Kaynağı: `ezdxf`nin `render/dim_base.py::BaseDimensionRenderer.add_line`i
+katman dahil BİRLEŞTİRİLMİŞ `attribs` sözlüğünü hesaplayıp sonra
+KULLANMADAN, orijinal (katmansız) `dxfattribs`i geometri bloğuna geçiriyor
+(ok/metin yolu birleşmiş sözlüğü doğru kullandığı için bu hatadan MUAF).
+Kütüphane kaynağı değiştirilemediği için `scripts/dimensions/linear.py::
+LinearDim.render` render SONRASI bir düzeltme uygular
+(`_fix_geometry_block_layer`): geometri bloğundaki `Defpoints` DIŞINDAKİ
+her varlığın katmanı `style.layer`e zorlanır. Regresyon testi:
+`scripts/dimensions/selftest.py::check_rendered_layer`.
+
+### Aks ölçüsü: en-uçtaki-toplam zinciri eklendi
+
+Kullanıcı kararı: *"akslar arası mesafeler ve ikinci olarak en uçtaki
+aksların arasındaki mesafeyi vermeli."* `AxisGrid._dim_chain_x/_dim_chain_y`
+artık, bir kenarda 2'den FAZLA aks varsa, ardışık-mesafe zincirinin YANINA
+`[min(xs), max(xs)]`ten tek-segmentli bir TOPLAM zinciri ekler; TAM 2 aks
+varsa bu ikisi ZATEN aynı sayı olacağından toplam zincir TEKRARLANMAZ.
+Toplam zincirin baseline'ı aksın kendi baloncuk/uzama bölgesinin
+(`extension + bubble_radius`) `total_dimension_clearance` (300mm) kadar
+ÖTESİNDE durur — aksi halde 3+ aks varlığında toplam zincirin ucu
+bubble'ın İÇİNE girebilirdi (elle doğrulandı). Regresyon testi:
+`scripts/axis/selftest.py::check_total_span_dimension` (3 aks + 2 aks →
+3+1=4 DIMENSION; bubble-clearance kontrolü).
+
+### Duvar/oda ölçüleri kaldırıldı (aks ölçüsünün yanında kafa karıştırıyordu)
+
+Kullanıcı: *"duvarların kalınlıklarını vs. aks ölçülerinin yanında
+göstermemeli bu kafa karıştırır, duvar ölçüleri sistem üzerinde şimdilik
+hiçbir yerde gösterilmeyecek."* Kök neden: `meta.dimensions`in `mahal`
+kademesi, bir bölme duvarının İKİ YÜZÜ arası (yani SADECE duvar kalınlığı)
+kadar bir segment üretebiliyordu; bu, oda ölçüleri arasında aks ölçüsüne
+yakın küçük ve şaşırtıcı bir sayı olarak görünüyordu. `dimensions` modülü
+(ve `aciklik`/`mahal`/`toplam` kademeleri) KALDIRILMADI — hâlâ
+`scripts/dimensions/` içinde vardır, `golden/aciklik_varyantlari` onu
+sınamaya devam eder — sadece gerçek projenin `context.json::meta.
+dimensions.enabled` alanı `true` → `false`ya çekildi (rev-13'ten beri
+açıktı, şimdi belgelenmiş varsayılana döndü).
+
+### ScaleBar tamamen kaldırıldı
+
+Kullanıcı: *"ilave olarak her pafta içerisinde ölçek gibi bir şey var,
+0-5 arası değerler ile birlikte, onu istemiyorum, kaldır."* Bu, rev-17'de
+(HD-011, DEV-025) AYNI talebin ikinci parçası olarak eklenen
+`pafta::ScaleBar` (+ `nice_scale_length_m`, `format_scale_value`) idi.
+Sınıf, `generate_dxf.py`/`preview.py`'deki tüm çağrı yerleri,
+`scripts/northarrow/selftest.py`'deki test grupları ve ilgili `CLAUDE.md`
+bölümleri (`pafta`, `northarrow`, kök) TAMAMEN KALDIRILDI. Kuzey oku
+(`NorthArrow`) etkilenmedi. `scripts/sections::draw_cut_marker_on_floor`,
+etiket yüksekliğini artık `ScaleBar`dan ÖDÜNÇ ALMAK yerine kendi
+`PRINTED_MARKER_LABEL_MM` sabitinden türetiyor (bağımsızlaştırma).
+
+### Doğrulama
+
+- `py_compile`, tüm 10 modül self-test'i (2 yeni test grubu: `dimensions::
+  check_rendered_layer`, `axis::check_total_span_dimension`; 1 yeni
+  assertion: `sections::check_section_sheet_entity_count`), `validate`,
+  `generate` (`PaftaOverflowError` FIRLAMADI), `preview`, 5 semantik kural,
+  5 golden referans (`--golden-set --update`), `doc_check` — hepsi temiz.
+- Gerçek çıktıda doğrudan doğrulandı: 86 kesit-HATCH'i artık
+  `dxf.solid_fill == 1`; 88 AKS DIMENSION'ının TAMAMI `AKS` katmanında
+  (host + geometri bloğu); `meta.dimensions` kapalı olduğu için `OLCU`
+  katmanlı DIMENSION SIFIRA düştü (önceden 402 idi).
+
+### Golden output etkisi
+
+- **Ana proje DEĞİŞTİ:** `output/plan.dxf`'te duvar/mahal/toplam ölçü
+  zinciri (402 `OLCU` DIMENSION) ve ScaleBar entity'leri kayboldu, kesit
+  HATCH'leri gerçek solid-fill oldu, aks ölçüsüne en-uçtaki-toplam satırı
+  eklendi; `docs/development/plan-golden-report.json` `--write` ile
+  YENİDEN üretildi.
+- Mevcut 5 golden referansının TÜMÜ aynı sebeplerle değişti (`--update`).
+  `golden/aciklik_varyantlari` kasıtlı olarak `meta.dimensions.enabled:
+  true` BIRAKILDI — bu fixture'ın amacı zaten o özelliği sınamaktır.
+
 ## HD-011 — Kesit modülü ve kuzey oku/ölçek çubuğu standardı
 
 - **Durum:** COMPLETED

@@ -37,7 +37,7 @@ Tamamlanan işlerin ayrıntılı gerekçesi, karar süreci ve ölçülen etkisi
 | DEV-022 | `stairs/` — merdiven gerçek geometrisi | PLANNED |
 | DEV-023 | `ceiling/` — yansıtılmış tavan planı | PLANNED |
 | DEV-024 | `site/` — vaziyet planı | PLANNED |
-| DEV-025 | Kuzey oku + grafik ölçek çubuğu | COMPLETED (rev-17) |
+| DEV-025 | Kuzey oku (+ grafik ölçek çubuğu, rev-18'de geri alındı) | COMPLETED (rev-17) |
 | DEV-026 | `legend/` — alan hesap cetveli | PLANNED |
 | DEV-027 | Kaçış (tahliye) planı | PLANNED |
 | DEV-028 | `legend/` — malzeme/kaplama cetveli | PLANNED |
@@ -413,8 +413,10 @@ DEĞİŞTİRİLMEZ), `sections/` (aynı istif, kesitte de kot gösterilir),
 
 - **Durum:** COMPLETED (rev-17)
 - **Özet:** `northarrow::NorthArrow` (Protocol-tabanlı, `meta.north_angle`
-  verilmezse çizilmez) ve `pafta::ScaleBar` (ölçekten türeyen grafik ölçek
-  cetveli) eklendi. (`HD-011`)
+  verilmezse çizilmez) eklendi. (`HD-011`) **rev-18 düzeltmesi:** aynı
+  görevle eklenen `pafta::ScaleBar` (grafik ölçek cetveli) kullanıcı geri
+  bildirimiyle ("her pafta içerisinde ölçek gibi bir şey var ... onu
+  istemiyorum, kaldır") TAMAMEN KALDIRILDI; kuzey oku etkilenmedi. (`HD-012`)
 
 ## Görev tamamlama kuralı
 

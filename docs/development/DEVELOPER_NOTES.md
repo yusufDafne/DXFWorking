@@ -59,8 +59,9 @@ sistem mimarı direktifi güncellenir.
 - **Kapı varyantları (rev-13):** `variant` / `swing` / `host_side`. Üçünün de
   varsayılanı rev-12 davranışı olduğu için mevcut proje aynı çizimi üretir.
   Çakışma matrisinde **kapı ↔ kapı artık HATA**.
-- **Dört self-test var** ve üretimden sonra hepsi çalıştırılmalıdır:
-  `collision`, `dimensions`, `axis`, `openings`.
+- **ON modül self-test'i var** ve üretimden sonra hepsi çalıştırılmalıdır:
+  `collision`, `dimensions`, `axis`, `openings`, `rooms`, `elevations`,
+  `walls`, `importer`, `sections`, `northarrow`.
 - **rev-17: `DEV-021` (`sections/`) ve `DEV-025` (`northarrow/` +
   `pafta::ScaleBar`) tamamlandı (`HD-011`).** Kesit hattı her zaman aks
   ailesine paralel (kullanıcı kararı); `sections[]` hiç verilmezse X+Y'den
@@ -72,6 +73,18 @@ sistem mimarı direktifi güncellenir.
   `golden/kesit_ornek` referansında sınandı). Kullanıcı ayrıca "kot/datum"
   mantığının proje geneline hakim, çapraz-kesit bir konu olduğunu belirtti;
   bu `DEV-029` olarak PLANNED eklendi, henüz uygulanmadı.
+- **rev-18: 3 kullanıcı geri bildirimi işlendi (`HD-012`).** (1) AutoCAD
+  "Large, Dense Hatch Patterns" uyarısının kök nedeni bulundu ve düzeltildi
+  (`sections`'taki kesit-duvar dolgusu `set_pattern_fill("SOLID")`
+  kullanıyordu — GERÇEK bir solid-fill DEĞİLDİ, `set_solid_fill()`e
+  çevrildi). (2) Aks ölçü zinciri artık AKS ile AYNI katmanda (`ezdxf`
+  1.4.4'ün render-sonrası katman düşürme hatası düzeltildi) VE bir kenarda
+  2'den fazla aks varsa ardışık mesafelerin YANINA en-uçtaki-toplam mesafe
+  zinciri eklendi. (3) `ScaleBar` (rev-17'de eklenen grafik ölçek çubuğu)
+  kullanıcı isteğiyle TAMAMEN KALDIRILDI; `meta.dimensions.enabled` gerçek
+  projede `false`ya çekildi (duvar/oda ölçüleri aks ölçüsünün yanında kafa
+  karıştırıyordu) — özellik `golden/aciklik_varyantlari`de sınanmaya
+  devam ediyor, sadece bu projenin sunum tercihi değişti.
 
 ## Sıradaki iş
 

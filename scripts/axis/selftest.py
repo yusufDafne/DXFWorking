@@ -12,6 +12,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+import ezdxf  # noqa: E402
+
 from axis import (  # noqa: E402
     Axis,
     AxisCoverageReport,
@@ -145,12 +147,49 @@ def check_coverage() -> list[str]:
     return errors
 
 
+def check_total_span_dimension() -> list[str]:
+    """rev-18 (kullanici karari: 'akslar arası mesafeler ve ikinci olarak
+    en uçtaki aksların arasındaki mesafeyi vermeli'): 2'den FAZLA aks
+    varsa ardisik-mesafe zincirinin YANINA bir de en-uctaki-aksa-aks TOPLAM
+    zinciri eklenir; TAM 2 aks varsa bu ikisi ZATEN AYNI sayidir ve
+    tekrar cizilmemelidir (elle sayilabilir DIMENSION adedi)."""
+    errors: list[str] = []
+    doc = ezdxf.new()
+    msp = doc.modelspace()
+    # Guney kenarda (y=0) 3 dusey aks (x=0,4000,9000) TAM (partial degil),
+    # bati kenarda (x=0) TAM 2 yatay aks (y=0,9000).
+    grid = AxisGrid(
+        [{"label": "1", "position": 0}, {"label": "2", "position": 4000},
+         {"label": "3", "position": 9000}],
+        [{"label": "A", "position": 0}, {"label": "B", "position": 9000}],
+        text_height=200.0,
+    )
+    grid.draw_on_floor(msp, dx=0.0, floor_width=9000.0, floor_depth=9000.0)
+    dims = list(msp.query("DIMENSION"))
+    # Guney (3 aks): ardisik 1-2 + 2-3 (2 varlik) + en-uctaki-toplam 1-3
+    # (1 varlik daha) = 3. Bati (TAM 2 aks): ardisik 1 varlik, toplam AYNI
+    # sayi oldugu icin TEKRARLANMAZ. Toplam: 3 + 1 = 4.
+    if len(dims) != 4:
+        errors.append(f"3 aks + 2 aks icin 3+1=4 DIMENSION bekleniyordu, {len(dims)} bulundu.")
+    # En uctaki (3.) aksin toplam zinciri, aksin KENDI baloncuk/uzama
+    # bolgesinin (extension+bubble_radius=1650) OTESINDE durmali.
+    standard = AxisDrawingStandard()
+    min_clearance = standard.extension + standard.bubble_radius
+    texts = sorted((d.dxf.text, d.dxf.defpoint.y) for d in dims if d.dxf.layer == "AKS")
+    farthest_y = min(y for _, y in texts)
+    if abs(farthest_y) <= min_clearance:
+        errors.append(f"Toplam zinciri aks baloncugunun ({min_clearance} disinda olmali) "
+                      f"ICINDE kaldi: {farthest_y}")
+    return errors
+
+
 def main() -> int:
     groups = (
         ("kismi aks", check_partial()),
         ("olcu zinciri uyeligi", check_chain_membership()),
         ("etiket kurali (negatif test)", check_naming()),
         ("kolon rasteri kapsamasi", check_coverage()),
+        ("en uctaki aks TOPLAM zinciri", check_total_span_dimension()),
     )
     failed = False
     for name, errors in groups:

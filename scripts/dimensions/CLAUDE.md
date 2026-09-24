@@ -70,6 +70,19 @@ rev-13'te bu ilk denemede yanlış yapıldı ve baloncuk en dıştaki zincirin
 Aks ölçü zinciri `AKS` katmanındadır (onu aks modülü sahiplenir); mahal/açıklık
 zincirleri projenin bildirdiği `OLCU` katmanına yazılır.
 
+**ezdxf katman hatası ve düzeltmesi (rev-18):** `ezdxf` 1.4.4'ün
+`add_linear_dim` render motoru (`render/dim_base.py::BaseDimensionRenderer.
+add_line`), katman dahil BİRLEŞMİŞ `attribs` sözlüğünü hesaplayıp
+KULLANMADAN atıyor — geometri bloğuna (ölçü + uzatma çizgileri) orijinal
+katmansız `dxfattribs`i geçiriyor, sonuç bu çizgilerin DIMENSION'ın kendi
+katmanından BAĞIMSIZ olarak hep `"0"` katmanında çizilmesi (ok/metin bu
+hatadan MUAFTIR). `LinearDim.render` (`linear.py`) render SONRASI bir
+düzeltme uygular (`_fix_geometry_block_layer`): geometri bloğundaki
+`Defpoints` DIŞINDAKİ her varlığın katmanı zorla `style.layer`e çekilir.
+Kütüphane kaynağı değiştirilemediği için (proje dışı dizin) bu, kalıcı bir
+workaround'dur — `ezdxf` güncellenirse yeniden test edilmelidir
+(`scripts/dimensions/selftest.py::check_rendered_layer`).
+
 ## Public API
 
 ```python

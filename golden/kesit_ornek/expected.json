@@ -1,22 +1,22 @@
 {
   "source": "golden/kesit_ornek",
-  "entity_count": 234,
+  "entity_count": 182,
   "entity_types": {
     "ATTRIB": 12,
     "CIRCLE": 26,
     "DIMENSION": 6,
     "HATCH": 6,
     "INSERT": 4,
-    "LINE": 76,
+    "LINE": 48,
     "LWPOLYLINE": 24,
-    "TEXT": 80
+    "TEXT": 56
   },
   "layers": {
     "AKS": 66,
-    "CERCEVE": 57,
+    "CERCEVE": 29,
     "DUVARLAR": 28,
     "KESIT": 10,
-    "METIN": 66,
+    "METIN": 42,
     "OLCU": 7
   },
   "modelspace_bbox": [
