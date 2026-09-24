@@ -50,6 +50,10 @@ COLLISION_EXEMPT: dict[str, str] = {
               "OZET TABLODUR (metin+cizgi); plan geometrisinde yer kaplamaz "
               "ve hicbir mekansal elemanla aynı KOORDINAT UZAYINI paylasmaz "
               "(dimensions/typography ile ayni gerekce).",
+    "importer": "context.json'u HIC OKUMAZ/gormez, salt-okunur bir DIS DXF "
+                "tarayicisidir (DEV-013); bu projenin plan/kat geometrisiyle "
+                "AYNI koordinat uzayinda YASAMAZ, cakisma kavraminin "
+                "kapsami disindadir.",
 }
 
 

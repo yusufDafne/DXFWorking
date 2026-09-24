@@ -146,8 +146,8 @@ geliştirme görevleri, tamamlanmış geçmiş, fikirler ve geliştirici notlar�
      aynı kontrolleri uygular. Bir modül bozulduğunda hangi modül olduğu
      doğrudan görünür.
 7. **Modül self-test'leri:** `collision`, `dimensions`, `axis`, `openings`,
-   `rooms` ve `elevations` modüllerinin her birinde bir `selftest.py` vardır
-   ve hepsi çalıştırılır:
+   `rooms`, `elevations`, `walls` ve `importer` modüllerinin her birinde bir
+   `selftest.py` vardır ve hepsi çalıştırılır:
 
    ```
    python scripts/collision/selftest.py
@@ -156,6 +156,8 @@ geliştirme görevleri, tamamlanmış geçmiş, fikirler ve geliştirici notlar�
    python scripts/openings/selftest.py
    python scripts/rooms/selftest.py
    python scripts/elevations/selftest.py
+   python scripts/walls/selftest.py
+   python scripts/importer/selftest.py
    ```
 
    Ortak disiplin: beklenen değerler ELLE hesaplanabilir tutulur ve kurallar
@@ -223,10 +225,19 @@ geliştirme görevleri, tamamlanmış geçmiş, fikirler ve geliştirici notlar�
   birleşim) o kesişim noktasına kadar uzatılır/kısaltılır. Sonuç: her dış
   köşe **dıştan tek bir noktada** temiz şekilde birleşir; çakışma veya boşluk
   oluşmaz.
-- Uygulama: `scripts/generate_dxf.py` içinde bu mantık `Wall` ve
-  `WallNetwork` sınıflarıyla kapsüllenir. Tüm duvar çizimleri bu sınıflardan
-  türetilir/kullanılır — duvar çizen yeni kod tekilleştirilmiş bu sınıflar
-  üzerinden yazılır, ayrı ayrı ad-hoc çizim mantığı eklenmez.
+- Uygulama: `scripts/walls/` modülündeki `Wall` ve `WallNetwork` sınıflarıyla
+  kapsüllenir (`generate_dxf.py` yalnızca public API'yi çağırır). Tüm duvar
+  çizimleri bu sınıflardan türetilir/kullanılır — duvar çizen yeni kod
+  tekilleştirilmiş bu sınıflar üzerinden yazılır, ayrı ayrı ad-hoc çizim
+  mantığı eklenmez.
+- **Rail çizim standardı (rev-15'ten itibaren):** rail'lerin NASIL çizildiği
+  (`RailDrawingStandard` Protocol'ü, `scripts/walls/standard.py`)
+  duvarın türünden (`kind`, `WallCatalog`) ayrılmıştır. Varsayılan
+  (`CatalogRailStandard`) `tugla_bolme` için araya taralı (`ANSI31`) bir
+  `HATCH`, `cam_duvar` için farklı bir linetype (`CAM`) ekler; `kind`
+  bildirilmeyen veya tanımsız bir duvar **eski düz-rail davranışını
+  BİREBİR korur** (`DefaultRailStandard`). Ayrıntı:
+  `scripts/walls/CLAUDE.md`.
 
 ## Çok katli bina yapisi (rev-2 tarihsel notu; güncel pafta kuralları geçerlidir)
 

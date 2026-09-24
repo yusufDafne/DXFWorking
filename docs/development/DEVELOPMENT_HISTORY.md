@@ -4,6 +4,86 @@ Aktif geçmiş kapasitesi: **50 kayıt**. En eski tamamlanmış kayıt, 51. kay�
 alınırken silinir. Ayrıntılı teknik değişiklikler git geçmişi ve ilgili proje
 provenance kayıtlarıyla ilişkilendirilir.
 
+## HD-010 — DXF duvar tarayıcısı ve kind-farkındalı rail standardı
+
+- **Durum:** COMPLETED
+- **Tamamlanma:** 2026-09-24
+- **Görevler:** `DEV-013` ve `DEV-014` (kullanıcı: "dev 13 ve 14'ü yap").
+- **Kapsam:** `scripts/importer/` (yeni modül, `import/`den yeniden
+  adlandırıldı), `scripts/walls/standard.py` (yeni), `scripts/walls/
+  render.py`, `scripts/walls/__init__.py`, `scripts/validate.py`,
+  `schema/design.schema.json`, `golden/duvar_standartlari/` (yeni).
+
+### İsim düzeltmesi: `import/` → `importer/`
+
+Planlama sırasında modül `scripts/import/` olarak adlandırılmıştı.
+Uygulamaya geçilince görüldü ki **`import` bir Python ANAHTAR
+KELİMESİDİR** — `import import` bir `SyntaxError`dır, bu isim hiçbir zaman
+geçerli bir paket olamazdı. `fixture` → `golden` (rev-11) ile AYNI
+kategoride bir hata: planlama sırasında seçilen ad, kod yazılınca teknik
+olarak kullanılamaz çıktı. Aynı çözüm uygulandı: dizin + tüm doküman
+atıfları `importer/`e taşındı (`git mv`), `DEV-013` kimliği değişmedi.
+
+### DEV-013 — `importer/`: `DxfWallScanner`
+
+- Mevcut bir DXF'ten `LINE` çiftlerini tarar; üç koşulu (paralellik ≤10°,
+  kalınlık 40–400mm, örtüşme oranı ≥0.5) geçen çiftleri, ELLE hesaplanabilir
+  bir confidence formülüyle (`parallel_score * overlap_score`) duvar adayı
+  olarak raporlar. Merkez çizgisi SADECE örtüşen aralıkta hesaplanır.
+- **Desen:** `walls.scan::RoomPolygonScanner.suggest_wall_dicts` İLE AYNI —
+  salt-okunur, context'e YAZMAZ. `WallCandidate.as_wall_dict()` şema-uyumlu
+  bir sözlük üretir ama hiçbir yere OTOMATİK eklenmez; insan/agent
+  onayından sonra normal talep akışıyla eklenir.
+- **Yan kazanç:** `RoomPolygonScanner.suggest_wall_dicts` rev-1'den beri
+  çıktısına `"kind"` koyuyordu ama şema bu alanı TANIMIYORDU — o aracın
+  çıktısı hiçbir zaman gerçekten context'e eklenemezdi. `DEV-014`nin şema
+  düzeltmesi bunu da kapattı.
+
+### DEV-014 — `walls/`: `RailDrawingStandard`
+
+- `CatalogRailStandard` (yeni sistem varsayılanı), `wall.kind`e göre
+  `tugla_bolme` için `ANSI31` `HATCH`, `cam_duvar` için `CAM` linetype
+  ekler; bilinmeyen/eksik `kind` `DefaultRailStandard`e (eski TEK yöntem,
+  düz `LINE`) düşer.
+- **Gerçek boşluk bulundu:** `WallCatalog`/`Wall.from_context` `kind`i HER
+  ZAMAN okuyordu ama `schema/design.schema.json`nin `additionalProperties:
+  false` olan `wall` tanımında YOKTU — hiçbir context.json bunu
+  KULLANAMAZDI. Şemaya eklendi; `validate.py::check_walls` artık bilinmeyen
+  bir `kind` değerini (yazım hatası) HATA sayar.
+- **Geriye dönük uyumluluk ölçülerek doğrulandı:** hiçbir mevcut proje
+  `kind` bildirmiyordu; `CatalogRailStandard`ı varsayılan yapmak `--golden-
+  set` `--update` GEREKMEDEN geçti (sıfır görsel etki).
+- **Yeni golden referansı `golden/duvar_standartlari`:** üç duvar türünü
+  (varsayılan, tuğla, cam) VE bir kapı açıklığının tarama/linetype'ı doğru
+  DIŞLADIĞINI (hatch 2 parçaya bölünür, kapı boşluğuna girmez) birlikte
+  sınar.
+
+### Doğrulama
+
+- İki yeni self-test (`importer`, `walls`) — toplam SEKİZ modül self-test'i
+  oldu. Her ikisi de elle hesaplanabilir örnekler + negatif testlerle.
+- `py_compile`, `validate`, `generate`, `preview`, 5 semantik kural,
+  4 golden referans, `doc_check` — hepsi temiz.
+
+### Golden output etkisi
+
+- Ana proje ve mevcut 3 golden referansı DEĞİŞMEDİ (hiçbiri `kind`
+  kullanmıyor) — `--update` gerekmedi.
+- Yeni `golden/duvar_standartlari` referansı eklendi (2 `HATCH`, `CAM`
+  linetype'lı 4 rail parçası).
+
+### Bilinen sınırlamalar
+
+- `importer/`: sadece `LINE` taranır (`LWPOLYLINE` YOK); PDF/altlık
+  (Fikir 2) uygulanmadı; köşe/T-kesişimi algılamaz.
+- `walls/`: tarama deseni/ölçeği context'ten AYARLANAMAZ (kolonlardaki
+  `meta.column_hatch` gibi); katalog kalınlıkları hâlâ kod seviyesinde
+  (Fikir 2 uygulanmadı).
+
+- **Sonraki direktif:** Planlanan modül kataloğu (`DEV-011`…`DEV-018`)
+  TAMAMLANDI. Sıradaki iş, mevcut modüllerin ertelenen "Fikir 2"lerinden
+  biri veya yeni bir modül fikridir — sistem mimarı açıkça seçmelidir.
+
 ## HD-009 — Mahal etiketi BLOCK+ATTRIB, cephe modülü ve kapı/pencere cetveli
 
 - **Durum:** COMPLETED

@@ -95,7 +95,13 @@ rev-12 durumu:
   below-ground `DASHED` linetype gerçekten uygulandı (`HD-009`).
 - `DEV-012` **COMPLETED (rev-14)** — `scripts/legend/` (yeni modül); kapı/
   pencere cetveli kapak paftasının boş üst alanında (`HD-009`).
-- `DEV-013`, `DEV-014` PLANNED.
+- `DEV-013` **COMPLETED (rev-15)** — `scripts/importer/` (yeni modül,
+  `import/`den yeniden adlandırıldı — `import` Python anahtar kelimesi);
+  `DxfWallScanner` salt-okunur duvar adayı raporlar (`HD-010`).
+- `DEV-014` **COMPLETED (rev-15)** — `scripts/walls/standard.py`;
+  `CatalogRailStandard` `tugla_bolme`/`cam_duvar` için gerçek görsel ayrım
+  (hatch/linetype); şemaya eksik olan `wall.kind` alanı eklendi (`HD-010`).
+- **Planlanan modül kataloğu (`DEV-011`…`DEV-018`) TAMAMLANDI.**
 
 **Önemli işletim notu:** Üretimden sonra artık
 `python scripts/golden_report.py output/plan.dxf --rules context.json`,
@@ -107,10 +113,16 @@ hiçbir şey kanıtlamaz (motor hiç çalışmasa da temiz dönerdi), bu yüzden
 self-test kasıtlı bozulmuş bir kat üzerinde beklenen bulguların TAM OLARAK
 üretildiğini sınar.
 
-Sıradaki iş için sistem mimarı açık direktif vermelidir. Kalan tek modül
-maddesi `DEV-013` (`import/`, ileri faz) ve `DEV-014` (`walls/`
-genişletmesi — `RailDrawingStandard` Protocol'ü). Sistem mimarı açıkça
-başlatmadan kod değişikliği yapılmaz. Başlangıçta görev kilidi alınmalıdır.
+Artık SEKİZ modül self-test'i çalıştırılmalıdır — yukarıdaki listeye
+`walls` ve `importer` de eklendi (`python scripts/walls/selftest.py`,
+`python scripts/importer/selftest.py`).
+
+Planlanan modül kataloğunun TAMAMI (`DEV-011`…`DEV-018`) tamamlandı.
+Sıradaki iş için sistem mimarı açık direktif vermelidir: yeni bir modül
+fikri veya mevcut modüllerin ertelenen "Fikir 2"lerinden biri (her modülün
+kendi `CLAUDE.md`'sindeki "Bilinen sınırlamalar"a bakınız). Sistem mimarı
+açıkça başlatmadan kod değişikliği yapılmaz. Başlangıçta görev kilidi
+alınmalıdır.
 
 ## İlk okuma sırası
 

@@ -1,0 +1,36 @@
+{
+  "source": "golden/duvar_standartlari",
+  "entity_count": 169,
+  "entity_types": {
+    "ARC": 2,
+    "ATTRIB": 9,
+    "CIRCLE": 20,
+    "DIMENSION": 7,
+    "HATCH": 2,
+    "INSERT": 3,
+    "LINE": 57,
+    "LWPOLYLINE": 15,
+    "TEXT": 54
+  },
+  "layers": {
+    "AKS": 57,
+    "CERCEVE": 28,
+    "DUVARLAR": 27,
+    "KAPI-PENCERE": 10,
+    "METIN": 45,
+    "OLCU": 2
+  },
+  "modelspace_bbox": [
+    -500.0,
+    -4150.0,
+    44600.0,
+    13150.0
+  ],
+  "blocks": [
+    "MAHAL_ETIKET",
+    "_CLOSEDFILLED"
+  ],
+  "block_inserts": {
+    "MAHAL_ETIKET": 3
+  }
+}

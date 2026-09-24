@@ -1,0 +1,211 @@
+{
+  "meta": {
+    "project_name": "Golden - Duvar Standartlari",
+    "schema_version": "1.0.0",
+    "units": "mm",
+    "scale": "1:50",
+    "project_type": "MIMARI_UYGULAMA",
+    "fonts": {
+      "default": "arialn.ttf",
+      "room_label": "arialn.ttf"
+    },
+    "cover": {
+      "signature_fields": ["MIMAR", "BELEDIYE"]
+    },
+    "floor_width": 9000.0,
+    "floor_depth": 9000.0
+  },
+  "layers": [
+    {
+      "name": "DUVARLAR",
+      "color": 7
+    },
+    {
+      "name": "KAPI-PENCERE",
+      "color": 5
+    },
+    {
+      "name": "METIN",
+      "color": 7
+    },
+    {
+      "name": "CERCEVE",
+      "color": 8
+    },
+    {
+      "name": "OLCU",
+      "color": 3
+    }
+  ],
+  "grid": {
+    "vertical_axes": [
+      {
+        "label": "1",
+        "position": 0.0
+      },
+      {
+        "label": "2",
+        "position": 3000.0
+      },
+      {
+        "label": "3",
+        "position": 6000.0
+      },
+      {
+        "label": "4",
+        "position": 9000.0
+      }
+    ],
+    "horizontal_axes": [
+      {
+        "label": "A",
+        "position": 0.0
+      },
+      {
+        "label": "B",
+        "position": 9000.0
+      }
+    ]
+  },
+  "floors": [
+    {
+      "id": "kat1",
+      "label": "DUVAR STANDARTLARI KATI",
+      "code": "K1",
+      "rooms": [
+        {
+          "id": "oda_1",
+          "name": "Oda 1",
+          "no": "01",
+          "area_m2": 24.64,
+          "polygon": [
+            [100, 100],
+            [2900, 100],
+            [2900, 8900.0],
+            [100, 8900.0]
+          ]
+        },
+        {
+          "id": "oda_2",
+          "name": "Oda 2 Tugla",
+          "no": "02",
+          "area_m2": 25.08,
+          "polygon": [
+            [3100, 100],
+            [5950, 100],
+            [5950, 8900.0],
+            [3100, 8900.0]
+          ]
+        },
+        {
+          "id": "oda_3",
+          "name": "Oda 3 Cam",
+          "no": "03",
+          "area_m2": 25.08,
+          "polygon": [
+            [6050, 100],
+            [8900, 100],
+            [8900, 8900.0],
+            [6050, 8900.0]
+          ]
+        }
+      ],
+      "walls": [
+        {
+          "id": "w_alt",
+          "start": [0, 0],
+          "end": [9000.0, 0],
+          "thickness": 200.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "w_sag",
+          "start": [9000.0, 0],
+          "end": [9000.0, 9000.0],
+          "thickness": 200.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "w_ust",
+          "start": [9000.0, 9000.0],
+          "end": [0, 9000.0],
+          "thickness": 200.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "w_sol",
+          "start": [0, 9000.0],
+          "end": [0, 0],
+          "thickness": 200.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "w_p_tugla",
+          "start": [3000.0, 0],
+          "end": [3000.0, 9000.0],
+          "thickness": 200.0,
+          "layer": "DUVARLAR",
+          "kind": "tugla_bolme"
+        },
+        {
+          "id": "w_p_cam",
+          "start": [6000.0, 0],
+          "end": [6000.0, 9000.0],
+          "thickness": 100.0,
+          "layer": "DUVARLAR",
+          "kind": "cam_duvar"
+        }
+      ],
+      "openings": [
+        {
+          "id": "kapi_tugla",
+          "type": "door",
+          "wall_id": "w_p_tugla",
+          "position_from_start": 4500.0,
+          "width": 900.0,
+          "layer": "KAPI-PENCERE"
+        },
+        {
+          "id": "kapi_cam",
+          "type": "door",
+          "wall_id": "w_p_cam",
+          "position_from_start": 4500.0,
+          "width": 900.0,
+          "layer": "KAPI-PENCERE"
+        },
+        {
+          "id": "pencere_alt",
+          "type": "window",
+          "wall_id": "w_alt",
+          "position_from_start": 1500.0,
+          "width": 1200.0,
+          "layer": "KAPI-PENCERE"
+        }
+      ],
+      "labels": []
+    }
+  ],
+  "elevations": [
+    {
+      "id": "on_cephe",
+      "label": "ON CEPHE",
+      "width": 9000.0,
+      "axis_source": "vertical",
+      "levels": [
+        {
+          "label": "ZEMIN KAT",
+          "height": 3000.0,
+          "window_count": 3,
+          "door": true
+        }
+      ]
+    }
+  ],
+  "rev_history": [
+    {
+      "rev": 1,
+      "ts": "2026-09-24T00:00:00Z",
+      "summary": "DEV-014 golden referansi: RailDrawingStandard Protocol'unun uc davranisi tek katta birlikte sinanir - disardaki duvarlar kind BILDIRMEZ (DefaultRailStandard'a duser, duz LINE), w_p_tugla kind='tugla_bolme' (ANSI31 tarali HATCH, kapi acikligi tarama disi kalir), w_p_cam kind='cam_duvar' (CAM linetype'li rail). Bina 9000x9000: 1:50'de A4 kapak blogu 14850 yuksek oldugundan icerigin dusey acikligi en az 8150 olmalidir."
+    }
+  ]
+}

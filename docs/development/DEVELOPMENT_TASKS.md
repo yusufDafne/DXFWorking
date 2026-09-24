@@ -20,8 +20,8 @@ agent kendi başına sıra değiştirmez.
 | DEV-010 | `columns/` | COMPLETED (rev-10) |
 | DEV-011 | `elevations/` | COMPLETED (rev-14) |
 | DEV-012 | `legend/` | COMPLETED (rev-14) |
-| DEV-013 | `import/` | PLANNED |
-| DEV-014 | `walls/` | PLANNED |
+| DEV-013 | `importer/` | COMPLETED (rev-15) |
+| DEV-014 | `walls/` | COMPLETED (rev-15) |
 | DEV-015 | `axis/` | COMPLETED (rev-13) |
 | DEV-016 | `openings/` | COMPLETED (rev-13) |
 | DEV-017 | `dimensions/` | COMPLETED (rev-13) |
@@ -31,10 +31,11 @@ agent kendi başına sıra değiştirmez.
 
 ## READY
 
-**Şu anda `READY` durumda görev YOKTUR.** Sistem mimarı aşağıdaki modül
-kataloğundan bir maddeyi (ve varsa bir fikri) açıkça seçip başlatmalıdır.
-Kalan tek modül maddesi `DEV-013` (`import/`, ileri faz) ve `DEV-014`
-(`walls/` genişletmesi) — ikisi de kullanıcı önceliklendirmesi bekliyor.
+**Şu anda `READY` durumda görev YOKTUR.** Planlanan tüm modül maddeleri
+(`DEV-011` … `DEV-018`) tamamlandı. Kalan iş, mevcut modüllerin "Bilinen
+sınırlamalar" bölümlerinde açık fikir olarak duran ikinci fikirlerdir (ör.
+`legend/` Fikir 2, `elevations/` Fikir 2, `walls/` Fikir 2,
+`importer/` Fikir 2) — hiçbiri sistem mimarı açıkça seçmeden başlatılmaz.
 
 > `DEV-007` kullanıcı talimatıyla (rev-12) **konusu açılmadan** plan olarak
 > bekleyecektir; agent bu madde için veri İSTEMEZ. İmza alanları rev-12'de
@@ -755,36 +756,64 @@ ZK-04        <- 2. satir: kat kodu + mahal no
   doğrular (bkz. `scripts/legend/CLAUDE.md` "Doğrulama").
 - **Kayıt:** `DEVELOPMENT_HISTORY.md` içindeki `HD-009`.
 
-### DEV-013 — `import/` — mevcut çizimden veri okuma
+### DEV-013 — `importer/` — mevcut çizimden veri okuma
 
-- **Durum:** PLANNED (ileri faz)
-- **Mevcut durum:** Kod yok. İlgili bir parça zaten mevcut:
-  `walls.scan::RoomPolygonScanner` salt-okunur öneri üretiyor ve context'e
-  yazmıyor — import modülünün benimseyeceği desen budur.
-- **Fikir 1 — `DxfWallScanner` salt-okunur rapor:** Mevcut bir DXF'ten duvar
-  adaylarını çıkarıp confidence ve provenance (kaynak dosya + hash) ile
-  raporlamak. Çıktı asla doğrudan context veya nihai DXF olmaz.
-- **Fikir 2 — PDF/görüntü altlık ölçekleme:** Bir altlığı bilinen bir referans
-  ölçüden ölçekleyip çizimin altına referans olarak yerleştirmek; geometri
-  üretmez, yalnızca elle çizime altlık olur.
-- **Açık kararlar:** Desteklenen kaynak formatları ve entity/layer kapsamı;
-  onaylı import patch formatı.
+- **Durum:** COMPLETED (rev-15)
+- **İsim notu:** `import/` olarak planlanmıştı; `import` bir Python anahtar
+  kelimesidir ve geçerli bir paket adı OLAMAZ — `fixture` → `golden`
+  (rev-11) ile AYNI kategoride bir düzeltmeyle `importer/`e taşındı.
+- **Sonuç:**
+  - *Fikir 1 — `DxfWallScanner` salt-okunur rapor (SEÇİLDİ):* mevcut bir
+    DXF'ten `LINE` çiftlerini tarar, paralellik + kalınlık aralığı +
+    örtüşme oranı KOŞULLARINI geçen çiftleri confidence skoruyla (elle
+    hesaplanabilir formül) duvar ADAYI olarak raporlar. Çıktı `walls.scan::
+    RoomPolygonScanner.suggest_wall_dicts` İLE AYNI desen: salt-okunur,
+    context'e YAZMAZ; `WallCandidate.as_wall_dict()` onaylandıktan SONRA
+    normal talep akışıyla eklenir.
+  - *Fikir 2 — PDF/görüntü altlık (uygulanmadı):* açık fikir olarak duruyor.
+- **Açık kararlar kapandı:** kaynak format SADECE DXF; entity kapsamı SADECE
+  `LINE` (bkz. "Bilinen sınırlamalar"); onaylı patch formatı = AYRI bir
+  `ImportPatch` sınıfı DEĞİL, `WallCandidate.as_wall_dict()`in ürettiği
+  şema-uyumlu sözlük (insan/agent inceler, otomatik birleştirme YOK).
+- **Yan kazanç:** `RoomPolygonScanner.suggest_wall_dicts` ÇOK ÖNCEDEN
+  (rev-1'den beri) çıktısına `"kind"` alanı koyuyordu, ama şema bu alanı
+  `DEV-013`e kadar TANIMIYORDU — o taslak aracın çıktısı context.json'a
+  hiçbir zaman gerçekten EKLENEMEZDİ. `DEV-014`nin şema düzeltmesi bunu da
+  kapattı.
+- **Doğrulama:** `python scripts/importer/selftest.py`.
+- **Kayıt:** `DEVELOPMENT_HISTORY.md` içindeki `HD-010`.
 
 ### DEV-014 — `walls/` — duvar çizim standardı genişletmesi
 
-- **Durum:** PLANNED
-- **Mevcut durum:** Tamamlandı ve çalışıyor: çift rail, köşe/T miter, açıklık
-  boşlukları, `WallCatalog`. Rail çizimi bugün **tek yöntem** (paralel LINE).
-- **Fikir 1 — `RailDrawingStandard`:** Sözleşmede zaten öngörülen genişleme
-  noktası. Hatch'li duvar (tuğla/betonarme ayrımı), cam duvar için farklı
-  linetype, yalıtım katmanı gösterimi bu Protocol üzerinden eklenir; mevcut
-  düz-rail davranışı varsayılan standart olarak kalır.
-- **Fikir 2 — Kataloğu context'ten sürmek:** `WallCatalog` bugün kod
-  seviyesinde. Yönetmelik/ofis standardı kalınlıklarının context.json'dan
-  verilebilmesi, aynı sistemle farklı standartlara göre üretim yapmayı mümkün
-  kılar (alt sınıf gerekmez, veri odaklı).
-- **Açık kararlar:** Hatch deseni ölçekle nasıl ilişkilenecek (1:50 ve 1:100'de
-  aynı desen okunaklı olmayabilir)?
+- **Durum:** COMPLETED (rev-15)
+- **Sonuç:**
+  - *Fikir 1 — `RailDrawingStandard` (SEÇİLDİ):* `scripts/walls/standard.py`.
+    `DefaultRailStandard` bugüne kadarki TEK yöntemi (düz `LINE`, `kind`den
+    BAĞIMSIZ) korur; `CatalogRailStandard` (yeni sistem varsayılanı)
+    `tugla_bolme` için `ANSI31` `HATCH`, `cam_duvar` için `CAM` linetype
+    ekler, başka/eksik `kind` için `DefaultRailStandard`e düşer.
+  - *Fikir 2 — Kataloğu context'ten sürmek (uygulanmadı):* açık fikir
+    olarak duruyor.
+- **Gerçek boşluk bulundu ve kapatıldı (bu maddede öngörülmemiş):** kod
+  (`Wall.from_context`, `WallCatalog.resolve`, `WallCatalog` içindeki
+  `tugla_bolme`/`cam_duvar` girdileri) `kind`i HER ZAMAN destekliyordu ama
+  `schema/design.schema.json`nin `additionalProperties: false` olan `wall`
+  tanımında `kind` YOKTU — hiçbir context.json bunu kullanamazdı. Şemaya
+  eklendi; `validate.py::check_walls` artık bilinmeyen bir `kind` değerini
+  (yazım hatası) de HATA sayar.
+- **Geriye dönük uyumluluk ölçülerek doğrulandı:** hiçbir mevcut proje
+  `kind` bildirmiyordu; `CatalogRailStandard`ı sistem varsayılanı yapmak
+  SIFIR görsel etki yarattı (`--golden-set` `--update` GEREKMEDEN geçti).
+- **Yeni golden referansı `golden/duvar_standartlari`:** üç duvar türünü
+  (varsayılan, tuğla, cam) ve bir kapı açıklığının tarama/linetype'ı doğru
+  DIŞLADIĞINI tek bir katta birlikte sınar.
+- **Açık kararlar kapandı:** tarama deseni/ölçeği context'ten AYARLANAMAZ
+  (sabit `ANSI31`/`1.5` — kolonlardaki `meta.column_hatch` gibi
+  configurable değil, bilinçli kapsam kararı); tarama katmanı `wall.layer`
+  ile AYNIDIR (kolonlardaki sabit `KOLON-TARAMA` gibi ayrı bir katman YOK,
+  çünkü `wall.layer` VERİdir ve duvardan duvara değişebilir).
+- **Doğrulama:** `python scripts/walls/selftest.py`.
+- **Kayıt:** `DEVELOPMENT_HISTORY.md` içindeki `HD-010`.
 
 ### DEV-018 — DXF `BLOCK` entity kullanımı (modüller arası)
 
@@ -829,14 +858,12 @@ ZK-04        <- 2. satir: kat kodu + mahal no
 
 ## BACKLOG
 
-Her modülün kendi plan maddesi artık yukarıdaki **PLANNED** bölümündedir;
-bu bölüm yalnızca sıra önerisini tutar.
-
-`columns/`, `elevations/` ve `legend/` TAMAMLANDI (rev-10, rev-14, rev-14).
-Kalan tek modül maddesi `DEV-013` (`import/`, ileri faz — kod HENÜZ yok) ve
-`DEV-014` (`walls/` genişletmesi — mevcut düz-rail davranışı bozulmadan bir
-`RailDrawingStandard` Protocol'ü eklemek). İkisi de sistem mimarının açık
-başlatmasını bekliyor.
+Her modülün kendi plan maddesi artık yukarıdaki bölümdedir. `DEV-011` …
+`DEV-014`, `DEV-018` (ve `DEV-019`/`DEV-020`) TAMAMLANDI — bu proje için
+planlanmış modül kataloğunun TAMAMI uygulandı. Yeni bir modül fikri veya
+mevcut modüllerin ertelenen "Fikir 2"leri (bkz. her modülün kendi
+`CLAUDE.md`'si) sistem mimarı tarafından açıkça talep edilmeden
+başlatılmaz.
 
 Her görev uygulamaya alınmadan önce ilgili `scripts/<module>/CLAUDE.md` dosyası
 ve `docs/phases/NEXT-MODULES-ROADMAP.md` okunur. Buradaki kayıtlar kod

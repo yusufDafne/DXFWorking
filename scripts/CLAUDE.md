@@ -26,7 +26,7 @@ kalanını bilmeye ihtiyaç duymadan o modül üzerinde derinlemesine/izole
 
 - ✅ **`scripts/pafta/`** — İLK modül (rev-4). Kendi `CLAUDE.md`'si var.
 - ✅ **`scripts/walls/`** — Duvar modülü: `Wall`, `WallNetwork`, katalog,
-  cizim, tarama (bkz. `scripts/walls/CLAUDE.md`).
+  cizim, tarama, `RailDrawingStandard` (bkz. `scripts/walls/CLAUDE.md`).
 - ✅ **`scripts/axis/`** — `AxisGrid`, `AxisDrawingStandard` ve
   `ensure_axis_layer` taşındı; tamamlanma kaydı
   `docs/development/DEVELOPMENT_HISTORY.md` içindedir.
@@ -47,7 +47,11 @@ kalanını bilmeye ihtiyaç duymadan o modül üzerinde derinlemesine/izole
   `FacadeOpeningPlacer`; zemin-altı `DASHED` linetype (bkz. `HD-009`).
 - ✅ **`scripts/legend/`** — `OpeningLegend`, `LegendRenderer`; kapı/pencere
   cetveli, kapak paftasının boş üst alanında (bkz. `HD-009`).
-- ⏳ Import — `docs/development/DEVELOPMENT_TASKS.md` içindeki `DEV-013`.
+- ✅ **`scripts/importer/`** — `DxfWallScanner`; mevcut bir DXF'ten duvar
+  adayı çıkarır, context'e YAZMAZ (bkz. `HD-010`). **İsim notu:** planlama
+  sırasında `import/` olarak adlandırılmıştı; `import` bir Python anahtar
+  kelimesi olduğu için geçerli bir paket adı DEĞİLDİR — `fixture` → `golden`
+  (rev-11) ile AYNI kategoride bir düzeltmeyle `importer/`e taşındı.
 
 ## Modül bağımsızlığı ve çapraz kontrol (kullanıcı ilkesi)
 
@@ -167,7 +171,7 @@ Ortak desen (pafta + walls ile kanitlandi):
 | Modul         | Cekirdek siniflar (gercek public API)                                      | Durum                                                          |
 | ------------- | -------------------------------------------------------------------------- | -------------------------------------------------------------- |
 | `pafta/`      | `Sheet`, `PaperSizePlanner`, `CoverBlock`, `PaftaOverflowError`             | UYGULANDI; uniform template + keyplan bekliyor                 |
-| `walls/`      | `Wall`, `WallNetwork`, `WallCatalog`, `RoomPolygonScanner`                  | UYGULANDI (ilk surum)                                          |
+| `walls/`      | `Wall`, `WallNetwork`, `WallCatalog`, `RoomPolygonScanner`, `RailDrawingStandard`, `CatalogRailStandard` | UYGULANDI (rev-15); kind-farkindali rail standardi |
 | `axis/`       | `AxisGrid`, `AxisDrawingStandard`, `Axis`, `AxisCoverageReport`, `check_labels` | UYGULANDI; kismi/ara aks + etiket kurali (rev-13)          |
 | `openings/`   | `Opening`, `Door`, `Window`, `OpeningSymbolStyle`, `OpeningSchedule`, `SwingGeometry`, `swing_geometry`, `DOOR_SYMBOLS`, `ARCS_PER_VARIANT` | UYGULANDI; 4 varyant + swing/host_side (rev-13) |
 | `rooms/`      | `Room`, `RoomLabeler`, `PolygonOps`, `RoomPolygonScanner`, `ensure_room_label_block` | UYGULANDI; 3 satirli mahal etiketi (rev-9), BLOK+ATTRIB (rev-14) |
@@ -177,7 +181,7 @@ Ortak desen (pafta + walls ile kanitlandi):
 | `columns/`    | `Column`, `ColumnGrid`, `ColumnRenderer`, `ColumnSection`, `ColumnSectionCatalog`, `ColumnHatchStyle`, `ColumnLabelStyle` | UYGULANDI; tarali kolon ANSI33/3.0 (rev-10) |
 | `elevations/` | `ElevationSheet`, `LevelStack`, `FacadeOpeningPlacer`, `Level`, `elevation_vertical_extent` | UYGULANDI (rev-14); zemin-alti DASHED linetype kapandi |
 | `legend/`     | `OpeningLegend`, `LegendRenderer`, `ScheduleRow`                            | UYGULANDI (rev-14); Fikir 1 (kapi/pencere cetveli) secildi     |
-| `import/`     | `DxfWallScanner`, `ImportReport`, `ImportPatch`                             | PLANLANAN (DEV-013); sinif adlari onerilmis, kod YOK           |
+| `importer/`   | `DxfWallScanner`, `ImportReport`, `WallCandidate`                           | UYGULANDI (rev-15); Fikir 1 - salt-okunur DXF duvar tarayicisi |
 | `collision/`  | `CollisionShape`, `CollisionPolicy`, `CollisionEngine`, `Clash`, `ClashReport`, `Scene`, `check_context` | UYGULANDI (rev-12); validate.py ONCESI bloklayici kapi |
 
 > Bu tablo `scripts/doc_check.py` tarafindan DENETLENIR: `UYGULANDI` isaretli bir
@@ -347,7 +351,8 @@ Sabit geliştirme sırası şöyledir:
 8. `elevations/`: seviye istifi ve cephe açıklıkları.
 9. `furniture/`: tezgah ve sabit mobilya.
 10. `legend/`: isteğe bağlı lejant.
-11. `import/`: ileri faz DXF/altlık okuma.
+11. `importer/`: DXF/altlık okuma (rev-15'te DXF duvar tarayıcısı olarak
+    tamamlandı; altlık kısmı hâlâ ileri faz).
 
 Her fazda önce agent sözleşmesi ve public API, sonra davranış korumalı taşıma,
 sonra schema/validator/generator entegrasyonu ve focused validation yapılır.

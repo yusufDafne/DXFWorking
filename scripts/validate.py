@@ -60,6 +60,7 @@ from version import (  # noqa: E402
     check_compatibility,
     project_schema_version,
 )
+from walls import WallCatalog  # noqa: E402
 
 AREA_TOLERANCE_RATIO = 0.03  # oda alani vs poligon alani icin tolerans
 
@@ -189,6 +190,19 @@ def check_walls(units: str, walls: list[dict]) -> list[str]:
         length = ((wall["end"][0] - wall["start"][0]) ** 2 + (wall["end"][1] - wall["start"][1]) ** 2) ** 0.5
         if length <= 0:
             errors.append(f"Duvar '{wall['id']}' sifir uzunlukta.")
+
+    # DEV-014: 'kind' bildirilmisse KATALOGDA TANIMLI olmali. Aksi halde
+    # bir yazim hatasi (orn. 'tugla_blome') SESSIZCE duz duvar olarak
+    # cizilirdi - CatalogRailStandard bilinmeyen kind'i fallback'e dusurur,
+    # hata vermez. Bu, arite-1 (kendi verim gecerli mi) bir kontroldur.
+    known_kinds = {spec.id for spec in WallCatalog().kinds()}
+    for wall in walls:
+        kind = wall.get("kind")
+        if kind is not None and kind not in known_kinds:
+            errors.append(
+                f"Duvar '{wall['id']}': bilinmeyen kind '{kind}'. "
+                f"Tanimli turler: {', '.join(sorted(known_kinds))}."
+            )
 
     return errors
 

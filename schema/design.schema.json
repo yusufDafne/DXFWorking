@@ -39,7 +39,11 @@
         "start": { "$ref": "#/definitions/point" },
         "end": { "$ref": "#/definitions/point" },
         "thickness": { "type": "number", "exclusiveMinimum": 0 },
-        "layer": { "type": "string" }
+        "layer": { "type": "string" },
+        "kind": {
+          "type": "string",
+          "description": "Opsiyonel duvar turu (walls.WallCatalog anahtari, orn. tugla_bolme/cam_duvar); rail cizim standardini (hatch/linetype) belirler, kalinlik/katman gene bu alandan turetilmez"
+        }
       }
     },
     "opening": {

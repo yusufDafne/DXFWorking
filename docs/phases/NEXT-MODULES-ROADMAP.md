@@ -115,7 +115,13 @@ yerleşimi.
 
 Kabul: yalnızca kullanılan/izinli öğeler açıklanır, `Sheet` sınırı korunur.
 
-### Faz 10 — `import/` (ileri faz)
+### Faz 10 — `importer/` (ileri faz — DXF tarama kısmı rev-15'te tamamlandı)
+
+**Not (rev-15):** bu modül `import/` olarak planlanmıştı; `import` bir
+Python anahtar kelimesi olduğu için geçerli bir paket adı DEĞİLDİR,
+`importer/`e taşındı (bkz. `scripts/importer/CLAUDE.md` "İsim notu").
+Aşağıdaki plan metni TARİHSEL olarak korunur; DXF tarama kısmı
+(`DxfWallScanner`) tamamlandı, PDF/altlık kısmı hâlâ ileri fazdır.
 
 Kaynak: yeni ters yönlü veri akışı.
 
