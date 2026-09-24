@@ -106,6 +106,39 @@ ROOM_LABEL_LINE_GAP = 0.40        # satir arasi bosluk (ana yuksekligin orani)
 ROOM_LABEL_MARGIN = 200.0         # oda kenarindan birakilan pay
 ROOM_LABEL_MIN_HEIGHT = 55.0      # okunabilirlik tabani
 
+# --- Mahal etiketi BLOK+ATTRIB tanimi (DEV-018, rev-14) ---
+# Uc satir da ATTDEF olarak NOMINAL_HEIGHT'a gore konumlanir; INSERT
+# scale = fitted_height / NOMINAL_HEIGHT verildiginde, ATTDEF konumlari ve
+# yukseklikleri dogrusal olceklenir ve eski duz-TEXT ciziminin URETTIGI
+# MUTLAK KONUMLARLA BIREBIR ORTUSUR (bkz. modul CLAUDE.md "blok kanitı").
+ROOM_LABEL_BLOCK_NAME = "MAHAL_ETIKET"
+ROOM_LABEL_ATTDEF_TAGS = ("MAHAL_ADI", "MAHAL_KOD", "ALAN")
+ROOM_LABEL_NOMINAL_HEIGHT = 100.0
+
+
+def ensure_room_label_block(doc, layer: str = "METIN", style_name: str | None = None):
+    """Mahal etiketi blok TANIMINI belgeye bir kere kaydeder (idempotent;
+    `FurnitureBlocks.ensure` ile ayni desen). Ikinci cagrida stil/layer
+    parametreleri yok sayilir - proje boyunca tek bir sabit stil kullanilir
+    (`generate_dxf.py` her katta ayni `room_label_style`i verir)."""
+    if ROOM_LABEL_BLOCK_NAME in doc.blocks:
+        return doc.blocks.get(ROOM_LABEL_BLOCK_NAME)
+    block = doc.blocks.new(name=ROOM_LABEL_BLOCK_NAME)
+    factors = (ROOM_LABEL_NAME_FACTOR, ROOM_LABEL_META_FACTOR, ROOM_LABEL_META_FACTOR)
+    height = ROOM_LABEL_NOMINAL_HEIGHT
+    total = height * (sum(factors) + ROOM_LABEL_LINE_GAP * (len(factors) - 1))
+    cursor = total / 2.0
+    for tag, factor in zip(ROOM_LABEL_ATTDEF_TAGS, factors):
+        line_height = factor * height
+        attribs = {"layer": layer, "height": line_height}
+        if style_name:
+            attribs["style"] = style_name
+        attdef = block.add_attdef(tag, dxfattribs=attribs)
+        attdef.set_placement((0.0, cursor - line_height / 2.0),
+                              align=TextEntityAlignment.MIDDLE_CENTER)
+        cursor -= line_height + ROOM_LABEL_LINE_GAP * height
+    return block
+
 
 class RoomLabeler:
     """Mahal etiketi: 3 satirli blok (ad / kat kodu-mahal no / alan).
@@ -197,8 +230,39 @@ class RoomLabeler:
             return
         height = RoomLabeler._fit(lines, available_width, available_height,
                                   max_text_height, font)
-
         layer = data.get("layer", "METIN")
+        center = (center_x, center_y)
+
+        if len(lines) == len(ROOM_LABEL_ATTDEF_TAGS):
+            # Standart 3 satirlik durum (kat kodu VE mahal no mevcut): tek
+            # secilebilir INSERT + duzenlenebilir ATTRIB (DEV-018).
+            RoomLabeler._draw_block(msp, lines, center, height, layer, style_name)
+        else:
+            # Nadir kenar durumu: kat kodu VE mahal no'nun ikisi de eksik ->
+            # 2 (veya daha az) satir. Blok 3 ATTDEF icin sabit yerlesimle
+            # tanimlandigi icin bu durumda eski duz-TEXT cizimine dusulur;
+            # aksi halde bos ortadaki satir gorsel bosluk birakirdi.
+            RoomLabeler._draw_raw(msp, lines, center, height, layer, style_name)
+
+    @staticmethod
+    def _draw_block(msp, lines: list[tuple[str, float]], center: tuple[float, float],
+                     height: float, layer: str, style_name: str | None) -> None:
+        doc = msp.doc
+        ensure_room_label_block(doc, layer=layer, style_name=style_name)
+        scale = height / ROOM_LABEL_NOMINAL_HEIGHT
+        insert = msp.add_blockref(
+            ROOM_LABEL_BLOCK_NAME, center,
+            dxfattribs={"layer": layer, "xscale": scale, "yscale": scale},
+        )
+        values = {tag: text for tag, (text, _) in zip(ROOM_LABEL_ATTDEF_TAGS, lines)}
+        insert.add_auto_attribs(values)
+        for attrib in insert.attribs:
+            attrib.dxf.layer = layer
+
+    @staticmethod
+    def _draw_raw(msp, lines: list[tuple[str, float]], center: tuple[float, float],
+                   height: float, layer: str, style_name: str | None) -> None:
+        center_x, center_y = center
         cursor = center_y + RoomLabeler._block_height(lines, height) / 2.0
         for text, factor in lines:
             line_height = factor * height
@@ -216,4 +280,6 @@ class RoomLabeler:
 # refactor artirmaz. Bkz. scripts/version.py
 CONTRACT_VERSION = "1.0"
 
-__all__ = ["PolygonOps", "Room", "RoomLabeler", "RoomPolygonScanner"]
+__all__ = ["PolygonOps", "Room", "RoomLabeler", "RoomPolygonScanner",
+           "ensure_room_label_block", "ROOM_LABEL_BLOCK_NAME",
+           "ROOM_LABEL_ATTDEF_TAGS", "ROOM_LABEL_NOMINAL_HEIGHT"]

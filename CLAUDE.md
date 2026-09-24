@@ -145,15 +145,17 @@ geliştirme görevleri, tamamlanmış geçmiş, fikirler ve geliştirici notlar�
      (modüle özel) altındaki küçük, izole referans projelerini baştan üretip
      aynı kontrolleri uygular. Bir modül bozulduğunda hangi modül olduğu
      doğrudan görünür.
-7. **Modül self-test'leri:** `collision`, `dimensions`, `axis` ve
-   `openings` modüllerinin her birinde bir `selftest.py` vardır ve hepsi
-   çalıştırılır:
+7. **Modül self-test'leri:** `collision`, `dimensions`, `axis`, `openings`,
+   `rooms` ve `elevations` modüllerinin her birinde bir `selftest.py` vardır
+   ve hepsi çalıştırılır:
 
    ```
    python scripts/collision/selftest.py
    python scripts/dimensions/selftest.py
    python scripts/axis/selftest.py
    python scripts/openings/selftest.py
+   python scripts/rooms/selftest.py
+   python scripts/elevations/selftest.py
    ```
 
    Ortak disiplin: beklenen değerler ELLE hesaplanabilir tutulur ve kurallar
@@ -253,10 +255,13 @@ geliştirme görevleri, tamamlanmış geçmiş, fikirler ve geliştirici notlar�
 - **Cephe gorunusleri (elevations):** Gercek plan geometrisinden TURETILMEZ;
   kullanicinin acikca izin verdigi sekilde (bkz. rev-2 talebi) semantik/basit
   bir seviye istifi + esit araliklarla yerlestirilmis jenerik pencere
-  dikdortgenleri olarak cizilir (`draw_elevation`). `below_ground: true`
-  seviyeler zemin cizgisinin (`y=0`) altinda cizilir; DXF'te ayri bir
-  kesikli linetype UYGULANMAZ (sadece etiketle ayirt edilir) - bu bilinen
-  bir basitlestirmedir.
+  dikdortgenleri olarak cizilir. Uygulamasi rev-14'ten (`DEV-011`) itibaren
+  kendi izole modulundedir: `scripts/elevations::ElevationSheet` /
+  `LevelStack` / `FacadeOpeningPlacer` — ayrı ad-hoc cephe cizim kodu
+  yazilmaz. `below_ground: true` seviyeler zemin cizgisinin (`y=0`) altinda
+  **VE artik gercekten kesikli (`DASHED`) linetype'la** cizilir (rev-14'te
+  kapatilan basitlestirme — onceden sadece etiketle ayirt ediliyordu, DXF'te
+  cizgi turu ayni kaliyordu). Ayrıntı: `scripts/elevations/CLAUDE.md`.
 - **Bilinen basitlestirmeler (rev-2):** Banyo/WC gibi servis odalari,
   "birim bandi"nin tam derinligini paylastigi icin gercekte olmasi
   gerekenden biraz dar-uzun orantili olabilir; otopark cizgileri
@@ -345,6 +350,15 @@ guncellenir.
     **genişlik hem yükseklik** bakımından sığacak şekilde ölçeklenir.
   - Uygulaması `scripts/rooms::RoomLabeler`dır — ayrı ad-hoc etiket kodu
     yazılmaz.
+  - **BLOK+ATTRIB (rev-14, DEV-018):** standart 3 satırlı durumda etiket
+    artık üç ayrı `TEXT` değil, tek bir `MAHAL_ETIKET` `INSERT`i + üç
+    `ATTRIB` (`MAHAL_ADI`/`MAHAL_KOD`/`ALAN`) olarak çizilir. AutoCAD'de
+    etiket **tek seçilebilir nesne** olur ve alanları CAD içinde
+    düzenlenebilir. Konum/yükseklik matematiği eski düz-TEXT formülüyle
+    **birebir örtüşür** (blok `NOMINAL_HEIGHT`e göre tanımlanır, `INSERT`
+    ölçeği `fitted_height/NOMINAL_HEIGHT`tir — doğrusal olduğu için eşitlik
+    kanıtlanabilir, bkz. `scripts/rooms/CLAUDE.md`). Kat kodu VEYA mahal no
+    eksikse (2 satır) blok kullanılmaz, eski düz-TEXT çizimine düşülür.
 - **Tefriş (rev-10'dan itibaren):** Tefriş **her zaman DXF `BLOCK`** olarak
   çizilir — tip başına bir blok tanımı, yerleşim başına bir `INSERT`.
   Uygulaması `scripts/furniture::FurnitureCatalog` / `FurnitureBlocks` /

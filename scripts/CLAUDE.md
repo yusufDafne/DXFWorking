@@ -33,7 +33,7 @@ kalanını bilmeye ihtiyaç duymadan o modül üzerinde derinlemesine/izole
 - ✅ **`scripts/openings/`** — `Opening`/`Door`/`Window`,
   `OpeningSymbolStyle`, `OpeningSchedule` (bkz. `HD-003`).
 - ✅ **`scripts/rooms/`** — `Room`, `PolygonOps`, `RoomLabeler` (3 satırlı
-  mahal etiketi, bkz. `HD-005`).
+  mahal etiketi, bkz. `HD-005`; BLOK+ATTRIB, bkz. `HD-009`).
 - ✅ **`scripts/dimensions/`** — `DimensionChain`, `LinearDim`,
   `ChainLayout` (bkz. `HD-003`).
 - ✅ **`scripts/typography/`** — Proje yazı tipi / DXF text style sahibi
@@ -43,8 +43,11 @@ kalanını bilmeye ihtiyaç duymadan o modül üzerinde derinlemesine/izole
   (bkz. `HD-006`). Kapı bu modülde DEĞİLDİR (bkz. modül CLAUDE.md).
 - ✅ **`scripts/columns/`** — Taralı kolon, dinamik hatch, ileriye dönük
   isimlendirme (bkz. `HD-006`).
-- ⏳ Cephe, lejant, import — her biri için ayrı plan maddesi
-  `docs/development/DEVELOPMENT_TASKS.md` içindedir (`DEV-011` … `DEV-018`).
+- ✅ **`scripts/elevations/`** — `ElevationSheet`, `LevelStack`,
+  `FacadeOpeningPlacer`; zemin-altı `DASHED` linetype (bkz. `HD-009`).
+- ✅ **`scripts/legend/`** — `OpeningLegend`, `LegendRenderer`; kapı/pencere
+  cetveli, kapak paftasının boş üst alanında (bkz. `HD-009`).
+- ⏳ Import — `docs/development/DEVELOPMENT_TASKS.md` içindeki `DEV-013`.
 
 ## Modül bağımsızlığı ve çapraz kontrol (kullanıcı ilkesi)
 
@@ -167,13 +170,13 @@ Ortak desen (pafta + walls ile kanitlandi):
 | `walls/`      | `Wall`, `WallNetwork`, `WallCatalog`, `RoomPolygonScanner`                  | UYGULANDI (ilk surum)                                          |
 | `axis/`       | `AxisGrid`, `AxisDrawingStandard`, `Axis`, `AxisCoverageReport`, `check_labels` | UYGULANDI; kismi/ara aks + etiket kurali (rev-13)          |
 | `openings/`   | `Opening`, `Door`, `Window`, `OpeningSymbolStyle`, `OpeningSchedule`, `SwingGeometry`, `swing_geometry`, `DOOR_SYMBOLS`, `ARCS_PER_VARIANT` | UYGULANDI; 4 varyant + swing/host_side (rev-13) |
-| `rooms/`      | `Room`, `RoomLabeler`, `PolygonOps`, `RoomPolygonScanner`                   | UYGULANDI; 3 satirli mahal etiketi (rev-9)                     |
+| `rooms/`      | `Room`, `RoomLabeler`, `PolygonOps`, `RoomPolygonScanner`, `ensure_room_label_block` | UYGULANDI; 3 satirli mahal etiketi (rev-9), BLOK+ATTRIB (rev-14) |
 | `dimensions/` | `DimensionChain`, `LinearDim`, `ChainLayout`, `ChainStack`, `DimensionStyle`, `FloorOrdinates`, `FloorDimensionPlanner`, `DimensionSettings` | UYGULANDI; turetilen 3 kademeli olcu yigini (rev-13) |
 | `typography/` | `TextStyles`                                                                | UYGULANDI; proje fontu Arial Narrow (rev-9)                    |
 | `furniture/`  | `FurnitureCatalog`, `FurnitureBlocks`, `FurnitureRenderer`, `FurnitureSpec`, `FurnitureItem`, `FurnitureGroup`, `FurnitureSchedule` | UYGULANDI; tefris = DXF BLOCK (rev-10) |
 | `columns/`    | `Column`, `ColumnGrid`, `ColumnRenderer`, `ColumnSection`, `ColumnSectionCatalog`, `ColumnHatchStyle`, `ColumnLabelStyle` | UYGULANDI; tarali kolon ANSI33/3.0 (rev-10) |
-| `elevations/` | `ElevationSheet`, `LevelStack`, `FacadeOpeningPlacer`                       | PLANLANAN (DEV-011); sinif adlari onerilmis, kod YOK           |
-| `legend/`     | `TitleBlockLegend`, `LayerSwatch`, `LegendRenderer`                         | PLANLANAN (DEV-012); sinif adlari onerilmis, kod YOK           |
+| `elevations/` | `ElevationSheet`, `LevelStack`, `FacadeOpeningPlacer`, `Level`, `elevation_vertical_extent` | UYGULANDI (rev-14); zemin-alti DASHED linetype kapandi |
+| `legend/`     | `OpeningLegend`, `LegendRenderer`, `ScheduleRow`                            | UYGULANDI (rev-14); Fikir 1 (kapi/pencere cetveli) secildi     |
 | `import/`     | `DxfWallScanner`, `ImportReport`, `ImportPatch`                             | PLANLANAN (DEV-013); sinif adlari onerilmis, kod YOK           |
 | `collision/`  | `CollisionShape`, `CollisionPolicy`, `CollisionEngine`, `Clash`, `ClashReport`, `Scene`, `check_context` | UYGULANDI (rev-12); validate.py ONCESI bloklayici kapi |
 

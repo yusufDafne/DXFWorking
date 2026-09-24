@@ -87,22 +87,30 @@ rev-12 durumu:
   hata düzeltildi (270°'lik yay, yarım genişlik kayık sektör) (`HD-008`).
 - `DEV-017` **COMPLETED (rev-13)** — türetilen 3 kademeli ölçü yığını +
   kademelendirme (`HD-008`).
-- `DEV-011`, `DEV-012`, `DEV-013`, `DEV-014`, `DEV-018` PLANNED.
+- `DEV-018` **COMPLETED (rev-14)** — mahal etiketi `MAHAL_ETIKET` bloğu +
+  `ATTRIB` (`MAHAL_ADI`/`MAHAL_KOD`/`ALAN`); `ensure_room_label_block`
+  idempotent, `add_auto_attribs` ile doldurulur. `golden_report.py::
+  _iter_all` eklendi (ezdxf ATTRIB'i genel iterasyona dahil etmiyor) (`HD-009`).
+- `DEV-011` **COMPLETED (rev-14)** — `scripts/elevations/` (yeni modül);
+  below-ground `DASHED` linetype gerçekten uygulandı (`HD-009`).
+- `DEV-012` **COMPLETED (rev-14)** — `scripts/legend/` (yeni modül); kapı/
+  pencere cetveli kapak paftasının boş üst alanında (`HD-009`).
+- `DEV-013`, `DEV-014` PLANNED.
 
 **Önemli işletim notu:** Üretimden sonra artık
 `python scripts/golden_report.py output/plan.dxf --rules context.json`,
-`python scripts/golden_report.py --golden-set` ve **dört modül self-test'i**
-(`collision`, `dimensions`, `axis`, `openings`) da çalıştırılmalıdır. Ölçüm raporunun
-tek başına yetmediği rev-10'da somut olarak gösterildi; çakışma motorunun
-"temiz döndü" çıktısı da tek başına hiçbir şey kanıtlamaz (motor hiç
-çalışmasa da temiz dönerdi), bu yüzden self-test kasıtlı bozulmuş bir kat
-üzerinde beklenen bulguların TAM OLARAK üretildiğini sınar.
+`python scripts/golden_report.py --golden-set` ve **altı modül self-test'i**
+(`collision`, `dimensions`, `axis`, `openings`, `rooms`, `elevations`) da
+çalıştırılmalıdır. Ölçüm raporunun tek başına yetmediği rev-10'da somut
+olarak gösterildi; çakışma motorunun "temiz döndü" çıktısı da tek başına
+hiçbir şey kanıtlamaz (motor hiç çalışmasa da temiz dönerdi), bu yüzden
+self-test kasıtlı bozulmuş bir kat üzerinde beklenen bulguların TAM OLARAK
+üretildiğini sınar.
 
-Sıradaki iş için sistem mimarı açık direktif vermelidir. Sıralama önerisi:
-`DEV-018` (blok yaygınlaştırma) `DEV-011`den önce ele alınırsa iş tekrarı
-önlenir — artık 3 golden referansı ve 4 self-test olduğu için bloklara geçişin
-etkisi ölçülebilir durumda. Sistem mimarı açıkça başlatmadan kod değişikliği
-yapılmaz. Başlangıçta görev kilidi alınmalıdır.
+Sıradaki iş için sistem mimarı açık direktif vermelidir. Kalan tek modül
+maddesi `DEV-013` (`import/`, ileri faz) ve `DEV-014` (`walls/`
+genişletmesi — `RailDrawingStandard` Protocol'ü). Sistem mimarı açıkça
+başlatmadan kod değişikliği yapılmaz. Başlangıçta görev kilidi alınmalıdır.
 
 ## İlk okuma sırası
 

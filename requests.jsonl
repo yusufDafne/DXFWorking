@@ -19,3 +19,4 @@
 {"rev": 12, "ts": "2026-09-23T14:20:00Z", "request": "dev 19 için: çakışma denetimi için ayrı modül mü yoksa her modül kendi içerisinde bunu kontrol eder bunun best practices önerisi nedir? karar ve planla.\ndev20: best practices seç, sanırım modül bazlı daha iyi olabilir ama senin fikrini yaz.\ndev7: konusunu tekrar açma plan olarak kalsın."}
 {"rev": 12, "ts": "2026-09-23T15:05:00Z", "request": "committen önce dev19 ve dev20 uygula. dev7 içinde eksik olan alanlara yetkili 1 ve yetkili 2 olarak belirle. yani 4 imza, mimiar, belediye, yetkili 1 yetkili 2 şeklinde 4 imza alanı olsun yeterli. kapak tasarımında uygun bir yere projenin üretildiği tarih saat de yazılsın."}
 {"rev": 13, "ts": "2026-09-23T16:00:00Z", "request": "uygun bir sıra belirleyerek 3 planı gerçekleştir.\n17 -> 15  sonrakini sen seç."}
+{"rev": 14, "ts": "2026-09-23T17:15:00Z", "request": "uygun sıralama ile 3 tane planı uygula."}

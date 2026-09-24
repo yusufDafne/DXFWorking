@@ -4,6 +4,104 @@ Aktif geçmiş kapasitesi: **50 kayıt**. En eski tamamlanmış kayıt, 51. kay�
 alınırken silinir. Ayrıntılı teknik değişiklikler git geçmişi ve ilgili proje
 provenance kayıtlarıyla ilişkilendirilir.
 
+## HD-009 — Mahal etiketi BLOCK+ATTRIB, cephe modülü ve kapı/pencere cetveli
+
+- **Durum:** COMPLETED
+- **Tamamlanma:** 2026-09-23
+- **Görevler:** `DEV-018` → `DEV-011` → `DEV-012` (bu sırayla; `DEV-018`
+  blok yaygınlaştırmasının `DEV-011`den önce ele alınması iş tekrarını
+  önledi — `DEVELOPER_NOTES.md`de rev-13 sonunda kayıtlı öneriydi).
+- **Kapsam:** `scripts/rooms/` (BLOK+ATTRIB + `selftest.py` yeni),
+  `scripts/elevations/` (yeni modül, `generate_dxf.py`den taşındı),
+  `scripts/legend/` (yeni modül, ilk taslak `CLAUDE.md`nin fikri DEĞİL,
+  Fikir 1 uygulandı), `scripts/golden_report.py` (`_iter_all` yeni),
+  `scripts/preview.py` (elevations/legend'ı import eder, kendi kopyasını
+  tutmaz), `scripts/collision/scene.py`, `scripts/version.py`,
+  `generate_dxf.py`, golden referansları (3'ü de `--update`).
+
+### DEV-018 — mahal etiketi BLOCK+ATTRIB
+
+- **Ölçülerek görüldü:** görev açılırken "hiç BLOCK kullanılmıyor" denmişti
+  ama bu ölçüm `furniture` (`DEV-010`) BLOCK/INSERT kullanmaya başlamadan
+  ÖNCEki bir kayıttı ve bayatlamıştı — ana projede tefriş YOK, bu yüzden
+  `INSERT` sayısı hâlâ 0 görünüyordu, furniture kodu blok kullanmadığı için
+  değil.
+- Asıl boşluk mahal etiketiydi. `MAHAL_ETIKET` bloğu üç `ATTDEF`
+  (`MAHAL_ADI`/`MAHAL_KOD`/`ALAN`) ile bir kez tanımlanır; `INSERT` ölçeği
+  `fitted_height / NOMINAL_HEIGHT`tir. Bu, eski düz-`TEXT` formülüyle
+  **doğrusal ölçekleme kanıtıyla** birebir örtüşür (her terim `height *
+  sabit` biçimindedir) — `selftest.py`de `< 1e-6` toleransla doğrulandı.
+- **Gerçek bir ezdxf tuzağı bulundu:** bir `INSERT`e bağlı `ATTRIB`ler DXF
+  dosyasında GERÇEKTEN ayrı entity'lerdir (AutoCAD'de tek tek düzenlenebilir)
+  ama ezdxf bunları genel layout iterasyonuna/`query()`'e DAHİL ETMEZ. Bu,
+  `golden_report.py`nin ölçüm raporunu ve `rule_room_labels`i SESSİZCE kör
+  ederdi. `_iter_all` yardımcısı (`for e in modelspace: yield e; if INSERT:
+  yield from e.attribs`) eklenerek kapatıldı.
+- Kat kodu VE mahal no'nun ikisi de eksikse (2 satır) blok kullanılmaz, eski
+  düz-TEXT'e düşülür — blok 3 ATTDEF için SABİT yerleşimlidir.
+
+### DEV-011 — `elevations/` modülü + below-ground linetype
+
+- `generate_dxf.py` içine gömülü `draw_elevation`/`elevation_vertical_extent`
+  kendi modülüne taşındı (`ElevationSheet`, `LevelStack`,
+  `FacadeOpeningPlacer`, `Level`) — diğer tüm modüllerle aynı desen.
+- **Kapatılan basitleştirme:** `below_ground: true` seviyelerin DXF'teki
+  çizgi türü artık gerçekten `DASHED`tir (önceden sadece etiketle ayırt
+  ediliyordu). `axis` modülü AYNI isimle aynı deseni yükler; iki modül
+  birbirini import ETMEZ, her biri kendi `if name not in doc.linetypes`
+  korumalı kaydını yapar.
+- **Taşıma sırasında bulunan tutarsızlık:** `preview.py`nin kendi
+  `elevation_vertical_extent` KOPYASI `machine_room` protrüzyonunu pafta
+  Y-aralığı hesabına KATMIYORDU (gerçek DXF versiyonu katıyordu). Ortak
+  `LevelStack`e geçince bu sessizce düzeldi.
+
+### DEV-012 — `legend/` modülü: kapı/pencere cetveli
+
+- **İki fikirden Fikir 1 seçildi.** Veri zaten hazırdı
+  (`OpeningSchedule.from_openings`); `OpeningLegend.rows` bunu proje çapında
+  (tip, varyant, genişlik) ile GRUPLAYIP `LegendRenderer.draw` ile gerçek bir
+  MARKA/TİP/VARYANT/GENİŞLİK/ADET cetveli çizer. Ana projede 145 açıklık →
+  10 grup (6 kapı + 4 pencere).
+- **Açık karar kapandı — nereye çizilir:** kapak paftasının kapak bloğunun
+  ÜSTÜNDE kalan, HER ZAMAN boş kalan alana (A4 kapak, daha uzun paylaşılan
+  pafta Y-aralığı içinde). Ayrı pafta açılmadı.
+- **Pencerede `VARYANT` sütunu `-`dir** — `openings/style.py` varyantı
+  SADECE kapıda kullanır; pencerede "TEK KANAT" yazmak var olmayan bir
+  ayrımı uydururdu.
+- `preview.py` da AYNI `COLUMNS`/`COLUMN_WEIGHTS` sabitleriyle matplotlib
+  karşılığını çizer (kök CLAUDE.md "önizleme DXF ile birebir" kuralı).
+
+### Doğrulama
+
+- Beş self-test (`collision`, `dimensions`, `axis`, `openings`, `rooms`) +
+  yeni altıncı (`elevations`) — hepsi negatif ve yanlış-pozitif testli.
+- `py_compile`, `validate`, `generate`, `preview`, 5 semantik kural,
+  3 golden referans, `doc_check` — hepsi temiz.
+- `legend` için ayrı `selftest.py` yok; doğrulaması `--golden-set`/`--rules`
+  üzerinden dolaylıdır (gruplama hatası TEXT/LINE sayısına yansır).
+
+### Golden output etkisi
+
+- Mahal etiketi `INSERT`+`ATTRIB` oldu: ana projede 125 `TEXT`→`INSERT`+375
+  `ATTRIB` (+125 entity toplamda, `METIN` layer'i +125).
+- Kapı/pencere cetveli her paftaya (kapak paftası) çizgi+metin ekledi.
+- `output/plan.dxf` entity sayısı ve `docs/development/plan-golden-report.json`
+  ile 3 golden `expected.json` bu yüzden `--update`/`--write` ile yenilendi;
+  fark açıklanabilir (yeni içerik, regresyon değil).
+
+### Bilinen sınırlamalar
+
+- `legend` modülünün Fikir 2'si (layer/sembol lejantı, `TitleBlockLegend`/
+  `LayerSwatch`) uygulanmadı, açık fikir olarak duruyor.
+- `elevations`de plandan açıklık türetme (Fikir 2) uygulanmadı.
+- `elevations`de seviye sırası (zemin-altı seviyelerin listede ÖNCE gelmesi
+  gerektiği) doğrulanmaz — context yanlış sıralanırsa cursor sessizce yanlış
+  konum üretir.
+
+- **Sonraki direktif:** `DEV-013` (`import/`, ileri faz) veya `DEV-014`
+  (`walls/` genişletmesi) görevlerinden birini sistem mimarı açıkça
+  başlatmalıdır.
+
 ## HD-008 — Ölçü zinciri, kısmi aks ve açıklık varyantları
 
 - **Durum:** COMPLETED

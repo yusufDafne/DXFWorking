@@ -1,20 +1,22 @@
 {
   "source": "golden/minimal",
-  "entity_count": 113,
+  "entity_count": 142,
   "entity_types": {
     "ARC": 1,
+    "ATTRIB": 6,
     "CIRCLE": 16,
     "DIMENSION": 5,
-    "LINE": 37,
+    "INSERT": 2,
+    "LINE": 48,
     "LWPOLYLINE": 14,
-    "TEXT": 40
+    "TEXT": 50
   },
   "layers": {
     "AKS": 45,
-    "CERCEVE": 17,
+    "CERCEVE": 28,
     "DUVARLAR": 19,
     "KAPI-PENCERE": 7,
-    "METIN": 23,
+    "METIN": 41,
     "OLCU": 2
   },
   "modelspace_bbox": [
@@ -24,7 +26,10 @@
     13150.0
   ],
   "blocks": [
+    "MAHAL_ETIKET",
     "_CLOSEDFILLED"
   ],
-  "block_inserts": {}
+  "block_inserts": {
+    "MAHAL_ETIKET": 2
+  }
 }

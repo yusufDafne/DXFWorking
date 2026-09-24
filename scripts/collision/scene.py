@@ -41,6 +41,15 @@ COLLISION_EXEMPT: dict[str, str] = {
     "dimensions": "Olcu zinciri anotasyondur; plan geometrisinde yer kaplamaz.",
     "typography": "Metin stili tanimlar; hic geometri uretmez.",
     "collision": "Motorun kendisi.",
+    "elevations": "Cephe (elevation) semantik/basit bir seviye istifidir, "
+                  "gercek plan geometrisinden turetilmez (kok CLAUDE.md "
+                  "rev-2 karari). Bu motor sadece floors[] uzerinde calisir; "
+                  "elevations[] ayri bir veri agacidir ve mekansal cakisma "
+                  "kavraminin (oda/tefris/duvar) hicbiri orada yoktur.",
+    "legend": "Kapi/pencere cetveli kapak paftasinin BOS alaninda duran bir "
+              "OZET TABLODUR (metin+cizgi); plan geometrisinde yer kaplamaz "
+              "ve hicbir mekansal elemanla aynı KOORDINAT UZAYINI paylasmaz "
+              "(dimensions/typography ile ayni gerekce).",
 }
 
 

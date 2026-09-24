@@ -85,6 +85,8 @@ from columns import (  # noqa: E402
     ensure_column_layers,
 )
 from openings import Opening, OpeningSchedule  # noqa: E402
+from elevations import elevation_vertical_extent, ElevationSheet  # noqa: E402
+from legend import OpeningLegend, LegendRenderer  # noqa: E402
 from version import (  # noqa: E402
     SCHEMA_VERSION,
     format_timestamp,
@@ -98,9 +100,8 @@ DEFAULT_OUTPUT_PATH = PROJECT_ROOT / "output" / "plan.dxf"
 
 # --- Cizim/sunum sabitleri (tasarim verisi degil) ---
 DEFAULT_LAYER_COLOR = 7
-DEFAULT_ELEVATION_WINDOW_SIZE = (1200.0, 1400.0)
-ELEVATION_DOOR_SIZE = (1800.0, 2100.0)
-ELEVATION_LABEL_OFFSET = 300.0   # icerik kenarindan itibaren bilerek birakilmis bosluk (sifir-hizali degil)
+# Cephe (elevation) cizim sabitleri artik scripts/elevations modulunde
+# (DEV-011, rev-14) - bu script sadece cagirir, kendi kopyasini tutmaz.
 
 # Pafta cercevesi/baslik/tasma-kontrolu/kagit-boyutu artik scripts/pafta
 # modulunde (bkz. scripts/pafta/CLAUDE.md) - bu script sadece Sheet/
@@ -235,6 +236,22 @@ def draw_cover_sheet(msp, context: dict, dx: float, sheet: Sheet,
         footer_right=f"SISTEM: {SCHEMA_VERSION}",
     )
 
+    # Kapak blogunun USTUNDE kalan bos alana kapi/pencere cetveli (DEV-012).
+    # Kapak paftasi digerlerinden daha kisa oldugu icin (A4 orantisi) bu alan
+    # HER ZAMAN bosta kalirdi; kok CLAUDE.md'nin "kapak paftanin ALTINA
+    # oturur, ustte kalan bolum BOS birakilir" notuyla tutarlidir.
+    legend_rows = OpeningLegend.rows(context["floors"])
+    if legend_rows:
+        margin = gap
+        LegendRenderer.draw(
+            msp, legend_rows,
+            block_x0 + margin, sheet.frame_y1 - gap - margin,
+            block.width - 2 * margin,
+            row_height=block.mm(7.0), title_row_height=block.mm(9.0),
+            title_height=block.mm(4.0), header_height=block.mm(2.8),
+            text_height=block.mm(2.6),
+        )
+
     # Bu pafta, TUM paftalarla paylasilan mutlak Y araligini oldugu gibi
     # kullanir (kendi araligini bildirip ortak cerceveyi bozmaz).
     content_entities = list(msp)[content_start:]
@@ -344,88 +361,6 @@ def draw_floor_sheet(msp, floor: dict, dx: float, units: str, floor_width: float
 
     content_entities = list(msp)[content_start:]
     sheet.draw(msp, dx, floor_width, 0.0, floor_depth, floor["label"], content_entities=content_entities)
-
-
-def elevation_vertical_extent(elevation: dict) -> tuple[float, float]:
-    levels = elevation["levels"]
-    total_below = sum(l["height"] for l in levels if l.get("below_ground"))
-    total_above = sum(l["height"] for l in levels if not l.get("below_ground"))
-    extra = 0.0
-    for l in levels:
-        if l.get("machine_room"):
-            extra = max(extra, l["height"] * 0.8)
-    return -total_below, total_above + extra
-
-
-def draw_elevation(msp, elevation: dict, dx: float, text_height: float, axis_grid: AxisGrid,
-                    label_text_height: float) -> None:
-    width = elevation["width"]
-    levels = elevation["levels"]
-
-    total_below = sum(l["height"] for l in levels if l.get("below_ground"))
-    cursor = -total_below
-    computed = []
-    for level in levels:
-        y0 = cursor
-        y1 = cursor + level["height"]
-        computed.append((level, y0, y1))
-        cursor = y1
-
-    # Aks izgarasi HER ZAMAN en once (en altta) cizilir.
-    axis_grid.draw_on_elevation(msp, dx, elevation.get("axis_source"), -total_below, cursor)
-
-    for level, y0, y1 in computed:
-        outline = msp.add_lwpolyline(
-            [(dx, y0), (dx + width, y0), (dx + width, y1), (dx, y1)], dxfattribs={"layer": "DUVARLAR"}
-        )
-        outline.closed = True
-
-        window_count = level.get("window_count", 0)
-        if window_count > 0:
-            win_w, win_h = level.get("window_size", list(DEFAULT_ELEVATION_WINDOW_SIZE))
-            sill = max(0.0, (level["height"] - win_h) / 2.0)
-            gap = width / (window_count + 1)
-            for i in range(1, window_count + 1):
-                cx = dx + gap * i
-                x0w = cx - win_w / 2.0
-                win = msp.add_lwpolyline(
-                    [
-                        (x0w, y0 + sill), (x0w + win_w, y0 + sill),
-                        (x0w + win_w, y0 + sill + win_h), (x0w, y0 + sill + win_h),
-                    ],
-                    dxfattribs={"layer": "KAPI-PENCERE"},
-                )
-                win.closed = True
-
-        if level.get("door"):
-            door_w, door_h = ELEVATION_DOOR_SIZE
-            cx = dx + width / 2.0
-            x0d = cx - door_w / 2.0
-            door = msp.add_lwpolyline(
-                [(x0d, y0), (x0d + door_w, y0), (x0d + door_w, y0 + door_h), (x0d, y0 + door_h)],
-                dxfattribs={"layer": "KAPI-PENCERE"},
-            )
-            door.closed = True
-
-        if level.get("machine_room"):
-            mr_w, mr_h = width * 0.25, level["height"] * 0.8
-            cx = dx + width * 0.2
-            mr = msp.add_lwpolyline(
-                [(cx, y1), (cx + mr_w, y1), (cx + mr_w, y1 + mr_h), (cx, y1 + mr_h)],
-                dxfattribs={"layer": "DUVARLAR"},
-            )
-            mr.closed = True
-
-        add_text(
-            msp, level["label"], (dx - ELEVATION_LABEL_OFFSET, (y0 + y1) / 2.0), label_text_height, "METIN",
-            align=TextEntityAlignment.MIDDLE_RIGHT,
-        )
-
-    msp.add_line((dx - 1000, 0), (dx + width + 1000, 0), dxfattribs={"layer": "OLCU"})
-    add_text(
-        msp, "+-0.00 ZEMIN", (dx - ELEVATION_LABEL_OFFSET, 150.0), label_text_height, "OLCU",
-        align=TextEntityAlignment.MIDDLE_RIGHT,
-    )
 
 
 def generate(context_path: Path = DEFAULT_CONTEXT_PATH, output_path: Path = DEFAULT_OUTPUT_PATH) -> Path:
@@ -564,7 +499,7 @@ def generate(context_path: Path = DEFAULT_CONTEXT_PATH, output_path: Path = DEFA
 
     for elevation in elevations:
         content_start = len(msp)
-        draw_elevation(msp, elevation, cursor, text_height, axis_grid, elevation_label_height)
+        ElevationSheet.draw(msp, elevation, cursor, text_height, axis_grid, elevation_label_height)
         content_entities = list(msp)[content_start:]
         y_bottom, y_top = elevation_vertical_extent(elevation)
         sheet.draw(msp, cursor, elevation["width"], y_bottom, y_top, elevation["label"], content_entities=content_entities)

@@ -57,6 +57,21 @@ MODULE_ROOT = PROJECT_ROOT / "scripts"       # scripts/<modul>/golden/<ad>
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 
+def _iter_all(modelspace):
+    """Modelspace entity'lerini, INSERT'e bagli ATTRIB'lerle BIRLIKTE gezer.
+
+    ezdxf bir INSERT'in ATTRIB'lerini genel layout iterasyonuna/`query()`'e
+    DAHIL ETMEZ (onlari INSERT'in sahiplendigi alt-entity sayar) - oysa DXF
+    dosyasinda gercekten AYRI, AutoCAD'de tek tek duzenlenebilir entity'lerdir
+    (DEV-018, bkz. `scripts/rooms/CLAUDE.md`). Olcum/kural kontrolleri bu
+    yuzden duz `for e in modelspace` yerine bu yardimciyi kullanir; aksi
+    halde mahal etiketi ATTRIB'leri sessizce sayilmaz."""
+    for entity in modelspace:
+        yield entity
+        if entity.dxftype() == "INSERT":
+            yield from entity.attribs
+
+
 def entity_bbox(entity):
     """Bir entity'nin GERCEK sinirlari. `INSERT` blok icerigini, `TEXT` ise
     metin genisligini kapsar (bkz. modul docstring'indeki uyari)."""
@@ -73,8 +88,8 @@ def entity_bbox(entity):
 def report(path: Path) -> dict:
     document = ezdxf.readfile(path)
     modelspace = document.modelspace()
-    types = Counter(entity.dxftype() for entity in modelspace)
-    layers = Counter(entity.dxf.layer for entity in modelspace)
+    types = Counter(entity.dxftype() for entity in _iter_all(modelspace))
+    layers = Counter(entity.dxf.layer for entity in _iter_all(modelspace))
     box = bbox_mod.extents(modelspace, fast=True)
     bbox = ([round(float(box.extmin[0]), 3), round(float(box.extmin[1]), 3),
              round(float(box.extmax[0]), 3), round(float(box.extmax[1]), 3)]
@@ -83,7 +98,7 @@ def report(path: Path) -> dict:
     result = {
         "source": str(path),
         "sha256": digest,
-        "entity_count": len(modelspace),
+        "entity_count": sum(types.values()),
         "entity_types": dict(sorted(types.items())),
         "layers": dict(sorted(layers.items())),
         "modelspace_bbox": bbox,
@@ -112,7 +127,11 @@ def compare(actual: dict, expected: dict) -> list[str]:
 # --------------------------------------------------------------------------
 
 def _text_entities(msp):
-    return list(msp.query("TEXT"))
+    # DEV-018 (rev-14): mahal etiketi artik cogunlukla ATTRIB'dir (blok +
+    # ATTRIB); nadir 2-satirlik kenar durumda hala duz TEXT'tir. Ikisi de
+    # Text alt sinifidir (`dxf.text`, `get_placement()` ortak). `query()`
+    # ATTRIB'i gormez (bkz. `_iter_all`), o yuzden onu kullaniyoruz.
+    return [e for e in _iter_all(msp) if e.dxftype() in ("TEXT", "ATTRIB")]
 
 
 def _sheet_offsets(context: dict) -> list[tuple[dict, float]]:
@@ -248,7 +267,7 @@ def rule_declared_layers(doc, context: dict) -> list[str]:
     """Cizimde context'te BILDIRILMEMIS bir layer kullanilmaz. Kod tarafindan
     zorunlu kilinan layer'lar (AKS, TEFRIS-*, KOLON*) muaftir."""
     declared = {layer["name"] for layer in context["layers"]} | _code_owned_layers()
-    used = {e.dxf.layer for e in doc.modelspace()}
+    used = {e.dxf.layer for e in _iter_all(doc.modelspace())}
     unknown = sorted(used - declared)
     if unknown:
         return [f"Bildirilmemis layer kullanilmis: {', '.join(unknown)}."]

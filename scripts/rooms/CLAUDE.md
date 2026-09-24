@@ -1,4 +1,4 @@
-# rooms modülü — DEV-002 tamamlandı
+# rooms modülü — DEV-002 + DEV-018 tamamlandı
 
 ## Sorumluluk
 
@@ -23,6 +23,8 @@ Kapalı oda poligonu, alan/komşuluk, `RoomLabeler`, alan etiketi sığdırma ve
 - `PolygonOps.area`, `centroid`, `is_closed`, `has_self_intersection`.
 - `RoomLabeler.draw(msp, room, max_text_height, units)`.
 - `RoomPolygonScanner.scan_edges(...)` ve `suggest_wall_dicts(...)`.
+- `ensure_room_label_block(doc, layer, style_name)`, `ROOM_LABEL_BLOCK_NAME`,
+  `ROOM_LABEL_ATTDEF_TAGS`, `ROOM_LABEL_NOMINAL_HEIGHT` (DEV-018).
 
 ## Invariant'lar ve doğrulama
 
@@ -32,6 +34,9 @@ Kapalı oda poligonu, alan/komşuluk, `RoomLabeler`, alan etiketi sığdırma ve
 - Etiket oda sınırları ve Sheet overflow sınırları içinde kalır.
 - Scanner önerisi context'e otomatik yazılmaz.
 - Golden output'ta oda label layer, metin ve konum farkları raporlanır.
+- Blok+ATTRIB konumu, eski düz-TEXT formülüyle her zaman `< 1e-6` toleransla
+  örtüşür (`python scripts/rooms/selftest.py`); blok tanımı belge başına
+  BİR kez oluşur (yanlış-pozitif testi).
 
 ## Sınır
 
@@ -67,6 +72,41 @@ olmadan küçük mahallerde (WC, hol) etiket odadan taşardı.
 `ROOM_LABEL_MIN_HEIGHT` bir okunabilirlik tabanıdır. Taban devreye girerse
 etiket teorik olarak odadan taşabilir; bu yüzden değişiklik sonrası
 **tüm odalar için** kapsama kontrolü yapılmalıdır (rev-9'da 125/125 doğrulandı).
+
+## BLOK+ATTRIB (rev-14, DEV-018)
+
+`DEV-018` "çizimde hiç `BLOCK` kullanılmıyor" gözlemiyle açılmıştı; ama
+tefriş (`DEV-010`) zaten `INSERT` kullanıyordu — asıl boşluk mahal etiketiydi
+(kullanıcının "mahal ismi blok olarak işlensin" ifadesi rev-9'da büyük harf
+olarak yorumlanmıştı; `BLOCK` entity kastedildiyse asıl karşılığı budur).
+
+**Tasarım:** blok, `ROOM_LABEL_NOMINAL_HEIGHT` (100 birim) referans
+yüksekliğine göre 3 ATTDEF (`MAHAL_ADI`/`MAHAL_KOD`/`ALAN`) ile TEK SEFER
+tanımlanır (`ensure_room_label_block`, `FurnitureBlocks.ensure` deseniyle
+idempotent). Her oda için `INSERT` ölçeği `fitted_height / NOMINAL_HEIGHT`
+verilir ve `insert.add_auto_attribs(...)` ile ATTRIB'ler doldurulur.
+
+**Neden eski çizimle birebir örtüşür:** eski düz-TEXT formülünün her terimi
+(`satır yüksekliği`, `satırlar arası kayma`, `blok toplam yüksekliği`)
+`height` değişkeninde DOĞRUSALDIR — hepsi `height * sabit` biçimindedir.
+Bu yüzden blok NOMINAL_HEIGHT'ta tanımlanıp `scale = height/NOMINAL_HEIGHT`
+ile eklendiğinde, `ezdxf`'in tekdüze (uniform) ölçekleme dönüşümü
+(`Insert.add_auto_attribs` → `Attrib.transform`) konumu ve yüksekliği AYNI
+`scale` ile çarpar — sonuç, eski formülün `height`i doğrudan kullanmasıyla
+MATEMATİKSEL OLARAK AYNIDIR. Bu denklik `selftest.py`de elle hesaplanan
+beklenen konumla `< 1e-6` toleransla kanıtlanır.
+
+**Kenar durum:** kat kodu VE mahal no'nun ikisi de eksikse (nadir; 2 veya
+daha az satır) blok kullanılmaz, eski düz-TEXT çizimine (`_draw_raw`)
+düşülür — blok 3 ATTDEF için SABİT yerleşimle tanımlıdır, ortadaki satır boş
+kalsaydı görsel bir boşluk bırakırdı.
+
+**ezdxf tuzağı (ölçüm araçları için önemli):** bir `INSERT`e bağlı `ATTRIB`
+entity'leri DXF dosyasında GERÇEKTEN ayrı, AutoCAD'de tek tek düzenlenebilir
+kayıtlardır — ama ezdxf'in Python nesne modeli bunları genel layout
+iterasyonuna/`query()`'e DAHİL ETMEZ (`insert.attribs` ile ayrıca okunur).
+`scripts/golden_report.py::_iter_all` bu yüzden eklendi; onsuz ölçüm/kural
+kontrolleri mahal etiketi ATTRIB'lerini SESSİZCE görmezdi.
 
 ## Çakışma ayak izi (rev-12)
 

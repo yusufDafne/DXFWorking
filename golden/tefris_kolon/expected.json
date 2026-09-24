@@ -1,24 +1,25 @@
 {
   "source": "golden/tefris_kolon",
-  "entity_count": 178,
+  "entity_count": 208,
   "entity_types": {
     "ARC": 2,
+    "ATTRIB": 9,
     "CIRCLE": 19,
     "DIMENSION": 6,
     "HATCH": 9,
-    "INSERT": 23,
-    "LINE": 51,
+    "INSERT": 26,
+    "LINE": 62,
     "LWPOLYLINE": 23,
-    "TEXT": 45
+    "TEXT": 52
   },
   "layers": {
     "AKS": 51,
-    "CERCEVE": 17,
+    "CERCEVE": 28,
     "DUVARLAR": 29,
     "KAPI-PENCERE": 12,
     "KOLON": 9,
     "KOLON-TARAMA": 9,
-    "METIN": 26,
+    "METIN": 45,
     "OLCU": 2,
     "TEFRIS-ISLAK": 5,
     "TEFRIS-MUTFAK": 5,
@@ -33,6 +34,7 @@
     13150.0
   ],
   "blocks": [
+    "MAHAL_ETIKET",
     "TEFRIS_BULASIK_MAKINESI",
     "TEFRIS_BUZDOLABI",
     "TEFRIS_CAMASIR_MAKINESI",
@@ -55,6 +57,7 @@
     "_CLOSEDFILLED"
   ],
   "block_inserts": {
+    "MAHAL_ETIKET": 3,
     "TEFRIS_BULASIK_MAKINESI": 1,
     "TEFRIS_BUZDOLABI": 1,
     "TEFRIS_CAMASIR_MAKINESI": 1,

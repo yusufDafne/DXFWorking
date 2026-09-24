@@ -18,14 +18,14 @@ agent kendi başına sıra değiştirmez.
 | DEV-008 | `rooms/` etiket | COMPLETED (rev-9) |
 | DEV-009 | `furniture/` | COMPLETED (rev-10) |
 | DEV-010 | `columns/` | COMPLETED (rev-10) |
-| DEV-011 | `elevations/` | PLANNED |
-| DEV-012 | `legend/` | PLANNED |
+| DEV-011 | `elevations/` | COMPLETED (rev-14) |
+| DEV-012 | `legend/` | COMPLETED (rev-14) |
 | DEV-013 | `import/` | PLANNED |
 | DEV-014 | `walls/` | PLANNED |
 | DEV-015 | `axis/` | COMPLETED (rev-13) |
 | DEV-016 | `openings/` | COMPLETED (rev-13) |
 | DEV-017 | `dimensions/` | COMPLETED (rev-13) |
-| DEV-018 | DXF `BLOCK` (modüller arası) | PLANNED |
+| DEV-018 | DXF `BLOCK` (modüller arası) | COMPLETED (rev-14) |
 | DEV-019 | `collision/` (modüller arası) | COMPLETED (rev-12) |
 | DEV-020 | sürüm + provenance | COMPLETED (rev-12) |
 
@@ -33,8 +33,8 @@ agent kendi başına sıra değiştirmez.
 
 **Şu anda `READY` durumda görev YOKTUR.** Sistem mimarı aşağıdaki modül
 kataloğundan bir maddeyi (ve varsa bir fikri) açıkça seçip başlatmalıdır.
-Öneri: `DEV-018` modüller arası bir karar olduğu için `DEV-011`den önce ele
-alınırsa iş tekrarı önlenir.
+Kalan tek modül maddesi `DEV-013` (`import/`, ileri faz) ve `DEV-014`
+(`walls/` genişletmesi) — ikisi de kullanıcı önceliklendirmesi bekliyor.
 
 > `DEV-007` kullanıcı talimatıyla (rev-12) **konusu açılmadan** plan olarak
 > bekleyecektir; agent bu madde için veri İSTEMEZ. İmza alanları rev-12'de
@@ -594,7 +594,7 @@ kullanıcı tarafından KESİN olarak verilmiştir ve fikir gibi değerlendirilm
   seçilmedi; şartname doğrudan uygulandı. `RoomLabelStyle` Protocol'ü ve
   leader'lı yerleşim hâlâ açık birer geliştirme olarak durur.
 - **İlgili:** Etiketin DXF `BLOCK` + `ATTRIB` olarak üretilmesi `DEV-018`de
-  planlandı.
+  (rev-14) tamamlandı.
 - **Önceki durum (kayıt):** `RoomLabeler.draw` tek satır, sabit biçim
   `"{ad} ({alan} m2)"` üretiyordu; yalnızca oda genişliğine bakıyordu.
 
@@ -673,9 +673,9 @@ ZK-04        <- 2. satir: kat kodu + mahal no
 - **Açık kararlar:** Katalog ölçüleri hangi kaynaktan gelecek (ofis
   standardı / yönetmelik)? Kapı açılım alanıyla çakışma bloklayıcı hata mı,
   uyarı mı?
-- **İlgili:** Tefrişin DXF `BLOCK` olarak tanımlanıp tanımlanmayacağı
-  `DEV-018`de planlandı. Tefriş uygulanmadan ÖNCE o karar verilirse kod iki
-  kez yazılmaz.
+- **İlgili:** Tefrişin DXF `BLOCK` olarak tanımlanması bu görevde (`DEV-009`)
+  zaten uygulandı; `DEV-018` (rev-14) bunu ÖLÇEREK doğruladı ve asıl eksiğin
+  mahal etiketi olduğunu ortaya çıkardı.
 
 ### DEV-010 — `columns/` — kolon modülü
 
@@ -709,38 +709,51 @@ ZK-04        <- 2. satir: kat kodu + mahal no
 
 ### DEV-011 — `elevations/` — cephe modülü
 
-- **Durum:** PLANNED
-- **Mevcut durum:** `elevation_vertical_extent` ve `draw_elevation` hâlâ
-  `generate_dxf.py` içinde. Cepheler plandan türetilmez; kullanıcının izin
-  verdiği şekilde semantik seviye istifi + eşit aralıklı jenerik pencerelerdir.
-  **Bilinen basitleştirme:** `below_ground: true` seviyeler için DXF'te ayrı
-  kesikli linetype UYGULANMIYOR, sadece etiketle ayırt ediliyor.
-- **Fikir 1 — Below-ground linetype'ı gerçekten uygulamak:** Bugünkü
-  basitleştirmeyi kapatmak; zemin altı seviyeleri kesikli linetype ile çizmek
-  ve davranışı gerçek renderer ile doğrulamak (sözleşme, doğrulanmamış bir
-  standardı varsaymayı yasaklıyor).
-- **Fikir 2 — Plandan cephe açıklığı türetme (opt-in):** Pencere sayısını elle
-  vermek yerine, ilgili cepheye bakan duvarlardaki `openings[]`'i X konumuyla
-  izdüşürmek. Varsayılan KAPALI olmalı ve türetilen açıklıklar kullanıcı
-  onayına sunulmalı — aksi halde "cephe plandan türetilmez" ilkesi delinir.
-- **Açık kararlar:** Cephe açıklıkları plan opening stilini mi tüketir, ayrı
-  stil mi kullanır?
+- **Durum:** COMPLETED (rev-14)
+- **Sonuç:**
+  - *Fikir 1 — below-ground linetype (SEÇİLDİ):* `below_ground: true`
+    seviyelerin ana hattı (ve içindeki pencere/kapı varsa onlar da) artık
+    gerçekten `DASHED` linetype ile çizilir. Önceden sadece ETİKETLE ayırt
+    ediliyordu; DXF'te çizgi türü diğer seviyelerle AYNIYDI. `preview.py`
+    zaten `linestyle="--"` ile bunu TAKLİT EDİYORDU — gerçek DXF çıkışında
+    yoktu, bu asimetri kapandı.
+  - *Fikir 2 — plandan açıklık türetme (uygulanmadı):* açık karar olarak
+    duruyor, bkz. `scripts/elevations/CLAUDE.md` "Bilinen sınırlamalar".
+- **Modül izole edildi:** `generate_dxf.py` içine gömülü `draw_elevation`/
+  `elevation_vertical_extent` `scripts/elevations/` modülüne taşındı
+  (`ElevationSheet`, `LevelStack`, `FacadeOpeningPlacer`, `Level`) — diğer
+  tüm modüllerle aynı "her çizim konusu kendi modülü" deseni. `preview.py`
+  artık cursor/extent matematiğini bu modülden import eder (önceden kendi
+  KOPYASINI tutuyordu ve `machine_room` protrüzyonunu pafta Y-aralığı
+  hesabına KATMIYORDU — bu tutarsızlık da bu geçişte kapandı).
+- **Doğrulama:** `python scripts/elevations/selftest.py` — elle hesaplanabilir
+  bir istifte cursor birikimi, `extent()`in `machine_room` protrüzyonunu
+  kapsadığı ve zemin-altı seviylerin (SADECE onların) `DASHED` aldığı
+  yanlış-pozitif testi.
+- **Kayıt:** `DEVELOPMENT_HISTORY.md` içindeki `HD-009`.
 
 ### DEV-012 — `legend/` — lejant ve cetveller
 
-- **Durum:** PLANNED
-- **Mevcut durum:** Yalnızca sözleşme var. İlgili veri üretimi KISMEN hazır:
-  `openings::OpeningSchedule.from_openings(...)` deterministik satırlar
-  üretiyor ama `generate_dxf.py` sonucu kullanmadan atıyor.
-- **Fikir 1 — Kapı/pencere cetveli:** Zaten üretilen `OpeningSchedule`
-  satırlarını bir tablo olarak çizmek. Veri hazır olduğu için en kısa yoldan
-  görünür değer üreten iş budur.
-- **Fikir 2 — Layer/sembol lejantı:** Projede gerçekten KULLANILAN layer ve
-  sembollerin merkezi bir registry'den okunup açıklanması. Lejant opsiyonel
-  kalır ve açık karar olmadan etkinleşmez.
-- **Açık kararlar:** Cetvel kendi paftasında mı, yoksa mevcut paftanın boş
-  alanında mı duracak? Kapak paftasının üstündeki boş alan bu iş için
-  kullanılabilir mi?
+- **Durum:** COMPLETED (rev-14)
+- **Sonuç:**
+  - *Fikir 1 — kapı/pencere cetveli (SEÇİLDİ):* `OpeningLegend.rows` zaten
+    üretilen `OpeningSchedule` satırlarını proje çapında (tip, varyant,
+    genişlik) ile GRUPLAYIP `LegendRenderer.draw` ile gerçek bir MARKA/TİP/
+    VARYANT/GENİŞLİK/ADET cetveli çizer (145 açıklık → 10 grup, ana proje
+    üzerinde ölçülerek doğrulandı).
+  - *Fikir 2 — layer/sembol lejantı (uygulanmadı):* açık fikir olarak
+    duruyor, bkz. `scripts/legend/CLAUDE.md`.
+- **Açık karar kapandı — cetvel NEREYE çizilir:** kapak paftasının kapak
+  bloğunun ÜSTÜNDE kalan, HER ZAMAN boş kalan alana (kök `CLAUDE.md`:
+  "kapak bloğu paftanın ALTINA oturur, üstte kalan bölüm BOŞTUR"). Ayrı bir
+  pafta açılmadı — ortak Y-aralığı hesabına yeni bir katılımcı eklemek
+  `CONTENT_PADDING` gibi başka sabitleri gereksiz yere tetikleyecekti.
+- **Pencere satırında `VARYANT` sütunu `-`dir** — `variant` alanı şemada
+  pencerede de var ama `openings/style.py` bunu SADECE kapıda kullanır;
+  pencerede "TEK KANAT" yazmak var olmayan bir ayrımı uydururdu.
+- **Doğrulama:** ayrı bir `selftest.py` yok; `--golden-set`/`--rules` dolaylı
+  doğrular (bkz. `scripts/legend/CLAUDE.md` "Doğrulama").
+- **Kayıt:** `DEVELOPMENT_HISTORY.md` içindeki `HD-009`.
 
 ### DEV-013 — `import/` — mevcut çizimden veri okuma
 
@@ -775,58 +788,55 @@ ZK-04        <- 2. satir: kat kodu + mahal no
 
 ### DEV-018 — DXF `BLOCK` entity kullanımı (modüller arası)
 
-- **Durum:** PLANNED (kullanıcı 2026-09-23'te plan olarak eklenmesini istedi)
-- **Kapsam notu:** Bu madde tek bir modüle ait değildir; `rooms`, `furniture`,
+- **Durum:** COMPLETED (rev-14)
+- **Kapsam notu:** Bu madde tek bir modüle ait değildi; `rooms`, `furniture`,
   `openings`, `axis` ve `legend` modüllerinin hepsini ilgilendiren bir DXF
-  yetenek kararıdır.
-- **Mevcut durum:** Çizimde **hiç `BLOCK` kullanılmıyor** — `output/plan.dxf`
-  içindeki `INSERT` sayısı **0**, 2226 entity'nin tamamı düz geometri
-  (`LINE`, `LWPOLYLINE`, `TEXT`, `ARC`, `CIRCLE`). Tekrarlayan öğeler her
-  yerde yeniden çiziliyor: 125 mahal etiketi = 375 ayrı `TEXT`, her kapı =
-  1 `ARC` + 3 `LINE`, her aks baloncuğu = 1 `CIRCLE` + 1 `TEXT`.
-- **Neden değerli:** AutoCAD'de bir blok **tek seçilebilir nesnedir**; bir
-  tanım, çok `INSERT`. Tekrarlayan öğenin biçimi tek yerden değişir, dosya
-  küçülür ve kullanıcı etiketi/mobilyayı yanlışlıkla parçalayamaz.
-- **Fikir 1 — Mahal etiketi bloğu + `ATTRIB`:** Mahal etiketini
-  `MAHAL_ADI` / `MAHAL_NO` / `ALAN` öznitelikli bir blok tanımı yapmak ve her
-  mahale bir `INSERT` koymak. Etiket AutoCAD'de tek nesne olur, öznitelikler
-  CAD içinde düzenlenebilir ve tüm etiketlerin biçimi tek tanımdan güncellenir.
-  (Kullanıcının "mahal ismi blok olarak işlensin" ifadesi rev-9'da **büyük
-  harf** olarak yorumlandı; `BLOCK` entity kastedildiyse asıl karşılığı budur.)
-- **Fikir 2 — Sembol/tefriş blok kütüphanesi:** Tefriş elemanları, kapı/pencere
-  sembolleri ve aks baloncuklarını yeniden kullanılabilir blok tanımlarına
-  taşımak; tanımların sahibi yeni bir `scripts/blocks/` modülü olur, diğer
-  modüller yalnızca `INSERT` üretir. `DEV-009` (tefriş) ile doğrudan bağlantılı
-  — tefriş uygulanmadan önce bu karar verilirse kod iki kez yazılmaz.
-- **ÖNCE ÇÖZÜLMESİ GEREKEN (ölçülerek doğrulandı):**
-  - **`golden_report.py` blokları GÖREMİYOR.** `entity_bbox`, `INSERT` için
-    yalnızca **ekleme noktasını** döndürüyor; blok içeriği bounding box'a
-    girmiyor (test edildi: 2000x1000 içerikli bir blok, (5000,5000) noktasına
-    eklendiğinde bbox `[5000, 5000, 5000, 5000]` çıkıyor). Bloklara geçilirse
-    golden raporunun modelspace bbox'ı **sessizce küçülür** ve regresyon
-    yakalama gücü daha da azalır. `DEV-006` ile birlikte ele alınmalıdır.
-  - **Pafta taşma koruması çalışmaya devam eder.** `verify_within_frame`,
-    `ezdxf.bbox.extents(...)` kullanıyor ve bu fonksiyon `INSERT`i çözüp
-    gerçek sınırları veriyor (aynı testte `(5000,5000)-(7000,6000)` döndü).
-    Yani bu tarafta bir risk yok.
-- **Açık kararlar:** Mevcut düz geometri bloklara **taşınacak mı**, yoksa
-  bloklar yalnızca yeni öğelerde mi kullanılacak? Blok adlandırma kuralı ne
-  olacak? Öznitelikler `ATTRIB` mi olacak yoksa düz `TEXT` mi (öznitelik
-  kullanılırsa `validate.py`nin ve golden raporunun bunları okuması gerekir)?
-  Ölçekli blokta metin yüksekliği nasıl korunacak?
+  yetenek kararıydı. Ölçülerek görüldü ki **`furniture` (`DEV-010`) zaten
+  `BLOCK`/`INSERT` kullanıyordu** — asıl boşluk mahal etiketiydi (proje bu
+  görevi AÇARKEN yazılan "Mevcut durum" metni furniture'dan ÖNCEki bir
+  ölçümdü ve bayatlamıştı).
+- **Sonuç:**
+  - *Fikir 1 — mahal etiketi bloğu + `ATTRIB` (SEÇİLDİ):** `MAHAL_ETIKET`
+    bloğu üç `ATTDEF` (`MAHAL_ADI`/`MAHAL_KOD`/`ALAN`) ile bir kez tanımlanır;
+    her mahal bir `INSERT` + üç `ATTRIB` olur (ana projede 125 `INSERT` +
+    375 `ATTRIB`). Konum/yükseklik matematiği eski düz-`TEXT` formülüyle
+    **doğrusal ölçekleme kanıtıyla** birebir örtüşür — bkz.
+    `scripts/rooms/CLAUDE.md` "BLOK+ATTRIB".
+  - *Fikir 2 — sembol/tefriş blok kütüphanesi:* tefriş kısmı zaten `DEV-010`
+    ile tamamlanmıştı (yukarıdaki not). Kapı/pencere sembolleri ve aks
+    baloncuklarının blok kütüphanesine taşınması **uygulanmadı** — açık fikir
+    olarak duruyor (bugün bu semboller düz `ARC`/`LINE`/`CIRCLE`/`TEXT`'tir,
+    yanlış değildir, sadece tek-nesne/`ATTRIB` avantajını taşımaz).
+- **ÖNCE ÇÖZÜLMESİ GEREKEN maddeleri gerçekten sınandı:**
+  - `golden_report.py::report`, `INSERT` blok içeriğini bounding box'a zaten
+    KATIYORDU (`entity_bbox` docstring'i bunun `DEV-006`/tefriş ile
+    düzeltildiğini not ediyor) — bu madde ölçülünce zaten KAPALI çıktı.
+  - **Yeni bulunan gerçek engel (bu maddede öngörülmemiş):** ezdxf, bir
+    `INSERT`e bağlı `ATTRIB`leri genel layout iterasyonuna/`query()`'e DAHİL
+    ETMEZ (DXF dosyasında GERÇEKTEN ayrı entity'ler olsalar da). Bu,
+    `golden_report.py::report`/`rule_room_labels`i SESSİZCE kör ederdi;
+    `_iter_all` yardımcısı eklenerek kapatıldı (bkz.
+    `scripts/rooms/CLAUDE.md` "ezdxf tuzağı").
+- **Açık kararlar kapandı:** Mevcut düz geometri bloklara TAŞINMADI (sadece
+  mahal etiketi, yeni bir öğe gibi ele alındı — geriye dönük veri taşıma
+  gerekmedi çünkü davranış BİREBİR korundu). Öznitelikler `ATTRIB` seçildi
+  (düz `TEXT` değil) — `validate.py` bunları okumaz (mahal etiketi zaten
+  `validate.py`nin ilgilendiği bir kontrol değildi); golden raporu `_iter_all`
+  ile okur. Ölçekli blokta metin yüksekliği `INSERT` `xscale`/`yscale` ile
+  korunur (`Attrib.transform` uniform ölçeği doğru uygular).
+- **Doğrulama:** `python scripts/rooms/selftest.py`.
+- **Kayıt:** `DEVELOPMENT_HISTORY.md` içindeki `HD-009`.
 
 ## BACKLOG
 
-Her modülün kendi plan maddesi artık yukarıdaki **PLANNED** bölümündedir
-(`DEV-007` … `DEV-017`); bu bölüm yalnızca sıra önerisini tutar.
+Her modülün kendi plan maddesi artık yukarıdaki **PLANNED** bölümündedir;
+bu bölüm yalnızca sıra önerisini tutar.
 
-Kullanıcının verdiği öncelik (2026-09-23): `DEV-008` tamamlandı, `DEV-007`
-kullanıcı verisi bekliyor, `DEV-006` hazır. `DEV-009` (tefriş) ve `DEV-018`
-(DXF `BLOCK` kullanımı) kullanıcı talebiyle açılmıştır; `DEV-018` modüller
-arası bir karardır ve `DEV-009`dan ÖNCE ele alınması işi tekrar etmeyi önler.
-Kalan modüller için sıra önerisi:
-
-`columns/` → `elevations/` → `legend/` → `import/`
+`columns/`, `elevations/` ve `legend/` TAMAMLANDI (rev-10, rev-14, rev-14).
+Kalan tek modül maddesi `DEV-013` (`import/`, ileri faz — kod HENÜZ yok) ve
+`DEV-014` (`walls/` genişletmesi — mevcut düz-rail davranışı bozulmadan bir
+`RailDrawingStandard` Protocol'ü eklemek). İkisi de sistem mimarının açık
+başlatmasını bekliyor.
 
 Her görev uygulamaya alınmadan önce ilgili `scripts/<module>/CLAUDE.md` dosyası
 ve `docs/phases/NEXT-MODULES-ROADMAP.md` okunur. Buradaki kayıtlar kod

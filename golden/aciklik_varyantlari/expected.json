@@ -1,20 +1,22 @@
 {
   "source": "golden/aciklik_varyantlari",
-  "entity_count": 150,
+  "entity_count": 196,
   "entity_types": {
     "ARC": 4,
+    "ATTRIB": 3,
     "CIRCLE": 16,
     "DIMENSION": 21,
-    "LINE": 58,
+    "INSERT": 1,
+    "LINE": 72,
     "LWPOLYLINE": 14,
-    "TEXT": 37
+    "TEXT": 65
   },
   "layers": {
     "AKS": 44,
-    "CERCEVE": 17,
+    "CERCEVE": 31,
     "DUVARLAR": 33,
     "KAPI-PENCERE": 17,
-    "METIN": 20,
+    "METIN": 52,
     "OLCU": 19
   },
   "modelspace_bbox": [
@@ -24,7 +26,10 @@
     13150.0
   ],
   "blocks": [
+    "MAHAL_ETIKET",
     "_CLOSEDFILLED"
   ],
-  "block_inserts": {}
+  "block_inserts": {
+    "MAHAL_ETIKET": 1
+  }
 }
