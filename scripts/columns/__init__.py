@@ -21,9 +21,11 @@ from .render import ColumnGrid, ColumnRenderer, ensure_column_layers
 from .section import DEFAULT_COLUMN_CATALOG, ColumnSection, ColumnSectionCatalog
 from .standard import (
     COLUMN_HATCH_LAYER,
+    COLUMN_HATCH_RGB,
     COLUMN_LAYER,
     COLUMN_RGB,
     COLUMN_TEXT_LAYER,
+    COLUMN_TEXT_RGB,
     DEFAULT_HATCH_PATTERN,
     DEFAULT_HATCH_SCALE,
 )
@@ -36,9 +38,11 @@ CONTRACT_VERSION = "1.0"
 
 __all__ = [
     "COLUMN_HATCH_LAYER",
+    "COLUMN_HATCH_RGB",
     "COLUMN_LAYER",
     "COLUMN_RGB",
     "COLUMN_TEXT_LAYER",
+    "COLUMN_TEXT_RGB",
     "DEFAULT_COLUMN_CATALOG",
     "DEFAULT_HATCH_PATTERN",
     "DEFAULT_HATCH_SCALE",

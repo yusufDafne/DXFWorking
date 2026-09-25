@@ -4,6 +4,108 @@ Aktif geçmiş kapasitesi: **50 kayıt**. En eski tamamlanmış kayıt, 51. kay�
 alınırken silinir. Ayrıntılı teknik değişiklikler git geçmişi ve ilgili proje
 provenance kayıtlarıyla ilişkilendirilir.
 
+## HD-014 — `palette/` modülü: merkezi katman renk organizasyonu (DEV-030)
+
+- **Durum:** COMPLETED
+- **Tamamlanma:** 2026-09-25
+- **Kökeni:** Kullanıcının kod incelemesi sırasında yaptığı gözlem
+  ("modüllerin kendi layer'larında çalışırken renklerinin
+  çeşitlendirilmediğini fark ettim") `DEV-030` olarak plana eklenmişti
+  (bkz. bu oturumdaki önceki kayıt). Kullanıcı sonradan Fikir 1
+  (merkezi olmayan) / Fikir 2 (merkezi kontrolör modülü) arasında **Fikir
+  2**'yi seçti, gerekçesi:
+
+  > "her modül kendi rengini oluşturursa bazı modüller aynı rengi seçmiş
+  > olabilir ... ve bazı modüllerin birbirlerine kontrast renkler ile
+  > bulunması ihtiyacı olabilir bundan dolayı ayrı bir modül olması uygun
+  > olabilir."
+
+- **Kapsam:** `scripts/palette/` (yeni modül: `__init__.py`, `CLAUDE.md`,
+  `selftest.py`), `scripts/axis/standard.py`, `scripts/columns/standard.py`
+  + `render.py` + `__init__.py`, `scripts/sections/__init__.py`,
+  `scripts/stairs/__init__.py`, `scripts/furniture/groups.py` (hepsi
+  `palette.color_for(...)`den okur), `scripts/collision/scene.py`
+  (`COLLISION_EXEMPT`), `scripts/version.py` (`CONTRACT_MODULES`), kök
+  `CLAUDE.md` + `scripts/CLAUDE.md` (modül kaydı).
+
+### İki kural, kullanıcının iki cümlesine BİREBİR karşılık gelir
+
+`palette::validate_palette`: (1) hiçbir iki katman AYNI rengi taşıyamaz
+(tam eşitlik yasağı — "aynı rengi seçmiş olabilir" riski), (2) aynı
+`contrast_group`taki katmanlar birbirinden en az `CONTRAST_MIN_DISTANCE`
+(40.0, RGB Öklid mesafesi) kadar uzak olmalıdır ("kontrast ihtiyacı").
+`"primary"` grubu AKS/KOLON ailesi/KESİT/MERDİVEN'i kapsar (aynı pafta
+üzerinde aynı anda görülebilirler); tefriş ailesi bilerek bu gruba GİRMEZ
+(rev-10 kararı: "zıt renk kullanılmaz" korunur).
+
+### Somut bulgu düzeltildi: KOLON ailesi artık 3 farklı ton
+
+`columns/standard.py::COLUMN_RGB`, üç farklı katmana (`KOLON` kontur,
+`KOLON-TARAMA` tarama, `KOLON-METIN` isim) TEK renk atıyordu — kullanıcının
+birinci endişesinin (aynı rengin paylaşılması) SOMUT bir örneğiydi.
+`palette` kurulurken üçü ayrıştırıldı: kontur nötr orta gri `(150,150,150)`,
+tarama daha açık `(190,190,190)` (ast eleman konvansiyonu), metin en koyu
+`(45,45,50)` (okunurluk) — üçü de `AKS`in SABİT rengine `(67,77,88)`
+(kök `CLAUDE.md` tarafından mandate edilir, DEĞİŞTİRİLEMEZ) yeterince uzak
+tutuldu; eski `(90,90,96)` AKS'ye tehlikeli derecede yakındı (Öklid mesafesi
+~27.6, yeni değerler ≥88).
+
+### Kapsam kararı: yalnızca kod-sahipli katmanlar
+
+`context.json::layers[]` (proje verisi, ACI index) merkezi kaydın DIŞINDA
+bırakıldı — kullanıcı bu ayrımı genişletmeyi istemedi (soru açık kararlar
+listesinde soruldu, ek yönlendirme gelmedi), bu yüzden "proje verisi = ACI,
+sistem/kod standardı = RGB" ikiliği KORUNDU.
+
+### `golden_report.py`nin bilinen bir kör noktası doğrulandı
+
+DEV-030 gerçek projenin `KOLON` ailesinin rengini DEĞİŞTİRDİĞİ halde
+`golden_report.py --golden-set` ve `--compare docs/development/
+plan-golden-report.json` "eşleşti" raporladı — ölçüm raporu yalnızca
+entity/layer SAYISINI ve `modelspace_bbox`i kaydeder, RGB'yi DEĞİL. Bu YENİ
+bir hata değil (rapor formatı hep böyleydi) ama DEV-030 bunu İLK KEZ somut
+olarak gösterdi; `scripts/palette/CLAUDE.md` ve `scripts/columns/CLAUDE.md`
+"Bilinen sınırlamalar"a eklendi. Renk regresyonu bugün yalnızca
+`palette/selftest.py` ve `preview.py` ile gözle kontrol edilebilir.
+
+### Golden output etkisi
+
+- **Ana proje GÖRSEL olarak değişti** (kolonların üç katmanı artık farklı
+  gri tonlarında) ama **ölçüm raporu AYNI kaldı** (yukarı bakınız) —
+  `docs/development/plan-golden-report.json` bu yüzden YENİDEN YAZILMADI
+  (zaten hiçbir şeyi kaydetmiyordu).
+- Mevcut 6 golden referansının TÜMÜ `--golden-set` ile yeniden koşuldu,
+  hepsi (`golden/tefris_kolon` dahil) "eşleşti" — beklenen, çünkü ölçüm
+  formatı renk taşımıyor.
+
+### Modül self-test'i
+
+`python scripts/palette/selftest.py` — 7 kontrol grubu: gerçek `PALETTE`nin
+kendi kurallarını ihlal etmediği, aynı-renk ihlalinin yakalandığı (KOLON
+bulgusunun regresyon testi), yakın-kontrast ihlalinin yakalandığı (+ eşiğin
+TAM ÜZERİNDEKİ mesafenin yanlış-pozitif ÜRETMEDİĞİ, elle: (100,100,100) vs
+(110,100,100) mesafe=10<40 HATA, (0,0,0) vs (40,0,0) mesafe=40 tam eşik
+HATA VERMEZ), farklı/`None` gruplar arası yakınlığın MUAF olduğu (tefriş
+ailesi korunur), `color_for`in bilinen/bilinmeyen isim davranışı, KOLON
+ailesinin artık aynı renk OLMADIĞI, `_distance`in elle hesaplanabilir
+olduğu (3-4-5 üçgeni, mesafe=5.0).
+
+### Açık risk / bilinen sınırlama
+
+- `golden_report.py` renk regresyonunu yakalamaz (yukarı bakınız) —
+  ileride `report()`e katman başına örnek RGB eklenmesi düşünülebilir.
+- `CONTRAST_MIN_DISTANCE` tek bir global eşiktir; gruba özel farklı eşikler
+  desteklenmiyor.
+- `context.json::layers[]` (ACI index) ile kod-seviyeli `PALETTE` (RGB)
+  arasında bir çakışma kontrolü YOK — kullanıcı bunu istemedi, bilinçli
+  sınır.
+
+### Sonraki direktif
+
+Sıradaki `PLANNED` madde `DEV-029` (kot/datum mantığı, `scripts/levels/`)
+— aynı oturumda kullanıcı tarafından seçildi, ayrıca bkz. bu dosyadaki
+sonraki kayıt.
+
 ## HD-013 — `stairs/` modülü: gerçek merdiven basamak geometrisi (DEV-022)
 
 - **Durum:** COMPLETED

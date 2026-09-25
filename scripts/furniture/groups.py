@@ -3,11 +3,18 @@
 Renkler bilerek DUSUK KONTRASTLIDIR (kullanici talebi: zit renk kullanilmaz) -
 tefris, duvar/aks gibi okunmasi gereken katmanla yarismaz. Layer'lar kod
 tarafinda zorunlu kilinir; renk context.json'dan ALINMAZ (`ensure_axis_layer`
-deseni).
+deseni). Renk DEGERLERI artik scripts/palette::PALETTE'in TEK kaynagindan
+gelir (DEV-030) - bu 5 ton DEGISMEDI, sadece merkezi kayda tasindi (tefris
+ailesi bilerek `contrast_group=None`dir, bkz. scripts/palette/CLAUDE.md).
 """
 from __future__ import annotations
 
 from dataclasses import dataclass
+
+try:
+    from ..palette import color_for
+except ImportError:  # dogrudan scripts/ uzerinden calistirildiginda
+    from palette import color_for
 
 @dataclass(frozen=True)
 class FurnitureGroup:
@@ -21,11 +28,11 @@ class FurnitureGroup:
 
 # Kahverengi ailesi - bilerek DUSUK kontrastli tonlar (kullanici talebi).
 FURNITURE_GROUPS: dict[str, FurnitureGroup] = {
-    "OTURMA": FurnitureGroup("OTURMA", "TEFRIS-OTURMA", (139, 94, 60), "Oturma grubu"),
-    "YEMEK": FurnitureGroup("YEMEK", "TEFRIS-YEMEK", (161, 120, 79), "Yemek grubu"),
-    "YATAK": FurnitureGroup("YATAK", "TEFRIS-YATAK", (120, 86, 66), "Yatak odasi"),
-    "MUTFAK": FurnitureGroup("MUTFAK", "TEFRIS-MUTFAK", (150, 111, 94), "Mutfak"),
-    "ISLAK": FurnitureGroup("ISLAK", "TEFRIS-ISLAK", (131, 120, 106), "Islak hacim"),
+    "OTURMA": FurnitureGroup("OTURMA", "TEFRIS-OTURMA", color_for("TEFRIS-OTURMA"), "Oturma grubu"),
+    "YEMEK": FurnitureGroup("YEMEK", "TEFRIS-YEMEK", color_for("TEFRIS-YEMEK"), "Yemek grubu"),
+    "YATAK": FurnitureGroup("YATAK", "TEFRIS-YATAK", color_for("TEFRIS-YATAK"), "Yatak odasi"),
+    "MUTFAK": FurnitureGroup("MUTFAK", "TEFRIS-MUTFAK", color_for("TEFRIS-MUTFAK"), "Mutfak"),
+    "ISLAK": FurnitureGroup("ISLAK", "TEFRIS-ISLAK", color_for("TEFRIS-ISLAK"), "Islak hacim"),
 }
 
 

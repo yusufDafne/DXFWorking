@@ -33,14 +33,18 @@ from ezdxf.enums import TextEntityAlignment
 try:
     from ..elevations import DIM_LAYER, LABEL_LAYER, Level, LevelStack
     from ..pafta import parse_scale_denominator, to_modelspace
+    from ..palette import color_for
 except ImportError:  # dogrudan scripts/ uzerinden calistirildiginda
     from elevations import DIM_LAYER, LABEL_LAYER, Level, LevelStack
     from pafta import parse_scale_denominator, to_modelspace
+    from palette import color_for
 
 SECTION_LAYER = "DUVARLAR"          # kesit icindeki kesilen duvar dolgusu - elevations ile AYNI konvansiyon (mevcut katman yeniden kullanilir)
 CUT_LAYER = "KESIT"                 # PLANDAKI kesit hatti + ucgen isaretler - AKS'ten (gri) BILEREK farkli
 CUT_LINETYPE = "KESIT_HATTI"
-CUT_RGB = (200, 30, 30)             # kirmizimsi - kullanici: "farkli renkte ve desende cizgi"
+# Renk artik scripts/palette::PALETTE'in TEK kaynagindan gelir (DEV-030);
+# DEGER AYNI (200,30,30) kalir - kullanici: "farkli renkte ve desende cizgi"
+CUT_RGB = color_for(CUT_LAYER)
 
 DEFAULT_POSITION_FRACTION = 1.0 / 3.0
 

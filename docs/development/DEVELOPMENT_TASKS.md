@@ -42,7 +42,7 @@ Tamamlanan işlerin ayrıntılı gerekçesi, karar süreci ve ölçülen etkisi
 | DEV-027 | Kaçış (tahliye) planı | PLANNED |
 | DEV-028 | `legend/` — malzeme/kaplama cetveli | PLANNED |
 | DEV-029 | Kot (seviye/datum) yönetim mantığı — proje geneli | PLANNED |
-| DEV-030 | Katman renk organizasyonu (modüller arası) | PLANNED |
+| DEV-030 | Katman renk organizasyonu (modüller arası) | COMPLETED (2026-09-25) |
 
 ## READY
 
@@ -76,12 +76,9 @@ bölüm artık üç tür maddeyi tutar:
    kullanıcının ayrıca gündeme getirdiği, proje geneline hakim olması
    gereken bir çapraz-kesit (cross-cutting) konu: kot (seviye/datum) verme
    mantığı. Aynı "uygulama izni değildir" kuralı geçerlidir.
-4. **`DEV-030`** — 2026-09-25'te kullanıcının kod incelemesi sırasında fark
-   ettiği bir gözlem: modüller kendi katmanlarında (layer) çalışıyor ama bu
-   katmanların RENKLERİ tutarlı biçimde çeşitlendirilmiyor. Aynı "uygulama
-   izni değildir" kuralı geçerlidir — kullanıcı mimari kararın (merkezi bir
-   renk kontrolör modülü mü, yoksa her modülün kendi rengini belirlemesi mi)
-   kendi ihtiyaca göre verileceğini belirtti.
+
+(`DEV-030` — katman renk organizasyonu — 2026-09-25'te seçilip tamamlandı,
+bkz. `## COMPLETED`.)
 
 **Şartname ile fikir farkı:** Bir maddede "Şartname" başlığı varsa, o kısım
 kullanıcı tarafından KESİN olarak verilmiştir ve fikir gibi değerlendirilmez.
@@ -256,96 +253,6 @@ değerlendirme:
 DEĞİŞTİRİLMEZ), `sections/` (aynı istif, kesitte de kot gösterilir),
 `rooms/`+`pafta` (plan tarafı spot kotu, henüz şema yok).
 
-### DEV-030 — Katman renk organizasyonu (modüller arası)
-
-- **Durum:** PLANNED
-
-**Kökeni:** Kullanıcının kod incelemesi sırasında yaptığı gözlem: "modüllerin
-kendi layer'larında çalışırken renklerinin çeşitlendirilmediğini fark ettim."
-Bu bir "endüstri standardı boşluğu" değil, mevcut kodun kendi içindeki bir
-TUTARLILIK sorunudur — bu yüzden diğer `PLANNED` maddelerden farklı olarak
-"Neden bir boşluk" yerine doğrudan bulgu ile başlıyor.
-
-**Bulgu (mevcut durumun envanteri, rev-25'te çıkarıldı):**
-
-- Proje verisi (`context.json::layers`) zaten çeşitlendirilmiş durumda:
-  `DUVARLAR`(7)/`KAPI-PENCERE`(5)/`MOBILYA`(3)/`OLCU`(4)/`METIN`(2)/
-  `CERCEVE`(8)/`OTOPARK`(9) — hepsi farklı ACI index.
-- `scripts/furniture/groups.py::FURNITURE_GROUPS` da çeşitlendirilmiş: 5
-  tefriş grubu (`TEFRIS-OTURMA`/`YEMEK`/`YATAK`/`MUTFAK`/`ISLAK`), 5 FARKLI
-  kahverengi-ailesi RGB tonu (`ensure_furniture_layers`). Bu, projenin
-  kendi iyi örneği.
-- **`scripts/columns/standard.py`de somut bir tutarsızlık var:** `KOLON`
-  (kontur), `KOLON-TARAMA` (hatch) ve `KOLON-METIN` (isim, bugün kapalı) —
-  ÜÇ farklı katman — `ensure_column_layers` içinde TEK bir `COLUMN_RGB =
-  (90, 90, 96)` ile boyanıyor. Kontur ve tarama görsel olarak ayrışmıyor.
-- `scripts/axis/standard.py::AXIS_RGB` ve `scripts/sections/__init__.py::
-  CUT_RGB` tek birer katmana (`AKS`, `KESIT`) ait olduğu için bu haliyle
-  sorun değil; ama her ikisi de KOD içinde ayrı ayrı sabitlenmiş, ortak bir
-  kayıt/çakışma kontrolünden geçmiyor — `AXIS_RGB=(67,77,88)` ile
-  `COLUMN_RGB=(90,90,96)` birbirine yakın gri tonlar, tesadüfen çakışmıyor
-  ama bunu garanti eden bir mekanizma yok.
-  `scripts/northarrow/` kendi katmanını/rengini açmıyor, `CERCEVE`/`METIN`i
-  ödünç alıyor (bilinçli bir paylaşım, ayrı bir renk sorunu değil).
-- Özet: renk kararı bugün HER modülde (varsa) `ensure_axis_layer` deseniyle
-  ayrı ayrı kod-seviyesinde veriliyor (kullanıcı ilkesi: "context.json'a
-  asla çizim sabiti sızmamalı"); ama modüller arası hiçbir yerde bu
-  renklerin BİRBİRİYLE çakışmadığını veya modül İÇİNDE anlamlı biçimde
-  ayrıştığını denetleyen tek bir nokta yok.
-
-**Fikir 1 — Merkezi olmayan: her modül kendi rengini kendi belirler.**
-Bugünkü `ensure_axis_layer`/`ensure_furniture_layers`/`ensure_column_layers`
-deseni AYNEN korunur; sadece HER modülün kendi `standard.py`si kendi
-katmanları için (varsa birden fazla) GERÇEKTEN farklı ton seçer (örn.
-`columns/standard.py`ye `COLUMN_LAYER` için bir RGB, `COLUMN_HATCH_LAYER`
-için ayrı (daha açık/taralı okunur) bir RGB tanımlanır). `doc_check.py`ye
-mekanik bir kontrol eklenebilir: bir modülün `ensure_*_layer` fonksiyonu
-BİRDEN FAZLA katman kuruyorsa, bunlara aynı RGB atanmış olması hataya
-sayılır. Modül bağımsızlığı ilkesiyle (`scripts/CLAUDE.md`) en uyumlu
-seçenek budur — yeni bir modül gerekmez, mevcut desen genişler.
-
-**Fikir 2 — Merkezi bir renk kontrolör modülü.** `typography::TextStyles`in
-font için yaptığını renk için yapan küçük bir kütüphane (örn.
-`scripts/palette/` veya `scripts/drawing_standards/`): tüm kod-seviyesi
-katman renklerini (AKS, KOLON ailesi, KESIT, TEFRIS ailesi, ileride
-`levels`/`stairs`/`ceiling` gibi yeni modüllerin katmanları) TEK bir
-kayıtta toplar, modüller bu kayıttan RGB ister
-(`palette.assign("KOLON-TARAMA", family="structural")` gibi), kayıt
-çakışma/ayrışma kuralını (örn. "aynı ailedeki katmanlar birbirine yakın
-ama BİRBİRİNDEN FARKLI tonda olmalı", "farklı aileler birbirine yakın
-olmamalı") merkezi olarak uygular ve denetler. `context.json::layers`
-(proje verisi, ACI index) bu kaydın KAPSAMI DIŞINDA kalır — o zaten
-kullanıcı/proje kararıdır, kod bunu SEÇMEZ, sadece `setup_layers` ile
-uygular.
-
-**Açık kararlar (kullanıcı kendi ihtiyacına göre karar verecek):**
-
-- Fikir 1 mi Fikir 2 mi? Bugün yalnızca 3 kod-seviyesi "aile" (aks/kolon/
-  kesit + tefriş) olduğu için Fikir 1 yeterli olabilir; ama `DEV-022`
-  (`stairs/`), `DEV-023` (`ceiling/`), `DEV-024` (`site/`), `DEV-029`
-  (`levels`/`datum`) gibi planlanan yeni modüller devreye girdikçe kod-
-  seviyesi katman/renk sayısı artacağı için merkezi bir kayıt (Fikir 2)
-  o noktada daha değerli hale gelebilir — kullanıcı bunu ŞİMDİ mi yoksa
-  ihtiyaç gerçekten büyüyünce mi kurmak istediğine karar verecek.
-- Kapsam yalnızca RENK mi, yoksa katman ADI/linetype çakışması (örn. iki
-  modülün aynı katman adını farklı amaçla kullanması) de aynı kontrole mi
-  girecek?
-- `context.json::layers` (proje verisi) ile kod-seviyesi katmanlar arasında
-  bir çakışma kontrolü (örn. proje bir `KOLON` adlı kendi katmanını
-  tanımlarsa ne olur) isteniyor mu, yoksa bu iki alan kasıtlı ayrı mı
-  kalacak?
-- ACI index (`context.json::layers[].color`, tamsayı) ile true RGB (kod-
-  seviyesi katmanlar) bugün İKİ farklı renk sistemi — bu proje için tek bir
-  sisteme (örn. hepsi RGB) geçmek isteniyor mu, yoksa ayrım (proje verisi =
-  ACI, sistem/kod standardı = RGB) bilinçli olarak mı korunacak?
-- Seçilen Fikir'e göre `doc_check.py`ye eklenecek mekanik kontrolün tam
-  şekli (bkz. Fikir 1'deki öneri) kullanıcı onayı gerektirir.
-
-**İlişkili modüller:** `columns/` (bugünkü somut tutarsızlığın kaynağı),
-`furniture/` (zaten iyi örnek, referans desen), `axis/` + `sections/` (tek
-katmanlı, bugün risksiz ama kaydın dışında), `typography/` (Fikir 2
-seçilirse aynı "merkezi kayıt" deseninin ikinci örneği olur).
-
 ## COMPLETED
 
 > Ayrıntılı gerekçe, karar süreci, bulunan gerçek hatalar ve ölçülen etki
@@ -500,6 +407,18 @@ seçilirse aynı "merkezi kayıt" deseninin ikinci örneği olur).
   (her esnetme UYARI). Yalnızca tek düz kollu merdiven desteklenir; sığmayan
   oda `StairFitError` ile REDDEDİLİR (gerçek projenin `Merdiven` odası bu
   sınıra girdiği için `context.json`a henüz veri eklenmedi). (`HD-013`)
+
+### DEV-030 — Katman renk organizasyonu (modüller arası)
+
+- **Durum:** COMPLETED (2026-09-25)
+- **Özet:** Yeni `scripts/palette/` modülü (Fikir 2, kullanıcı kararı:
+  "bazı modüller aynı rengi seçmiş olabilir" + "kontrast ihtiyacı"); tüm
+  kod-sahipli katman renkleri TEK kayıtta (`PALETTE`), iki kural
+  (aynı-renk yasağı + `contrast_group` içi minimum mesafe) denetleniyor.
+  Somut bulgu düzeltildi: `KOLON`/`KOLON-TARAMA`/`KOLON-METIN` artık üç
+  FARKLI ton (DEV-030 öncesi üçü aynıydı). `context.json::layers[]` (proje
+  verisi, ACI index) kapsam DIŞINDA bırakıldı — kod-seviyeli/proje-seviyeli
+  ayrım korundu. (`HD-014`)
 
 ## Görev tamamlama kuralı
 
