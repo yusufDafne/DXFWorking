@@ -34,7 +34,7 @@ Tamamlanan işlerin ayrıntılı gerekçesi, karar süreci ve ölçülen etkisi
 | DEV-019 | `collision/` (modüller arası) | COMPLETED (rev-12) |
 | DEV-020 | sürüm + provenance | COMPLETED (rev-12) |
 | DEV-021 | `sections/` — kesit modülü | COMPLETED (rev-17) |
-| DEV-022 | `stairs/` — merdiven gerçek geometrisi | PLANNED |
+| DEV-022 | `stairs/` — merdiven gerçek geometrisi | COMPLETED (2026-09-25) |
 | DEV-023 | `ceiling/` — yansıtılmış tavan planı | PLANNED |
 | DEV-024 | `site/` — vaziyet planı | PLANNED |
 | DEV-025 | Kuzey oku (+ grafik ölçek çubuğu, rev-18'de geri alındı) | COMPLETED (rev-17) |
@@ -61,10 +61,11 @@ Planlanmış modül kataloğunun tamamı (`DEV-011`…`DEV-020`) tamamlandı. Bu
 bölüm artık üç tür maddeyi tutar:
 
 1. **`DEV-007`** — tek gerçek BLOCKED madde, yukarıya bakınız.
-2. **`DEV-022`…`DEV-028`** — 2026-09-24'te (kullanıcı talebiyle) eklenen,
+2. **`DEV-023`…`DEV-028`** — 2026-09-24'te (kullanıcı talebiyle) eklenen,
    **endüstri standardı bir mimari çizim setinde bulunan ama bu projede
-   henüz olmayan** modül/geliştirme fikirleri (`DEV-021` ve `DEV-025`
-   rev-17'de seçilip tamamlandı, bkz. `## COMPLETED`). Bunlar bir mimarın
+   henüz olmayan** modül/geliştirme fikirleri (`DEV-021`/`DEV-025` rev-17'de,
+   `DEV-022` 2026-09-25'te seçilip tamamlandı, bkz. `## COMPLETED`). Bunlar
+   bir mimarın
    ufkunu açmak ve gerçekten gözden kaçan bir şey olup olmadığını
    değerlendirmek için yazılmıştır — **uygulama izni DEĞİLDİR**. Her biri
    `PLANNED` seviyesinde bir taslaktır; gerçek Fikir 1/Fikir 2/Açık kararlar
@@ -104,74 +105,6 @@ kullanıcı tarafından KESİN olarak verilmiştir ve fikir gibi değerlendirilm
 - **Açık kararlar:** Kapak **tasarımı** için kullanıcı ayrı bir talep
   paylaşacak; o talepte geometri (A4, sağ-alt sabitleme, eşit offset,
   antetsiz pafta) değişmemelidir.
-
-### DEV-022 — `stairs/` — merdiven gerçek basamak geometrisi
-
-- **Durum:** PLANNED
-
-**Neden endüstri standardı bir boşluk:** Kök `CLAUDE.md` bunu zaten kendi
-"bilinen basitleştirme" olarak kayıtlı tutuyor: "asansör/merdiven kapı
-sembolü çizilmez, sadece etiketli kapalı oda olarak gösterilir." Gerçek bir
-mimari planda merdiven basamak/rıht çizgileri, çıkış yönü oku ve kesme
-çizgisiyle (üst kat basamakları görünmez olduğu için) gösterilir — bu,
-"birim bandı" / "sirkülasyon bandı" ayrımı zaten var olan bu projede somut
-bir eksiktir.
-
-**Kapsam taslağı:** `floors[].rooms[]`de merdiven için ayrılmış poligon +
-basamak sayısı/rıht yüksekliği (kat yüksekliğinden türetilebilir) verilirse,
-eşit aralıklı basamak çizgileri + yön oku + kesme çizgisi üretilir. Kesitle
-(`DEV-021`, tamamlandı) doğal bir bağlantısı vardır: `sections::
-SectionFeatureHook` genişletme noktası tam olarak bu senaryo (merdivenin
-kesitte kırılma çizgisiyle gösterilmesi) için hazır tutulmuştur (bkz.
-`scripts/sections/CLAUDE.md` "Genişletme noktası").
-
-**Fikir 1 — YENİ, bağımsız `scripts/stairs/` modülü.** Projenin kurulu
-motifiyle (her çizim konusu kendi modülü + kendi `CLAUDE.md`'si) tutarlı:
-`Staircase`/`StairFlight` sınıfı merdiven poligonunü + basamak sayısını
-girdi alıp eşit aralıklı rıht çizgilerini, yön okunu ve kesme çizgisini
-üretir. `rooms/`e YENİ bir sorumluluk yüklemez — `rooms/` bugünkü gibi
-poligon+etiketten sorumlu kalır, `stairs/` yalnızca merdiven olarak
-işaretlenmiş odanın İÇİNE ek geometri çizer (kolonun `columns/` ile
-tefrişin `furniture/` ile ilişkisine benzer bir "oda içi ek çizim" deseni).
-Kesitteki kırılma çizgisi `sections::SectionFeatureHook`e bu modülden
-enjekte edilir; `sections` `stairs`i import ETMEZ (mevcut tek yönlü
-bağımlılık deseni korunur).
-
-**Fikir 2 — `rooms/` modülünün genişletilmesi.** Merdiven zaten bugün bir
-`Room` poligonu olarak modelleniyor; yeni bir modül açmak yerine
-`RoomLabeler`e (veya yakınına) bir `stair_kind`/`is_stair` bayrağıyla
-tetiklenen ek bir çizim adımı eklenebilir. Daha küçük bir değişiklik ama
-`rooms/`in bugünkü net kapsamını (poligon + 3 satırlı etiket) bulanıklaştırır
-ve `columns/`/`furniture/` emsaliyle (oda-içi ek eleman = kendi modülü)
-tutarsız düşer.
-
-**Açık kararlar (kod yazılmadan önce kullanıcı yönlendirmesi gerekir):**
-
-- Fikir 1 mi Fikir 2 mi? (Proje motifiyle Fikir 1 önerilir ama seçim
-  kullanıcınındır.)
-- Basamak sayısı/rıht yüksekliği **şema alanı olarak mı verilecek**
-  (örn. `rooms[].stairs.step_count`, `riser_height_mm`), yoksa kat
-  yüksekliğinden (varsayılan rıht ~180mm ile) **otomatik türetilecek** mi?
-  İkinci seçenek bir "çizim sabiti" (varsayım) içerir — kullanıcı onayı
-  gerektirir, uydurulmaz.
-- Yön oku (çıkış yönü) hangi veri alanından gelecek — yeni bir alan mı
-  eklenecek, yoksa `rooms[]`in mevcut geometrisinden mi (örn. kapıya en
-  yakın uç) türetilecek?
-- Bu görevin kapsamı SADECE plan görünümü mü, yoksa `SectionFeatureHook`
-  entegrasyonu (kesitte kırılma çizgisi) da AYNI revizyonda mı yapılacak?
-- Çakışma denetimi (`collision/`): merdiven basamak çizgileri bir ayak izi
-  ÜRETİR Mİ (örn. tefriş merdiven alanına girerse hata), yoksa yalnızca
-  görsel bir katman mı kalacak?
-- Golden referansı `golden/` (proje-geneli) altında mı yoksa
-  `scripts/stairs/golden/` (modül-özel) altında mı olacak?
-- Schema değişikliğine (`schema/design.schema.json`) izin var mı,
-  `additionalProperties: false` sözleşmesiyle hangi alan adları eklenecek?
-
-**İlişkili modüller:** `rooms/` (merdiven poligonu bugün de var, sadece
-etiketli), `sections/` (tamamlandı — `SectionFeatureHook`e merdiven
-kırılma çizgisi eklenerek genişletilir, çekirdek `SectionSheet.draw`
-değişmeden), `collision/` (yeni ayak izi sağlayıcısı gerekip gerekmediği
-açık karar).
 
 ### DEV-023 — `ceiling/` — yansıtılmış tavan planı (RCP)
 
@@ -557,6 +490,16 @@ seçilirse aynı "merkezi kayıt" deseninin ikinci örneği olur).
   görevle eklenen `pafta::ScaleBar` (grafik ölçek cetveli) kullanıcı geri
   bildirimiyle ("her pafta içerisinde ölçek gibi bir şey var ... onu
   istemiyorum, kaldır") TAMAMEN KALDIRILDI; kuzey oku etkilenmedi. (`HD-012`)
+
+### DEV-022 — `stairs/` — merdiven gerçek basamak geometrisi
+
+- **Durum:** COMPLETED (2026-09-25)
+- **Özet:** Yeni `scripts/stairs/` modülü (Fikir 1, kullanıcı kararı);
+  `resolve_stair` tek kaynak (`openings::swing_geometry` deseni), rıht/going
+  ofis standardı varsayılanları (170mm/270mm) `auto_flex` ile esnetilir
+  (her esnetme UYARI). Yalnızca tek düz kollu merdiven desteklenir; sığmayan
+  oda `StairFitError` ile REDDEDİLİR (gerçek projenin `Merdiven` odası bu
+  sınıra girdiği için `context.json`a henüz veri eklenmedi). (`HD-013`)
 
 ## Görev tamamlama kuralı
 

@@ -4,6 +4,148 @@ Aktif geçmiş kapasitesi: **50 kayıt**. En eski tamamlanmış kayıt, 51. kay�
 alınırken silinir. Ayrıntılı teknik değişiklikler git geçmişi ve ilgili proje
 provenance kayıtlarıyla ilişkilendirilir.
 
+## HD-013 — `stairs/` modülü: gerçek merdiven basamak geometrisi (DEV-022)
+
+- **Durum:** COMPLETED
+- **Tamamlanma:** 2026-09-25
+- **Kökeni:** `DEVELOPMENT_TASKS.md::DEV-022`, 2026-09-24'te "endüstri
+  standardı bir boşluk" olarak eklenmişti (kök `CLAUDE.md`nin "asansör/
+  merdiven kapı sembolü çizilmez, sadece etiketli kapalı oda olarak
+  gösterilir" bilinen basitleştirmesi). Kullanıcı 2026-09-25'te bu maddeyi
+  açıkça seçti ve şu yönlendirmeyi verdi: **Fikir 1** (yeni bağımsız
+  `scripts/stairs/` modülü — `columns/`/`furniture/` ile AYNI "oda-içi ek
+  eleman = kendi modülü" deseni); rıht için varsayılan **17cm**, basamak
+  genişliği için varsayılan **27cm** (makul bant 25-30cm); esnetilebilirlik
+  (`auto_flex`) **varsayılan AÇIK**, esnetme her seferinde kullanıcıya
+  bildirilir (UYARI).
+- **Kapsam:** `scripts/stairs/` (yeni modül: `__init__.py`, `CLAUDE.md`,
+  `selftest.py`), `schema/design.schema.json` (`stairs` tanımı +
+  `floor.properties.stairs`), `scripts/validate.py` (`check_stairs`),
+  `scripts/generate_dxf.py` (`ensure_stair_layer` + `draw_stairs_on_floor`
+  çağrıları), `scripts/collision/scene.py` (`COLLISION_EXEMPT["stairs"]`),
+  `scripts/version.py` (`CONTRACT_MODULES`), `scripts/golden_report.py`
+  (`_code_owned_layers`e `MERDIVEN`), `golden/merdiven_ornek/` (yeni izole
+  referans), kök `CLAUDE.md` + `scripts/CLAUDE.md` (modül kaydı).
+
+### Tek kaynak: `resolve_stair`
+
+`openings::swing_geometry` ile AYNI desen (kök `CLAUDE.md`, "Açıklık
+varyantları" bölümü, rev-13'te bunun ihlalinin gerçek bir hataya yol açtığı
+not edilir): `resolve_stair(spec, room_polygon)` hem `validate.py::
+check_stairs` hem `draw_stairs_on_floor`in ÇAĞIRDIĞI TEK fonksiyondur. Basamak
+sayısı `step_count` açıkça verilmemişse `floor_to_floor_mm / riser`den
+(`round`) türetilir; `riser_height_mm`/`going_mm` verilmemişse ofis
+standardı varsayılanlarına (170mm / 270mm) düşer; `auto_flex=True`
+(varsayılan) bu değerleri kat yüksekliğine VE oda uzunluğuna TAM oturacak
+şekilde ince ayarlar ve her esnetme `StairResolution.warnings`e yazılıp
+hem `validate.py` hem `generate_dxf.py` tarafından "UYARI (merdiven): ..."
+olarak basılır (sessiz varsayım YOK). Basamak genişliği esnetmesi
+`MIN_GOING_MM=250`in altına düşerse (güvensiz/standart-dışı bir merdiven)
+`StairFitError` fırlatılır — üretim durur, sessizce geçersiz geometri
+üretilmez.
+
+### Geliştirme sırasında bulunan gerçek hata: X/Y ekseni takası
+
+İlk uygulamada `_travel_points` yardımcı fonksiyonu, seyahat ekseni `y`
+olan bir merdiven için nokta çiftlerini `(y_koordinati, mid_x)` sırasıyla
+döndürüyordu — DXF'in beklediği `(x, y)` sırası yerine KOORDINATLAR YER
+DEĞİŞTİRİLMİŞTİ. Bu, `golden/merdiven_ornek` fixture'ı ilk kez üretilmeye
+çalışılırken `PaftaOverflowError` olarak YAKALANDI (basamak/ok/kesme
+çizgisi entity'leri pafta çerçevesinin çok dışına taştı — içerik sınırları
+beklenenin binlerce mm dışındaydı). Kök neden bulunup `_travel_coords`
+(yalnızca seyahat ekseni üzerindeki SKALER koordinatı döndüren, ayrı ve
+daha az belirsiz bir yardımcı) ile düzeltildi. **Bu, `scripts/stairs/
+selftest.py`ye eksik olan bir test sınıfını da ortaya çıkardı:**
+`check_draw_entity_counts` yalnızca çizilen VARLIK SAYISINI doğruluyordu,
+KOORDİNATLARINI değil — sayı doğru olsa bile koordinat yanlış olabilirdi.
+Bunu kapatmak için `check_step_line_coordinates_hand_computable` eklendi
+(hem X hem Y seyahat ekseninde elle hesaplanmış uç noktalarla karşılaştırma
+— bu proje disiplininin "temiz döndü çıktısı tek başına hiçbir şey
+kanıtlamaz" ilkesinin somut bir örneği).
+
+### Bağımsız reviewer geçişinde bulunan ikinci gerçek hata: koşulsuz olmayan MIN_GOING_MM
+
+Ayrı bir Agent çağrısıyla yapılan bağımsız reviewer/validator geçişi
+(`scripts/CLAUDE.md`daki "reviewer/validator" rolü) `resolve_stair`i elle
+izleyerek gerçek bir kapsam açığı buldu: `MIN_GOING_MM` kontrolü yalnızca
+going'in OTOMATİK DARALTILDIĞI dalın İÇİNDEYDİ. Oda zaten sığıyorsa (daraltma
+dalına hiç girilmiyorsa) açıkça verilmiş güvensiz bir `going_mm` (örn.
+100mm) HİÇBİR kontrolden geçmeden sessizce kabul ediliyordu — modülün kendi
+sözleşmesinin ("sessizce geçersiz/güvensiz bir basamak genişliği üretmez")
+BİREBİR ihlaliydi. Düzeltme: `MIN_GOING_MM`/`MAX_GOING_MM` kontrolü
+`resolve_stair`in SONUNDA, daraltılmış olsun ya da olmasın nihai `going`
+değeri üzerinde KOŞULSUZ çalışacak şekilde taşındı (altında `StairFitError`,
+üstünde UYARI — `MAX_GOING_MM` böylece ilk defa gerçekten KULLANILAN bir
+sabit oldu, önceden tanımlı ama hiç okunmuyordu). İki yeni selftest eklendi
+(`check_explicit_going_below_minimum_raises_even_without_shrink`,
+`check_going_above_maximum_warns`) — toplam self-test grubu 10 → 12.
+Reviewer ayrıca küçük bir kod kokusu (Python truthiness'e dayanan bir no-op
+guard, `required_run and ...`) buldu; temiz bir bölmeyle değiştirildi.
+
+### Gerçek projenin `Merdiven` odasına `stairs[]` verisi EKLENMEDİ
+
+`context.json`daki mevcut `Merdiven` odası (4000×3000mm, tüm katlarda
+sabit) için deneme amaçlı bir `stairs[]` girdisi (`floor_to_floor_mm=3000`)
+`check_stairs` ile test edildi: sonuç `StairFitError` — tek düz kollu
+merdiven için gereken kosu uzunluğu (~4590mm, 18 basamak × 270mm) odanın
+uzun eksenine (4000mm) SIĞMIYOR, esnetilmiş basamak genişliği (~235mm)
+minimum konfor sınırının (250mm) altında kalıyor. Bu SESSİZCE görmezden
+gelinmedi: modül DOĞRU şekilde reddetti. Gerçek bir bina için bu odada
+sahanlıklı/çift kollu bir merdiven gerekir (v1 kapsamı dışında, bkz.
+`scripts/stairs/CLAUDE.md` "Bilinen sınırlamalar") — bu yüzden gerçek
+projenin `context.json`ına HENÜZ `stairs[]` verisi eklenmedi; oda büyütülüp
+tek kollu merdivene mi geçilecek yoksa çok kollu merdiven mi (ayrı bir
+gelecek geliştirme konusu) eklenecek, sistem mimarının kararıdır.
+
+### Golden output etkisi
+
+- **Ana proje DEĞİŞMEDİ:** `context.json`a `stairs[]` verisi eklenmediği
+  için `output/plan.dxf` entity/layer/bbox açısından AYNI kaldı
+  (`golden_report.py --compare docs/development/plan-golden-report.json`
+  ile doğrulandı, "Golden semantic report matches"); referans rapor
+  YENİDEN YAZILMADI.
+- **Yeni izole referans:** `golden/merdiven_ornek/` (tek oda, `stairs[]`
+  ile `floor_to_floor_mm=3000` + `up_towards='N'`, TÜM basamak/riht/going
+  değerleri varsayılanlardan türetilir, 0 UYARI) — 161 entity, `MERDIVEN`
+  katmanında 21 entity (17 riht çizgisi + 1 ok gövdesi + 1 ok başı + 2
+  kesme çizgisi parçası, elle sayılabilir: `step_count-1 + 4`).
+- `scripts/golden_report.py::_code_owned_layers` `MERDIVEN`yi tanımadığı
+  için ilk denemede `declared_layers` kuralı bunu "bildirilmemiş layer"
+  olarak işaretlerdi — `AKS`/`KOLON*`/`TEFRIS-*`/`KESIT` ile AYNI listeye
+  eklenerek düzeltildi.
+
+### Modül self-test'i
+
+`python scripts/stairs/selftest.py` — 12 kontrol grubu: step_count'tan
+riht türetme (elle hesap), `auto_flex` açık/kapalı davranış farkı (+
+UYARI), going daraltma (+ UYARI), MIN going altında `StairFitError` (+
+yanlış-pozitif: sığan oda hata VERMEMELİ), **açıkça verilmiş güvensiz
+`going_mm`nin daraltma dalı hiç tetiklenmese bile reddedilmesi** (+
+yanlış-pozitif) ve MAX üstünde UYARI (bağımsız reviewer'ın bulduğu ikinci
+kök neden hatasının regresyon testi, bkz. yukarısı), `up_towards`/
+`travel_axis` tutarlılığı (+ yanlış-pozitif), riht çizgisi koordinatları
+(X VE Y ekseni, elle hesaplanabilir — ilk kök neden hatasını yakalayan
+test), çizilen varlık sayıları, bilinmeyen `room_id`nin çizim tarafında
+sessizce atlanması, katman RGB'si.
+
+### Açık risk / bilinen sınırlama
+
+- Yalnızca TEK DÜZ KOLLU (sahanlıksız) merdiven desteklenir — bkz.
+  `scripts/stairs/CLAUDE.md`.
+- Kesit (`sections::SectionFeatureHook`) entegrasyonu bu revizyonun
+  kapsamında DEĞİLDİR; ayrı bir takip konusu.
+- `DEV-030` (katman renk organizasyonu, henüz PLANNED) tamamlandığında
+  `STAIR_RGB` sabiti o merkezi karara göre yeniden gözden geçirilebilir.
+
+### Sonraki direktif
+
+Sistem mimarı şunlardan birine karar verebilir: (a) örnek projenin
+`Merdiven` odasını büyütüp gerçek `stairs[]` verisiyle bağlamak, (b)
+sahanlıklı/çift kollu merdiven desteğini ayrı bir görev olarak
+`DEVELOPMENT_TASKS.md`ye eklemek, (c) `sections::SectionFeatureHook`
+entegrasyonunu ayrı bir takip görevi yapmak, (d) sıradaki `PLANNED`
+maddeye (`DEV-023` `ceiling/` veya kullanıcının seçtiği başka biri) geçmek.
+
 ## HD-012 — AutoCAD hatch uyarısı + aks ölçüsü düzeltmeleri, ScaleBar geri alındı
 
 - **Durum:** COMPLETED

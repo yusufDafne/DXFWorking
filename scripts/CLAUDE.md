@@ -61,6 +61,16 @@ kalanını bilmeye ihtiyaç duymadan o modül üzerinde derinlemesine/izole
   (bkz. `HD-011`). rev-17'de AYNI talebin parçası olarak `pafta/`e eklenen
   grafik ölçek çubuğu (`ScaleBar`), kullanıcı geri bildirimiyle rev-18'de
   KALDIRILDI (bkz. `HD-012`) — bu modül etkilenmedi.
+- ✅ **`scripts/stairs/`** — `DEV-022` (2026-09-25): merdiven odasının
+  İÇİNE gerçek basamak/rıht geometrisi çizer. `resolve_stair` tek kaynaktır
+  (`openings::swing_geometry` ile AYNI desen — validate.py VE çizim kodu
+  AYNI fonksiyonu çağırır). `floor_to_floor_mm` GERÇEK proje verisi,
+  `riser_height_mm`/`going_mm` OFİS STANDARDI varsayılanlarıdır (170mm /
+  270mm) ve `auto_flex` (varsayılan açık) ile kat yüksekliğine/oda
+  uzunluğuna otomatik esnetilir (her esnetme UYARI olarak raporlanır).
+  Yalnızca TEK DÜZ KOLLU merdiven desteklenir; sığmayan bir oda sessizce
+  hatalı geometri üretmek yerine `StairFitError` fırlatır — bkz.
+  `scripts/stairs/CLAUDE.md`.
 
 ## Modül bağımsızlığı ve çapraz kontrol (kullanıcı ilkesi)
 
@@ -194,6 +204,7 @@ Ortak desen (pafta + walls ile kanitlandi):
 | `collision/`  | `CollisionShape`, `CollisionPolicy`, `CollisionEngine`, `Clash`, `ClashReport`, `Scene`, `check_context` | UYGULANDI (rev-12); validate.py ONCESI bloklayici kapi |
 | `sections/`   | `SectionCutLine`, `SectionSheet`, `SectionFeatureHook`, `DefaultSectionFeatureHook`, `resolve_sections`, `crossing_walls`, `section_vertical_extent`, `draw_cut_marker_on_floor` | UYGULANDI (rev-17); kesit hatti aks ailesine paralel, varsayilan X+Y kesit |
 | `northarrow/` | `NorthArrow`, `NorthArrowStyle`, `DefaultNorthArrowStyle`, `rotate_point` | UYGULANDI (rev-17); Protocol-tabanli, meta.north_angle verilmezse cizilmez |
+| `stairs/`     | `resolve_stair`, `StairResolution`, `StairFitError`, `StairDrawingStandard`, `DefaultStairStandard`, `ensure_stair_layer`, `draw_stairs_on_floor` | UYGULANDI (DEV-022, 2026-09-25); tek duz kollu merdiven, auto_flex ile riser/going esnetme |
 
 > Bu tablo `scripts/doc_check.py` tarafindan DENETLENIR: `UYGULANDI` isaretli bir
 > satirda anilan her sinif adi, o modulde gercekten tanimli olmalidir. Yalnizca

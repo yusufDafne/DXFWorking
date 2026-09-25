@@ -1,0 +1,140 @@
+{
+  "meta": {
+    "project_name": "Fixture - Merdiven Ornegi",
+    "schema_version": "1.0.0",
+    "units": "mm",
+    "scale": "1:50",
+    "project_type": "MIMARI_UYGULAMA",
+    "fonts": {
+      "default": "arialn.ttf",
+      "room_label": "arialn.ttf"
+    },
+    "cover": {
+      "signature_fields": ["YONETIM", "MIMAR"]
+    },
+    "floor_width": 1200.0,
+    "floor_depth": 8200.0
+  },
+  "layers": [
+    {
+      "name": "DUVARLAR",
+      "color": 7
+    },
+    {
+      "name": "METIN",
+      "color": 7
+    },
+    {
+      "name": "CERCEVE",
+      "color": 8
+    },
+    {
+      "name": "OLCU",
+      "color": 3
+    }
+  ],
+  "grid": {
+    "vertical_axes": [
+      {
+        "label": "1",
+        "position": 0.0
+      },
+      {
+        "label": "2",
+        "position": 1200.0
+      }
+    ],
+    "horizontal_axes": [
+      {
+        "label": "A",
+        "position": 0.0
+      },
+      {
+        "label": "B",
+        "position": 8200.0
+      }
+    ]
+  },
+  "floors": [
+    {
+      "id": "kat1",
+      "label": "ORNEK KAT",
+      "code": "K1",
+      "rooms": [
+        {
+          "id": "merdiven",
+          "name": "Merdiven",
+          "no": "01",
+          "area_m2": 8.0,
+          "polygon": [
+            [100, 100],
+            [1100, 100],
+            [1100, 8100],
+            [100, 8100]
+          ]
+        }
+      ],
+      "walls": [
+        {
+          "id": "w_alt",
+          "start": [0, 0],
+          "end": [1200.0, 0],
+          "thickness": 200.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "w_sag",
+          "start": [1200.0, 0],
+          "end": [1200.0, 8200.0],
+          "thickness": 200.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "w_ust",
+          "start": [1200.0, 8200.0],
+          "end": [0, 8200.0],
+          "thickness": 200.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "w_sol",
+          "start": [0, 8200.0],
+          "end": [0, 0],
+          "thickness": 200.0,
+          "layer": "DUVARLAR"
+        }
+      ],
+      "openings": [],
+      "labels": [],
+      "stairs": [
+        {
+          "id": "merdiven_1",
+          "room_id": "merdiven",
+          "floor_to_floor_mm": 3000.0,
+          "up_towards": "N"
+        }
+      ]
+    }
+  ],
+  "elevations": [
+    {
+      "id": "on_cephe",
+      "label": "ON CEPHE",
+      "width": 1200.0,
+      "axis_source": "vertical",
+      "levels": [
+        {
+          "label": "ZEMIN KAT",
+          "height": 3000.0
+        }
+      ]
+    }
+  ],
+  "rev_history": [
+    {
+      "rev": 1,
+      "ts": "2026-09-25T00:00:00Z",
+      "summary": "DEV-022 fixture: TEK oda (merdiven, 1000x8000mm net - uzun eksen Y), 4 duvar, stairs[] ile floor_to_floor_mm=3000 + up_towards='N' (step_count/riser/going TAMAMEN varsayilanlardan turetilir: 18 basamak, riht~166.67mm, going=270mm - gerekli kosu (18-1)*270=4590mm, oda 8000mm uzunlugunda bol miktarda pay birakir, HICBIR esnetme/UYARI TETIKLENMEZ). floor_depth=8200 BILEREK 8150'nin UZERINDE secildi (1:50'de A4 kapak blogunun minimum dusey acikligi, bkz. golden/minimal rev_history). Gercek projeden BAGIMSIZDIR; amac scripts/stairs modulunun uctan uca (validate+generate+golden) dogru calistigini kucuk ve elle dogrulanabilir bir referansla kanitlamaktir."
+    }
+  ]
+}

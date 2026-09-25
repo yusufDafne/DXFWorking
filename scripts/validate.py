@@ -18,6 +18,10 @@ Yaptigi kontroller:
   3b) ACIKCA bildirilmis her kesit (sections[], DEV-021) icin: levels_from
       gecerli bir elevation'a isaret ediyor mu, o elevation'in seviye sayisi
       floors[] sayisiyla esit mi, position bina siniri icinde mi.
+  3c) Her merdiven (stairs[], DEV-022) icin: room_id gecerli bir odaya isaret
+      ediyor mu, scripts/stairs::resolve_stair (cizim koduyla AYNI TEK
+      kaynak) HATA (sigmayan/gecersiz) uretiyor mu; esnetme UYARILARI
+      bloklamaz, basilir.
   4) SURUM KAPISI (DEV-020): meta.schema_version ile sistemin SCHEMA_VERSION'u
      arasinda MAJOR fark varsa uretim DURUR. Bkz. scripts/version.py.
   5) CAKISMA DENETIMI (DEV-019): moduller arasi girisim - tefris odanin
@@ -63,6 +67,7 @@ from version import (  # noqa: E402
     check_compatibility,
     project_schema_version,
 )
+from stairs import StairFitError, resolve_stair  # noqa: E402
 from walls import WallCatalog  # noqa: E402
 
 AREA_TOLERANCE_RATIO = 0.03  # oda alani vs poligon alani icin tolerans
@@ -241,6 +246,31 @@ def check_openings(openings: list[dict], walls: list[dict]) -> list[str]:
     return errors
 
 
+def check_stairs(floor: dict) -> tuple[list[str], list[str]]:
+    """Arity-1 (DEV-022): `stairs[].room_id` bu kattaki bir odaya isaret
+    ediyor mu, ve `resolve_stair` (cizim koduyla AYNI TEK kaynak, bkz.
+    scripts/stairs/CLAUDE.md) HATA/UYARI uretiyor mu. Ayri bir hesap
+    YAZMAZ - `resolve_stair`i CAGIRIR, sonucunu yorumlar."""
+    errors: list[str] = []
+    warnings: list[str] = []
+    rooms_by_id = {r["id"]: r for r in floor.get("rooms", [])}
+    for spec in floor.get("stairs", []):
+        room = rooms_by_id.get(spec["room_id"])
+        if room is None:
+            errors.append(
+                f"Merdiven '{spec['id']}', bu kattaki gecersiz bir oda id'sine "
+                f"referans veriyor: '{spec['room_id']}'."
+            )
+            continue
+        try:
+            resolution = resolve_stair(spec, room["polygon"])
+        except StairFitError as exc:
+            errors.append(str(exc))
+            continue
+        warnings.extend(resolution.warnings)
+    return errors, warnings
+
+
 def check_floor_codes(floors: list[dict]) -> list[str]:
     """Kat kodlari (floors[].code) birbirinden farkli olmali; ayni kod iki
     katta kullanilirsa mahal kimligi ('ZK-04') artik benzersiz olmaz."""
@@ -363,13 +393,20 @@ def run_validation(context_path: Path = DEFAULT_CONTEXT_PATH) -> bool:
     all_errors += check_axis_labels(context["grid"]["vertical_axes"],
                                     context["grid"]["horizontal_axes"])
 
+    stair_warnings: list[str] = []
     for floor in context["floors"]:
         all_errors += check_floor(units, floor)
+        floor_stair_errors, floor_stair_warnings = check_stairs(floor)
+        all_errors += [f"[{floor['id']}] " + e for e in floor_stair_errors]
+        stair_warnings += [f"[{floor['id']}] " + w for w in floor_stair_warnings]
 
     for elevation in context["elevations"]:
         all_errors += check_elevation(elevation)
 
     all_errors += check_sections(context)
+
+    for warning in stair_warnings:
+        print(f"UYARI (merdiven): {warning}")
 
     if all_errors:
         print("DOGRULAMA BASARISIZ (geometri/mantik):")

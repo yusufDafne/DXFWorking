@@ -154,10 +154,33 @@ doc_check ile). Ayrıca kullanıcı katman RENK çeşitlendirmesi eksikliğini
 fark etti; bu **`DEV-030`** olarak `DEVELOPMENT_TASKS.md`ye eklendi (somut
 bulgu: `columns/standard.py::COLUMN_RGB` üç farklı katmana — `KOLON`/
 `KOLON-TARAMA`/`KOLON-METIN` — TEK renk atıyor; `furniture/groups.py` ise
-zaten iyi bir örnek, 5 farklı kahverengi tonu). `DEV-022`nin
-Fikir1/Fikir2/açık kararlar analizi de bu oturumda yazıldı — kod yazımı
-kullanıcının bu açık kararlara (özellikle basamak/rıht veri kaynağı ve
-Fikir 1/2 seçimi) vereceği yönlendirmeyi bekliyor.
+zaten iyi bir örnek, 5 farklı kahverengi tonu) — **implementasyon YOK,
+yalnızca plan**; hangi Fikrin (merkezi olmayan / merkezi kontrolör modülü)
+uygulanacağı kullanıcının ihtiyaca göre vereceği ayrı bir karardır.
+
+**`DEV-022` COMPLETED (aynı oturumda):** kullanıcı Fikir 1'i (yeni bağımsız
+`scripts/stairs/` modülü) ve rıht/going/auto_flex varsayılanlarını (170mm/
+270mm/açık) seçti; modül, schema, `validate.py::check_stairs`,
+`generate_dxf.py` entegrasyonu, `golden/merdiven_ornek` izole referansı ve
+10 self-test kontrolü tamamlandı — ayrıntı `HD-013`. Geliştirme sırasında
+GERÇEK bir X/Y ekseni takası hatası bulunup düzeltildi (bkz. `HD-013` "Kök
+neden" bölümü) ve bunu yakalayacak bir koordinat-doğruluğu testi eklendi —
+eski `check_draw_entity_counts` yalnızca SAYI doğruluyordu, koordinat değil.
+Gerçek projenin `Merdiven` odası (4000×3000mm) tek düz kollu merdiven için
+`StairFitError` ile REDDEDİLDİ (fiziksel olarak yetersiz) — bu yüzden
+`context.json`a henüz `stairs[]` verisi eklenmedi, sistem mimarının kararı
+bekleniyor (oda büyütülsün mü, çok kollu merdiven desteği mi eklensin).
+Bağımsız reviewer/validator geçişi ayrı bir Agent çağrısıyla yapıldı ve
+GERÇEK ikinci bir hata buldu: `MIN_GOING_MM` kontrolü yalnızca going'in
+otomatik daraltıldığı dalın içindeydi — oda zaten sığıyorsa açıkça verilmiş
+güvensiz bir `going_mm` sessizce geçiyordu. Düzeltildi (kontrol artık
+koşulsuz, `MAX_GOING_MM` de ilk defa gerçekten kullanılıyor) + 2 yeni
+selftest eklendi (10 → 12), bkz. `HD-013`. Reviewer'ın işaret ettiği
+"DEV-022'nin DEVELOPMENT_TASKS.md'de COMPLETED bölümünde maddesi yok"
+bulgusu paralel doküman düzenlemesinden kaynaklı bir ANLIK yarış durumuydu
+(agent DEVELOPMENT_TASKS.md'yi ben hâlâ düzenlerken okumuş) — mevcut
+durumda `### DEV-022` maddesi COMPLETED altında gerçekten var ve
+`doc_check.py` temiz dönüyor.
 
 ## İlk okuma sırası
 
