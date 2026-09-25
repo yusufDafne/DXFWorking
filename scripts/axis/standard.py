@@ -13,9 +13,17 @@ from dataclasses import dataclass
 import ezdxf
 from ezdxf.enums import TextEntityAlignment
 
+try:
+    from ..palette import color_for
+except ImportError:  # dogrudan scripts/ uzerinden calistirildiginda
+    from palette import color_for
+
 AXIS_LAYER = "AKS"
 AXIS_LINETYPE = "DASHED"
-AXIS_RGB = (67, 77, 88)
+# Renk artik scripts/palette::PALETTE'in TEK kaynagindan gelir (DEV-030);
+# DEGER AYNI (67,77,88) kalir - bu sabit kok CLAUDE.md tarafindan mandate
+# edilir, palette de bunu DEGISTIRMEZ, sadece merkezi kayda alir.
+AXIS_RGB = color_for("AKS")
 
 
 @dataclass(frozen=True)

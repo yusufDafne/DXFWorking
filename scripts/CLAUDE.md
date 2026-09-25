@@ -71,6 +71,26 @@ kalanını bilmeye ihtiyaç duymadan o modül üzerinde derinlemesine/izole
   Yalnızca TEK DÜZ KOLLU merdiven desteklenir; sığmayan bir oda sessizce
   hatalı geometri üretmek yerine `StairFitError` fırlatır — bkz.
   `scripts/stairs/CLAUDE.md`.
+- ✅ **`scripts/palette/`** — `DEV-030` (2026-09-25): TÜM kod-sahipli
+  katman renklerinin TEK kaydı (`typography::TextStyles`in font için
+  yaptığını renk için yapar). Kullanıcı kararı: merkezi olmayan (her modül
+  kendi rengini seçer) yerine merkezi bir kontrolör modülü — gerekçe:
+  "bazı modüller aynı rengi seçmiş olabilir" + "bazı modüllerin
+  birbirlerine kontrast renkler ile bulunması ihtiyacı". Somut bulgu:
+  `columns/standard.py::COLUMN_RGB` üç farklı katmana (`KOLON`/
+  `KOLON-TARAMA`/`KOLON-METIN`) TEK renk atıyordu — `palette` kurulurken
+  üçü birbirinden `CONTRAST_MIN_DISTANCE` kadar uzak, üç FARKLI tona
+  ayrıldı. `axis`/`sections`/`stairs`/`furniture` artık kendi RGB
+  sabitlerini `palette.color_for(...)`den ALIR (değerleri DEĞİŞMEDİ,
+  sadece merkezi kayda taşındı) — bkz. `scripts/palette/CLAUDE.md`.
+- ✅ **`scripts/levels/`** — `DEV-029` (2026-09-25): kot (spot elevation)
+  standardı — bayrak (üçgen) + `"+3.00"`/`"-0.20"`/`"±0.00"` formatında
+  metin. Kat yüksekliği hesabını YENİDEN YAZMAZ: `elevations::LevelStack`in
+  zaten hesapladığı `(y0, y1)` çiftlerini (`levels_from` üzerinden kesit/
+  görünüşe) DUCK-TYPING ile tüketir (`elevations`i import ETMEZ). Plan
+  tarafında (`floors[].level_marks[]`) GERÇEK proje verisidir (rampa/teras
+  kademe farkı), verilmezse hiçbir işaret çizilmez — bkz.
+  `scripts/levels/CLAUDE.md`.
 
 ## Modül bağımsızlığı ve çapraz kontrol (kullanıcı ilkesi)
 
@@ -205,6 +225,8 @@ Ortak desen (pafta + walls ile kanitlandi):
 | `sections/`   | `SectionCutLine`, `SectionSheet`, `SectionFeatureHook`, `DefaultSectionFeatureHook`, `resolve_sections`, `crossing_walls`, `section_vertical_extent`, `draw_cut_marker_on_floor` | UYGULANDI (rev-17); kesit hatti aks ailesine paralel, varsayilan X+Y kesit |
 | `northarrow/` | `NorthArrow`, `NorthArrowStyle`, `DefaultNorthArrowStyle`, `rotate_point` | UYGULANDI (rev-17); Protocol-tabanli, meta.north_angle verilmezse cizilmez |
 | `stairs/`     | `resolve_stair`, `StairResolution`, `StairFitError`, `StairDrawingStandard`, `DefaultStairStandard`, `ensure_stair_layer`, `draw_stairs_on_floor` | UYGULANDI (DEV-022, 2026-09-25); tek duz kollu merdiven, auto_flex ile riser/going esnetme |
+| `palette/`    | `PALETTE`, `LayerColor`, `color_for`, `validate_palette`, `CONTRAST_MIN_DISTANCE` | UYGULANDI (DEV-030, 2026-09-25); tum kod-sahipli katman renklerinin tek kaydi, ayni-renk + yakin-kontrast denetimi |
+| `levels/`     | `LevelMark`, `LevelMarkStyle`, `DefaultLevelMarkStyle`, `format_level`, `level_boundaries_from_placements`, `draw_level_marks`, `draw_plan_level_marks` | UYGULANDI (DEV-029, 2026-09-25); kot/datum standardi, elevations::LevelStack'i TUKETIR, kendi kat yuksekligi hesaplamaz |
 
 > Bu tablo `scripts/doc_check.py` tarafindan DENETLENIR: `UYGULANDI` isaretli bir
 > satirda anilan her sinif adi, o modulde gercekten tanimli olmalidir. Yalnizca

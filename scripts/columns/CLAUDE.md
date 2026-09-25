@@ -90,7 +90,17 @@ taşıyıcı eleman tefrişin altında kalmaz.
   listeler). Kesit ölçüsü pozitif olmalıdır.
 - Layer'lar (`KOLON`, `KOLON-TARAMA`, `KOLON-METIN`) kod tarafında sabit RGB
   ile oluşturulur (`ensure_axis_layer` deseni); renk context'ten alınmaz.
-- `golden_report.py` bu layer'ları kod-sahipli sayar.
+  **rev DEV-030'dan itibaren renk `scripts/palette::PALETTE`in TEK
+  kaynağından gelir** (`COLUMN_RGB`/`COLUMN_HATCH_RGB`/`COLUMN_TEXT_RGB`,
+  `columns/standard.py`) ve üçü artık BİRBİRİNDEN FARKLI tondadır — DEV-030
+  ÖNCESİ üçü de AYNI `COLUMN_RGB`yi paylaşıyordu (kontur ile tarama
+  ayrışmıyordu); bu somut bulgu `palette` modülünün kurulma nedenlerinden
+  biriydi, bkz. `scripts/palette/CLAUDE.md`.
+- `golden_report.py` bu layer'ları kod-sahipli sayar. **Ölçüm raporu renk
+  değişikliğini YAKALAMAZ** (yalnızca entity/layer sayısı + bbox) — DEV-030
+  bu üç layer'ın rengini değiştirdiği halde `--golden-set`/`--compare`
+  "eşleşti" raporladı; ayrıntı `scripts/palette/CLAUDE.md` "Bilinen
+  sınırlamalar".
 
 ## Sınır
 

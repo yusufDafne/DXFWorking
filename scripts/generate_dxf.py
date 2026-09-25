@@ -88,7 +88,14 @@ from columns import (  # noqa: E402
     ensure_column_layers,
 )
 from openings import Opening, OpeningSchedule  # noqa: E402
-from elevations import elevation_vertical_extent, ElevationSheet  # noqa: E402
+from elevations import elevation_vertical_extent, ElevationSheet, LevelStack  # noqa: E402
+from levels import (  # noqa: E402
+    LevelMark,
+    draw_level_marks,
+    draw_plan_level_marks,
+    ensure_level_layer,
+    level_boundaries_from_placements,
+)
 from legend import OpeningLegend, LegendRenderer  # noqa: E402
 from sections import (  # noqa: E402
     SectionSheet,
@@ -301,6 +308,9 @@ def translate_floor(floor: dict, dx: float) -> dict:
     new_floor["columns"] = [
         {**c, "position": shift_point(c["position"], dx)} for c in floor.get("columns", [])
     ]
+    new_floor["level_marks"] = [
+        {**m, "position": shift_point(m["position"], dx)} for m in floor.get("level_marks", [])
+    ]
     return new_floor
 
 
@@ -313,7 +323,7 @@ def draw_floor_sheet(msp, floor: dict, dx: float, units: str, floor_width: float
                       dimension_settings: DimensionSettings,
                       scale: str, sheet_margin: float,
                       north_arrow: NorthArrow | None, north_angle: float | None,
-                      sections: list) -> None:
+                      sections: list, level_mark: LevelMark) -> None:
     content_start = len(msp)
 
     # Aks izgarasi HER ZAMAN en once (en altta) cizilir (bkz. kullanici standardi).
@@ -358,6 +368,10 @@ def draw_floor_sheet(msp, floor: dict, dx: float, units: str, floor_width: float
     # ile ayni kaynaktan gectigi icin burada uyari DISINDA bir sey beklenmez.
     for warning in draw_stairs_on_floor(msp, tfloor):
         print(f"UYARI (merdiven): [{floor['id']}] {warning}")
+
+    # Kot (spot elevation) isaretleri (DEV-029): GERCEK proje verisidir
+    # (orn. rampa/teras kademe farki), verilmezse hicbir sey cizilmez.
+    draw_plan_level_marks(msp, tfloor, level_mark)
 
     # Kolonlar: tarali kesit (bkz. scripts/columns). Tefristen ONCE cizilir -
     # tasiyici eleman, tefrisin altinda kalmaz.
@@ -413,6 +427,7 @@ def generate(context_path: Path = DEFAULT_CONTEXT_PATH, output_path: Path = DEFA
     text_styles = TextStyles.from_context(context["meta"])
     text_styles.ensure(doc)
     ensure_axis_layer(doc)
+    ensure_level_layer(doc)
     setup_layers(doc, context["layers"])
     msp = doc.modelspace()
 
@@ -435,6 +450,10 @@ def generate(context_path: Path = DEFAULT_CONTEXT_PATH, output_path: Path = DEFA
         ensure_stair_layer(doc)
 
     scale = context["meta"].get("scale", "1:100")
+    # Kot isareti (DEV-029): kat yuksekligi hesabini YENIDEN YAZMAZ, sadece
+    # elevations::LevelStack'in zaten hesapladigi degerleri formatlar/cizer.
+    level_mark = LevelMark(scale)
+    level_mark_denominator = parse_scale_denominator(scale)
     # Kapak paftasinda antet kutusu olmadigi icin adi bu listeye girmez.
     all_labels = [f["label"] for f in floors] + [e["label"] for e in elevations]
 
@@ -550,12 +569,31 @@ def generate(context_path: Path = DEFAULT_CONTEXT_PATH, output_path: Path = DEFA
                          sheet, axis_grid, text_styles, furniture_catalog,
                          column_catalog, column_hatch_style, column_label_style,
                          dimension_settings, scale, sheet_margin,
-                         north_arrow, north_angle, sections)
+                         north_arrow, north_angle, sections, level_mark)
         cursor += floor_width + 2 * frame_half_width
+
+    # Kot isaretinin SOL kenardan ne kadar disari cizilecegi (DEV-029):
+    # kucuk, olcege gore tureyen (`to_modelspace`) bir pay - flag+metnin
+    # boyutuyla AYNI oranda buyur/kucultur, boylece farkli olceklerde
+    # gorsel oran korunur. DIKKAT (bagimsiz reviewer bulgusu): bu deger
+    # ElevationSheet.draw'daki zemin cizgisinin SABIT (`dx-1000`, olcekle
+    # TURMEYEN) tasmasiyla KARSILASTIRILAMAZ - biri olcekle buyur, digeri
+    # buyumez, 1:50'de bile (`50*50=2500mm`) zaten o 1000mm'lik payi asar.
+    # Gercek tasma GUVENCESI bu ikisinin karsilastirilmasi DEGIL,
+    # `pafta::Sheet.verify_within_frame`in (CONTENT_PADDING=4000 sabit,
+    # olcekle turemeyen) URETIM SIRASINDA gercek bbox kontrolu yapip
+    # PaftaOverflowError firlatmasidir - gercek proje + 6 golden referansta
+    # elle dogrulandi (hicbir PaftaOverflowError tetiklenmedi), ama cok
+    # buyuk olcek paydalarinda (orn. 1:200/1:500) bu deger CONTENT_PADDING'i
+    # asabilir - o zaman uretim SESSIZCE degil, PaftaOverflowError ile
+    # DURUR (bkz. HD-015 "Bilinen sinirlama").
+    level_mark_offset = to_modelspace(50.0, level_mark_denominator)
 
     for elevation in elevations:
         content_start = len(msp)
         ElevationSheet.draw(msp, elevation, cursor, text_height, axis_grid, elevation_label_height)
+        level_boundaries = level_boundaries_from_placements(LevelStack.from_context(elevation).placements())
+        draw_level_marks(msp, level_mark, level_boundaries, cursor - level_mark_offset)
         y_bottom, y_top = elevation_vertical_extent(elevation)
         content_entities = list(msp)[content_start:]
         sheet.draw(msp, cursor, elevation["width"], y_bottom, y_top, elevation["label"], content_entities=content_entities)
@@ -566,6 +604,9 @@ def generate(context_path: Path = DEFAULT_CONTEXT_PATH, output_path: Path = DEFA
         width = cut.width_for(floor_width, floor_depth)
         SectionSheet.draw(msp, cut, floors, elevation_lookup, cursor, width,
                           elevation_label_height, axis_grid)
+        cut_stack = LevelStack.from_context(elevation_lookup[cut.levels_from])
+        level_boundaries = level_boundaries_from_placements(cut_stack.placements())
+        draw_level_marks(msp, level_mark, level_boundaries, cursor - level_mark_offset)
         y_bottom, y_top = section_vertical_extent(cut, elevation_lookup)
         content_entities = list(msp)[content_start:]
         sheet.draw(msp, cursor, width, y_bottom, y_top, f"{cut.label} KESITI", content_entities=content_entities)

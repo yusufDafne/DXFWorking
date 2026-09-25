@@ -4,6 +4,217 @@ Aktif geçmiş kapasitesi: **50 kayıt**. En eski tamamlanmış kayıt, 51. kay�
 alınırken silinir. Ayrıntılı teknik değişiklikler git geçmişi ve ilgili proje
 provenance kayıtlarıyla ilişkilendirilir.
 
+## HD-015 — `levels/` modülü: kot (seviye/datum) standardı (DEV-029)
+
+- **Durum:** COMPLETED
+- **Tamamlanma:** 2026-09-25
+- **Kökeni:** rev-17'de (`DEV-021`/`DEV-025` çalışması sırasında)
+  kullanıcının gündeme getirdiği çapraz-kesit konu: *"kot verme
+  mantıklarını yöneten bir mantık istiyorum ... kot organizasyonu hem
+  planda hem kesitte kullanılacaktır ... bu mantığın projenin geneline
+  hakim olması gerekecektir."* `DEVELOPMENT_TASKS.md::DEV-029`de sistemin
+  önceden yazdığı "Öneri" (yeni bağımsız modül) kullanıcı tarafından
+  onaylandı; kullanıcı ayrıca kot metni formatını da onayladı: "+3.00"/
+  "-0.20"/"±0.00" (işaret + 2 ondalıklı metre).
+- **Kapsam:** `scripts/levels/` (yeni modül: `__init__.py`, `CLAUDE.md`,
+  `selftest.py`), `schema/design.schema.json` (`level_mark` tanımı +
+  `floor.properties.level_marks`), `scripts/generate_dxf.py` (kesit/
+  görünüş/plan entegrasyonu), `scripts/palette/__init__.py` (`KOT` girdisi),
+  `scripts/collision/scene.py` (`COLLISION_EXEMPT`), `scripts/version.py`
+  (`CONTRACT_MODULES`), `scripts/golden_report.py` (`_code_owned_layers`e
+  `KOT`), `golden/merdiven_ornek/` (plan kot işareti eklendi), kök
+  `CLAUDE.md` + `scripts/CLAUDE.md` (modül kaydı).
+
+### Kat yüksekliği hesabı YENİDEN YAZILMADI — dolaylı tüketim
+
+Bu görevin en kritik invariant'ı: `levels` modülü `elevations::LevelStack`i
+import ETMEZ. `level_boundaries_from_placements(placements)`,
+`LevelStack.placements()`in DÜZ çıktısını (herhangi bir `(etiket, y0, y1)`
+üçlü listesi — SEKİL beklenir, SINIF değil) işler; `generate_dxf.py`
+(orkestratör) köprüyü KENDİSİ kurar (`LevelStack.from_context(elevation)`
+zaten `sections`/`elevations` için kuruluyordu, `levels` sadece SONUCU
+tüketir). Bu, `axis_grid`in `draw_on_elevation(...)` duck-typing
+sözleşmesiyle AYNI desendir — iki modül birbirini BİLMEZ.
+
+### İki tüketim yolu: otomatik (kesit/görünüş) vs. gerçek-veri (plan)
+
+- **Kesit/görünüş:** HİÇBİR yeni proje verisi gerekmedi — her kat sınırının
+  kotu zaten `context.json::elevations[].levels[].height`den (GERÇEK veri)
+  hesaplanıyordu, `levels` SADECE bunu `"+3.00"` gibi FORMATLAR ve ÇİZER.
+  Bu yüzden gerçek projenin `output/plan.dxf`ine **otomatik olarak** 80 yeni
+  `KOT` varlığı eklendi (2 cephe × 10 sınır + 2 kesit × 10 sınır, her sınır
+  1 bayrak + 1 metin = elle hesaplanabilir: `(2+2) × 10 × 2 = 80`).
+- **Plan:** `floors[].level_marks[]` GERÇEK proje verisidir (rampa/teras
+  kademe farkı) — plan düzleminde "kat yüksekliği" kavramı OLMADIĞI için
+  otomatik türetme YAPILAMAZ. Veri verilmezse HİÇBİR ŞEY çizilmez (kuzey
+  oku ile AYNI "veri yoksa uydurma" deseni). Gerçek projenin hiçbir katına
+  bu veri EKLENMEDİ (rampa kademe değerleri elde yoktu, uydurulmadı);
+  `golden/merdiven_ornek`e (üst sahanlık +3.00, `stairs[].
+  floor_to_floor_mm` ile TUTARLI) tek bir örnek eklendi.
+
+### Yerleşim kararı: sol kenarın biraz dışı, ölçekle türer
+
+`anchor_x = cursor - to_modelspace(50.0, denominator)` — flag+metinle AYNI
+oranda ölçeğe göre türeyen küçük bir pay. Gerçek proje + 6 golden
+referansın TÜMÜNDE `PaftaOverflowError` TETİKLENMEDİ (elle doğrulandı,
+`DEV-022`nin ilk denemesinde yaşanan taşma hatasının AKSİNE).
+
+**Bağımsız reviewer düzeltmesi (aynı oturum):** İlk yazılan gerekçe
+("`ElevationSheet.draw`daki zemin çizgisinin sabit `dx-1000` payının
+İÇİNDE kalır") MATEMATİKSEL OLARAK YANLIŞTI — `to_modelspace(50, denom)`
+ÖLÇEKLE BÜYÜYEN bir değerdir (1:50'de zaten `50×50=2500mm`, sabit
+`1000mm`lik payı AŞAR), iki değer karşılaştırılamaz. Gerçek taşma
+GÜVENCESİ bu karşılaştırma DEĞİL, `pafta::Sheet.verify_within_frame`in
+(SABİT `CONTENT_PADDING=4000`, ölçekle türemez) üretim SIRASINDA yaptığı
+gerçek bbox kontrolüdür — bugünkü `1:50` sabit ölçeğinde (bu proje
+`MIMARI_UYGULAMA` sınıfı olduğu için ölçek zaten sabit) rahatça sığıyor,
+ama ÇOK BÜYÜK ölçek paydalarında (örn. `1:200`/`1:500`, `VAZIYET_PLANI`
+proje tipi) bu değer `CONTENT_PADDING`i AŞABİLİR — o durumda üretim
+SESSİZCE değil, `PaftaOverflowError` ile DURUR (sessiz hata YOK, sadece
+yanlış bir gerekçe yorumu vardı). Yorum düzeltildi
+(`scripts/generate_dxf.py`), kod DEĞİŞMEDİ (davranış zaten güvenliydi).
+
+### Golden output etkisi
+
+- **Ana proje DEĞİŞTİ** (beklenen, otomatik kesit/görünüş kot işaretleri):
+  `output/plan.dxf`e 80 yeni `KOT` entity'si eklendi;
+  `docs/development/plan-golden-report.json` `--write` ile YENİDEN
+  üretildi.
+- **6 golden referansın TÜMÜ** aynı sebeple değişti (`--update`);
+  `golden/merdiven_ornek` ayrıca `floors[0].level_marks[]` ile PLAN
+  tarafını da (opt-in) sınıyor.
+- `scripts/golden_report.py::_code_owned_layers` `KOT`u tanımadığı için ilk
+  denemede `declared_layers` kuralı bunu "bildirilmemiş layer" olarak
+  işaretledi — `MERDIVEN` ile AYNI unutkanlık sınıfı, `AKS`/`KOLON*`/
+  `TEFRIS-*`/`KESIT`/`MERDIVEN` ile AYNI listeye eklenerek düzeltildi.
+
+### Modül self-test'i
+
+`python scripts/levels/selftest.py` — 8 kontrol grubu: `format_level`in
+elle hesaplanabilir 6 durumu (dahil: `±0.00`ye yuvarlanan 1mm'lik değer),
+`level_boundaries_from_placements`in elle hesaplanabilir sonucu (+ boş
+liste), `LevelMark.draw`in TAM 2 varlık ürettiği, boyutun ölçekle
+DOĞRUSAL türediği (1:100 = 1:50 × 2), `draw_level_marks`in N sınır için
+TAM 2N varlık ürettiği, plan kot işaretlerinin OPT-IN olduğu (+ yanlış-
+pozitif), özel bir stilin enjekte edilebildiği, katman RGB'sinin kod-
+sahipli olduğu.
+
+### Açık risk / bilinen sınırlama
+
+- `validate.py`de `level_marks[]` için özel bir geometrik kontrol YOK
+  (schema zaten sayısal/zorunlu kılıyor).
+- Kesit/görünüşteki `anchor_x` konumu piksel-kesin çakışmama garantisi
+  vermez (`NorthArrow` ile AYNI sınırlama sınıfı).
+
+### Sonraki direktif
+
+`DEVELOPMENT_TASKS.md::PLANLANAN GÖREVLER`de kalan maddeler: `DEV-007`
+(BLOCKED), `DEV-023` (`ceiling/`), `DEV-024` (`site/`), `DEV-026`/
+`DEV-028` (`legend/` genişletmeleri), `DEV-027` (kaçış planı). Sistem
+mimarı bir sonraki maddeyi seçip yönlendirme verene kadar kod yazılmaz.
+
+## HD-014 — `palette/` modülü: merkezi katman renk organizasyonu (DEV-030)
+
+- **Durum:** COMPLETED
+- **Tamamlanma:** 2026-09-25
+- **Kökeni:** Kullanıcının kod incelemesi sırasında yaptığı gözlem
+  ("modüllerin kendi layer'larında çalışırken renklerinin
+  çeşitlendirilmediğini fark ettim") `DEV-030` olarak plana eklenmişti
+  (bkz. bu oturumdaki önceki kayıt). Kullanıcı sonradan Fikir 1
+  (merkezi olmayan) / Fikir 2 (merkezi kontrolör modülü) arasında **Fikir
+  2**'yi seçti, gerekçesi:
+
+  > "her modül kendi rengini oluşturursa bazı modüller aynı rengi seçmiş
+  > olabilir ... ve bazı modüllerin birbirlerine kontrast renkler ile
+  > bulunması ihtiyacı olabilir bundan dolayı ayrı bir modül olması uygun
+  > olabilir."
+
+- **Kapsam:** `scripts/palette/` (yeni modül: `__init__.py`, `CLAUDE.md`,
+  `selftest.py`), `scripts/axis/standard.py`, `scripts/columns/standard.py`
+  + `render.py` + `__init__.py`, `scripts/sections/__init__.py`,
+  `scripts/stairs/__init__.py`, `scripts/furniture/groups.py` (hepsi
+  `palette.color_for(...)`den okur), `scripts/collision/scene.py`
+  (`COLLISION_EXEMPT`), `scripts/version.py` (`CONTRACT_MODULES`), kök
+  `CLAUDE.md` + `scripts/CLAUDE.md` (modül kaydı).
+
+### İki kural, kullanıcının iki cümlesine BİREBİR karşılık gelir
+
+`palette::validate_palette`: (1) hiçbir iki katman AYNI rengi taşıyamaz
+(tam eşitlik yasağı — "aynı rengi seçmiş olabilir" riski), (2) aynı
+`contrast_group`taki katmanlar birbirinden en az `CONTRAST_MIN_DISTANCE`
+(40.0, RGB Öklid mesafesi) kadar uzak olmalıdır ("kontrast ihtiyacı").
+`"primary"` grubu AKS/KOLON ailesi/KESİT/MERDİVEN'i kapsar (aynı pafta
+üzerinde aynı anda görülebilirler); tefriş ailesi bilerek bu gruba GİRMEZ
+(rev-10 kararı: "zıt renk kullanılmaz" korunur).
+
+### Somut bulgu düzeltildi: KOLON ailesi artık 3 farklı ton
+
+`columns/standard.py::COLUMN_RGB`, üç farklı katmana (`KOLON` kontur,
+`KOLON-TARAMA` tarama, `KOLON-METIN` isim) TEK renk atıyordu — kullanıcının
+birinci endişesinin (aynı rengin paylaşılması) SOMUT bir örneğiydi.
+`palette` kurulurken üçü ayrıştırıldı: kontur nötr orta gri `(150,150,150)`,
+tarama daha açık `(190,190,190)` (ast eleman konvansiyonu), metin en koyu
+`(45,45,50)` (okunurluk) — üçü de `AKS`in SABİT rengine `(67,77,88)`
+(kök `CLAUDE.md` tarafından mandate edilir, DEĞİŞTİRİLEMEZ) yeterince uzak
+tutuldu; eski `(90,90,96)` AKS'ye tehlikeli derecede yakındı (Öklid mesafesi
+~27.6, yeni değerler ≥88).
+
+### Kapsam kararı: yalnızca kod-sahipli katmanlar
+
+`context.json::layers[]` (proje verisi, ACI index) merkezi kaydın DIŞINDA
+bırakıldı — kullanıcı bu ayrımı genişletmeyi istemedi (soru açık kararlar
+listesinde soruldu, ek yönlendirme gelmedi), bu yüzden "proje verisi = ACI,
+sistem/kod standardı = RGB" ikiliği KORUNDU.
+
+### `golden_report.py`nin bilinen bir kör noktası doğrulandı
+
+DEV-030 gerçek projenin `KOLON` ailesinin rengini DEĞİŞTİRDİĞİ halde
+`golden_report.py --golden-set` ve `--compare docs/development/
+plan-golden-report.json` "eşleşti" raporladı — ölçüm raporu yalnızca
+entity/layer SAYISINI ve `modelspace_bbox`i kaydeder, RGB'yi DEĞİL. Bu YENİ
+bir hata değil (rapor formatı hep böyleydi) ama DEV-030 bunu İLK KEZ somut
+olarak gösterdi; `scripts/palette/CLAUDE.md` ve `scripts/columns/CLAUDE.md`
+"Bilinen sınırlamalar"a eklendi. Renk regresyonu bugün yalnızca
+`palette/selftest.py` ve `preview.py` ile gözle kontrol edilebilir.
+
+### Golden output etkisi
+
+- **Ana proje GÖRSEL olarak değişti** (kolonların üç katmanı artık farklı
+  gri tonlarında) ama **ölçüm raporu AYNI kaldı** (yukarı bakınız) —
+  `docs/development/plan-golden-report.json` bu yüzden YENİDEN YAZILMADI
+  (zaten hiçbir şeyi kaydetmiyordu).
+- Mevcut 6 golden referansının TÜMÜ `--golden-set` ile yeniden koşuldu,
+  hepsi (`golden/tefris_kolon` dahil) "eşleşti" — beklenen, çünkü ölçüm
+  formatı renk taşımıyor.
+
+### Modül self-test'i
+
+`python scripts/palette/selftest.py` — 7 kontrol grubu: gerçek `PALETTE`nin
+kendi kurallarını ihlal etmediği, aynı-renk ihlalinin yakalandığı (KOLON
+bulgusunun regresyon testi), yakın-kontrast ihlalinin yakalandığı (+ eşiğin
+TAM ÜZERİNDEKİ mesafenin yanlış-pozitif ÜRETMEDİĞİ, elle: (100,100,100) vs
+(110,100,100) mesafe=10<40 HATA, (0,0,0) vs (40,0,0) mesafe=40 tam eşik
+HATA VERMEZ), farklı/`None` gruplar arası yakınlığın MUAF olduğu (tefriş
+ailesi korunur), `color_for`in bilinen/bilinmeyen isim davranışı, KOLON
+ailesinin artık aynı renk OLMADIĞI, `_distance`in elle hesaplanabilir
+olduğu (3-4-5 üçgeni, mesafe=5.0).
+
+### Açık risk / bilinen sınırlama
+
+- `golden_report.py` renk regresyonunu yakalamaz (yukarı bakınız) —
+  ileride `report()`e katman başına örnek RGB eklenmesi düşünülebilir.
+- `CONTRAST_MIN_DISTANCE` tek bir global eşiktir; gruba özel farklı eşikler
+  desteklenmiyor.
+- `context.json::layers[]` (ACI index) ile kod-seviyeli `PALETTE` (RGB)
+  arasında bir çakışma kontrolü YOK — kullanıcı bunu istemedi, bilinçli
+  sınır.
+
+### Sonraki direktif
+
+Sıradaki `PLANNED` madde `DEV-029` (kot/datum mantığı, `scripts/levels/`)
+— aynı oturumda kullanıcı tarafından seçildi, ayrıca bkz. bu dosyadaki
+sonraki kayıt.
+
 ## HD-013 — `stairs/` modülü: gerçek merdiven basamak geometrisi (DEV-022)
 
 - **Durum:** COMPLETED

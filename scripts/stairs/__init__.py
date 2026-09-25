@@ -37,13 +37,18 @@ import math
 from dataclasses import dataclass, field
 from typing import Protocol
 
+try:
+    from ..palette import color_for
+except ImportError:  # dogrudan scripts/ uzerinden calistirildiginda
+    from palette import color_for
+
 STAIR_LAYER = "MERDIVEN"
 # Kod-seviyeli sabit renk (ensure_axis_layer deseni) - context.json'dan
-# ALINMAZ. DEV-030 (katman renk organizasyonu, henuz PLANNED) bu rengin
-# projedeki DIGER kod-seviyeli renklerle (AKS gri, KOLON gri, TEFRIS
-# kahverengi ailesi) CAKISMAMASINI/karistirilmamasini istiyor - bu yuzden
-# bilerek FARKLI bir aile (mavi-gri) secildi.
-STAIR_RGB = (60, 120, 150)
+# ALINMAZ. Renk artik scripts/palette::PALETTE'in TEK kaynagindan gelir
+# (DEV-030, sonradan tamamlandi); DEGER AYNI (60,120,150) kalir - bilerek
+# diger "primary" kod-seviyeli tonlarindan (AKS gri, KOLON ailesi, KESIT
+# kirmizi) uzak bir mavi-gri ailesi.
+STAIR_RGB = color_for(STAIR_LAYER)
 
 DEFAULT_RISER_MM = 170.0     # ofis standardi (TS/mimari pratikte tipik 16-18cm)
 DEFAULT_GOING_MM = 270.0     # ofis standardi (makul bant 250-300mm, orta deger)

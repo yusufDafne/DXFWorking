@@ -1,6 +1,6 @@
 {
   "source": "golden/tefris_kolon",
-  "entity_count": 284,
+  "entity_count": 296,
   "entity_types": {
     "ARC": 2,
     "ATTRIB": 9,
@@ -9,8 +9,8 @@
     "HATCH": 14,
     "INSERT": 26,
     "LINE": 78,
-    "LWPOLYLINE": 33,
-    "TEXT": 76
+    "LWPOLYLINE": 39,
+    "TEXT": 82
   },
   "layers": {
     "AKS": 90,
@@ -20,6 +20,7 @@
     "KESIT": 10,
     "KOLON": 9,
     "KOLON-TARAMA": 9,
+    "KOT": 12,
     "METIN": 51,
     "OLCU": 10,
     "TEFRIS-ISLAK": 5,

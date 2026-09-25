@@ -182,6 +182,30 @@ bulgusu paralel doküman düzenlemesinden kaynaklı bir ANLIK yarış durumuydu
 durumda `### DEV-022` maddesi COMPLETED altında gerçekten var ve
 `doc_check.py` temiz dönüyor.
 
+**`DEV-030` COMPLETED (aynı oturumun devamı, kullanıcı "29 ve 30. planları
+uygula" dedi):** kullanıcı Fikir 2'yi (merkezi `scripts/palette/` modülü)
+seçti. `axis`/`columns`/`sections`/`stairs`/`furniture` artık RGB
+sabitlerini `palette.color_for(...)`den alıyor; `KOLON`/`KOLON-TARAMA`/
+`KOLON-METIN` DEV-030'un kurulma nedeni olan somut bulgu (üçü aynı renkti)
+düzeltilerek üç FARKLI tona ayrıldı — ayrıntı `HD-014`. `golden_report.py`
+renk değişikliğini YAKALAMADIĞI (yalnızca entity/layer sayısı + bbox
+kaydeder) belgelendi, bu bir DEV-030 regresyonu DEĞİL, önceden var olan bir
+kör nokta.
+
+**`DEV-029` COMPLETED (aynı oturumun devamı):** kullanıcı Fikir 1'i (yeni
+bağımsız `scripts/levels/` modülü) ve kot formatını ("+3.00"/"-0.20"/
+"±0.00") onayladı. Kesit/görünüş tarafı OTOMATİK (`elevations::LevelStack`
+tüketilir, YENİDEN YAZILMAZ) — gerçek projenin `output/plan.dxf`ine 80 yeni
+`KOT` entity'si eklendi, hiçbir yeni proje verisi GEREKMEDİ. Plan tarafı
+(`floors[].level_marks[]`) GERÇEK veri gerektirir (rampa/teras kademesi);
+gerçek projeye eklenmedi (veri elde yoktu), `golden/merdiven_ornek`e bir
+örnek eklendi (üst sahanlık +3.00, `stairs[].floor_to_floor_mm` ile
+TUTARLI). `docs/development/plan-golden-report.json` ve 6 golden referans
+`--write`/`--update` ile yenilendi. Ayrıntı `HD-015`. Sıradaki `PLANNED`
+madde seçilmedi — sistem mimarının yönlendirmesi bekleniyor (`DEV-023`
+`ceiling/`, `DEV-024` `site/`, `DEV-026`/`DEV-028` `legend/` genişletmeleri,
+`DEV-027` kaçış planı; `DEV-007` hâlâ BLOCKED).
+
 ## İlk okuma sırası
 
 1. Bu dosya.

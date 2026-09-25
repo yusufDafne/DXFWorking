@@ -116,6 +116,17 @@
         "name": { "type": "string", "description": "Kolon adi. Bugun CIZILMEZ (kullanici kolonlari aks kesisimiyle ifade ediyor); meta.column_label.enabled ile acilir." }
       }
     },
+    "level_mark": {
+      "type": "object",
+      "description": "PLAN uzerinde bir kot (spot elevation) isareti (scripts/levels, DEV-029). GERCEK proje verisidir (orn. bir rampa/teras kademe farki) - asla turetilmez/uydurulmaz. Kesit/gorunuslerdeki kat sinirlarinin AKSINE (onlar elevations::LevelStack'ten OTOMATIK turetilir), plan'da bir kot kavrami hesaplanamaz - bu yuzden bu alan ACIKCA verilir.",
+      "required": ["id", "position", "value_mm"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string" },
+        "position": { "$ref": "#/definitions/point" },
+        "value_mm": { "type": "number", "description": "Zemin kotuna (±0.00) gore dusey mesafe, mm. Pozitif=yukari, negatif=asagi. Cizimde '+3.00'/'-0.20'/'±0.00' formatinda (isaret + 2 ondalikli metre) gosterilir." }
+      }
+    },
     "stairs": {
       "type": "object",
       "description": "Merdiven basamak geometrisi (scripts/stairs, DEV-022). 'room_id', ayni kattaki bir Merdiven odasina (rooms[]) referans verir; basamaklar o odanin poligonu ICINDE cizilir. 'floor_to_floor_mm' GERCEK proje verisidir (uydurulamaz); riser/going degerleri VERILMEZSE ofis standardi varsayilanlarina (DEFAULT_RISER_MM=170, DEFAULT_GOING_MM=270) duser ve gerekirse 'auto_flex' ile kat yuksekligine tam oturacak sekilde esnetilir (bkz. scripts/stairs/CLAUDE.md).",
@@ -183,7 +194,8 @@
         "furniture": { "type": "array", "items": { "$ref": "#/definitions/furniture_item" } },
         "columns": { "type": "array", "items": { "$ref": "#/definitions/column" } },
         "markings": { "type": "array", "items": { "$ref": "#/definitions/marking" } },
-        "stairs": { "type": "array", "items": { "$ref": "#/definitions/stairs" } }
+        "stairs": { "type": "array", "items": { "$ref": "#/definitions/stairs" } },
+        "level_marks": { "type": "array", "items": { "$ref": "#/definitions/level_mark" } }
       }
     },
     "elevation_level": {

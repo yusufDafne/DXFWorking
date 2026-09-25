@@ -5,18 +5,23 @@ from ezdxf.enums import TextEntityAlignment
 
 from .column import Column
 from .section import ColumnSectionCatalog
-from .standard import COLUMN_LAYER, COLUMN_RGB
+from .standard import COLUMN_HATCH_RGB, COLUMN_LAYER, COLUMN_RGB, COLUMN_TEXT_RGB
 from .style import ColumnHatchStyle, ColumnLabelStyle
 
 def ensure_column_layers(doc, hatch_style: ColumnHatchStyle | None = None,
                          label_style: ColumnLabelStyle | None = None) -> None:
     """Kolon layer'larini hazirlar (`ensure_axis_layer` deseni). Renk koddan
-    gelir, context'ten alinmaz."""
+    gelir, context'ten alinmaz. UC layer ARTIK UC FARKLI tondadir (DEV-030,
+    scripts/palette) - eskiden ucu de COLUMN_RGB'yi paylasiyordu."""
     hatch_style = hatch_style or ColumnHatchStyle()
     label_style = label_style or ColumnLabelStyle()
-    for name in (COLUMN_LAYER, hatch_style.layer, label_style.layer):
+    for name, rgb in (
+        (COLUMN_LAYER, COLUMN_RGB),
+        (hatch_style.layer, COLUMN_HATCH_RGB),
+        (label_style.layer, COLUMN_TEXT_RGB),
+    ):
         layer = doc.layers.get(name) if name in doc.layers else doc.layers.add(name=name)
-        layer.rgb = COLUMN_RGB
+        layer.rgb = rgb
 
 
 class ColumnRenderer:
