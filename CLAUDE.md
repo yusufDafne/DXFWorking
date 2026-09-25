@@ -291,6 +291,32 @@ geliştirme görevleri, tamamlanmış geçmiş, fikirler ve geliştirici notlar�
   KALDIRILDI — bkz. `docs/development/DEVELOPMENT_HISTORY.md` HD-012. Kuzey
   oku bundan etkilenmedi. Ayrıntı: `scripts/northarrow/CLAUDE.md`.
 
+## Kot (seviye/datum) standardı (rev-19'dan itibaren)
+
+- Kullanıcı talebi (rev-17'de gündeme geldi, rev-19'da uygulandı): *"kot
+  verme mantıklarını yöneten bir mantık istiyorum ... kot organizasyonu hem
+  planda hem kesitte kullanılacaktır ... bu mantığın projenin geneline
+  hakim olması gerekecektir."* Uygulaması `scripts/levels/` modülündeki
+  `LevelMark` sınıfıyla kapsüllenir; ayrı ad-hoc kot çizim kodu YAZILMAZ.
+- **Sembol:** bayrak (üçgen) + kot metni. Kot metni **işaret + 2 ondalıklı
+  METRE** formatındadır (kullanıcı kararı): `"+3.00"`, `"-0.20"`, sıfır
+  seviyesi `"±0.00"`. Bu SADECE gösterim formatıdır; `context.json`daki
+  asıl ölçü birimi (mm) DEĞİŞMEZ.
+- **Kesit/görünüş:** OTOMATİK çizilir, HİÇBİR yeni veri GEREKMEZ — her kat
+  sınırında bir kot işareti, `elevations::LevelStack`in ZATEN hesapladığı
+  `(y0, y1)` değerlerinden türetilir (`levels` modülü kat yüksekliği
+  hesabını YENİDEN YAPMAZ, sadece formatlar/çizer). `sections/`teki kesit
+  paftaları da AYNI mekanizmayı (`levels_from` üzerinden) kullanır.
+- **Plan:** rampa/teras gibi bir kademe farkının kotu `floors[].
+  level_marks[]` ile AÇIKÇA verilir (`id`, `position`, `value_mm`) — bu
+  GERÇEK proje verisidir, plan düzleminde otomatik türetilecek bir kaynak
+  YOKTUR. **Veri verilmezse hiçbir işaret çizilmez** — kuzey oku ile AYNI
+  "veri yoksa uydurma" deseni.
+- **Katman:** `KOT` katmanı, `scripts/palette::PALETTE`den (DEV-030) gelen
+  kod-sahipli sabit bir renkle (yeşil, diğer "primary" ailelerden — AKS/
+  KOLON grisi, KESİT kırmızısı, MERDİVEN mavisi — bilerek farklı) çizilir.
+  Ayrıntı: `scripts/levels/CLAUDE.md`.
+
 ## Çok katli bina yapisi (rev-2 tarihsel notu; güncel pafta kuralları geçerlidir)
 
 - context.json semasi rev-2'de degisti: artik duz (tek daire) yapi degil,

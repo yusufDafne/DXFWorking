@@ -1,6 +1,6 @@
 {
   "source": "golden/merdiven_ornek",
-  "entity_count": 161,
+  "entity_count": 175,
   "entity_types": {
     "ATTRIB": 3,
     "CIRCLE": 20,
@@ -8,14 +8,15 @@
     "HATCH": 4,
     "INSERT": 1,
     "LINE": 56,
-    "LWPOLYLINE": 22,
-    "TEXT": 50
+    "LWPOLYLINE": 29,
+    "TEXT": 57
   },
   "layers": {
     "AKS": 55,
     "CERCEVE": 25,
     "DUVARLAR": 13,
     "KESIT": 10,
+    "KOT": 14,
     "MERDIVEN": 21,
     "METIN": 27,
     "OLCU": 10

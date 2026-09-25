@@ -4,6 +4,115 @@ Aktif geçmiş kapasitesi: **50 kayıt**. En eski tamamlanmış kayıt, 51. kay�
 alınırken silinir. Ayrıntılı teknik değişiklikler git geçmişi ve ilgili proje
 provenance kayıtlarıyla ilişkilendirilir.
 
+## HD-015 — `levels/` modülü: kot (seviye/datum) standardı (DEV-029)
+
+- **Durum:** COMPLETED
+- **Tamamlanma:** 2026-09-25
+- **Kökeni:** rev-17'de (`DEV-021`/`DEV-025` çalışması sırasında)
+  kullanıcının gündeme getirdiği çapraz-kesit konu: *"kot verme
+  mantıklarını yöneten bir mantık istiyorum ... kot organizasyonu hem
+  planda hem kesitte kullanılacaktır ... bu mantığın projenin geneline
+  hakim olması gerekecektir."* `DEVELOPMENT_TASKS.md::DEV-029`de sistemin
+  önceden yazdığı "Öneri" (yeni bağımsız modül) kullanıcı tarafından
+  onaylandı; kullanıcı ayrıca kot metni formatını da onayladı: "+3.00"/
+  "-0.20"/"±0.00" (işaret + 2 ondalıklı metre).
+- **Kapsam:** `scripts/levels/` (yeni modül: `__init__.py`, `CLAUDE.md`,
+  `selftest.py`), `schema/design.schema.json` (`level_mark` tanımı +
+  `floor.properties.level_marks`), `scripts/generate_dxf.py` (kesit/
+  görünüş/plan entegrasyonu), `scripts/palette/__init__.py` (`KOT` girdisi),
+  `scripts/collision/scene.py` (`COLLISION_EXEMPT`), `scripts/version.py`
+  (`CONTRACT_MODULES`), `scripts/golden_report.py` (`_code_owned_layers`e
+  `KOT`), `golden/merdiven_ornek/` (plan kot işareti eklendi), kök
+  `CLAUDE.md` + `scripts/CLAUDE.md` (modül kaydı).
+
+### Kat yüksekliği hesabı YENİDEN YAZILMADI — dolaylı tüketim
+
+Bu görevin en kritik invariant'ı: `levels` modülü `elevations::LevelStack`i
+import ETMEZ. `level_boundaries_from_placements(placements)`,
+`LevelStack.placements()`in DÜZ çıktısını (herhangi bir `(etiket, y0, y1)`
+üçlü listesi — SEKİL beklenir, SINIF değil) işler; `generate_dxf.py`
+(orkestratör) köprüyü KENDİSİ kurar (`LevelStack.from_context(elevation)`
+zaten `sections`/`elevations` için kuruluyordu, `levels` sadece SONUCU
+tüketir). Bu, `axis_grid`in `draw_on_elevation(...)` duck-typing
+sözleşmesiyle AYNI desendir — iki modül birbirini BİLMEZ.
+
+### İki tüketim yolu: otomatik (kesit/görünüş) vs. gerçek-veri (plan)
+
+- **Kesit/görünüş:** HİÇBİR yeni proje verisi gerekmedi — her kat sınırının
+  kotu zaten `context.json::elevations[].levels[].height`den (GERÇEK veri)
+  hesaplanıyordu, `levels` SADECE bunu `"+3.00"` gibi FORMATLAR ve ÇİZER.
+  Bu yüzden gerçek projenin `output/plan.dxf`ine **otomatik olarak** 80 yeni
+  `KOT` varlığı eklendi (2 cephe × 10 sınır + 2 kesit × 10 sınır, her sınır
+  1 bayrak + 1 metin = elle hesaplanabilir: `(2+2) × 10 × 2 = 80`).
+- **Plan:** `floors[].level_marks[]` GERÇEK proje verisidir (rampa/teras
+  kademe farkı) — plan düzleminde "kat yüksekliği" kavramı OLMADIĞI için
+  otomatik türetme YAPILAMAZ. Veri verilmezse HİÇBİR ŞEY çizilmez (kuzey
+  oku ile AYNI "veri yoksa uydurma" deseni). Gerçek projenin hiçbir katına
+  bu veri EKLENMEDİ (rampa kademe değerleri elde yoktu, uydurulmadı);
+  `golden/merdiven_ornek`e (üst sahanlık +3.00, `stairs[].
+  floor_to_floor_mm` ile TUTARLI) tek bir örnek eklendi.
+
+### Yerleşim kararı: sol kenarın biraz dışı, ölçekle türer
+
+`anchor_x = cursor - to_modelspace(50.0, denominator)` — flag+metinle AYNI
+oranda ölçeğe göre türeyen küçük bir pay. Gerçek proje + 6 golden
+referansın TÜMÜNDE `PaftaOverflowError` TETİKLENMEDİ (elle doğrulandı,
+`DEV-022`nin ilk denemesinde yaşanan taşma hatasının AKSİNE).
+
+**Bağımsız reviewer düzeltmesi (aynı oturum):** İlk yazılan gerekçe
+("`ElevationSheet.draw`daki zemin çizgisinin sabit `dx-1000` payının
+İÇİNDE kalır") MATEMATİKSEL OLARAK YANLIŞTI — `to_modelspace(50, denom)`
+ÖLÇEKLE BÜYÜYEN bir değerdir (1:50'de zaten `50×50=2500mm`, sabit
+`1000mm`lik payı AŞAR), iki değer karşılaştırılamaz. Gerçek taşma
+GÜVENCESİ bu karşılaştırma DEĞİL, `pafta::Sheet.verify_within_frame`in
+(SABİT `CONTENT_PADDING=4000`, ölçekle türemez) üretim SIRASINDA yaptığı
+gerçek bbox kontrolüdür — bugünkü `1:50` sabit ölçeğinde (bu proje
+`MIMARI_UYGULAMA` sınıfı olduğu için ölçek zaten sabit) rahatça sığıyor,
+ama ÇOK BÜYÜK ölçek paydalarında (örn. `1:200`/`1:500`, `VAZIYET_PLANI`
+proje tipi) bu değer `CONTENT_PADDING`i AŞABİLİR — o durumda üretim
+SESSİZCE değil, `PaftaOverflowError` ile DURUR (sessiz hata YOK, sadece
+yanlış bir gerekçe yorumu vardı). Yorum düzeltildi
+(`scripts/generate_dxf.py`), kod DEĞİŞMEDİ (davranış zaten güvenliydi).
+
+### Golden output etkisi
+
+- **Ana proje DEĞİŞTİ** (beklenen, otomatik kesit/görünüş kot işaretleri):
+  `output/plan.dxf`e 80 yeni `KOT` entity'si eklendi;
+  `docs/development/plan-golden-report.json` `--write` ile YENİDEN
+  üretildi.
+- **6 golden referansın TÜMÜ** aynı sebeple değişti (`--update`);
+  `golden/merdiven_ornek` ayrıca `floors[0].level_marks[]` ile PLAN
+  tarafını da (opt-in) sınıyor.
+- `scripts/golden_report.py::_code_owned_layers` `KOT`u tanımadığı için ilk
+  denemede `declared_layers` kuralı bunu "bildirilmemiş layer" olarak
+  işaretledi — `MERDIVEN` ile AYNI unutkanlık sınıfı, `AKS`/`KOLON*`/
+  `TEFRIS-*`/`KESIT`/`MERDIVEN` ile AYNI listeye eklenerek düzeltildi.
+
+### Modül self-test'i
+
+`python scripts/levels/selftest.py` — 8 kontrol grubu: `format_level`in
+elle hesaplanabilir 6 durumu (dahil: `±0.00`ye yuvarlanan 1mm'lik değer),
+`level_boundaries_from_placements`in elle hesaplanabilir sonucu (+ boş
+liste), `LevelMark.draw`in TAM 2 varlık ürettiği, boyutun ölçekle
+DOĞRUSAL türediği (1:100 = 1:50 × 2), `draw_level_marks`in N sınır için
+TAM 2N varlık ürettiği, plan kot işaretlerinin OPT-IN olduğu (+ yanlış-
+pozitif), özel bir stilin enjekte edilebildiği, katman RGB'sinin kod-
+sahipli olduğu.
+
+### Açık risk / bilinen sınırlama
+
+- `validate.py`de `level_marks[]` için özel bir geometrik kontrol YOK
+  (schema zaten sayısal/zorunlu kılıyor).
+- Kesit/görünüşteki `anchor_x` konumu piksel-kesin çakışmama garantisi
+  vermez (`NorthArrow` ile AYNI sınırlama sınıfı).
+
+### Sonraki direktif
+
+`DEVELOPMENT_TASKS.md::PLANLANAN GÖREVLER`de kalan maddeler: `DEV-007`
+(BLOCKED), `DEV-023` (`ceiling/`), `DEV-024` (`site/`), `DEV-026`/
+`DEV-028` (`legend/` genişletmeleri), `DEV-027` (kaçış planı). Sistem
+mimarı bir sonraki maddeyi seçip yönlendirme verene kadar kod yazılmaz.
+
 ## HD-014 — `palette/` modülü: merkezi katman renk organizasyonu (DEV-030)
 
 - **Durum:** COMPLETED

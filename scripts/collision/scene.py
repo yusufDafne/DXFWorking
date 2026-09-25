@@ -64,6 +64,9 @@ COLLISION_EXEMPT: dict[str, str] = {
                   "(basligi/aksi gibi) - proje geometrisiyle (oda/duvar/"
                   "tefris) hicbir mekansal iliskisi yoktur (axis/typography "
                   "ile AYNI gerekce, politika matrisinde IGNORE).",
+    "levels": "Kot (seviye/datum) isareti (DEV-029) bir ANOTASYONDUR "
+              "(bayrak+metin) - dimensions/axis ile AYNI gerekce, plan "
+              "geometrisinde anlamli bir alan kaplamaz.",
     "palette": "Katman renk organizasyonu (DEV-030); hic geometri uretmez, "
                "yalnizca kod-sahipli katman renk sabitlerini tanimlar "
                "(typography ile AYNI gerekce).",

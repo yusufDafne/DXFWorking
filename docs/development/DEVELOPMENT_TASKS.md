@@ -41,7 +41,7 @@ Tamamlanan işlerin ayrıntılı gerekçesi, karar süreci ve ölçülen etkisi
 | DEV-026 | `legend/` — alan hesap cetveli | PLANNED |
 | DEV-027 | Kaçış (tahliye) planı | PLANNED |
 | DEV-028 | `legend/` — malzeme/kaplama cetveli | PLANNED |
-| DEV-029 | Kot (seviye/datum) yönetim mantığı — proje geneli | PLANNED |
+| DEV-029 | Kot (seviye/datum) yönetim mantığı — proje geneli | COMPLETED (2026-09-25) |
 | DEV-030 | Katman renk organizasyonu (modüller arası) | COMPLETED (2026-09-25) |
 
 ## READY
@@ -72,13 +72,8 @@ bölüm artık üç tür maddeyi tutar:
    analizi (mevcut modüllerdeki gibi) o madde açıkça seçildiğinde yapılır.
    Sistem mimarı bir maddeyi seçip kendi yönlendirmesini eklemeden agent
    kod yazmaz.
-3. **`DEV-029`** — rev-17'de `DEV-021`/`DEV-025` çalışması sırasında
-   kullanıcının ayrıca gündeme getirdiği, proje geneline hakim olması
-   gereken bir çapraz-kesit (cross-cutting) konu: kot (seviye/datum) verme
-   mantığı. Aynı "uygulama izni değildir" kuralı geçerlidir.
-
-(`DEV-030` — katman renk organizasyonu — 2026-09-25'te seçilip tamamlandı,
-bkz. `## COMPLETED`.)
+(`DEV-029` — kot/datum yönetim mantığı — ve `DEV-030` — katman renk
+organizasyonu — 2026-09-25'te seçilip tamamlandı, bkz. `## COMPLETED`.)
 
 **Şartname ile fikir farkı:** Bir maddede "Şartname" başlığı varsa, o kısım
 kullanıcı tarafından KESİN olarak verilmiştir ve fikir gibi değerlendirilmez.
@@ -201,57 +196,6 @@ malzeme kodu) eklenip, `legend/`nin AYNI gruplama+tablo deseniyle (bkz.
 
 **İlişkili modüller:** `rooms/` (şema genişlemesi), `legend/` (tablo
 altyapısı hazır).
-
-### DEV-029 — Kot (seviye/datum) yönetim mantığı — proje geneline hakim
-
-- **Durum:** PLANNED
-
-**Kökeni:** `DEV-021`/`DEV-025` çalışması sırasında kullanıcının ayrıca
-gündeme getirdiği bir konu: *"kot verme mantıklarını yöneten bir mantık
-istiyorum... kot organizasyonu hem planda hem kesitte kullanılacaktır...
-bu mantığın projenin geneline hakim olması gerekecektir."*
-
-**Neden endüstri standardı bir boşluk:** Kot (spot/seviye yüksekliği,
-örn. `±0.00`, `+3.00`, `-0.20`) mimari çizimde SEMBOLLE (üçgen/bayrak +
-liderle bağlı metin) gösterilen, gerçek dünya yüksekliğini bildiren
-standart bir anotasyondur — hem KAT PLANINDA (rampa/teras/kademe farkı
-noktalarında) hem GÖRÜNÜŞ/KESİTTE (her kat sınırında) kullanılır. Bugün
-sistemde bu YOK: `elevations::LevelStack` her seviyenin y0/y1'ini zaten
-HESAPLIYOR (kümülatif kat yüksekliği) ama bunu bir "kot" olarak
-FORMATLAYIP çizen hiçbir şey yok; kat planında ise hiçbir seviye/kot
-verisi hiç yok.
-
-**Mimari soru ve öneri (kullanıcının açıkça sorduğu karar):** Ayrı bir
-modül mü, yoksa mevcut bir modül tarafından mı yönetilmeli? Bu görev
-açıkça seçilmeden TAM Fikir 1/Fikir 2 analizi yapılmaz (bkz. dosya başı
-kural), ama kullanıcı doğrudan bir mimari görüş istediği için ön bir
-değerlendirme:
-
-- **Öneri — YENİ, küçük, bağımsız bir modül** (örn. `scripts/levels/` veya
-  `scripts/datum/`), `typography/` ölçeğinde küçük bir kütüphane:
-  - Kot **formatlama/gösterim standardını** (işaret, ondalık sayısı, bayrak/
-    üçgen sembolü — Türkiye standardında tipik olarak `+3.00` gibi 2
-    ondalıklı METRE) ve bir `LevelMark` çizim ilkesini (flag/leader/text,
-    `NorthArrow`/`ScaleBar` gibi ölçeğe göre türeyen) sahiplenir.
-  - **Kat yüksekliği hesabını YENİDEN YAZMAZ** — `elevations::LevelStack`in
-    zaten hesapladığı `y0`/`y1`i TÜKETİR (tek yönlü bağımlılık, `sections`
-    → `elevations` ile AYNI desen).
-  - Neden `elevations/`nin kendisine eklenmesin (Fikir 2 yerine): kot
-    PLAN görünümünde de kullanılır (rampa/teras spot kotu) — bu,
-    `elevations/`nin bugünkü net kapsamının (SADECE cephe istifi) dışında
-    bir sorumluluktur; kot format/sembol standardı ile "seviye istifi
-    hesabı" birbirinden ayrı iki karardır (birini değiştirmek diğerini
-    etkilememeli). Bu tam olarak `sections`/`northarrow`ın `elevations`/
-    `pafta`dan AYRI tutulma gerekçesiyle aynıdır (rev-17, bkz. `HD-011`).
-- **Kapsam taslağı (taslak, henüz onay değil):** `rooms[]`e opsiyonel spot
-  kot alanı (plan için) + `LevelMark.draw(msp, point, value_mm, ...)` +
-  `elevations`/`sections`in her seviye sınırında bunu otomatik çağırması.
-  Kot metni formatı (işaret/ondalık/birim) kullanıcı onayı gerektirir —
-  UYDURULMAZ.
-
-**İlişkili modüller:** `elevations/` (`LevelStack`in y0/y1'i TÜKETİLİR,
-DEĞİŞTİRİLMEZ), `sections/` (aynı istif, kesitte de kot gösterilir),
-`rooms/`+`pafta` (plan tarafı spot kotu, henüz şema yok).
 
 ## COMPLETED
 
@@ -419,6 +363,18 @@ DEĞİŞTİRİLMEZ), `sections/` (aynı istif, kesitte de kot gösterilir),
   FARKLI ton (DEV-030 öncesi üçü aynıydı). `context.json::layers[]` (proje
   verisi, ACI index) kapsam DIŞINDA bırakıldı — kod-seviyeli/proje-seviyeli
   ayrım korundu. (`HD-014`)
+
+### DEV-029 — Kot (seviye/datum) yönetim mantığı — proje geneline hakim
+
+- **Durum:** COMPLETED (2026-09-25)
+- **Özet:** Yeni `scripts/levels/` modülü (kullanıcının doğrudan önerdiği
+  Fikir: bağımsız, küçük modül); kot metni `"+3.00"`/`"-0.20"`/`"±0.00"`
+  formatında (kullanıcı kararı). Kesit/görünüşte OTOMATİK — kat yüksekliği
+  hesabı `elevations::LevelStack`ten TÜKETİLİR, YENİDEN YAZILMAZ. Planda
+  `floors[].level_marks[]` ile GERÇEK veri (rampa/teras kademesi), verilmezse
+  çizilmez. Gerçek projenin `output/plan.dxf`ine otomatik olarak 80 yeni
+  `KOT` varlığı eklendi (2 cephe + 2 kesit × 10 kat sınırı × 2 varlık).
+  (`HD-015`)
 
 ## Görev tamamlama kuralı
 

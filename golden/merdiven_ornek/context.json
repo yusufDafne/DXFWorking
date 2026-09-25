@@ -113,6 +113,13 @@
           "floor_to_floor_mm": 3000.0,
           "up_towards": "N"
         }
+      ],
+      "level_marks": [
+        {
+          "id": "kot_ust_sahanlik",
+          "position": [600.0, 8000.0],
+          "value_mm": 3000.0
+        }
       ]
     }
   ],
@@ -135,6 +142,11 @@
       "rev": 1,
       "ts": "2026-09-25T00:00:00Z",
       "summary": "DEV-022 fixture: TEK oda (merdiven, 1000x8000mm net - uzun eksen Y), 4 duvar, stairs[] ile floor_to_floor_mm=3000 + up_towards='N' (step_count/riser/going TAMAMEN varsayilanlardan turetilir: 18 basamak, riht~166.67mm, going=270mm - gerekli kosu (18-1)*270=4590mm, oda 8000mm uzunlugunda bol miktarda pay birakir, HICBIR esnetme/UYARI TETIKLENMEZ). floor_depth=8200 BILEREK 8150'nin UZERINDE secildi (1:50'de A4 kapak blogunun minimum dusey acikligi, bkz. golden/minimal rev_history). Gercek projeden BAGIMSIZDIR; amac scripts/stairs modulunun uctan uca (validate+generate+golden) dogru calistigini kucuk ve elle dogrulanabilir bir referansla kanitlamaktir."
+    },
+    {
+      "rev": 2,
+      "ts": "2026-09-25T01:00:00Z",
+      "summary": "DEV-029: floors[0].level_marks[] ile TEK bir PLAN kot isareti eklendi (id='kot_ust_sahanlik', position=[600,8000] - merdivenin UST sahanligi, value_mm=3000.0 - stairs[].floor_to_floor_mm ile AYNI deger, anlamli: ust sahanlik +3.00 kotundadir). Amac scripts/levels modulunun PLAN tarafinin (draw_plan_level_marks, opt-in) uctan uca dogru calistigini kanitlamak - kesit/gorunus tarafi zaten HER golden referansta otomatik (LevelStack'ten turetilerek) sinanir."
     }
   ]
 }

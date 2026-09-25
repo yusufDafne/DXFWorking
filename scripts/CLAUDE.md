@@ -83,6 +83,14 @@ kalanını bilmeye ihtiyaç duymadan o modül üzerinde derinlemesine/izole
   ayrıldı. `axis`/`sections`/`stairs`/`furniture` artık kendi RGB
   sabitlerini `palette.color_for(...)`den ALIR (değerleri DEĞİŞMEDİ,
   sadece merkezi kayda taşındı) — bkz. `scripts/palette/CLAUDE.md`.
+- ✅ **`scripts/levels/`** — `DEV-029` (2026-09-25): kot (spot elevation)
+  standardı — bayrak (üçgen) + `"+3.00"`/`"-0.20"`/`"±0.00"` formatında
+  metin. Kat yüksekliği hesabını YENİDEN YAZMAZ: `elevations::LevelStack`in
+  zaten hesapladığı `(y0, y1)` çiftlerini (`levels_from` üzerinden kesit/
+  görünüşe) DUCK-TYPING ile tüketir (`elevations`i import ETMEZ). Plan
+  tarafında (`floors[].level_marks[]`) GERÇEK proje verisidir (rampa/teras
+  kademe farkı), verilmezse hiçbir işaret çizilmez — bkz.
+  `scripts/levels/CLAUDE.md`.
 
 ## Modül bağımsızlığı ve çapraz kontrol (kullanıcı ilkesi)
 
@@ -218,6 +226,7 @@ Ortak desen (pafta + walls ile kanitlandi):
 | `northarrow/` | `NorthArrow`, `NorthArrowStyle`, `DefaultNorthArrowStyle`, `rotate_point` | UYGULANDI (rev-17); Protocol-tabanli, meta.north_angle verilmezse cizilmez |
 | `stairs/`     | `resolve_stair`, `StairResolution`, `StairFitError`, `StairDrawingStandard`, `DefaultStairStandard`, `ensure_stair_layer`, `draw_stairs_on_floor` | UYGULANDI (DEV-022, 2026-09-25); tek duz kollu merdiven, auto_flex ile riser/going esnetme |
 | `palette/`    | `PALETTE`, `LayerColor`, `color_for`, `validate_palette`, `CONTRAST_MIN_DISTANCE` | UYGULANDI (DEV-030, 2026-09-25); tum kod-sahipli katman renklerinin tek kaydi, ayni-renk + yakin-kontrast denetimi |
+| `levels/`     | `LevelMark`, `LevelMarkStyle`, `DefaultLevelMarkStyle`, `format_level`, `level_boundaries_from_placements`, `draw_level_marks`, `draw_plan_level_marks` | UYGULANDI (DEV-029, 2026-09-25); kot/datum standardi, elevations::LevelStack'i TUKETIR, kendi kat yuksekligi hesaplamaz |
 
 > Bu tablo `scripts/doc_check.py` tarafindan DENETLENIR: `UYGULANDI` isaretli bir
 > satirda anilan her sinif adi, o modulde gercekten tanimli olmalidir. Yalnizca

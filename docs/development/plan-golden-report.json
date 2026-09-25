@@ -1,7 +1,7 @@
 {
-  "source": "output\\plan.dxf",
-  "sha256": "2c2739e31e1218bff853f976fecd0e50d8f0d48655af2a83fca9c5068ffbd075",
-  "entity_count": 2726,
+  "source": "output/plan.dxf",
+  "sha256": "45e88fa1a021955ba04bacecfd5d14a95befaa6c4de80794777314de3d8fdd78",
+  "entity_count": 2806,
   "entity_types": {
     "ARC": 105,
     "ATTRIB": 375,
@@ -10,8 +10,8 @@
     "HATCH": 86,
     "INSERT": 125,
     "LINE": 1276,
-    "LWPOLYLINE": 147,
-    "TEXT": 348
+    "LWPOLYLINE": 187,
+    "TEXT": 388
   },
   "layers": {
     "AKS": 528,
@@ -19,6 +19,7 @@
     "DUVARLAR": 1002,
     "KAPI-PENCERE": 321,
     "KESIT": 90,
+    "KOT": 80,
     "METIN": 632,
     "MOBILYA": 15,
     "OLCU": 28,

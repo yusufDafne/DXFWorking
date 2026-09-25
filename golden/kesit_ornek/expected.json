@@ -1,6 +1,6 @@
 {
   "source": "golden/kesit_ornek",
-  "entity_count": 182,
+  "entity_count": 194,
   "entity_types": {
     "ATTRIB": 12,
     "CIRCLE": 26,
@@ -8,14 +8,15 @@
     "HATCH": 6,
     "INSERT": 4,
     "LINE": 48,
-    "LWPOLYLINE": 24,
-    "TEXT": 56
+    "LWPOLYLINE": 30,
+    "TEXT": 62
   },
   "layers": {
     "AKS": 66,
     "CERCEVE": 29,
     "DUVARLAR": 28,
     "KESIT": 10,
+    "KOT": 12,
     "METIN": 42,
     "OLCU": 7
   },
