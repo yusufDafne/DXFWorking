@@ -145,6 +145,20 @@ kullanıcı tarafından eklendi) hâlâ seçilmeyi bekliyor. Sistem mimarı
 açıkça başlatmadan kod değişikliği yapılmaz. Başlangıçta görev kilidi
 alınmalıdır.
 
+**2026-09-25 durumu:** Kullanıcı "planlanmış tüm planları uygula" istedi;
+kök `CLAUDE.md`nin "PLANLANAN = uygulama izni değildir, tek tek seçilip
+yönlendirilir" kuralıyla çelişki agent tarafından açıkça bildirildi ve
+kullanıcı **"sırayla, tek tek"** ilerlenmesini onayladı (her görev kendi
+Fikir1/Fikir2/açık kararlar analiziyle, tek IN_PROGRESS, validate+golden+
+doc_check ile). Ayrıca kullanıcı katman RENK çeşitlendirmesi eksikliğini
+fark etti; bu **`DEV-030`** olarak `DEVELOPMENT_TASKS.md`ye eklendi (somut
+bulgu: `columns/standard.py::COLUMN_RGB` üç farklı katmana — `KOLON`/
+`KOLON-TARAMA`/`KOLON-METIN` — TEK renk atıyor; `furniture/groups.py` ise
+zaten iyi bir örnek, 5 farklı kahverengi tonu). `DEV-022`nin
+Fikir1/Fikir2/açık kararlar analizi de bu oturumda yazıldı — kod yazımı
+kullanıcının bu açık kararlara (özellikle basamak/rıht veri kaynağı ve
+Fikir 1/2 seçimi) vereceği yönlendirmeyi bekliyor.
+
 ## İlk okuma sırası
 
 1. Bu dosya.
