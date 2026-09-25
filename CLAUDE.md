@@ -329,8 +329,17 @@ geliştirme görevleri, tamamlanmış geçmiş, fikirler ve geliştirici notlar�
   "birim bandi"nin tam derinligini paylastigi icin gercekte olmasi
   gerekenden biraz dar-uzun orantili olabilir; otopark cizgileri
   (`markings[]`, `OTOPARK` katmani) salt gorsel/semantik olmayan
-  isaretlemedir, validate.py bunlari kontrol etmez; asansor/merdiven kapi
-  sembolu cizilmez (sadece etiketli kapali oda olarak gosterilir).
+  isaretlemedir, validate.py bunlari kontrol etmez; asansor kapi sembolu
+  cizilmez (sadece etiketli kapali oda olarak gosterilir). **Merdiven
+  artik istisnadir (DEV-022, `scripts/stairs/`):** `floors[].stairs[]`
+  ile ACIKCA bildirilirse gercek basamak/riht cizgileri + yon oku + kesme
+  cizgisi cizilir (opsiyonel, opt-in - bildirilmezse eskisi gibi sadece
+  etiketli kapali oda). **Bu ornek projenin `Merdiven` odasi (4000x3000mm)
+  hala `stairs[]` VERISI TASIMIYOR:** modul yalnizca tek duz kollu merdiven
+  destekliyor ve bu oda, ~3000mm kat yuksekligi icin tek duz kolla
+  SIGMIYOR (`resolve_stair` bunu `StairFitError` ile dogru sekilde
+  yakaliyor) - sahanlikli/cift kollu merdiven henuz ayri bir gelistirme
+  konusudur, bkz. `scripts/stairs/CLAUDE.md` "Bilinen sinirlamalar".
 
 ## Çizim standartları (ofis standardı, rev-3'ten itibaren)
 

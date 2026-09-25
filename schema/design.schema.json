@@ -116,6 +116,26 @@
         "name": { "type": "string", "description": "Kolon adi. Bugun CIZILMEZ (kullanici kolonlari aks kesisimiyle ifade ediyor); meta.column_label.enabled ile acilir." }
       }
     },
+    "stairs": {
+      "type": "object",
+      "description": "Merdiven basamak geometrisi (scripts/stairs, DEV-022). 'room_id', ayni kattaki bir Merdiven odasina (rooms[]) referans verir; basamaklar o odanin poligonu ICINDE cizilir. 'floor_to_floor_mm' GERCEK proje verisidir (uydurulamaz); riser/going degerleri VERILMEZSE ofis standardi varsayilanlarina (DEFAULT_RISER_MM=170, DEFAULT_GOING_MM=270) duser ve gerekirse 'auto_flex' ile kat yuksekligine tam oturacak sekilde esnetilir (bkz. scripts/stairs/CLAUDE.md).",
+      "required": ["id", "room_id", "floor_to_floor_mm"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string" },
+        "room_id": { "type": "string", "description": "Ayni kattaki merdiven odasinin rooms[].id degeri." },
+        "floor_to_floor_mm": { "type": "number", "exclusiveMinimum": 0, "description": "Bu merdivenin kat ettigi GERCEK dusey mesafe. Uydurulmaz; context'te acikca verilir." },
+        "step_count": { "type": "integer", "minimum": 2, "description": "Basamak (riht) sayisi. Verilmezse floor_to_floor_mm / riser_height_mm'den (veya varsayilandan) turetilir." },
+        "riser_height_mm": { "type": "number", "exclusiveMinimum": 0, "description": "Riht yuksekligi. Verilmezse DEFAULT_RISER_MM=170 kullanilir - bu bir olcu degil, ofis cizim standardidir (ANSI33 hatch olcegi gibi)." },
+        "going_mm": { "type": "number", "exclusiveMinimum": 0, "description": "Basamak genisligi (tread). Verilmezse DEFAULT_GOING_MM=270 kullanilir (makul bant: 250-300mm)." },
+        "auto_flex": { "type": "boolean", "description": "true ise (varsayilan) riser/going, kat yuksekligine VE mevcut oda uzunluguna tam oturacak sekilde otomatik ince ayarlanir; bu her seferinde UYARI olarak raporlanir. false ise degerler oldugu gibi kullanilir, uymazsa UYARI (veya sigmazsa HATA) verilir." },
+        "up_towards": {
+          "type": "string",
+          "enum": ["N", "S", "E", "W"],
+          "description": "Yon oku ve kesme cizgisinin hangi uca cizilecegini belirtir (merdivenin 'yukari' ucu). Verilmezse yon oku ve kesme cizgisi HIC cizilmez (yon uydurulmaz) - yalniz basamak cizgileri cizilir. Merdivenin uzun ekseniyle tutarli olmalidir (orn. dogu-bati uzanan bir merdivende yalnizca 'E'/'W' gecerlidir)."
+        }
+      }
+    },
     "counter": {
       "type": "object",
       "description": "Mutfak tezgahi gibi sabit mobilya elemanlari (dikdortgen poligon)",
@@ -162,7 +182,8 @@
         "counters": { "type": "array", "items": { "$ref": "#/definitions/counter" } },
         "furniture": { "type": "array", "items": { "$ref": "#/definitions/furniture_item" } },
         "columns": { "type": "array", "items": { "$ref": "#/definitions/column" } },
-        "markings": { "type": "array", "items": { "$ref": "#/definitions/marking" } }
+        "markings": { "type": "array", "items": { "$ref": "#/definitions/marking" } },
+        "stairs": { "type": "array", "items": { "$ref": "#/definitions/stairs" } }
       }
     },
     "elevation_level": {

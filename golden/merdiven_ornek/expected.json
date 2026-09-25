@@ -1,0 +1,36 @@
+{
+  "source": "golden/merdiven_ornek",
+  "entity_count": 161,
+  "entity_types": {
+    "ATTRIB": 3,
+    "CIRCLE": 20,
+    "DIMENSION": 5,
+    "HATCH": 4,
+    "INSERT": 1,
+    "LINE": 56,
+    "LWPOLYLINE": 22,
+    "TEXT": 50
+  },
+  "layers": {
+    "AKS": 55,
+    "CERCEVE": 25,
+    "DUVARLAR": 13,
+    "KESIT": 10,
+    "MERDIVEN": 21,
+    "METIN": 27,
+    "OLCU": 10
+  },
+  "modelspace_bbox": [
+    -500.0,
+    -4150.0,
+    55000.0,
+    12350.0
+  ],
+  "blocks": [
+    "MAHAL_ETIKET",
+    "_CLOSEDFILLED"
+  ],
+  "block_inserts": {
+    "MAHAL_ETIKET": 1
+  }
+}

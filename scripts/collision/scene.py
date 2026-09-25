@@ -64,6 +64,11 @@ COLLISION_EXEMPT: dict[str, str] = {
                   "(basligi/aksi gibi) - proje geometrisiyle (oda/duvar/"
                   "tefris) hicbir mekansal iliskisi yoktur (axis/typography "
                   "ile AYNI gerekce, politika matrisinde IGNORE).",
+    "stairs": "Merdiven (DEV-022) YENI bir mekansal ayak izi URETMEZ - "
+              "yalnizca zaten rooms.collision tarafindan kapsanan bir oda "
+              "poligonunun ICINE basamak/yon-oku anotasyonu cizer (AYNI oda, "
+              "AYNI koordinat uzayi). dimensions/axis ile AYNI 'anotasyon, "
+              "madde degil' gerekcesi.",
 }
 
 

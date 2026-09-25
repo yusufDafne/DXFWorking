@@ -96,6 +96,7 @@ from sections import (  # noqa: E402
     resolve_sections,
     section_vertical_extent,
 )
+from stairs import draw_stairs_on_floor, ensure_stair_layer  # noqa: E402
 from version import (  # noqa: E402
     SCHEMA_VERSION,
     format_timestamp,
@@ -353,6 +354,11 @@ def draw_floor_sheet(msp, floor: dict, dx: float, units: str, floor_width: float
     for marking in tfloor.get("markings", []):
         msp.add_line(marking["start"], marking["end"], dxfattribs={"layer": marking["layer"]})
 
+    # Merdiven basamak geometrisi (DEV-022): validate.py zaten resolve_stair
+    # ile ayni kaynaktan gectigi icin burada uyari DISINDA bir sey beklenmez.
+    for warning in draw_stairs_on_floor(msp, tfloor):
+        print(f"UYARI (merdiven): [{floor['id']}] {warning}")
+
     # Kolonlar: tarali kesit (bkz. scripts/columns). Tefristen ONCE cizilir -
     # tasiyici eleman, tefrisin altinda kalmaz.
     if tfloor.get("columns"):
@@ -425,6 +431,8 @@ def generate(context_path: Path = DEFAULT_CONTEXT_PATH, output_path: Path = DEFA
     column_label_style = ColumnLabelStyle.from_context(context["meta"].get("column_label"))
     if any(floor.get("columns") for floor in floors):
         ensure_column_layers(doc, column_hatch_style, column_label_style)
+    if any(floor.get("stairs") for floor in floors):
+        ensure_stair_layer(doc)
 
     scale = context["meta"].get("scale", "1:100")
     # Kapak paftasinda antet kutusu olmadigi icin adi bu listeye girmez.
