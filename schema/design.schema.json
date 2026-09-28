@@ -27,7 +27,16 @@
           "minItems": 3,
           "items": { "$ref": "#/definitions/point" }
         },
-        "layer": { "type": "string" }
+        "layer": { "type": "string" },
+        "ceiling_height_mm": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Bu odanin tavan kotu (scripts/ceiling, DEV-023) - zemin kotuna (+-0.00) gore dusey mesafe, mm. GERCEK proje verisidir (asma tavan farki olabilir), asla turetilmez. Verilmezse bu oda yansitilmis tavan planinda (RCP) HIC gorunmez."
+        },
+        "ceiling_finish": {
+          "type": "string",
+          "description": "Tavan malzeme/kaplama etiketi (orn. 'ALCIPAN ASMA TAVAN', 'SIVA BOYA') - serbest metin, sabit bir kod listesi UYDURULMAZ. ceiling_height_mm verilmemisse yok sayilir."
+        }
       }
     },
     "wall": {

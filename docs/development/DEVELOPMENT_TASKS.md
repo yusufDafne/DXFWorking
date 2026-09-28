@@ -13,19 +13,7 @@ Tamamlanan işlerin ayrıntılı gerekçesi, karar süreci ve ölçülen etkisi
 
 | Görev | Modül | Durum |
 | ----- | ----- | ----- |
-| DEV-001 | `openings/` | COMPLETED |
-| DEV-002 | `rooms/` | COMPLETED |
-| DEV-003 | `dimensions/` | COMPLETED |
-| DEV-004 | golden output | COMPLETED |
-| DEV-005 | agentic kontrol | COMPLETED |
-| DEV-006 | golden fixture kataloğu | COMPLETED (rev-10) |
 | DEV-007 | `pafta/` | **BLOCKED** — yalnızca mimar adı / proje tarihi |
-| DEV-008 | `rooms/` etiket | COMPLETED (rev-9) |
-| DEV-009 | `furniture/` | COMPLETED (rev-10) |
-| DEV-010 | `columns/` | COMPLETED (rev-10) |
-| DEV-011 | `elevations/` | COMPLETED (rev-14) |
-| DEV-012 | `legend/` | COMPLETED (rev-14) |
-| DEV-013 | `importer/` | COMPLETED (rev-15) |
 | DEV-014 | `walls/` | COMPLETED (rev-15) |
 | DEV-015 | `axis/` | COMPLETED (rev-13) |
 | DEV-016 | `openings/` | COMPLETED (rev-13) |
@@ -35,7 +23,7 @@ Tamamlanan işlerin ayrıntılı gerekçesi, karar süreci ve ölçülen etkisi
 | DEV-020 | sürüm + provenance | COMPLETED (rev-12) |
 | DEV-021 | `sections/` — kesit modülü | COMPLETED (rev-17) |
 | DEV-022 | `stairs/` — merdiven gerçek geometrisi | COMPLETED (2026-09-25) |
-| DEV-023 | `ceiling/` — yansıtılmış tavan planı | PLANNED |
+| DEV-023 | `ceiling/` — yansıtılmış tavan planı | COMPLETED (2026-09-28) |
 | DEV-024 | `site/` — vaziyet planı | PLANNED |
 | DEV-025 | Kuzey oku (+ grafik ölçek çubuğu, rev-18'de geri alındı) | COMPLETED (rev-17) |
 | DEV-026 | `legend/` — alan hesap cetveli | PLANNED |
@@ -43,6 +31,11 @@ Tamamlanan işlerin ayrıntılı gerekçesi, karar süreci ve ölçülen etkisi
 | DEV-028 | `legend/` — malzeme/kaplama cetveli | PLANNED |
 | DEV-029 | Kot (seviye/datum) yönetim mantığı — proje geneli | COMPLETED (2026-09-25) |
 | DEV-030 | Katman renk organizasyonu (modüller arası) | COMPLETED (2026-09-25) |
+| DEV-031 | `electrical/` — elektrik tesisatı planı | PLANNED |
+| DEV-032 | `plumbing/` — sıhhi tesisat (ıslak hacim) planı | PLANNED |
+| DEV-033 | `walls/` genişletmesi — duvar katman/yalıtım detay kesiti | PLANNED |
+| DEV-034 | `columns/`+`walls/` genişletmesi — statik kalıp planı | PLANNED |
+| DEV-035 | `roof/` — çatı planı | PLANNED |
 
 ## READY
 
@@ -61,17 +54,17 @@ Planlanmış modül kataloğunun tamamı (`DEV-011`…`DEV-020`) tamamlandı. Bu
 bölüm artık üç tür maddeyi tutar:
 
 1. **`DEV-007`** — tek gerçek BLOCKED madde, yukarıya bakınız.
-2. **`DEV-023`…`DEV-028`** — 2026-09-24'te (kullanıcı talebiyle) eklenen,
-   **endüstri standardı bir mimari çizim setinde bulunan ama bu projede
-   henüz olmayan** modül/geliştirme fikirleri (`DEV-021`/`DEV-025` rev-17'de,
-   `DEV-022` 2026-09-25'te seçilip tamamlandı, bkz. `## COMPLETED`). Bunlar
-   bir mimarın
-   ufkunu açmak ve gerçekten gözden kaçan bir şey olup olmadığını
-   değerlendirmek için yazılmıştır — **uygulama izni DEĞİLDİR**. Her biri
-   `PLANNED` seviyesinde bir taslaktır; gerçek Fikir 1/Fikir 2/Açık kararlar
-   analizi (mevcut modüllerdeki gibi) o madde açıkça seçildiğinde yapılır.
-   Sistem mimarı bir maddeyi seçip kendi yönlendirmesini eklemeden agent
-   kod yazmaz.
+2. **`DEV-023`…`DEV-028`** (2026-09-24) ve **`DEV-031`…`DEV-035`**
+   (2026-09-28) — kullanıcı talebiyle eklenen, **endüstri standardı bir
+   mimari çizim setinde bulunan ama bu projede henüz olmayan** modül/
+   geliştirme fikirleri (`DEV-021`/`DEV-025` rev-17'de, `DEV-022`
+   2026-09-25'te, `DEV-023` 2026-09-28'de seçilip tamamlandı, bkz. `##
+   COMPLETED`). Bunlar bir mimarın ufkunu açmak ve gerçekten gözden kaçan
+   bir şey olup olmadığını değerlendirmek için yazılmıştır — **uygulama
+   izni DEĞİLDİR**. Her biri `PLANNED` seviyesinde bir taslaktır; gerçek
+   Fikir 1/Fikir 2/Açık kararlar analizi (mevcut modüllerdeki gibi) o
+   madde açıkça seçildiğinde yapılır. Sistem mimarı bir maddeyi seçip
+   kendi yönlendirmesini eklemeden agent kod yazmaz.
 (`DEV-029` — kot/datum yönetim mantığı — ve `DEV-030` — katman renk
 organizasyonu — 2026-09-25'te seçilip tamamlandı, bkz. `## COMPLETED`.)
 
@@ -97,25 +90,6 @@ kullanıcı tarafından KESİN olarak verilmiştir ve fikir gibi değerlendirilm
 - **Açık kararlar:** Kapak **tasarımı** için kullanıcı ayrı bir talep
   paylaşacak; o talepte geometri (A4, sağ-alt sabitleme, eşit offset,
   antetsiz pafta) değişmemelidir.
-
-### DEV-023 — `ceiling/` — yansıtılmış tavan planı (RCP)
-
-- **Durum:** PLANNED
-
-**Neden endüstri standardı bir boşluk:** Tavan planı (Reflected Ceiling
-Plan), kat planından AYRI ve standart bir pafta türüdür — tavan kotu
-farklılıkları (asma tavan, kot farkı), aydınlatma armatür yerleşimi ve
-tavan malzemesi gösterir. Bugün sistemde `floors[]` yalnızca zemin
-düzlemini (oda poligonu + duvar + tefriş) biliyor; tavan hiç modellenmiyor.
-
-**Kapsam taslağı:** En basit sürüm, mevcut oda poligonlarını (`rooms[]`)
-yeniden kullanıp üstüne tavan kotu + malzeme etiketi + (opsiyonel)
-aydınlatma noktası yerleşimi ekler — `rooms/` ve `furniture/`nin
-"katalog + yerleşim" deseniyle aynı yapıda olabilir (armatür bir tefriş
-kataloğu gibi ele alınabilir).
-
-**İlişkili modüller:** `rooms/` (poligon paylaşılır), `furniture/`
-(armatür yerleşimi aynı desen), `legend/` (armatür lejantı).
 
 ### DEV-024 — `site/` — vaziyet planı
 
@@ -197,89 +171,196 @@ malzeme kodu) eklenip, `legend/`nin AYNI gruplama+tablo deseniyle (bkz.
 **İlişkili modüller:** `rooms/` (şema genişlemesi), `legend/` (tablo
 altyapısı hazır).
 
+### DEV-031 — `electrical/` — elektrik tesisatı planı
+
+- **Durum:** PLANNED
+
+**Neden endüstri standardı bir boşluk:** Elektrik tesisat planı (priz,
+anahtar, aydınlatma armatürü, pano/tek hat şeması, kablo güzergahı) TS EN
+60617/IEC sembol setiyle çizilen, ruhsat evrakının AYRILMAZ bir parçasıdır
+(AIA/NCS katman standardında `E-` öneki, elektrik mimari kabuktan AYRI bir
+disiplindir). Bugün sistemde bu bilgi katmanı hiç yok — kullanıcının
+açıkça belirttiği "elektrik projeleri" boşluğu budur.
+
+**Fikir 1 — YENİ, bağımsız `scripts/electrical/` modülü (önerilen).**
+`furniture/`nin "katalog + yerleşim" deseniyle AYNI yapı: sembol kataloğu
+(priz/anahtar/aydınlatma armatürü — TS/IEC sembolleri) + `floors[].
+electrical[]` yerleşimi. Elektrik `furniture/`ye KARIŞTIRILMAZ (endüstri
+standardı: `A-FURN` ile `E-*` ayrı katman ailesidir, `openings/`in
+`furniture/`den ayrı tutulma gerekçesiyle AYNI).
+
+**Fikir 2 — `furniture/`ye yeni bir grup olarak eklemek.** Daha ucuz ama
+endüstri standardıyla ÇELİŞİR — elektrik sembolleri tefriş değildir,
+ayrı bir disiplindir; kapı/pencerenin tefrişten ayrı tutulma gerekçesiyle
+(bkz. kök `CLAUDE.md` "Tefriş") AYNI mantıkla ÖNERİLMEZ.
+
+**Açık kararlar:**
+
+- Fikir 1 mi Fikir 2 mi? (Fikir 1 önerilir.)
+- Kapsam yalnızca NOKTA sembolleri mi (priz/anahtar/armatür), yoksa hat
+  (kablo güzergahı, nokta-nokta bağlama) da mı çizilecek? Otomatik
+  routing İSTENMEZ/UYDURULMAZ — güzergah proje verisi olarak AÇIKÇA
+  verilmelidir.
+- Pano/tek hat şeması (ayrı bir şema türü, elektrik odası/panosu) bu
+  revizyonun kapsamında mı, yoksa ayrı bir takip görevi mi?
+- Sembol seti standardı (TS mi, IEC mi) kullanıcı onayı gerektirir.
+
+**İlişkili modüller:** `furniture/` (yerleşim deseni benzer, AYRI liste),
+`legend/` (sembol lejantı), `collision/` (muhtemelen `dimensions`/`axis`
+ile AYNI gerekçeyle EXEMPT — anotasyon, oda dışına taşma kontrolü hariç).
+
+### DEV-032 — `plumbing/` — sıhhi tesisat (ıslak hacim) planı
+
+- **Durum:** PLANNED
+
+**Neden endüstri standardı bir boşluk:** Kullanıcının açıkça belirttiği
+"ıslak hacimler" boşluğu: bugün `furniture/`nin `ISLAK` grubu lavabo/
+klozet/duş gibi ELEMANLARI yerleştiriyor ama su/pis su HATTINI, gider
+noktasını çizmiyor. Sıhhi tesisat planı (`A-PLMB`/`P-` katman ailesi),
+mimari tefriş çiziminden AYRI, standart bir mühendislik paftasıdır.
+
+**Fikir 1 — YENİ, bağımsız `scripts/plumbing/` modülü (önerilen).**
+`furniture/`nin `ISLAK` grubu YERLEŞİMLERİNİ TÜKETİR (kopyalamaz,
+`stairs`in `rooms/`i tüketmesiyle AYNI desen) ve bu noktalara gider/temiz
+su sembolü + (verilirse) hat bağlantısı ekler.
+
+**Fikir 2 — `furniture/`nin `ISLAK` grubuna otomatik sembol eklemek.**
+Daha ucuz, ayrı modül gerektirmez, ama endüstri standardıyla (tesisat
+mimari kabuktan ayrı disiplin) ÇELİŞİR; `DEV-031`deki Fikir 2'nin AYNI
+sakıncası geçerlidir.
+
+**Açık kararlar:**
+
+- Fikir 1 mi Fikir 2 mi?
+- Kapsam yalnızca gider/bağlantı NOKTA sembolleri mi, yoksa gerçek boru
+  güzergahı (routing) da mı çizilecek? Routing deterministik olabilir
+  AMA güzergah proje verisi olarak AÇIKÇA verilmelidir — sistem boru
+  yolunu TAHMİN ETMEZ.
+- `furniture::ISLAK` grubuyla veri akışı: her ıslak hacim elemanı
+  otomatik bir tesisat noktası mı alır, yoksa ayrı bir `floors[].
+  plumbing[]` listesi mi (elemanla eşleşmesi gerekir) tanımlanacak?
+
+**İlişkili modüller:** `furniture/` (`ISLAK` grubu TÜKETİLİR), `collision/`
+(tesisat hattının duvar/tefrişle çakışması yeni bir kural gerektirebilir).
+
+### DEV-033 — `walls/` genişletmesi: duvar katman/yalıtım detay kesiti
+
+- **Durum:** PLANNED
+
+**Neden endüstri standardı bir boşluk:** `scripts/pafta::PaperSizePlanner`
+zaten `DETAY` proje tipini (1:20/1:10/1:5/1:1 ölçek kısıtıyla) TANIYOR —
+ama bu ölçekte gerçekten çizilen bir detay YOK (`DEV-024`ün `VAZIYET_
+PLANI` durumuyla AYNI desen: proje tipi tanınıyor, yetkinlik yok). Duvar
+katman detayı (sıva-tuğla/yalıtım-tuğla-sıva, katman kalınlıkları +
+malzeme etiketleri), Türkiye enerji kimlik belgesi/yalıtım yönetmeliği
+kapsamında standart bir mimari uygulama çizimidir.
+
+**Tek fikir (mevcut `walls/` modülünün genişletilmesi, yeni modül
+GEREKMEZ):** `walls::WallCatalog`a katman kompozisyonu (örn. `layers:
+[{"malzeme": "siva", "kalinlik_mm": 20}, ...]`) eklenip, büyük ölçekte TEK
+bir duvarın enine kesitini katmanlarıyla çizen yeni bir fonksiyon
+(`WallDetailSheet` gibi) `walls/` modülüne eklenir — `RailDrawingStandard`
+deseninin doğal bir uzantısı (rail'in NASIL çizildiği zaten `kind`e göre
+değişiyor, bu onun "yakınlaştırılmış" hali).
+
+**Açık kararlar:**
+
+- Katman kompozisyonu verisi `WallCatalog`a (kütüphane/ofis standardı,
+  `kind`e göre sabit) mı, yoksa `context.json`a (proje verisi, projeye
+  özgü) mı ait olacak?
+- Detay hangi duvarlar için çizilecek — TÜMÜ mü, kullanıcının seçtiği
+  BİRİ mi (`meta.detail_walls` gibi bir liste)?
+- Malzeme kod listesi ve gösterim standardı (tarama deseni/renk) kullanıcı
+  onayı gerektirir — UYDURULMAZ.
+
+**İlişkili modüller:** `walls/` (ana sahiplenici), `pafta/` (`DETAY`
+proje tipi zaten tanınıyor, yeni pafta boyutu/ölçek planlaması
+gerekebilir).
+
+### DEV-034 — `columns/`+`walls/` genişletmesi: statik kalıp planı
+
+- **Durum:** PLANNED
+
+**Neden endüstri standardı bir boşluk:** `scripts/pafta::PaperSizePlanner`
+zaten `STATIK_KALIP` proje tipini (yalnızca `1:50` ölçek kısıtıyla)
+TANIYOR — ama sistemde HİÇBİR statik/strüktürel çizim YOK, yalnızca
+mimari plan var. Kalıp planı (kolon-kiriş-döşeme sınırları + kalıp
+ölçüleri), ruhsat evrakının statik projesinin temel paftasıdır.
+
+**Tek fikir gerçek bir mimari sorudur, iki alt-seçenek var:** kolonlar
+zaten `columns/`de modelleniyor, ama kiriş ve döşeme (kalıp planının asıl
+konusu) bugün HİÇ yok — bunlar GERÇEK yeni geometri sınıflarıdır
+(`schema`ya `beams[]`/`slabs[]` eklenmesi gerekir), yani bu görev
+muhtemelen `DEV-023`/`DEV-024` gibi "mevcut modülü genişlet" değil,
+**yeni bir `scripts/structural/` modülü** gerektirir.
+
+- **Alt-seçenek A (küçük kapsam):** v1 yalnızca mevcut kolon+taşıyıcı
+  duvar geometrisini `STATIK_KALIP` ölçeğinde YENİDEN çizer (kiriş/döşeme
+  OLMADAN) — gerçek bir kalıp planı değildir ama mevzuat tanıma
+  altyapısını (`PaperSizePlanner`) gerçek bir çıktıya bağlar.
+- **Alt-seçenek B (tam kapsam):** yeni `scripts/structural/` modülü,
+  `beams[]`/`slabs[]` şema alanları, kalıp ölçü etiketleri. Demir donatı
+  (çubuk çapı/aralığı) KAPSAM DIŞI bırakılmalıdır — bu çok daha büyük,
+  ayrı bir mühendislik konusudur.
+
+**Açık kararlar:**
+
+- Alt-seçenek A mı B mi? (B gerçek değeri taşır ama çok daha büyük iştir.)
+- B seçilirse: kiriş/döşeme verisi nasıl modellenir (aks ızgarasına mı
+  oturur, yoksa serbest mi)?
+- Demir donatı kesinlikle kapsam DIŞI mı kalacak? (Öneri: evet.)
+
+**İlişkili modüller:** `columns/` (kolonlar zaten var, yeniden kullanılır),
+`walls/` (taşıyıcı duvarlar), `axis/` (kalıp planı aks ızgarasına oturur),
+`pafta/` (`STATIK_KALIP` zaten tanınıyor).
+
+### DEV-035 — `roof/` — çatı planı
+
+- **Durum:** PLANNED
+
+**Neden endüstri standardı bir boşluk:** Bugün "ÇATI/TERAS" kat tipi düz
+bir teras olarak modelleniyor — kırma/beşik çatı eğimi, mahya çizgisi,
+dere çizgisi, saçak genişliği hiç modellenmiyor. Kırma çatılı bir yapı
+için çatı planı (eğim yönleri + mahya/dere hatları + saçak ofseti + çatı
+malzemesi), ruhsat evrakının standart bir parçasıdır.
+
+**Fikir 1 — YENİ, bağımsız `scripts/roof/` modülü (önerilen).** Çatı
+geometrisi (eğim yönü okları, mahya/dere çizgileri, saçak ofseti) binanın
+MEVCUT `floor_width`/`floor_depth` oturumundan TÜRETİLİR (bina oturumu
+zaten var — yeni bir geometri UYDURULMAZ); kullanıcı yalnızca eğim
+oranı/yönü ve malzeme gibi GERÇEK proje kararlarını verir.
+
+**Fikir 2 — Düz teras davranışını DEĞİŞTİRMEDEN, çatı görünümünü SADECE
+cephe/kesitte göstermek.** Ayrı bir çatı PLANI çizmez, kapsamı küçültür;
+`elevations`/`sections`e opsiyonel bir "çatı silueti" ekler. Endüstri
+standardının bir PLAN paftası da beklediği gerçeğiyle KISMEN çelişir ama
+çok daha küçük bir iştir.
+
+**Açık kararlar:**
+
+- Fikir 1 mi Fikir 2 mi?
+- Mevcut düz teras davranışı (bilinen basitleştirme, kök `CLAUDE.md`)
+  VARSAYILAN olarak KORUNACAK mı — kırma çatı yalnızca opt-in (yeni veri
+  verilirse) mi devreye girecek? (Öneri: evet, geriye dönük uyumluluk.)
+- Eğim oranı/yönü ve çatı malzemesi kullanıcı onayı gerektirir —
+  UYDURULMAZ.
+
+**İlişkili modüller:** `elevations/`+`sections/` (çatı siluetinin cephe/
+kesitte görünmesi), `pafta/` (yeni pafta türü, Fikir 1 seçilirse).
+
 ## COMPLETED
 
 > Ayrıntılı gerekçe, karar süreci, bulunan gerçek hatalar ve ölçülen etki
 > için her maddenin işaret ettiği `DEVELOPMENT_HISTORY.md` kaydına bakınız.
 > Buradaki özetler KASITLI olarak 1-2 cümledir.
 
-### DEV-001 — Openings modülünü oluştur
-
-- **Durum:** COMPLETED
-- **Özet:** Typed `Opening`/`Door`/`Window`/`OpeningSchedule` + enjekte
-  edilebilir stil `scripts/openings/`e taşındı. (`HD-003`)
-
-### DEV-002 — Room modülü
-
-- **Durum:** COMPLETED
-- **Özet:** `Room`, `PolygonOps`, `RoomLabeler` ve scanner
-  `scripts/rooms/`e taşındı; kapanış/alan/self-intersection doğrulaması
-  eklendi. (`HD-003`)
-
-### DEV-003 — DimensionChain modülü
-
-- **Durum:** COMPLETED
-- **Özet:** `DimensionChain`/`LinearDim`/`ChainLayout` `scripts/dimensions/`e
-  taşındı; `AxisGrid` gerçek DXF ölçülerini bu API ile üretir. (`HD-003`)
-
-### DEV-004 — Golden output anlamsal karşılaştırması
-
-- **Durum:** COMPLETED
-- **Özet:** `scripts/golden_report.py` entity/layer/bbox/SHA-256 ölçüm
-  raporu üretip `--compare` ile karşılaştırıyor. (`HD-002`)
-
-### DEV-005 — Agentic kontrol altyapısı
-
-- **Durum:** COMPLETED
-- **Özet:** `development_control.py` atomik görev kilidi,
-  `AGENT_PERMISSIONS.json` ve `PROVENANCE_TEMPLATE.json` eklendi. (`HD-002`)
-
-### DEV-006 — Golden fixture kataloğu
-
-- **Durum:** COMPLETED (rev-10)
-- **Özet:** `golden_report.py` üç katmanlı oldu (ölçüm + semantik kural +
-  fixture koşucusu); ilk fixture'lar bir pafta-yükseklik sınırını ve bir
-  isim-çakışması hatasını gerçekten yakaladı. (`HD-006`)
-
-### DEV-008 — `rooms/` — 3 satırlı mahal etiketi (`RoomLabeler`)
-
-- **Durum:** COMPLETED (rev-9)
-- **Özet:** Şartname birebir uygulandı (3 satır: ad/kat kodu-no/alan,
-  Arial Narrow, genişlik+yükseklik sığdırma); 125/125 oda doğrulandı.
-  (`HD-005`)
-
-### DEV-009 — `furniture/` — tefriş modülü
-
-- **Durum:** COMPLETED (rev-10)
-- **Özet:** 22 tipli tefriş kataloğu, her tefriş DXF `BLOCK`/`INSERT`;
-  kapı tefriş SAYILMADI (duvar açıklığı, endüstri standardı gerekçesiyle).
-  (`HD-006`)
-
-### DEV-010 — `columns/` — kolon modülü
-
-- **Durum:** COMPLETED (rev-10)
-- **Özet:** Taralı kolon (`ANSI33`/`3.0`), kesit kataloğu,
-  `on_axis_report`; isimlendirme altyapısı hazır ama varsayılan kapalı.
-  (`HD-006`)
-
-### DEV-011 — `elevations/` — cephe modülü
-
-- **Durum:** COMPLETED (rev-14)
-- **Özet:** `draw_elevation` kendi modülüne taşındı; `below_ground`
-  seviyeler artık gerçekten `DASHED` linetype ile çiziliyor. (`HD-009`)
-
-### DEV-012 — `legend/` — lejant ve cetveller
-
-- **Durum:** COMPLETED (rev-14)
-- **Özet:** Kapı/pencere cetveli (`OpeningLegend`/`LegendRenderer`), kapak
-  paftasının boş üst alanına çiziliyor. (`HD-009`)
-
-### DEV-013 — `importer/` — mevcut çizimden veri okuma
-
-- **Durum:** COMPLETED (rev-15)
-- **Özet:** `DxfWallScanner`, mevcut bir DXF'ten confidence skorlu duvar
-  adayı çıkarır (salt-okunur); `import/`den `importer/`e yeniden
-  adlandırıldı (Python anahtar kelimesi çakışması). (`HD-010`)
+> **2026-09-28'de kullanıcı talebiyle budandı:** en eski 12 COMPLETED
+> madde (`DEV-001`…`DEV-006`, `DEV-008`…`DEV-013` — orijinal modül
+> kataloğunun ilk kuruluşu) bu dosyadan TAMAMEN kaldırıldı; bu bir veri
+> kaybı DEĞİLDİR, ayrıntıları zaten `DEVELOPMENT_HISTORY.md`de
+> (`HD-002`, `HD-003`, `HD-005`, `HD-006`, `HD-009`, `HD-010`) eksiksiz
+> duruyor. Bu dosyanın amacı "sıradaki iş" olduğu için en eski/en az
+> güncel bağlamlı tamamlanmış işler burada TUTULMAZ.
 
 ### DEV-014 — `walls/` — duvar çizim standardı genişletmesi
 
@@ -375,6 +456,22 @@ altyapısı hazır).
   çizilmez. Gerçek projenin `output/plan.dxf`ine otomatik olarak 80 yeni
   `KOT` varlığı eklendi (2 cephe + 2 kesit × 10 kat sınırı × 2 varlık).
   (`HD-015`)
+
+### DEV-023 — `ceiling/` — yansıtılmış tavan planı (RCP)
+
+- **Durum:** COMPLETED (2026-09-28)
+- **Özet:** Yeni `scripts/ceiling/` modülü (Fikir 1, kullanıcı kararı: ayrı
+  RCP paftası); tavan kotu/malzeme `rooms[]` başına GERÇEK veridir
+  (kullanıcı kararı: oda bazlı), v1 aydınlatma armatürünü İÇERMEZ (kullanıcı
+  kararı). `ceiling_height_mm` taşımayan bir katın RCP paftası HİÇ
+  üretilmez — gerçek projenin bugünkü verisinde bu alan yok, bu yüzden
+  `output/plan.dxf` DEĞİŞMEDİ (yalnızca zaman damgası/GUID farkı). RCP'nin
+  açıklıkları (kapı yayı dahil) YENİDEN çizmesi gerçek bir golden-kural
+  boşluğunu ortaya çıkardı: `golden_report.py::rule_opening_symbols` "ARC
+  sayısı = kapı sayısı" varsayıyordu, RCP'li bir katta bu İKİYE katlanır —
+  kural `ceiling.floor_has_ceiling_data`yı (paftayı açan AYNI tek kaynak)
+  okuyacak şekilde düzeltildi. Yeni `golden/tavan_ornek` RCP'yi uçtan uca
+  sınıyor. (`HD-016`)
 
 ## Görev tamamlama kuralı
 

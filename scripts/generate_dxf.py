@@ -104,6 +104,7 @@ from sections import (  # noqa: E402
     section_vertical_extent,
 )
 from stairs import draw_stairs_on_floor, ensure_stair_layer  # noqa: E402
+from ceiling import CeilingSheet, ensure_ceiling_layer, floor_has_ceiling_data  # noqa: E402
 from version import (  # noqa: E402
     SCHEMA_VERSION,
     format_timestamp,
@@ -412,6 +413,26 @@ def draw_floor_sheet(msp, floor: dict, dx: float, units: str, floor_width: float
     sheet.draw(msp, dx, floor_width, 0.0, floor_depth, floor["label"], content_entities=content_entities)
 
 
+def draw_ceiling_sheet(msp, floor: dict, dx: float, units: str, floor_width: float, floor_depth: float,
+                        sheet: Sheet, axis_grid: AxisGrid) -> None:
+    """RCP (DEV-023): kat plani ile AYNI aks izgarasi + duvar agi, farkli icerik.
+
+    Kendi paftasidir (kullanici karari, bkz. scripts/ceiling/CLAUDE.md) -
+    tefris/mahal etiketi/olcu ZINCIRI gibi kat plani ogeleri BURADA cizilmez,
+    yalnizca duvar konturu + tavan kotu/malzeme etiketi.
+    """
+    content_start = len(msp)
+    axis_grid.draw_on_floor(msp, dx, floor_width, floor_depth)
+    tfloor = translate_floor(floor, dx)
+    # Etiket boyutu mahal etiketiyle AYNI (room_label_height_for_units) -
+    # kucuk odalara (WC vb.) da sigsin diye, genel metinden kucuk tutulur.
+    ceiling_text_height = room_label_height_for_units(units)
+    CeilingSheet.draw(msp, tfloor, units, ceiling_text_height)
+    content_entities = list(msp)[content_start:]
+    sheet.draw(msp, dx, floor_width, 0.0, floor_depth, f"{floor['label']} TAVAN PLANI",
+               content_entities=content_entities)
+
+
 def generate(context_path: Path = DEFAULT_CONTEXT_PATH, output_path: Path = DEFAULT_OUTPUT_PATH) -> Path:
     context = load_json(context_path)
     units = context["meta"]["units"]
@@ -448,6 +469,12 @@ def generate(context_path: Path = DEFAULT_CONTEXT_PATH, output_path: Path = DEFA
         ensure_column_layers(doc, column_hatch_style, column_label_style)
     if any(floor.get("stairs") for floor in floors):
         ensure_stair_layer(doc)
+    # RCP (DEV-023): veri TASIMAYAN bir katin tavan paftasi HIC ACILMAZ -
+    # ceiling.floor_has_ceiling_data TEK kaynaktir (uydurulmus varsayilan
+    # pafta YOK).
+    ceiling_floors = [floor for floor in floors if floor_has_ceiling_data(floor)]
+    if ceiling_floors:
+        ensure_ceiling_layer(doc)
 
     scale = context["meta"].get("scale", "1:100")
     # Kot isareti (DEV-029): kat yuksekligi hesabini YENIDEN YAZMAZ, sadece
@@ -473,12 +500,19 @@ def generate(context_path: Path = DEFAULT_CONTEXT_PATH, output_path: Path = DEFA
     elevation_lookup = {e["id"]: e for e in elevations}
     section_labels = [f"{cut.label} KESITI" for cut in sections]
     all_labels += section_labels
+    # RCP (DEV-023): her tavan paftasinin adi kendi kat paftasindan turetilir
+    # ("<kat> TAVAN PLANI"), ayrica bir isim UYDURULMAZ.
+    ceiling_labels = [f"{floor['label']} TAVAN PLANI" for floor in ceiling_floors]
+    all_labels += ceiling_labels
 
     content_ranges = [(0.0, floor_depth) for _ in floors]
     for elevation in elevations:
         content_ranges.append(elevation_vertical_extent(elevation))
     for cut in sections:
         content_ranges.append(section_vertical_extent(cut, elevation_lookup))
+    # Tavan paftasi kat plani ile AYNI ortak ayak izini (0, floor_depth)
+    # kullanir - RCP de floors[] duzleminde, ayni dis-cerceve Y-araliginda.
+    content_ranges += [(0.0, floor_depth) for _ in ceiling_floors]
 
     sheet = Sheet(scale, text_height, all_labels, content_ranges)
 
@@ -570,6 +604,13 @@ def generate(context_path: Path = DEFAULT_CONTEXT_PATH, output_path: Path = DEFA
                          column_catalog, column_hatch_style, column_label_style,
                          dimension_settings, scale, sheet_margin,
                          north_arrow, north_angle, sections, level_mark)
+        cursor += floor_width + 2 * frame_half_width
+
+    # RCP paftalari (DEV-023): kat plani paftalarindan SONRA, veri TASIYAN
+    # katlar icin. `ceiling_floors` bos ise (bugunku gercek proje gibi) bu
+    # dongu HICBIR SEY cizmez - uydurulmus bir varsayilan pafta yoktur.
+    for floor in ceiling_floors:
+        draw_ceiling_sheet(msp, floor, cursor, units, floor_width, floor_depth, sheet, axis_grid)
         cursor += floor_width + 2 * frame_half_width
 
     # Kot isaretinin SOL kenardan ne kadar disari cizilecegi (DEV-029):
