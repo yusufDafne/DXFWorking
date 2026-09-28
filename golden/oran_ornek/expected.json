@@ -1,0 +1,38 @@
+{
+  "source": "golden/oran_ornek",
+  "entity_count": 222,
+  "entity_types": {
+    "ARC": 1,
+    "ATTRIB": 6,
+    "CIRCLE": 26,
+    "DIMENSION": 11,
+    "HATCH": 5,
+    "INSERT": 2,
+    "LINE": 63,
+    "LWPOLYLINE": 30,
+    "TEXT": 78
+  },
+  "layers": {
+    "AKS": 76,
+    "CERCEVE": 36,
+    "DUVARLAR": 24,
+    "KAPI-PENCERE": 7,
+    "KESIT": 10,
+    "KOT": 12,
+    "METIN": 47,
+    "OLCU": 10
+  },
+  "modelspace_bbox": [
+    -500.0,
+    -4150.0,
+    70200.0,
+    13150.0
+  ],
+  "blocks": [
+    "MAHAL_ETIKET",
+    "_CLOSEDFILLED"
+  ],
+  "block_inserts": {
+    "MAHAL_ETIKET": 2
+  }
+}

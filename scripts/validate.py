@@ -22,6 +22,11 @@ Yaptigi kontroller:
       ediyor mu, scripts/stairs::resolve_stair (cizim koduyla AYNI TEK
       kaynak) HATA (sigmayan/gecersiz) uretiyor mu; esnetme UYARILARI
       bloklamaz, basilir.
+  3d) SARTNAME/ORANSAL MAHAL KURALLARI (DEV-036, scripts/standards): bir
+      odaya `room_type` VERILMISSE (opt-in) STANDARDS'ta TANIMLI olmali
+      (aksi HATA - yazim hatasi korumasi); en-boy orani/asgari kisa kenar/
+      asgari alan esik DISINDAYSA bu HER ZAMAN UYARIdir - kullanici karari
+      geregi uretimi DURDURMAZ.
   4) SURUM KAPISI (DEV-020): meta.schema_version ile sistemin SCHEMA_VERSION'u
      arasinda MAJOR fark varsa uretim DURUR. Bkz. scripts/version.py.
   5) CAKISMA DENETIMI (DEV-019): moduller arasi girisim - tefris odanin
@@ -68,6 +73,7 @@ from version import (  # noqa: E402
     project_schema_version,
 )
 from stairs import StairFitError, resolve_stair  # noqa: E402
+from standards import check_room_proportions, check_room_types  # noqa: E402
 from walls import WallCatalog  # noqa: E402
 
 AREA_TOLERANCE_RATIO = 0.03  # oda alani vs poligon alani icin tolerans
@@ -296,6 +302,9 @@ def check_floor(units: str, floor: dict) -> list[str]:
     errors += [prefix + e for e in check_rooms(units, floor["rooms"])]
     errors += [prefix + e for e in check_walls(units, floor["walls"])]
     errors += [prefix + e for e in check_openings(floor["openings"], floor["walls"])]
+    # DEV-036: room_type VERILMIS ama standards.STANDARDS'ta TANIMSIZ bir
+    # deger YAZIM HATASIDIR (arity-1, walls.kind ile AYNI desen) - HATA.
+    errors += [prefix + e for e in check_room_types(floor["rooms"])]
     return errors
 
 
@@ -394,11 +403,18 @@ def run_validation(context_path: Path = DEFAULT_CONTEXT_PATH) -> bool:
                                     context["grid"]["horizontal_axes"])
 
     stair_warnings: list[str] = []
+    standards_warnings: list[str] = []
     for floor in context["floors"]:
         all_errors += check_floor(units, floor)
         floor_stair_errors, floor_stair_warnings = check_stairs(floor)
         all_errors += [f"[{floor['id']}] " + e for e in floor_stair_errors]
         stair_warnings += [f"[{floor['id']}] " + w for w in floor_stair_warnings]
+        # DEV-036: oransal mahal kurallari - kullanici karari geregi HER
+        # ZAMAN UYARIdir, uretimi DURDURMAZ.
+        standards_warnings += [
+            f"[{floor['id']}] " + w
+            for w in check_room_proportions(floor["rooms"], units)
+        ]
 
     for elevation in context["elevations"]:
         all_errors += check_elevation(elevation)
@@ -407,6 +423,8 @@ def run_validation(context_path: Path = DEFAULT_CONTEXT_PATH) -> bool:
 
     for warning in stair_warnings:
         print(f"UYARI (merdiven): {warning}")
+    for warning in standards_warnings:
+        print(f"UYARI (sartname): {warning}")
 
     if all_errors:
         print("DOGRULAMA BASARISIZ (geometri/mantik):")

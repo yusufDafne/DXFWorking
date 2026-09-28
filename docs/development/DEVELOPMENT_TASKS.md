@@ -36,6 +36,8 @@ Tamamlanan işlerin ayrıntılı gerekçesi, karar süreci ve ölçülen etkisi
 | DEV-033 | `walls/` genişletmesi — duvar katman/yalıtım detay kesiti | PLANNED |
 | DEV-034 | `columns/`+`walls/` genişletmesi — statik kalıp planı | PLANNED |
 | DEV-035 | `roof/` — çatı planı | PLANNED |
+| DEV-036 | `standards/` — şartname + oransal mahal kural kütüphanesi | COMPLETED (2026-09-28) |
+| DEV-037 | Kat planı / daire yerleşimi şablon kütüphanesi + generator | COMPLETED (2026-09-28) |
 
 ## READY
 
@@ -54,14 +56,17 @@ Planlanmış modül kataloğunun tamamı (`DEV-011`…`DEV-020`) tamamlandı. Bu
 bölüm artık üç tür maddeyi tutar:
 
 1. **`DEV-007`** — tek gerçek BLOCKED madde, yukarıya bakınız.
-2. **`DEV-023`…`DEV-028`** (2026-09-24) ve **`DEV-031`…`DEV-035`**
-   (2026-09-28) — kullanıcı talebiyle eklenen, **endüstri standardı bir
-   mimari çizim setinde bulunan ama bu projede henüz olmayan** modül/
-   geliştirme fikirleri (`DEV-021`/`DEV-025` rev-17'de, `DEV-022`
-   2026-09-25'te, `DEV-023` 2026-09-28'de seçilip tamamlandı, bkz. `##
-   COMPLETED`). Bunlar bir mimarın ufkunu açmak ve gerçekten gözden kaçan
-   bir şey olup olmadığını değerlendirmek için yazılmıştır — **uygulama
-   izni DEĞİLDİR**. Her biri `PLANNED` seviyesinde bir taslaktır; gerçek
+2. **`DEV-023`…`DEV-028`** (2026-09-24), **`DEV-031`…`DEV-035`**
+   (2026-09-28) ve **`DEV-036`…`DEV-037`** (2026-09-28, kullanıcının
+   şartname/oransal kural + kat planı şablon kütüphanesi talebiyle) —
+   kullanıcı talebiyle eklenen, **endüstri standardı bir mimari çizim
+   setinde bulunan ama bu projede henüz olmayan** modül/geliştirme
+   fikirleri (`DEV-021`/`DEV-025` rev-17'de, `DEV-022` 2026-09-25'te,
+   `DEV-023`/`DEV-036`/`DEV-037` 2026-09-28'de seçilip tamamlandı, bkz.
+   `## COMPLETED`). Bunlar bir mimarın ufkunu açmak ve gerçekten gözden
+   kaçan bir şey olup
+   olmadığını değerlendirmek için yazılmıştır — **uygulama izni
+   DEĞİLDİR**. Her biri `PLANNED` seviyesinde bir taslaktır; gerçek
    Fikir 1/Fikir 2/Açık kararlar analizi (mevcut modüllerdeki gibi) o
    madde açıkça seçildiğinde yapılır. Sistem mimarı bir maddeyi seçip
    kendi yönlendirmesini eklemeden agent kod yazmaz.
@@ -472,6 +477,43 @@ kesitte görünmesi), `pafta/` (yeni pafta türü, Fikir 1 seçilirse).
   kural `ceiling.floor_has_ceiling_data`yı (paftayı açan AYNI tek kaynak)
   okuyacak şekilde düzeltildi. Yeni `golden/tavan_ornek` RCP'yi uçtan uca
   sınıyor. (`HD-016`)
+
+### DEV-036 — `standards/` — şartname + oransal mahal kural kütüphanesi
+
+- **Durum:** COMPLETED (2026-09-28)
+- **Özet:** Yeni `scripts/standards/` modülü (Fikir 1, kullanıcı yönlendirmesi:
+  "best practices bir yaklaşım ile gerçekleştir"); mahal tipi başına en-boy
+  oranı (+ opsiyonel asgari kısa kenar/alan). İhlal kullanıcı kararı gereği
+  HER ZAMAN UYARIdır, üretimi DURDURMAZ. `rooms[].room_type` (opt-in, addan
+  TAHMİN EDİLMEZ) `STANDARDS`ta tanımsızsa `walls.kind` ile AYNI desende
+  HATA verir. v1 kataloğu çoğunlukla "pratik varsayılan" — kullanıcının
+  ileride gerçek şartname belgeleriyle güncellemesi beklenir; bu yüzden
+  `CONTRACT_VERSION` disiplini "katalog DEĞERİ serbestçe değişir, `RoomStandard`
+  ALAN ŞEKLİ değişirse sürüm artar" şeklinde tasarlandı (bkz.
+  `scripts/standards/CLAUDE.md` "Gelecek güncelleme sözleşmesi"). Gerçek
+  projeye `room_type` verisi eklenmedi (altyapı opt-in kuruldu, `ceiling`/
+  `levels` emsali); yeni `golden/oran_ornek` (golden/minimal ile AYNI
+  geometri, yalnızca `room_type` etiketleriyle) politikayı uçtan uca
+  kanıtlıyor: aynı oran bir tipte (koridor) UYARISIZ geçiyor, aynı oranın
+  başka bir tipte (banyo) TAM 1 UYARI üretip yine de ÇİZİLDİĞİni gösteriyor.
+  (`HD-017`)
+
+### DEV-037 — Kat planı / daire yerleşimi şablon kütüphanesi + generator
+
+- **Durum:** COMPLETED (2026-09-28)
+- **Özet:** Yeni `scripts/templates/` modülü (Fikir 1, kullanıcı
+  yönlendirmesi: "best practices"); v1 kapsamı yalnızca **sirkülasyon
+  çekirdeği** (asansör+merdiven+L-şekilli koridor+güney duvarı) ile
+  SINIRLANDI — daire/birim içi oda bölüntüsü kapsam DIŞI bırakıldı (kendi
+  başına büyük bir açık-karar seti gerektirir). **Kritik mimari not**
+  (kullanıcı istemedi, deterministik ilkeyle çelişmemek için eklendi):
+  "generator" dil modeline geometri ÜRETTİRMEZ, tamamen deterministik bir
+  Python fonksiyonudur. Varsayılan ölçüler icat EDİLMEDİ — gerçek
+  projenin ZATEN çalışan sirkülasyon çekirdeğinden (`normal1` katı)
+  BİREBİR çıkarıldı; `selftest.py` `generate_circulation_core(20000,
+  17500)`in gerçek proje verisiyle (poligon/alan/duvar/kapı konumu)
+  BİREBİR eşleştiğini doğrudan kanıtlıyor. Çıktı bir `dict`tir,
+  context.json'a OTOMATİK YAZILMAZ (açık karar). (`HD-018`)
 
 ## Görev tamamlama kuralı
 
