@@ -38,6 +38,7 @@ Tamamlanan işlerin ayrıntılı gerekçesi, karar süreci ve ölçülen etkisi
 | DEV-035 | `roof/` — çatı planı | PLANNED |
 | DEV-036 | `standards/` — şartname + oransal mahal kural kütüphanesi | COMPLETED (2026-09-28) |
 | DEV-037 | Kat planı / daire yerleşimi şablon kütüphanesi + generator | COMPLETED (2026-09-28) |
+| DEV-038 | Oda programı ↔ mevcut alan sığma (feasibility) kontrolü | PLANNED |
 
 ## READY
 
@@ -57,8 +58,10 @@ bölüm artık üç tür maddeyi tutar:
 
 1. **`DEV-007`** — tek gerçek BLOCKED madde, yukarıya bakınız.
 2. **`DEV-023`…`DEV-028`** (2026-09-24), **`DEV-031`…`DEV-035`**
-   (2026-09-28) ve **`DEV-036`…`DEV-037`** (2026-09-28, kullanıcının
-   şartname/oransal kural + kat planı şablon kütüphanesi talebiyle) —
+   (2026-09-28), **`DEV-036`…`DEV-037`** (2026-09-28, kullanıcının
+   şartname/oransal kural + kat planı şablon kütüphanesi talebiyle) ve
+   **`DEV-038`** (2026-09-28, `DEV-037`nin gerçek projeye uygulanması
+   sırasında ORTAYA ÇIKAN bir sığma/feasibility boşluğu) —
    kullanıcı talebiyle eklenen, **endüstri standardı bir mimari çizim
    setinde bulunan ama bu projede henüz olmayan** modül/geliştirme
    fikirleri (`DEV-021`/`DEV-025` rev-17'de, `DEV-022` 2026-09-25'te,
@@ -352,6 +355,69 @@ standardının bir PLAN paftası da beklediği gerçeğiyle KISMEN çelişir ama
 
 **İlişkili modüller:** `elevations/`+`sections/` (çatı siluetinin cephe/
 kesitte görünmesi), `pafta/` (yeni pafta türü, Fikir 1 seçilirse).
+
+### DEV-038 — Oda programı ↔ mevcut alan sığma (feasibility) kontrolü
+
+- **Durum:** PLANNED
+
+**Neden boşluk (kullanıcı talebi, 2026-09-28 — DEV-037'nin gerçek projeye
+uygulanması sırasında KEŞFEDİLDİ):** Birim A/B'nin sirkülasyon çekirdeği
+dışındaki 7700mm genişliğine salon (`standards::STANDARDS['salon']` asgari
+kısa kenar 3000mm) + 2 yatak odası (asgari 2700mm×2) yan yana, hepsi
+pencereli, sığdırılmak istendiğinde toplam asgari genişlik (3000+2700+2700
+=8400mm) mevcut genişliği (7700mm) **matematiksel olarak** aşıyordu — bu
+yalnızca elle hesaplanarak fark edildi. Kullanıcının kendi sözleriyle:
+*"ilgili oturum alanların daire sayısı sığmaması gibi durumları da
+kontrol edip kullanıcıya dönmeliyiz."* Bugün sistemde `standards/`
+yalnızca **üretilmiş bir odanın** oranını denetliyor; **henüz üretilmemiş
+bir oda programının verilen bir alana sığıp sığmayacağını** hiçbir modül
+kontrol etmiyor — bu, tasarım AŞAMASINDA (üretimden önce) yakalanması
+gereken bir boşluktur.
+
+**Fikir 1 (önerilen) — `scripts/standards/`e basit bir "1D sığma" testi
+eklemek.** Verilen bir bant genişliği + istenen oda tipi listesi
+(`room_type` + sayı) için, her tipin `STANDARDS`taki asgari kısa kenarını
+TOPLAYIP mevcut genişlikle karşılaştıran bir fonksiyon (örn.
+`fits_side_by_side(available_width, room_types) -> FeasibilityReport`).
+v1 KASITLI OLARAK basit tutulur — bu oturumda ELLE yapılan hesabın
+(toplam asgari genişlik ≤ mevcut genişlik) BİREBİR koda dökülmüş hali;
+karmaşık 2D yerleşim/bin-packing optimizasyonu YAPILMAZ (`stairs`/
+`ceiling` ile AYNI "net bir v1 sınırı" disiplini).
+
+**Fikir 2 — `scripts/templates/`e entegre bir ön-kontrol.**
+`generate_circulation_core` gibi bir üretici fonksiyon, ürettiği
+yerleşimin `standards` sınırlarını karşılayıp karşılamadığını KENDİSİ
+üretim SIRASINDA kontrol edip erken bir hata/uyarı fırlatır (üretim
+SONRASI `validate.py`ye bırakmak yerine). Fikir 1'den daha entegre ama
+`templates/`in "sadece deterministik geometri üretir, karar vermez"
+sınırını (bkz. `scripts/templates/CLAUDE.md`) bulanıklaştırabilir.
+
+**Açık kararlar:**
+
+- Fikir 1 mi Fikir 2 mi, yoksa YENİ bir modül mü (`scripts/feasibility/`)?
+  Kapsam küçük olduğu için muhtemelen `standards/`in DOĞAL bir uzantısı
+  (Fikir 1) — ama `templates/`in gelecekteki birim-içi şablon
+  genişlemesiyle (bkz. `DEV-037` "bilinen sınırlamalar") doğrudan
+  ilişkili olduğu için orada da yaşayabilir.
+- Sonuç `standards`ın "ihlal HER ZAMAN UYARIdır" felsefesiyle mi tutarlı
+  olacak (rapor, engellemez), yoksa "sığmıyor" durumu gerçekten
+  ÜRETİMİ DURDURAN bir HATA mı olmalı? Bu ikisi FARKLI bir karardır —
+  "mevcut bir odanın oranı kötü" (düzeltilebilir, üretilmiş) ile "istenen
+  program bu alana HİÇ sığmıyor" (üretilecek bir şey yok, üretim
+  anlamsız) kavramsal olarak FARKLI ağırlıktadır.
+- v1 yalnızca GENİŞLİK (yan yana) mi test eder, yoksa DERİNLİK (üst üste
+  bant) sığması da mı eklenir? (Öneri: ikisi de basit toplama testleriyle
+  yapılabilir, aynı fonksiyonun iki modu.)
+- Bu kontrol `templates::generate_circulation_core` gibi bir üretici
+  ÇAĞRILMADAN ÖNCE mi çalıştırılacak (agent'ın kendi kendine "bu program
+  bu alana sığar mı" diye SORABİLMESİ), yoksa yalnızca üretilmiş bir
+  context.json'u SONRADAN mı denetleyecek?
+
+**İlişkili modüller:** `standards/` (asgari kısa kenar/oran verisinin TEK
+kaynağı), `templates/` (yerleşim üreticisi, bu kontrolün en doğal
+entegrasyon/çağrı noktası — bkz. `scripts/templates/CLAUDE.md` "Bilinen
+sınırlamalar": "Bina ana girişi/kaç daire gibi üst-seviye 'arketip
+seçimi' mantığı YOK" notuyla AYNI ailede bir gelecek genişleme).
 
 ## COMPLETED
 

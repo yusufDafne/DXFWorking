@@ -1,26 +1,26 @@
 {
   "source": "output/plan.dxf",
-  "sha256": "45e88fa1a021955ba04bacecfd5d14a95befaa6c4de80794777314de3d8fdd78",
-  "entity_count": 2806,
+  "sha256": "d8c61001985aefdf6eb4a83df5f73ef77e6e7ccc44582948da69e3baba8a9356",
+  "entity_count": 2569,
   "entity_types": {
-    "ARC": 105,
-    "ATTRIB": 375,
+    "ARC": 95,
+    "ATTRIB": 345,
     "CIRCLE": 176,
     "DIMENSION": 88,
-    "HATCH": 86,
-    "INSERT": 125,
-    "LINE": 1276,
+    "HATCH": 71,
+    "INSERT": 115,
+    "LINE": 1114,
     "LWPOLYLINE": 187,
-    "TEXT": 388
+    "TEXT": 378
   },
   "layers": {
     "AKS": 528,
-    "CERCEVE": 82,
-    "DUVARLAR": 1002,
-    "KAPI-PENCERE": 321,
+    "CERCEVE": 80,
+    "DUVARLAR": 867,
+    "KAPI-PENCERE": 271,
     "KESIT": 90,
     "KOT": 80,
-    "METIN": 632,
+    "METIN": 582,
     "MOBILYA": 15,
     "OLCU": 28,
     "OTOPARK": 28
@@ -36,6 +36,6 @@
     "_CLOSEDFILLED"
   ],
   "block_inserts": {
-    "MAHAL_ETIKET": 125
+    "MAHAL_ETIKET": 115
   }
 }

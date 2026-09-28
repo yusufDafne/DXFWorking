@@ -104,39 +104,42 @@
         {
           "id": "elevator",
           "name": "Asansor Kuyusu",
+          "room_type": "asansor",
           "no": "01",
-          "area_m2": 3.0,
+          "area_m2": 6.3,
           "polygon": [
-            [0, 14500],
-            [1000, 14500],
-            [1000, 17500],
-            [0, 17500]
+            [0.0, 14500.0],
+            [2100.0, 14500.0],
+            [2100.0, 17500.0],
+            [0.0, 17500.0]
           ]
         },
         {
           "id": "stair",
           "name": "Merdiven",
+          "room_type": "merdiven",
           "no": "02",
           "area_m2": 12.0,
           "polygon": [
-            [1000, 14500],
-            [5000, 14500],
-            [5000, 17500],
-            [1000, 17500]
+            [2100.0, 14500.0],
+            [6100.0, 14500.0],
+            [6100.0, 17500.0],
+            [2100.0, 17500.0]
           ]
         },
         {
           "id": "band",
           "name": "Rampa",
+          "room_type": "koridor",
           "no": "03",
-          "area_m2": 75.0,
+          "area_m2": 71.7,
           "polygon": [
-            [0, 13000],
-            [20000, 13000],
-            [20000, 17500],
-            [5000, 17500],
-            [5000, 14500],
-            [0, 14500]
+            [0.0, 13000.0],
+            [20000.0, 13000.0],
+            [20000.0, 17500.0],
+            [6100.0, 17500.0],
+            [6100.0, 14500.0],
+            [0.0, 14500.0]
           ]
         },
         {
@@ -183,22 +186,22 @@
         },
         {
           "id": "core_div",
-          "start": [1000, 14500],
-          "end": [1000, 17500],
+          "start": [2100.0, 14500.0],
+          "end": [2100.0, 17500.0],
           "thickness": 200.0,
           "layer": "DUVARLAR"
         },
         {
           "id": "core_bottom",
-          "start": [0, 14500],
-          "end": [5000, 14500],
+          "start": [0.0, 14500.0],
+          "end": [6100.0, 14500.0],
           "thickness": 200.0,
           "layer": "DUVARLAR"
         },
         {
           "id": "core_right",
-          "start": [5000, 14500],
-          "end": [5000, 17500],
+          "start": [6100.0, 14500.0],
+          "end": [6100.0, 17500.0],
           "thickness": 200.0,
           "layer": "DUVARLAR"
         }
@@ -208,7 +211,7 @@
           "id": "door_stair",
           "type": "door",
           "wall_id": "core_bottom",
-          "position_from_start": 3000,
+          "position_from_start": 4100.0,
           "width": 900,
           "layer": "KAPI-PENCERE"
         }
@@ -311,39 +314,42 @@
         {
           "id": "elevator",
           "name": "Asansor Kuyusu",
+          "room_type": "asansor",
           "no": "01",
-          "area_m2": 3.0,
+          "area_m2": 6.3,
           "polygon": [
-            [0, 14500],
-            [1000, 14500],
-            [1000, 17500],
-            [0, 17500]
+            [0.0, 14500.0],
+            [2100.0, 14500.0],
+            [2100.0, 17500.0],
+            [0.0, 17500.0]
           ]
         },
         {
           "id": "stair",
           "name": "Merdiven",
+          "room_type": "merdiven",
           "no": "02",
           "area_m2": 12.0,
           "polygon": [
-            [1000, 14500],
-            [5000, 14500],
-            [5000, 17500],
-            [1000, 17500]
+            [2100.0, 14500.0],
+            [6100.0, 14500.0],
+            [6100.0, 17500.0],
+            [2100.0, 17500.0]
           ]
         },
         {
           "id": "band",
           "name": "Rampa",
+          "room_type": "koridor",
           "no": "03",
-          "area_m2": 75.0,
+          "area_m2": 71.7,
           "polygon": [
-            [0, 13000],
-            [20000, 13000],
-            [20000, 17500],
-            [5000, 17500],
-            [5000, 14500],
-            [0, 14500]
+            [0.0, 13000.0],
+            [20000.0, 13000.0],
+            [20000.0, 17500.0],
+            [6100.0, 17500.0],
+            [6100.0, 14500.0],
+            [0.0, 14500.0]
           ]
         },
         {
@@ -390,22 +396,22 @@
         },
         {
           "id": "core_div",
-          "start": [1000, 14500],
-          "end": [1000, 17500],
+          "start": [2100.0, 14500.0],
+          "end": [2100.0, 17500.0],
           "thickness": 200.0,
           "layer": "DUVARLAR"
         },
         {
           "id": "core_bottom",
-          "start": [0, 14500],
-          "end": [5000, 14500],
+          "start": [0.0, 14500.0],
+          "end": [6100.0, 14500.0],
           "thickness": 200.0,
           "layer": "DUVARLAR"
         },
         {
           "id": "core_right",
-          "start": [5000, 14500],
-          "end": [5000, 17500],
+          "start": [6100.0, 14500.0],
+          "end": [6100.0, 17500.0],
           "thickness": 200.0,
           "layer": "DUVARLAR"
         }
@@ -415,7 +421,7 @@
           "id": "door_stair",
           "type": "door",
           "wall_id": "core_bottom",
-          "position_from_start": 3000,
+          "position_from_start": 4100.0,
           "width": 900,
           "layer": "KAPI-PENCERE"
         }
@@ -518,39 +524,42 @@
         {
           "id": "elevator",
           "name": "Asansor",
+          "room_type": "asansor",
           "no": "01",
-          "area_m2": 3.0,
+          "area_m2": 6.3,
           "polygon": [
-            [0, 14500],
-            [1000, 14500],
-            [1000, 17500],
-            [0, 17500]
+            [0.0, 14500.0],
+            [2100.0, 14500.0],
+            [2100.0, 17500.0],
+            [0.0, 17500.0]
           ]
         },
         {
           "id": "stair",
           "name": "Merdiven",
+          "room_type": "merdiven",
           "no": "02",
           "area_m2": 12.0,
           "polygon": [
-            [1000, 14500],
-            [5000, 14500],
-            [5000, 17500],
-            [1000, 17500]
+            [2100.0, 14500.0],
+            [6100.0, 14500.0],
+            [6100.0, 17500.0],
+            [2100.0, 17500.0]
           ]
         },
         {
           "id": "band",
           "name": "Koridor",
+          "room_type": "koridor",
           "no": "03",
-          "area_m2": 75.0,
+          "area_m2": 71.7,
           "polygon": [
-            [0, 13000],
-            [20000, 13000],
-            [20000, 17500],
-            [5000, 17500],
-            [5000, 14500],
-            [0, 14500]
+            [0.0, 13000.0],
+            [20000.0, 13000.0],
+            [20000.0, 17500.0],
+            [6100.0, 17500.0],
+            [6100.0, 14500.0],
+            [0.0, 14500.0]
           ]
         },
         {
@@ -645,22 +654,22 @@
         },
         {
           "id": "core_div",
-          "start": [1000, 14500],
-          "end": [1000, 17500],
+          "start": [2100.0, 14500.0],
+          "end": [2100.0, 17500.0],
           "thickness": 200.0,
           "layer": "DUVARLAR"
         },
         {
           "id": "core_bottom",
-          "start": [0, 14500],
-          "end": [5000, 14500],
+          "start": [0.0, 14500.0],
+          "end": [6100.0, 14500.0],
           "thickness": 200.0,
           "layer": "DUVARLAR"
         },
         {
           "id": "core_right",
-          "start": [5000, 14500],
-          "end": [5000, 17500],
+          "start": [6100.0, 14500.0],
+          "end": [6100.0, 17500.0],
           "thickness": 200.0,
           "layer": "DUVARLAR"
         },
@@ -694,8 +703,8 @@
         },
         {
           "id": "band_south",
-          "start": [0, 13000],
-          "end": [20000.0, 13000],
+          "start": [0.0, 13000.0],
+          "end": [20000.0, 13000.0],
           "thickness": 200.0,
           "layer": "DUVARLAR"
         }
@@ -705,7 +714,7 @@
           "id": "door_stair",
           "type": "door",
           "wall_id": "core_bottom",
-          "position_from_start": 3000,
+          "position_from_start": 4100.0,
           "width": 900,
           "layer": "KAPI-PENCERE"
         },
@@ -771,255 +780,250 @@
         {
           "id": "elevator",
           "name": "Asansor",
+          "room_type": "asansor",
           "no": "01",
-          "area_m2": 3.0,
+          "area_m2": 6.3,
           "polygon": [
-            [0, 14500],
-            [1000, 14500],
-            [1000, 17500],
-            [0, 17500]
+            [0.0, 14500.0],
+            [2100.0, 14500.0],
+            [2100.0, 17500.0],
+            [0.0, 17500.0]
           ]
         },
         {
           "id": "stair",
           "name": "Merdiven",
+          "room_type": "merdiven",
           "no": "02",
           "area_m2": 12.0,
           "polygon": [
-            [1000, 14500],
-            [5000, 14500],
-            [5000, 17500],
-            [1000, 17500]
+            [2100.0, 14500.0],
+            [6100.0, 14500.0],
+            [6100.0, 17500.0],
+            [2100.0, 17500.0]
           ]
         },
         {
           "id": "band",
           "name": "Koridor",
+          "room_type": "koridor",
           "no": "03",
-          "area_m2": 75.0,
+          "area_m2": 71.7,
           "polygon": [
-            [0, 13000],
-            [20000, 13000],
-            [20000, 17500],
-            [5000, 17500],
-            [5000, 14500],
-            [0, 14500]
+            [0.0, 13000.0],
+            [20000.0, 13000.0],
+            [20000.0, 17500.0],
+            [6100.0, 17500.0],
+            [6100.0, 14500.0],
+            [0.0, 14500.0]
           ]
         },
         {
           "id": "uA_salon",
           "name": "Salon",
-          "no": "04",
-          "area_m2": 29.93,
+          "no": "11",
+          "area_m2": 27.3,
+          "room_type": "salon",
           "polygon": [
-            [0.0, 0],
-            [4100.0, 0],
-            [4100.0, 7300.0],
-            [0.0, 7300.0]
+            [0, 0],
+            [4200, 0],
+            [4200, 6500],
+            [0, 6500]
           ]
         },
         {
           "id": "uA_oda1",
-          "name": "Oda 1",
-          "no": "05",
-          "area_m2": 14.235,
+          "name": "Oda",
+          "no": "12",
+          "area_m2": 22.75,
+          "room_type": "yatak_odasi",
           "polygon": [
-            [4100.0, 0],
-            [6050.0, 0],
-            [6050.0, 7300.0],
-            [4100.0, 7300.0]
-          ]
-        },
-        {
-          "id": "uA_oda2",
-          "name": "Oda 2",
-          "no": "06",
-          "area_m2": 12.045,
-          "polygon": [
-            [6050.0, 0],
-            [7700.0, 0],
-            [7700.0, 7300.0],
-            [6050.0, 7300.0]
+            [4200, 0],
+            [7700, 0],
+            [7700, 6500],
+            [4200, 6500]
           ]
         },
         {
           "id": "uA_mutfak",
           "name": "Mutfak",
-          "no": "07",
-          "area_m2": 9.12,
+          "no": "13",
+          "area_m2": 6.27,
+          "room_type": "mutfak",
           "polygon": [
-            [0.0, 7300.0],
-            [1600.0, 7300.0],
-            [1600.0, 13000.0],
-            [0.0, 13000.0]
+            [0, 6500],
+            [1900, 6500],
+            [1900, 9800],
+            [0, 9800]
           ]
         },
         {
           "id": "uA_banyo",
           "name": "Banyo",
-          "no": "08",
-          "area_m2": 6.84,
+          "no": "14",
+          "area_m2": 3.8,
+          "room_type": "banyo",
           "polygon": [
-            [1600.0, 7300.0],
-            [2800.0, 7300.0],
-            [2800.0, 13000.0],
-            [1600.0, 13000.0]
-          ]
-        },
-        {
-          "id": "uA_hol",
-          "name": "Hol",
-          "no": "09",
-          "area_m2": 22.8,
-          "polygon": [
-            [2800.0, 7300.0],
-            [6800.0, 7300.0],
-            [6800.0, 13000.0],
-            [2800.0, 13000.0]
+            [0, 9800],
+            [1900, 9800],
+            [1900, 11800],
+            [0, 11800]
           ]
         },
         {
           "id": "uA_wc",
           "name": "WC",
-          "no": "10",
-          "area_m2": 5.13,
+          "no": "15",
+          "area_m2": 2.28,
+          "room_type": "wc",
           "polygon": [
-            [6800.0, 7300.0],
-            [7700.0, 7300.0],
-            [7700.0, 13000.0],
-            [6800.0, 13000.0]
+            [0, 11800],
+            [1900, 11800],
+            [1900, 13000],
+            [0, 13000]
+          ]
+        },
+        {
+          "id": "uA_hol",
+          "name": "Hol",
+          "no": "16",
+          "area_m2": 37.7,
+          "room_type": "koridor",
+          "polygon": [
+            [1900, 6500],
+            [7700, 6500],
+            [7700, 13000],
+            [1900, 13000]
           ]
         },
         {
           "id": "uB_salon",
           "name": "Salon",
-          "no": "11",
-          "area_m2": 29.93,
+          "no": "21",
+          "area_m2": 27.3,
+          "room_type": "salon",
           "polygon": [
-            [7700.0, 0],
-            [11800.0, 0],
-            [11800.0, 7300.0],
-            [7700.0, 7300.0]
+            [7700, 0],
+            [11900, 0],
+            [11900, 6500],
+            [7700, 6500]
           ]
         },
         {
           "id": "uB_oda1",
-          "name": "Oda 1",
-          "no": "12",
-          "area_m2": 14.235,
+          "name": "Oda",
+          "no": "22",
+          "area_m2": 22.75,
+          "room_type": "yatak_odasi",
           "polygon": [
-            [11800.0, 0],
-            [13750.0, 0],
-            [13750.0, 7300.0],
-            [11800.0, 7300.0]
-          ]
-        },
-        {
-          "id": "uB_oda2",
-          "name": "Oda 2",
-          "no": "13",
-          "area_m2": 12.045,
-          "polygon": [
-            [13750.0, 0],
-            [15400.0, 0],
-            [15400.0, 7300.0],
-            [13750.0, 7300.0]
+            [11900, 0],
+            [15400, 0],
+            [15400, 6500],
+            [11900, 6500]
           ]
         },
         {
           "id": "uB_mutfak",
           "name": "Mutfak",
-          "no": "14",
-          "area_m2": 9.12,
+          "no": "23",
+          "area_m2": 6.27,
+          "room_type": "mutfak",
           "polygon": [
-            [7700.0, 7300.0],
-            [9300.0, 7300.0],
-            [9300.0, 13000.0],
-            [7700.0, 13000.0]
+            [7700, 6500],
+            [9600, 6500],
+            [9600, 9800],
+            [7700, 9800]
           ]
         },
         {
           "id": "uB_banyo",
           "name": "Banyo",
-          "no": "15",
-          "area_m2": 6.84,
+          "no": "24",
+          "area_m2": 3.8,
+          "room_type": "banyo",
           "polygon": [
-            [9300.0, 7300.0],
-            [10500.0, 7300.0],
-            [10500.0, 13000.0],
-            [9300.0, 13000.0]
-          ]
-        },
-        {
-          "id": "uB_hol",
-          "name": "Hol",
-          "no": "16",
-          "area_m2": 22.8,
-          "polygon": [
-            [10500.0, 7300.0],
-            [14500.0, 7300.0],
-            [14500.0, 13000.0],
-            [10500.0, 13000.0]
+            [7700, 9800],
+            [9600, 9800],
+            [9600, 11800],
+            [7700, 11800]
           ]
         },
         {
           "id": "uB_wc",
           "name": "WC",
-          "no": "17",
-          "area_m2": 5.13,
+          "no": "25",
+          "area_m2": 2.28,
+          "room_type": "wc",
           "polygon": [
-            [14500.0, 7300.0],
-            [15400.0, 7300.0],
-            [15400.0, 13000.0],
-            [14500.0, 13000.0]
+            [7700, 11800],
+            [9600, 11800],
+            [9600, 13000],
+            [7700, 13000]
+          ]
+        },
+        {
+          "id": "uB_hol",
+          "name": "Hol",
+          "no": "26",
+          "area_m2": 37.7,
+          "room_type": "koridor",
+          "polygon": [
+            [9600, 6500],
+            [15400, 6500],
+            [15400, 13000],
+            [9600, 13000]
           ]
         },
         {
           "id": "uC_salon",
           "name": "Salon (Amerikan Mutfak)",
-          "no": "18",
-          "area_m2": 32.24,
+          "no": "31",
+          "area_m2": 19.32,
+          "room_type": "salon",
           "polygon": [
-            [15400.0, 0],
-            [18500.0, 0],
-            [18500.0, 10400.0],
-            [15400.0, 10400.0]
+            [15400, 0],
+            [20000, 0],
+            [20000, 4200],
+            [15400, 4200]
           ]
         },
         {
           "id": "uC_oda",
           "name": "Oda",
-          "no": "19",
-          "area_m2": 15.6,
+          "no": "32",
+          "area_m2": 14.72,
+          "room_type": "yatak_odasi",
           "polygon": [
-            [18500.0, 0],
-            [20000.0, 0],
-            [20000.0, 10400.0],
-            [18500.0, 10400.0]
+            [15400, 4200],
+            [20000, 4200],
+            [20000, 7400],
+            [15400, 7400]
           ]
         },
         {
           "id": "uC_banyo",
           "name": "Banyo",
-          "no": "20",
-          "area_m2": 4.94,
+          "no": "33",
+          "area_m2": 10.12,
+          "room_type": "banyo",
           "polygon": [
-            [15400.0, 10400.0],
-            [17300.0, 10400.0],
-            [17300.0, 13000.0],
-            [15400.0, 13000.0]
+            [15400, 7400],
+            [20000, 7400],
+            [20000, 9600],
+            [15400, 9600]
           ]
         },
         {
           "id": "uC_hol",
           "name": "Hol",
-          "no": "21",
-          "area_m2": 7.02,
+          "no": "34",
+          "area_m2": 15.64,
+          "room_type": "koridor",
           "polygon": [
-            [17300.0, 10400.0],
-            [20000.0, 10400.0],
-            [20000.0, 13000.0],
-            [17300.0, 13000.0]
+            [15400, 9600],
+            [20000, 9600],
+            [20000, 13000],
+            [15400, 13000]
           ]
         }
       ],
@@ -1054,128 +1058,23 @@
         },
         {
           "id": "core_div",
-          "start": [1000, 14500],
-          "end": [1000, 17500],
+          "start": [2100.0, 14500.0],
+          "end": [2100.0, 17500.0],
           "thickness": 200.0,
           "layer": "DUVARLAR"
         },
         {
           "id": "core_bottom",
-          "start": [0, 14500],
-          "end": [5000, 14500],
+          "start": [0.0, 14500.0],
+          "end": [6100.0, 14500.0],
           "thickness": 200.0,
           "layer": "DUVARLAR"
         },
         {
           "id": "core_right",
-          "start": [5000, 14500],
-          "end": [5000, 17500],
+          "start": [6100.0, 14500.0],
+          "end": [6100.0, 17500.0],
           "thickness": 200.0,
-          "layer": "DUVARLAR"
-        },
-        {
-          "id": "uA_w_salon_oda1",
-          "start": [4100.0, 0],
-          "end": [4100.0, 7300.0],
-          "thickness": 100.0,
-          "layer": "DUVARLAR"
-        },
-        {
-          "id": "uA_w_oda1_oda2",
-          "start": [6050.0, 0],
-          "end": [6050.0, 7300.0],
-          "thickness": 100.0,
-          "layer": "DUVARLAR"
-        },
-        {
-          "id": "uA_w_front_back",
-          "start": [0.0, 7300.0],
-          "end": [7700.0, 7300.0],
-          "thickness": 100.0,
-          "layer": "DUVARLAR"
-        },
-        {
-          "id": "uA_w_mutfak_banyo",
-          "start": [1600.0, 7300.0],
-          "end": [1600.0, 13000.0],
-          "thickness": 100.0,
-          "layer": "DUVARLAR"
-        },
-        {
-          "id": "uA_w_banyo_hol",
-          "start": [2800.0, 7300.0],
-          "end": [2800.0, 13000.0],
-          "thickness": 100.0,
-          "layer": "DUVARLAR"
-        },
-        {
-          "id": "uA_w_hol_wc",
-          "start": [6800.0, 7300.0],
-          "end": [6800.0, 13000.0],
-          "thickness": 100.0,
-          "layer": "DUVARLAR"
-        },
-        {
-          "id": "uB_w_salon_oda1",
-          "start": [11800.0, 0],
-          "end": [11800.0, 7300.0],
-          "thickness": 100.0,
-          "layer": "DUVARLAR"
-        },
-        {
-          "id": "uB_w_oda1_oda2",
-          "start": [13750.0, 0],
-          "end": [13750.0, 7300.0],
-          "thickness": 100.0,
-          "layer": "DUVARLAR"
-        },
-        {
-          "id": "uB_w_front_back",
-          "start": [7700.0, 7300.0],
-          "end": [15400.0, 7300.0],
-          "thickness": 100.0,
-          "layer": "DUVARLAR"
-        },
-        {
-          "id": "uB_w_mutfak_banyo",
-          "start": [9300.0, 7300.0],
-          "end": [9300.0, 13000.0],
-          "thickness": 100.0,
-          "layer": "DUVARLAR"
-        },
-        {
-          "id": "uB_w_banyo_hol",
-          "start": [10500.0, 7300.0],
-          "end": [10500.0, 13000.0],
-          "thickness": 100.0,
-          "layer": "DUVARLAR"
-        },
-        {
-          "id": "uB_w_hol_wc",
-          "start": [14500.0, 7300.0],
-          "end": [14500.0, 13000.0],
-          "thickness": 100.0,
-          "layer": "DUVARLAR"
-        },
-        {
-          "id": "uC_w_salon_oda",
-          "start": [18500.0, 0],
-          "end": [18500.0, 10400.0],
-          "thickness": 100.0,
-          "layer": "DUVARLAR"
-        },
-        {
-          "id": "uC_w_front_back",
-          "start": [15400.0, 10400.0],
-          "end": [20000.0, 10400.0],
-          "thickness": 100.0,
-          "layer": "DUVARLAR"
-        },
-        {
-          "id": "uC_w_banyo_hol",
-          "start": [17300.0, 10400.0],
-          "end": [17300.0, 13000.0],
-          "thickness": 100.0,
           "layer": "DUVARLAR"
         },
         {
@@ -1194,9 +1093,100 @@
         },
         {
           "id": "band_south",
-          "start": [0, 13000],
-          "end": [20000.0, 13000],
+          "start": [0.0, 13000.0],
+          "end": [20000.0, 13000.0],
           "thickness": 200.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "uA_w_salon_oda",
+          "start": [4200, 0],
+          "end": [4200, 6500],
+          "thickness": 100.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "uA_w_front_back",
+          "start": [0, 6500],
+          "end": [7700, 6500],
+          "thickness": 100.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "uA_w_wetcolumn_hol",
+          "start": [1900, 6500],
+          "end": [1900, 13000],
+          "thickness": 100.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "uA_w_mutfak_banyo",
+          "start": [0, 9800],
+          "end": [1900, 9800],
+          "thickness": 100.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "uA_w_banyo_wc",
+          "start": [0, 11800],
+          "end": [1900, 11800],
+          "thickness": 100.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "uB_w_salon_oda",
+          "start": [11900, 0],
+          "end": [11900, 6500],
+          "thickness": 100.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "uB_w_front_back",
+          "start": [7700, 6500],
+          "end": [15400, 6500],
+          "thickness": 100.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "uB_w_wetcolumn_hol",
+          "start": [9600, 6500],
+          "end": [9600, 13000],
+          "thickness": 100.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "uB_w_mutfak_banyo",
+          "start": [7700, 9800],
+          "end": [9600, 9800],
+          "thickness": 100.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "uB_w_banyo_wc",
+          "start": [7700, 11800],
+          "end": [9600, 11800],
+          "thickness": 100.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "uC_w_salon_oda",
+          "start": [15400, 4200],
+          "end": [20000, 4200],
+          "thickness": 100.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "uC_w_oda_banyo",
+          "start": [15400, 7400],
+          "end": [20000, 7400],
+          "thickness": 100.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "uC_w_banyo_hol",
+          "start": [15400, 9600],
+          "end": [20000, 9600],
+          "thickness": 100.0,
           "layer": "DUVARLAR"
         }
       ],
@@ -1205,56 +1195,8 @@
           "id": "door_stair",
           "type": "door",
           "wall_id": "core_bottom",
-          "position_from_start": 3000,
+          "position_from_start": 4100.0,
           "width": 900,
-          "layer": "KAPI-PENCERE"
-        },
-        {
-          "id": "uA_d_mutfak_salon",
-          "type": "door",
-          "wall_id": "uA_w_front_back",
-          "position_from_start": 800,
-          "width": 800,
-          "layer": "KAPI-PENCERE"
-        },
-        {
-          "id": "uA_d_hol_salon",
-          "type": "door",
-          "wall_id": "uA_w_front_back",
-          "position_from_start": 3450,
-          "width": 700,
-          "layer": "KAPI-PENCERE"
-        },
-        {
-          "id": "uA_d_hol_oda1",
-          "type": "door",
-          "wall_id": "uA_w_front_back",
-          "position_from_start": 5075,
-          "width": 800,
-          "layer": "KAPI-PENCERE"
-        },
-        {
-          "id": "uA_d_hol_oda2",
-          "type": "door",
-          "wall_id": "uA_w_front_back",
-          "position_from_start": 6425,
-          "width": 600,
-          "layer": "KAPI-PENCERE"
-        },
-        {
-          "id": "uA_d_hol_banyo",
-          "type": "door",
-          "wall_id": "uA_w_banyo_hol",
-          "position_from_start": 2850,
-          "width": 700,
-          "layer": "KAPI-PENCERE"
-        },
-        {
-          "id": "uA_d_hol_wc",
-          "type": "door",
-          "wall_id": "uA_w_hol_wc",
-          "position_from_start": 2850,
-          "width": 700,
           "layer": "KAPI-PENCERE"
         },
         {
@@ -1274,58 +1216,42 @@
           "layer": "KAPI-PENCERE"
         },
         {
-          "id": "uA_win_oda2",
-          "type": "window",
-          "wall_id": "ext_bottom",
-          "position_from_start": 6875.0,
-          "width": 1200,
-          "layer": "KAPI-PENCERE"
-        },
-        {
-          "id": "uB_d_mutfak_salon",
+          "id": "uA_d_salon_hol",
           "type": "door",
-          "wall_id": "uB_w_front_back",
-          "position_from_start": 800,
-          "width": 800,
-          "layer": "KAPI-PENCERE"
-        },
-        {
-          "id": "uB_d_hol_salon",
-          "type": "door",
-          "wall_id": "uB_w_front_back",
-          "position_from_start": 3450,
+          "wall_id": "uA_w_front_back",
+          "position_from_start": 3000.0,
           "width": 700,
           "layer": "KAPI-PENCERE"
         },
         {
-          "id": "uB_d_hol_oda1",
+          "id": "uA_d_oda_hol",
           "type": "door",
-          "wall_id": "uB_w_front_back",
-          "position_from_start": 5075,
+          "wall_id": "uA_w_front_back",
+          "position_from_start": 5500.0,
           "width": 800,
           "layer": "KAPI-PENCERE"
         },
         {
-          "id": "uB_d_hol_oda2",
+          "id": "uA_d_hol_mutfak",
           "type": "door",
-          "wall_id": "uB_w_front_back",
-          "position_from_start": 6425,
-          "width": 600,
+          "wall_id": "uA_w_wetcolumn_hol",
+          "position_from_start": 1500.0,
+          "width": 800,
           "layer": "KAPI-PENCERE"
         },
         {
-          "id": "uB_d_hol_banyo",
+          "id": "uA_d_hol_banyo",
           "type": "door",
-          "wall_id": "uB_w_banyo_hol",
-          "position_from_start": 2850,
+          "wall_id": "uA_w_wetcolumn_hol",
+          "position_from_start": 4200.0,
           "width": 700,
           "layer": "KAPI-PENCERE"
         },
         {
-          "id": "uB_d_hol_wc",
+          "id": "uA_d_hol_wc",
           "type": "door",
-          "wall_id": "uB_w_hol_wc",
-          "position_from_start": 2850,
+          "wall_id": "uA_w_wetcolumn_hol",
+          "position_from_start": 5900.0,
           "width": 700,
           "layer": "KAPI-PENCERE"
         },
@@ -1346,34 +1272,42 @@
           "layer": "KAPI-PENCERE"
         },
         {
-          "id": "uB_win_oda2",
-          "type": "window",
-          "wall_id": "ext_bottom",
-          "position_from_start": 14575.0,
-          "width": 1200,
-          "layer": "KAPI-PENCERE"
-        },
-        {
-          "id": "uC_d_hol_salon",
+          "id": "uB_d_salon_hol",
           "type": "door",
-          "wall_id": "uC_w_front_back",
-          "position_from_start": 2500,
-          "width": 800,
-          "layer": "KAPI-PENCERE"
-        },
-        {
-          "id": "uC_d_hol_oda",
-          "type": "door",
-          "wall_id": "uC_w_front_back",
-          "position_from_start": 3850,
+          "wall_id": "uB_w_front_back",
+          "position_from_start": 3000.0,
           "width": 700,
           "layer": "KAPI-PENCERE"
         },
         {
-          "id": "uC_d_hol_banyo",
+          "id": "uB_d_oda_hol",
           "type": "door",
-          "wall_id": "uC_w_banyo_hol",
-          "position_from_start": 1300,
+          "wall_id": "uB_w_front_back",
+          "position_from_start": 5500.0,
+          "width": 800,
+          "layer": "KAPI-PENCERE"
+        },
+        {
+          "id": "uB_d_hol_mutfak",
+          "type": "door",
+          "wall_id": "uB_w_wetcolumn_hol",
+          "position_from_start": 1500.0,
+          "width": 800,
+          "layer": "KAPI-PENCERE"
+        },
+        {
+          "id": "uB_d_hol_banyo",
+          "type": "door",
+          "wall_id": "uB_w_wetcolumn_hol",
+          "position_from_start": 4200.0,
+          "width": 700,
+          "layer": "KAPI-PENCERE"
+        },
+        {
+          "id": "uB_d_hol_wc",
+          "type": "door",
+          "wall_id": "uB_w_wetcolumn_hol",
+          "position_from_start": 5900.0,
           "width": 700,
           "layer": "KAPI-PENCERE"
         },
@@ -1381,16 +1315,32 @@
           "id": "uC_win_salon",
           "type": "window",
           "wall_id": "ext_bottom",
-          "position_from_start": 16950.0,
+          "position_from_start": 17050.0,
           "width": 1600,
           "layer": "KAPI-PENCERE"
         },
         {
-          "id": "uC_win_oda",
-          "type": "window",
-          "wall_id": "ext_bottom",
-          "position_from_start": 19250.0,
-          "width": 1200,
+          "id": "uC_d_salon_oda",
+          "type": "door",
+          "wall_id": "uC_w_salon_oda",
+          "position_from_start": 2300.0,
+          "width": 800,
+          "layer": "KAPI-PENCERE"
+        },
+        {
+          "id": "uC_d_oda_banyo",
+          "type": "door",
+          "wall_id": "uC_w_oda_banyo",
+          "position_from_start": 3800.0,
+          "width": 700,
+          "layer": "KAPI-PENCERE"
+        },
+        {
+          "id": "uC_d_banyo_hol",
+          "type": "door",
+          "wall_id": "uC_w_banyo_hol",
+          "position_from_start": 800.0,
+          "width": 700,
           "layer": "KAPI-PENCERE"
         },
         {
@@ -1423,30 +1373,30 @@
         {
           "id": "uA_tezgah",
           "polygon": [
-            [0.0, 7600],
-            [600.0, 7600],
-            [600.0, 12700],
-            [0.0, 12700]
+            [0.0, 6600.0],
+            [600.0, 6600.0],
+            [600.0, 9700.0],
+            [0.0, 9700.0]
           ],
           "layer": "MOBILYA"
         },
         {
           "id": "uB_tezgah",
           "polygon": [
-            [7700.0, 7600],
-            [8300.0, 7600],
-            [8300.0, 12700],
-            [7700.0, 12700]
+            [7700.0, 6600.0],
+            [8300.0, 6600.0],
+            [8300.0, 9700.0],
+            [7700.0, 9700.0]
           ],
           "layer": "MOBILYA"
         },
         {
           "id": "uC_tezgah",
           "polygon": [
-            [15400.0, 7000],
-            [16000.0, 7000],
-            [16000.0, 10100],
-            [15400.0, 10100]
+            [19200.0, 500.0],
+            [19800.0, 500.0],
+            [19800.0, 3500.0],
+            [19200.0, 3500.0]
           ],
           "layer": "MOBILYA"
         }
@@ -1462,255 +1412,250 @@
         {
           "id": "elevator",
           "name": "Asansor",
+          "room_type": "asansor",
           "no": "01",
-          "area_m2": 3.0,
+          "area_m2": 6.3,
           "polygon": [
-            [0, 14500],
-            [1000, 14500],
-            [1000, 17500],
-            [0, 17500]
+            [0.0, 14500.0],
+            [2100.0, 14500.0],
+            [2100.0, 17500.0],
+            [0.0, 17500.0]
           ]
         },
         {
           "id": "stair",
           "name": "Merdiven",
+          "room_type": "merdiven",
           "no": "02",
           "area_m2": 12.0,
           "polygon": [
-            [1000, 14500],
-            [5000, 14500],
-            [5000, 17500],
-            [1000, 17500]
+            [2100.0, 14500.0],
+            [6100.0, 14500.0],
+            [6100.0, 17500.0],
+            [2100.0, 17500.0]
           ]
         },
         {
           "id": "band",
           "name": "Koridor",
+          "room_type": "koridor",
           "no": "03",
-          "area_m2": 75.0,
+          "area_m2": 71.7,
           "polygon": [
-            [0, 13000],
-            [20000, 13000],
-            [20000, 17500],
-            [5000, 17500],
-            [5000, 14500],
-            [0, 14500]
+            [0.0, 13000.0],
+            [20000.0, 13000.0],
+            [20000.0, 17500.0],
+            [6100.0, 17500.0],
+            [6100.0, 14500.0],
+            [0.0, 14500.0]
           ]
         },
         {
           "id": "uA_salon",
           "name": "Salon",
-          "no": "04",
-          "area_m2": 29.93,
+          "no": "11",
+          "area_m2": 27.3,
+          "room_type": "salon",
           "polygon": [
-            [0.0, 0],
-            [4100.0, 0],
-            [4100.0, 7300.0],
-            [0.0, 7300.0]
+            [0, 0],
+            [4200, 0],
+            [4200, 6500],
+            [0, 6500]
           ]
         },
         {
           "id": "uA_oda1",
-          "name": "Oda 1",
-          "no": "05",
-          "area_m2": 14.235,
+          "name": "Oda",
+          "no": "12",
+          "area_m2": 22.75,
+          "room_type": "yatak_odasi",
           "polygon": [
-            [4100.0, 0],
-            [6050.0, 0],
-            [6050.0, 7300.0],
-            [4100.0, 7300.0]
-          ]
-        },
-        {
-          "id": "uA_oda2",
-          "name": "Oda 2",
-          "no": "06",
-          "area_m2": 12.045,
-          "polygon": [
-            [6050.0, 0],
-            [7700.0, 0],
-            [7700.0, 7300.0],
-            [6050.0, 7300.0]
+            [4200, 0],
+            [7700, 0],
+            [7700, 6500],
+            [4200, 6500]
           ]
         },
         {
           "id": "uA_mutfak",
           "name": "Mutfak",
-          "no": "07",
-          "area_m2": 9.12,
+          "no": "13",
+          "area_m2": 6.27,
+          "room_type": "mutfak",
           "polygon": [
-            [0.0, 7300.0],
-            [1600.0, 7300.0],
-            [1600.0, 13000.0],
-            [0.0, 13000.0]
+            [0, 6500],
+            [1900, 6500],
+            [1900, 9800],
+            [0, 9800]
           ]
         },
         {
           "id": "uA_banyo",
           "name": "Banyo",
-          "no": "08",
-          "area_m2": 6.84,
+          "no": "14",
+          "area_m2": 3.8,
+          "room_type": "banyo",
           "polygon": [
-            [1600.0, 7300.0],
-            [2800.0, 7300.0],
-            [2800.0, 13000.0],
-            [1600.0, 13000.0]
-          ]
-        },
-        {
-          "id": "uA_hol",
-          "name": "Hol",
-          "no": "09",
-          "area_m2": 22.8,
-          "polygon": [
-            [2800.0, 7300.0],
-            [6800.0, 7300.0],
-            [6800.0, 13000.0],
-            [2800.0, 13000.0]
+            [0, 9800],
+            [1900, 9800],
+            [1900, 11800],
+            [0, 11800]
           ]
         },
         {
           "id": "uA_wc",
           "name": "WC",
-          "no": "10",
-          "area_m2": 5.13,
+          "no": "15",
+          "area_m2": 2.28,
+          "room_type": "wc",
           "polygon": [
-            [6800.0, 7300.0],
-            [7700.0, 7300.0],
-            [7700.0, 13000.0],
-            [6800.0, 13000.0]
+            [0, 11800],
+            [1900, 11800],
+            [1900, 13000],
+            [0, 13000]
+          ]
+        },
+        {
+          "id": "uA_hol",
+          "name": "Hol",
+          "no": "16",
+          "area_m2": 37.7,
+          "room_type": "koridor",
+          "polygon": [
+            [1900, 6500],
+            [7700, 6500],
+            [7700, 13000],
+            [1900, 13000]
           ]
         },
         {
           "id": "uB_salon",
           "name": "Salon",
-          "no": "11",
-          "area_m2": 29.93,
+          "no": "21",
+          "area_m2": 27.3,
+          "room_type": "salon",
           "polygon": [
-            [7700.0, 0],
-            [11800.0, 0],
-            [11800.0, 7300.0],
-            [7700.0, 7300.0]
+            [7700, 0],
+            [11900, 0],
+            [11900, 6500],
+            [7700, 6500]
           ]
         },
         {
           "id": "uB_oda1",
-          "name": "Oda 1",
-          "no": "12",
-          "area_m2": 14.235,
+          "name": "Oda",
+          "no": "22",
+          "area_m2": 22.75,
+          "room_type": "yatak_odasi",
           "polygon": [
-            [11800.0, 0],
-            [13750.0, 0],
-            [13750.0, 7300.0],
-            [11800.0, 7300.0]
-          ]
-        },
-        {
-          "id": "uB_oda2",
-          "name": "Oda 2",
-          "no": "13",
-          "area_m2": 12.045,
-          "polygon": [
-            [13750.0, 0],
-            [15400.0, 0],
-            [15400.0, 7300.0],
-            [13750.0, 7300.0]
+            [11900, 0],
+            [15400, 0],
+            [15400, 6500],
+            [11900, 6500]
           ]
         },
         {
           "id": "uB_mutfak",
           "name": "Mutfak",
-          "no": "14",
-          "area_m2": 9.12,
+          "no": "23",
+          "area_m2": 6.27,
+          "room_type": "mutfak",
           "polygon": [
-            [7700.0, 7300.0],
-            [9300.0, 7300.0],
-            [9300.0, 13000.0],
-            [7700.0, 13000.0]
+            [7700, 6500],
+            [9600, 6500],
+            [9600, 9800],
+            [7700, 9800]
           ]
         },
         {
           "id": "uB_banyo",
           "name": "Banyo",
-          "no": "15",
-          "area_m2": 6.84,
+          "no": "24",
+          "area_m2": 3.8,
+          "room_type": "banyo",
           "polygon": [
-            [9300.0, 7300.0],
-            [10500.0, 7300.0],
-            [10500.0, 13000.0],
-            [9300.0, 13000.0]
-          ]
-        },
-        {
-          "id": "uB_hol",
-          "name": "Hol",
-          "no": "16",
-          "area_m2": 22.8,
-          "polygon": [
-            [10500.0, 7300.0],
-            [14500.0, 7300.0],
-            [14500.0, 13000.0],
-            [10500.0, 13000.0]
+            [7700, 9800],
+            [9600, 9800],
+            [9600, 11800],
+            [7700, 11800]
           ]
         },
         {
           "id": "uB_wc",
           "name": "WC",
-          "no": "17",
-          "area_m2": 5.13,
+          "no": "25",
+          "area_m2": 2.28,
+          "room_type": "wc",
           "polygon": [
-            [14500.0, 7300.0],
-            [15400.0, 7300.0],
-            [15400.0, 13000.0],
-            [14500.0, 13000.0]
+            [7700, 11800],
+            [9600, 11800],
+            [9600, 13000],
+            [7700, 13000]
+          ]
+        },
+        {
+          "id": "uB_hol",
+          "name": "Hol",
+          "no": "26",
+          "area_m2": 37.7,
+          "room_type": "koridor",
+          "polygon": [
+            [9600, 6500],
+            [15400, 6500],
+            [15400, 13000],
+            [9600, 13000]
           ]
         },
         {
           "id": "uC_salon",
           "name": "Salon (Amerikan Mutfak)",
-          "no": "18",
-          "area_m2": 32.24,
+          "no": "31",
+          "area_m2": 19.32,
+          "room_type": "salon",
           "polygon": [
-            [15400.0, 0],
-            [18500.0, 0],
-            [18500.0, 10400.0],
-            [15400.0, 10400.0]
+            [15400, 0],
+            [20000, 0],
+            [20000, 4200],
+            [15400, 4200]
           ]
         },
         {
           "id": "uC_oda",
           "name": "Oda",
-          "no": "19",
-          "area_m2": 15.6,
+          "no": "32",
+          "area_m2": 14.72,
+          "room_type": "yatak_odasi",
           "polygon": [
-            [18500.0, 0],
-            [20000.0, 0],
-            [20000.0, 10400.0],
-            [18500.0, 10400.0]
+            [15400, 4200],
+            [20000, 4200],
+            [20000, 7400],
+            [15400, 7400]
           ]
         },
         {
           "id": "uC_banyo",
           "name": "Banyo",
-          "no": "20",
-          "area_m2": 4.94,
+          "no": "33",
+          "area_m2": 10.12,
+          "room_type": "banyo",
           "polygon": [
-            [15400.0, 10400.0],
-            [17300.0, 10400.0],
-            [17300.0, 13000.0],
-            [15400.0, 13000.0]
+            [15400, 7400],
+            [20000, 7400],
+            [20000, 9600],
+            [15400, 9600]
           ]
         },
         {
           "id": "uC_hol",
           "name": "Hol",
-          "no": "21",
-          "area_m2": 7.02,
+          "no": "34",
+          "area_m2": 15.64,
+          "room_type": "koridor",
           "polygon": [
-            [17300.0, 10400.0],
-            [20000.0, 10400.0],
-            [20000.0, 13000.0],
-            [17300.0, 13000.0]
+            [15400, 9600],
+            [20000, 9600],
+            [20000, 13000],
+            [15400, 13000]
           ]
         }
       ],
@@ -1745,128 +1690,23 @@
         },
         {
           "id": "core_div",
-          "start": [1000, 14500],
-          "end": [1000, 17500],
+          "start": [2100.0, 14500.0],
+          "end": [2100.0, 17500.0],
           "thickness": 200.0,
           "layer": "DUVARLAR"
         },
         {
           "id": "core_bottom",
-          "start": [0, 14500],
-          "end": [5000, 14500],
+          "start": [0.0, 14500.0],
+          "end": [6100.0, 14500.0],
           "thickness": 200.0,
           "layer": "DUVARLAR"
         },
         {
           "id": "core_right",
-          "start": [5000, 14500],
-          "end": [5000, 17500],
+          "start": [6100.0, 14500.0],
+          "end": [6100.0, 17500.0],
           "thickness": 200.0,
-          "layer": "DUVARLAR"
-        },
-        {
-          "id": "uA_w_salon_oda1",
-          "start": [4100.0, 0],
-          "end": [4100.0, 7300.0],
-          "thickness": 100.0,
-          "layer": "DUVARLAR"
-        },
-        {
-          "id": "uA_w_oda1_oda2",
-          "start": [6050.0, 0],
-          "end": [6050.0, 7300.0],
-          "thickness": 100.0,
-          "layer": "DUVARLAR"
-        },
-        {
-          "id": "uA_w_front_back",
-          "start": [0.0, 7300.0],
-          "end": [7700.0, 7300.0],
-          "thickness": 100.0,
-          "layer": "DUVARLAR"
-        },
-        {
-          "id": "uA_w_mutfak_banyo",
-          "start": [1600.0, 7300.0],
-          "end": [1600.0, 13000.0],
-          "thickness": 100.0,
-          "layer": "DUVARLAR"
-        },
-        {
-          "id": "uA_w_banyo_hol",
-          "start": [2800.0, 7300.0],
-          "end": [2800.0, 13000.0],
-          "thickness": 100.0,
-          "layer": "DUVARLAR"
-        },
-        {
-          "id": "uA_w_hol_wc",
-          "start": [6800.0, 7300.0],
-          "end": [6800.0, 13000.0],
-          "thickness": 100.0,
-          "layer": "DUVARLAR"
-        },
-        {
-          "id": "uB_w_salon_oda1",
-          "start": [11800.0, 0],
-          "end": [11800.0, 7300.0],
-          "thickness": 100.0,
-          "layer": "DUVARLAR"
-        },
-        {
-          "id": "uB_w_oda1_oda2",
-          "start": [13750.0, 0],
-          "end": [13750.0, 7300.0],
-          "thickness": 100.0,
-          "layer": "DUVARLAR"
-        },
-        {
-          "id": "uB_w_front_back",
-          "start": [7700.0, 7300.0],
-          "end": [15400.0, 7300.0],
-          "thickness": 100.0,
-          "layer": "DUVARLAR"
-        },
-        {
-          "id": "uB_w_mutfak_banyo",
-          "start": [9300.0, 7300.0],
-          "end": [9300.0, 13000.0],
-          "thickness": 100.0,
-          "layer": "DUVARLAR"
-        },
-        {
-          "id": "uB_w_banyo_hol",
-          "start": [10500.0, 7300.0],
-          "end": [10500.0, 13000.0],
-          "thickness": 100.0,
-          "layer": "DUVARLAR"
-        },
-        {
-          "id": "uB_w_hol_wc",
-          "start": [14500.0, 7300.0],
-          "end": [14500.0, 13000.0],
-          "thickness": 100.0,
-          "layer": "DUVARLAR"
-        },
-        {
-          "id": "uC_w_salon_oda",
-          "start": [18500.0, 0],
-          "end": [18500.0, 10400.0],
-          "thickness": 100.0,
-          "layer": "DUVARLAR"
-        },
-        {
-          "id": "uC_w_front_back",
-          "start": [15400.0, 10400.0],
-          "end": [20000.0, 10400.0],
-          "thickness": 100.0,
-          "layer": "DUVARLAR"
-        },
-        {
-          "id": "uC_w_banyo_hol",
-          "start": [17300.0, 10400.0],
-          "end": [17300.0, 13000.0],
-          "thickness": 100.0,
           "layer": "DUVARLAR"
         },
         {
@@ -1885,9 +1725,100 @@
         },
         {
           "id": "band_south",
-          "start": [0, 13000],
-          "end": [20000.0, 13000],
+          "start": [0.0, 13000.0],
+          "end": [20000.0, 13000.0],
           "thickness": 200.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "uA_w_salon_oda",
+          "start": [4200, 0],
+          "end": [4200, 6500],
+          "thickness": 100.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "uA_w_front_back",
+          "start": [0, 6500],
+          "end": [7700, 6500],
+          "thickness": 100.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "uA_w_wetcolumn_hol",
+          "start": [1900, 6500],
+          "end": [1900, 13000],
+          "thickness": 100.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "uA_w_mutfak_banyo",
+          "start": [0, 9800],
+          "end": [1900, 9800],
+          "thickness": 100.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "uA_w_banyo_wc",
+          "start": [0, 11800],
+          "end": [1900, 11800],
+          "thickness": 100.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "uB_w_salon_oda",
+          "start": [11900, 0],
+          "end": [11900, 6500],
+          "thickness": 100.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "uB_w_front_back",
+          "start": [7700, 6500],
+          "end": [15400, 6500],
+          "thickness": 100.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "uB_w_wetcolumn_hol",
+          "start": [9600, 6500],
+          "end": [9600, 13000],
+          "thickness": 100.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "uB_w_mutfak_banyo",
+          "start": [7700, 9800],
+          "end": [9600, 9800],
+          "thickness": 100.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "uB_w_banyo_wc",
+          "start": [7700, 11800],
+          "end": [9600, 11800],
+          "thickness": 100.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "uC_w_salon_oda",
+          "start": [15400, 4200],
+          "end": [20000, 4200],
+          "thickness": 100.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "uC_w_oda_banyo",
+          "start": [15400, 7400],
+          "end": [20000, 7400],
+          "thickness": 100.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "uC_w_banyo_hol",
+          "start": [15400, 9600],
+          "end": [20000, 9600],
+          "thickness": 100.0,
           "layer": "DUVARLAR"
         }
       ],
@@ -1896,56 +1827,8 @@
           "id": "door_stair",
           "type": "door",
           "wall_id": "core_bottom",
-          "position_from_start": 3000,
+          "position_from_start": 4100.0,
           "width": 900,
-          "layer": "KAPI-PENCERE"
-        },
-        {
-          "id": "uA_d_mutfak_salon",
-          "type": "door",
-          "wall_id": "uA_w_front_back",
-          "position_from_start": 800,
-          "width": 800,
-          "layer": "KAPI-PENCERE"
-        },
-        {
-          "id": "uA_d_hol_salon",
-          "type": "door",
-          "wall_id": "uA_w_front_back",
-          "position_from_start": 3450,
-          "width": 700,
-          "layer": "KAPI-PENCERE"
-        },
-        {
-          "id": "uA_d_hol_oda1",
-          "type": "door",
-          "wall_id": "uA_w_front_back",
-          "position_from_start": 5075,
-          "width": 800,
-          "layer": "KAPI-PENCERE"
-        },
-        {
-          "id": "uA_d_hol_oda2",
-          "type": "door",
-          "wall_id": "uA_w_front_back",
-          "position_from_start": 6425,
-          "width": 600,
-          "layer": "KAPI-PENCERE"
-        },
-        {
-          "id": "uA_d_hol_banyo",
-          "type": "door",
-          "wall_id": "uA_w_banyo_hol",
-          "position_from_start": 2850,
-          "width": 700,
-          "layer": "KAPI-PENCERE"
-        },
-        {
-          "id": "uA_d_hol_wc",
-          "type": "door",
-          "wall_id": "uA_w_hol_wc",
-          "position_from_start": 2850,
-          "width": 700,
           "layer": "KAPI-PENCERE"
         },
         {
@@ -1965,58 +1848,42 @@
           "layer": "KAPI-PENCERE"
         },
         {
-          "id": "uA_win_oda2",
-          "type": "window",
-          "wall_id": "ext_bottom",
-          "position_from_start": 6875.0,
-          "width": 1200,
-          "layer": "KAPI-PENCERE"
-        },
-        {
-          "id": "uB_d_mutfak_salon",
+          "id": "uA_d_salon_hol",
           "type": "door",
-          "wall_id": "uB_w_front_back",
-          "position_from_start": 800,
-          "width": 800,
-          "layer": "KAPI-PENCERE"
-        },
-        {
-          "id": "uB_d_hol_salon",
-          "type": "door",
-          "wall_id": "uB_w_front_back",
-          "position_from_start": 3450,
+          "wall_id": "uA_w_front_back",
+          "position_from_start": 3000.0,
           "width": 700,
           "layer": "KAPI-PENCERE"
         },
         {
-          "id": "uB_d_hol_oda1",
+          "id": "uA_d_oda_hol",
           "type": "door",
-          "wall_id": "uB_w_front_back",
-          "position_from_start": 5075,
+          "wall_id": "uA_w_front_back",
+          "position_from_start": 5500.0,
           "width": 800,
           "layer": "KAPI-PENCERE"
         },
         {
-          "id": "uB_d_hol_oda2",
+          "id": "uA_d_hol_mutfak",
           "type": "door",
-          "wall_id": "uB_w_front_back",
-          "position_from_start": 6425,
-          "width": 600,
+          "wall_id": "uA_w_wetcolumn_hol",
+          "position_from_start": 1500.0,
+          "width": 800,
           "layer": "KAPI-PENCERE"
         },
         {
-          "id": "uB_d_hol_banyo",
+          "id": "uA_d_hol_banyo",
           "type": "door",
-          "wall_id": "uB_w_banyo_hol",
-          "position_from_start": 2850,
+          "wall_id": "uA_w_wetcolumn_hol",
+          "position_from_start": 4200.0,
           "width": 700,
           "layer": "KAPI-PENCERE"
         },
         {
-          "id": "uB_d_hol_wc",
+          "id": "uA_d_hol_wc",
           "type": "door",
-          "wall_id": "uB_w_hol_wc",
-          "position_from_start": 2850,
+          "wall_id": "uA_w_wetcolumn_hol",
+          "position_from_start": 5900.0,
           "width": 700,
           "layer": "KAPI-PENCERE"
         },
@@ -2037,34 +1904,42 @@
           "layer": "KAPI-PENCERE"
         },
         {
-          "id": "uB_win_oda2",
-          "type": "window",
-          "wall_id": "ext_bottom",
-          "position_from_start": 14575.0,
-          "width": 1200,
-          "layer": "KAPI-PENCERE"
-        },
-        {
-          "id": "uC_d_hol_salon",
+          "id": "uB_d_salon_hol",
           "type": "door",
-          "wall_id": "uC_w_front_back",
-          "position_from_start": 2500,
-          "width": 800,
-          "layer": "KAPI-PENCERE"
-        },
-        {
-          "id": "uC_d_hol_oda",
-          "type": "door",
-          "wall_id": "uC_w_front_back",
-          "position_from_start": 3850,
+          "wall_id": "uB_w_front_back",
+          "position_from_start": 3000.0,
           "width": 700,
           "layer": "KAPI-PENCERE"
         },
         {
-          "id": "uC_d_hol_banyo",
+          "id": "uB_d_oda_hol",
           "type": "door",
-          "wall_id": "uC_w_banyo_hol",
-          "position_from_start": 1300,
+          "wall_id": "uB_w_front_back",
+          "position_from_start": 5500.0,
+          "width": 800,
+          "layer": "KAPI-PENCERE"
+        },
+        {
+          "id": "uB_d_hol_mutfak",
+          "type": "door",
+          "wall_id": "uB_w_wetcolumn_hol",
+          "position_from_start": 1500.0,
+          "width": 800,
+          "layer": "KAPI-PENCERE"
+        },
+        {
+          "id": "uB_d_hol_banyo",
+          "type": "door",
+          "wall_id": "uB_w_wetcolumn_hol",
+          "position_from_start": 4200.0,
+          "width": 700,
+          "layer": "KAPI-PENCERE"
+        },
+        {
+          "id": "uB_d_hol_wc",
+          "type": "door",
+          "wall_id": "uB_w_wetcolumn_hol",
+          "position_from_start": 5900.0,
           "width": 700,
           "layer": "KAPI-PENCERE"
         },
@@ -2072,16 +1947,32 @@
           "id": "uC_win_salon",
           "type": "window",
           "wall_id": "ext_bottom",
-          "position_from_start": 16950.0,
+          "position_from_start": 17050.0,
           "width": 1600,
           "layer": "KAPI-PENCERE"
         },
         {
-          "id": "uC_win_oda",
-          "type": "window",
-          "wall_id": "ext_bottom",
-          "position_from_start": 19250.0,
-          "width": 1200,
+          "id": "uC_d_salon_oda",
+          "type": "door",
+          "wall_id": "uC_w_salon_oda",
+          "position_from_start": 2300.0,
+          "width": 800,
+          "layer": "KAPI-PENCERE"
+        },
+        {
+          "id": "uC_d_oda_banyo",
+          "type": "door",
+          "wall_id": "uC_w_oda_banyo",
+          "position_from_start": 3800.0,
+          "width": 700,
+          "layer": "KAPI-PENCERE"
+        },
+        {
+          "id": "uC_d_banyo_hol",
+          "type": "door",
+          "wall_id": "uC_w_banyo_hol",
+          "position_from_start": 800.0,
+          "width": 700,
           "layer": "KAPI-PENCERE"
         },
         {
@@ -2114,30 +2005,30 @@
         {
           "id": "uA_tezgah",
           "polygon": [
-            [0.0, 7600],
-            [600.0, 7600],
-            [600.0, 12700],
-            [0.0, 12700]
+            [0.0, 6600.0],
+            [600.0, 6600.0],
+            [600.0, 9700.0],
+            [0.0, 9700.0]
           ],
           "layer": "MOBILYA"
         },
         {
           "id": "uB_tezgah",
           "polygon": [
-            [7700.0, 7600],
-            [8300.0, 7600],
-            [8300.0, 12700],
-            [7700.0, 12700]
+            [7700.0, 6600.0],
+            [8300.0, 6600.0],
+            [8300.0, 9700.0],
+            [7700.0, 9700.0]
           ],
           "layer": "MOBILYA"
         },
         {
           "id": "uC_tezgah",
           "polygon": [
-            [15400.0, 7000],
-            [16000.0, 7000],
-            [16000.0, 10100],
-            [15400.0, 10100]
+            [19200.0, 500.0],
+            [19800.0, 500.0],
+            [19800.0, 3500.0],
+            [19200.0, 3500.0]
           ],
           "layer": "MOBILYA"
         }
@@ -2153,255 +2044,250 @@
         {
           "id": "elevator",
           "name": "Asansor",
+          "room_type": "asansor",
           "no": "01",
-          "area_m2": 3.0,
+          "area_m2": 6.3,
           "polygon": [
-            [0, 14500],
-            [1000, 14500],
-            [1000, 17500],
-            [0, 17500]
+            [0.0, 14500.0],
+            [2100.0, 14500.0],
+            [2100.0, 17500.0],
+            [0.0, 17500.0]
           ]
         },
         {
           "id": "stair",
           "name": "Merdiven",
+          "room_type": "merdiven",
           "no": "02",
           "area_m2": 12.0,
           "polygon": [
-            [1000, 14500],
-            [5000, 14500],
-            [5000, 17500],
-            [1000, 17500]
+            [2100.0, 14500.0],
+            [6100.0, 14500.0],
+            [6100.0, 17500.0],
+            [2100.0, 17500.0]
           ]
         },
         {
           "id": "band",
           "name": "Koridor",
+          "room_type": "koridor",
           "no": "03",
-          "area_m2": 75.0,
+          "area_m2": 71.7,
           "polygon": [
-            [0, 13000],
-            [20000, 13000],
-            [20000, 17500],
-            [5000, 17500],
-            [5000, 14500],
-            [0, 14500]
+            [0.0, 13000.0],
+            [20000.0, 13000.0],
+            [20000.0, 17500.0],
+            [6100.0, 17500.0],
+            [6100.0, 14500.0],
+            [0.0, 14500.0]
           ]
         },
         {
           "id": "uA_salon",
           "name": "Salon",
-          "no": "04",
-          "area_m2": 29.93,
+          "no": "11",
+          "area_m2": 27.3,
+          "room_type": "salon",
           "polygon": [
-            [0.0, 0],
-            [4100.0, 0],
-            [4100.0, 7300.0],
-            [0.0, 7300.0]
+            [0, 0],
+            [4200, 0],
+            [4200, 6500],
+            [0, 6500]
           ]
         },
         {
           "id": "uA_oda1",
-          "name": "Oda 1",
-          "no": "05",
-          "area_m2": 14.235,
+          "name": "Oda",
+          "no": "12",
+          "area_m2": 22.75,
+          "room_type": "yatak_odasi",
           "polygon": [
-            [4100.0, 0],
-            [6050.0, 0],
-            [6050.0, 7300.0],
-            [4100.0, 7300.0]
-          ]
-        },
-        {
-          "id": "uA_oda2",
-          "name": "Oda 2",
-          "no": "06",
-          "area_m2": 12.045,
-          "polygon": [
-            [6050.0, 0],
-            [7700.0, 0],
-            [7700.0, 7300.0],
-            [6050.0, 7300.0]
+            [4200, 0],
+            [7700, 0],
+            [7700, 6500],
+            [4200, 6500]
           ]
         },
         {
           "id": "uA_mutfak",
           "name": "Mutfak",
-          "no": "07",
-          "area_m2": 9.12,
+          "no": "13",
+          "area_m2": 6.27,
+          "room_type": "mutfak",
           "polygon": [
-            [0.0, 7300.0],
-            [1600.0, 7300.0],
-            [1600.0, 13000.0],
-            [0.0, 13000.0]
+            [0, 6500],
+            [1900, 6500],
+            [1900, 9800],
+            [0, 9800]
           ]
         },
         {
           "id": "uA_banyo",
           "name": "Banyo",
-          "no": "08",
-          "area_m2": 6.84,
+          "no": "14",
+          "area_m2": 3.8,
+          "room_type": "banyo",
           "polygon": [
-            [1600.0, 7300.0],
-            [2800.0, 7300.0],
-            [2800.0, 13000.0],
-            [1600.0, 13000.0]
-          ]
-        },
-        {
-          "id": "uA_hol",
-          "name": "Hol",
-          "no": "09",
-          "area_m2": 22.8,
-          "polygon": [
-            [2800.0, 7300.0],
-            [6800.0, 7300.0],
-            [6800.0, 13000.0],
-            [2800.0, 13000.0]
+            [0, 9800],
+            [1900, 9800],
+            [1900, 11800],
+            [0, 11800]
           ]
         },
         {
           "id": "uA_wc",
           "name": "WC",
-          "no": "10",
-          "area_m2": 5.13,
+          "no": "15",
+          "area_m2": 2.28,
+          "room_type": "wc",
           "polygon": [
-            [6800.0, 7300.0],
-            [7700.0, 7300.0],
-            [7700.0, 13000.0],
-            [6800.0, 13000.0]
+            [0, 11800],
+            [1900, 11800],
+            [1900, 13000],
+            [0, 13000]
+          ]
+        },
+        {
+          "id": "uA_hol",
+          "name": "Hol",
+          "no": "16",
+          "area_m2": 37.7,
+          "room_type": "koridor",
+          "polygon": [
+            [1900, 6500],
+            [7700, 6500],
+            [7700, 13000],
+            [1900, 13000]
           ]
         },
         {
           "id": "uB_salon",
           "name": "Salon",
-          "no": "11",
-          "area_m2": 29.93,
+          "no": "21",
+          "area_m2": 27.3,
+          "room_type": "salon",
           "polygon": [
-            [7700.0, 0],
-            [11800.0, 0],
-            [11800.0, 7300.0],
-            [7700.0, 7300.0]
+            [7700, 0],
+            [11900, 0],
+            [11900, 6500],
+            [7700, 6500]
           ]
         },
         {
           "id": "uB_oda1",
-          "name": "Oda 1",
-          "no": "12",
-          "area_m2": 14.235,
+          "name": "Oda",
+          "no": "22",
+          "area_m2": 22.75,
+          "room_type": "yatak_odasi",
           "polygon": [
-            [11800.0, 0],
-            [13750.0, 0],
-            [13750.0, 7300.0],
-            [11800.0, 7300.0]
-          ]
-        },
-        {
-          "id": "uB_oda2",
-          "name": "Oda 2",
-          "no": "13",
-          "area_m2": 12.045,
-          "polygon": [
-            [13750.0, 0],
-            [15400.0, 0],
-            [15400.0, 7300.0],
-            [13750.0, 7300.0]
+            [11900, 0],
+            [15400, 0],
+            [15400, 6500],
+            [11900, 6500]
           ]
         },
         {
           "id": "uB_mutfak",
           "name": "Mutfak",
-          "no": "14",
-          "area_m2": 9.12,
+          "no": "23",
+          "area_m2": 6.27,
+          "room_type": "mutfak",
           "polygon": [
-            [7700.0, 7300.0],
-            [9300.0, 7300.0],
-            [9300.0, 13000.0],
-            [7700.0, 13000.0]
+            [7700, 6500],
+            [9600, 6500],
+            [9600, 9800],
+            [7700, 9800]
           ]
         },
         {
           "id": "uB_banyo",
           "name": "Banyo",
-          "no": "15",
-          "area_m2": 6.84,
+          "no": "24",
+          "area_m2": 3.8,
+          "room_type": "banyo",
           "polygon": [
-            [9300.0, 7300.0],
-            [10500.0, 7300.0],
-            [10500.0, 13000.0],
-            [9300.0, 13000.0]
-          ]
-        },
-        {
-          "id": "uB_hol",
-          "name": "Hol",
-          "no": "16",
-          "area_m2": 22.8,
-          "polygon": [
-            [10500.0, 7300.0],
-            [14500.0, 7300.0],
-            [14500.0, 13000.0],
-            [10500.0, 13000.0]
+            [7700, 9800],
+            [9600, 9800],
+            [9600, 11800],
+            [7700, 11800]
           ]
         },
         {
           "id": "uB_wc",
           "name": "WC",
-          "no": "17",
-          "area_m2": 5.13,
+          "no": "25",
+          "area_m2": 2.28,
+          "room_type": "wc",
           "polygon": [
-            [14500.0, 7300.0],
-            [15400.0, 7300.0],
-            [15400.0, 13000.0],
-            [14500.0, 13000.0]
+            [7700, 11800],
+            [9600, 11800],
+            [9600, 13000],
+            [7700, 13000]
+          ]
+        },
+        {
+          "id": "uB_hol",
+          "name": "Hol",
+          "no": "26",
+          "area_m2": 37.7,
+          "room_type": "koridor",
+          "polygon": [
+            [9600, 6500],
+            [15400, 6500],
+            [15400, 13000],
+            [9600, 13000]
           ]
         },
         {
           "id": "uC_salon",
           "name": "Salon (Amerikan Mutfak)",
-          "no": "18",
-          "area_m2": 32.24,
+          "no": "31",
+          "area_m2": 19.32,
+          "room_type": "salon",
           "polygon": [
-            [15400.0, 0],
-            [18500.0, 0],
-            [18500.0, 10400.0],
-            [15400.0, 10400.0]
+            [15400, 0],
+            [20000, 0],
+            [20000, 4200],
+            [15400, 4200]
           ]
         },
         {
           "id": "uC_oda",
           "name": "Oda",
-          "no": "19",
-          "area_m2": 15.6,
+          "no": "32",
+          "area_m2": 14.72,
+          "room_type": "yatak_odasi",
           "polygon": [
-            [18500.0, 0],
-            [20000.0, 0],
-            [20000.0, 10400.0],
-            [18500.0, 10400.0]
+            [15400, 4200],
+            [20000, 4200],
+            [20000, 7400],
+            [15400, 7400]
           ]
         },
         {
           "id": "uC_banyo",
           "name": "Banyo",
-          "no": "20",
-          "area_m2": 4.94,
+          "no": "33",
+          "area_m2": 10.12,
+          "room_type": "banyo",
           "polygon": [
-            [15400.0, 10400.0],
-            [17300.0, 10400.0],
-            [17300.0, 13000.0],
-            [15400.0, 13000.0]
+            [15400, 7400],
+            [20000, 7400],
+            [20000, 9600],
+            [15400, 9600]
           ]
         },
         {
           "id": "uC_hol",
           "name": "Hol",
-          "no": "21",
-          "area_m2": 7.02,
+          "no": "34",
+          "area_m2": 15.64,
+          "room_type": "koridor",
           "polygon": [
-            [17300.0, 10400.0],
-            [20000.0, 10400.0],
-            [20000.0, 13000.0],
-            [17300.0, 13000.0]
+            [15400, 9600],
+            [20000, 9600],
+            [20000, 13000],
+            [15400, 13000]
           ]
         }
       ],
@@ -2436,128 +2322,23 @@
         },
         {
           "id": "core_div",
-          "start": [1000, 14500],
-          "end": [1000, 17500],
+          "start": [2100.0, 14500.0],
+          "end": [2100.0, 17500.0],
           "thickness": 200.0,
           "layer": "DUVARLAR"
         },
         {
           "id": "core_bottom",
-          "start": [0, 14500],
-          "end": [5000, 14500],
+          "start": [0.0, 14500.0],
+          "end": [6100.0, 14500.0],
           "thickness": 200.0,
           "layer": "DUVARLAR"
         },
         {
           "id": "core_right",
-          "start": [5000, 14500],
-          "end": [5000, 17500],
+          "start": [6100.0, 14500.0],
+          "end": [6100.0, 17500.0],
           "thickness": 200.0,
-          "layer": "DUVARLAR"
-        },
-        {
-          "id": "uA_w_salon_oda1",
-          "start": [4100.0, 0],
-          "end": [4100.0, 7300.0],
-          "thickness": 100.0,
-          "layer": "DUVARLAR"
-        },
-        {
-          "id": "uA_w_oda1_oda2",
-          "start": [6050.0, 0],
-          "end": [6050.0, 7300.0],
-          "thickness": 100.0,
-          "layer": "DUVARLAR"
-        },
-        {
-          "id": "uA_w_front_back",
-          "start": [0.0, 7300.0],
-          "end": [7700.0, 7300.0],
-          "thickness": 100.0,
-          "layer": "DUVARLAR"
-        },
-        {
-          "id": "uA_w_mutfak_banyo",
-          "start": [1600.0, 7300.0],
-          "end": [1600.0, 13000.0],
-          "thickness": 100.0,
-          "layer": "DUVARLAR"
-        },
-        {
-          "id": "uA_w_banyo_hol",
-          "start": [2800.0, 7300.0],
-          "end": [2800.0, 13000.0],
-          "thickness": 100.0,
-          "layer": "DUVARLAR"
-        },
-        {
-          "id": "uA_w_hol_wc",
-          "start": [6800.0, 7300.0],
-          "end": [6800.0, 13000.0],
-          "thickness": 100.0,
-          "layer": "DUVARLAR"
-        },
-        {
-          "id": "uB_w_salon_oda1",
-          "start": [11800.0, 0],
-          "end": [11800.0, 7300.0],
-          "thickness": 100.0,
-          "layer": "DUVARLAR"
-        },
-        {
-          "id": "uB_w_oda1_oda2",
-          "start": [13750.0, 0],
-          "end": [13750.0, 7300.0],
-          "thickness": 100.0,
-          "layer": "DUVARLAR"
-        },
-        {
-          "id": "uB_w_front_back",
-          "start": [7700.0, 7300.0],
-          "end": [15400.0, 7300.0],
-          "thickness": 100.0,
-          "layer": "DUVARLAR"
-        },
-        {
-          "id": "uB_w_mutfak_banyo",
-          "start": [9300.0, 7300.0],
-          "end": [9300.0, 13000.0],
-          "thickness": 100.0,
-          "layer": "DUVARLAR"
-        },
-        {
-          "id": "uB_w_banyo_hol",
-          "start": [10500.0, 7300.0],
-          "end": [10500.0, 13000.0],
-          "thickness": 100.0,
-          "layer": "DUVARLAR"
-        },
-        {
-          "id": "uB_w_hol_wc",
-          "start": [14500.0, 7300.0],
-          "end": [14500.0, 13000.0],
-          "thickness": 100.0,
-          "layer": "DUVARLAR"
-        },
-        {
-          "id": "uC_w_salon_oda",
-          "start": [18500.0, 0],
-          "end": [18500.0, 10400.0],
-          "thickness": 100.0,
-          "layer": "DUVARLAR"
-        },
-        {
-          "id": "uC_w_front_back",
-          "start": [15400.0, 10400.0],
-          "end": [20000.0, 10400.0],
-          "thickness": 100.0,
-          "layer": "DUVARLAR"
-        },
-        {
-          "id": "uC_w_banyo_hol",
-          "start": [17300.0, 10400.0],
-          "end": [17300.0, 13000.0],
-          "thickness": 100.0,
           "layer": "DUVARLAR"
         },
         {
@@ -2576,9 +2357,100 @@
         },
         {
           "id": "band_south",
-          "start": [0, 13000],
-          "end": [20000.0, 13000],
+          "start": [0.0, 13000.0],
+          "end": [20000.0, 13000.0],
           "thickness": 200.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "uA_w_salon_oda",
+          "start": [4200, 0],
+          "end": [4200, 6500],
+          "thickness": 100.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "uA_w_front_back",
+          "start": [0, 6500],
+          "end": [7700, 6500],
+          "thickness": 100.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "uA_w_wetcolumn_hol",
+          "start": [1900, 6500],
+          "end": [1900, 13000],
+          "thickness": 100.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "uA_w_mutfak_banyo",
+          "start": [0, 9800],
+          "end": [1900, 9800],
+          "thickness": 100.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "uA_w_banyo_wc",
+          "start": [0, 11800],
+          "end": [1900, 11800],
+          "thickness": 100.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "uB_w_salon_oda",
+          "start": [11900, 0],
+          "end": [11900, 6500],
+          "thickness": 100.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "uB_w_front_back",
+          "start": [7700, 6500],
+          "end": [15400, 6500],
+          "thickness": 100.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "uB_w_wetcolumn_hol",
+          "start": [9600, 6500],
+          "end": [9600, 13000],
+          "thickness": 100.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "uB_w_mutfak_banyo",
+          "start": [7700, 9800],
+          "end": [9600, 9800],
+          "thickness": 100.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "uB_w_banyo_wc",
+          "start": [7700, 11800],
+          "end": [9600, 11800],
+          "thickness": 100.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "uC_w_salon_oda",
+          "start": [15400, 4200],
+          "end": [20000, 4200],
+          "thickness": 100.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "uC_w_oda_banyo",
+          "start": [15400, 7400],
+          "end": [20000, 7400],
+          "thickness": 100.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "uC_w_banyo_hol",
+          "start": [15400, 9600],
+          "end": [20000, 9600],
+          "thickness": 100.0,
           "layer": "DUVARLAR"
         }
       ],
@@ -2587,56 +2459,8 @@
           "id": "door_stair",
           "type": "door",
           "wall_id": "core_bottom",
-          "position_from_start": 3000,
+          "position_from_start": 4100.0,
           "width": 900,
-          "layer": "KAPI-PENCERE"
-        },
-        {
-          "id": "uA_d_mutfak_salon",
-          "type": "door",
-          "wall_id": "uA_w_front_back",
-          "position_from_start": 800,
-          "width": 800,
-          "layer": "KAPI-PENCERE"
-        },
-        {
-          "id": "uA_d_hol_salon",
-          "type": "door",
-          "wall_id": "uA_w_front_back",
-          "position_from_start": 3450,
-          "width": 700,
-          "layer": "KAPI-PENCERE"
-        },
-        {
-          "id": "uA_d_hol_oda1",
-          "type": "door",
-          "wall_id": "uA_w_front_back",
-          "position_from_start": 5075,
-          "width": 800,
-          "layer": "KAPI-PENCERE"
-        },
-        {
-          "id": "uA_d_hol_oda2",
-          "type": "door",
-          "wall_id": "uA_w_front_back",
-          "position_from_start": 6425,
-          "width": 600,
-          "layer": "KAPI-PENCERE"
-        },
-        {
-          "id": "uA_d_hol_banyo",
-          "type": "door",
-          "wall_id": "uA_w_banyo_hol",
-          "position_from_start": 2850,
-          "width": 700,
-          "layer": "KAPI-PENCERE"
-        },
-        {
-          "id": "uA_d_hol_wc",
-          "type": "door",
-          "wall_id": "uA_w_hol_wc",
-          "position_from_start": 2850,
-          "width": 700,
           "layer": "KAPI-PENCERE"
         },
         {
@@ -2656,58 +2480,42 @@
           "layer": "KAPI-PENCERE"
         },
         {
-          "id": "uA_win_oda2",
-          "type": "window",
-          "wall_id": "ext_bottom",
-          "position_from_start": 6875.0,
-          "width": 1200,
-          "layer": "KAPI-PENCERE"
-        },
-        {
-          "id": "uB_d_mutfak_salon",
+          "id": "uA_d_salon_hol",
           "type": "door",
-          "wall_id": "uB_w_front_back",
-          "position_from_start": 800,
-          "width": 800,
-          "layer": "KAPI-PENCERE"
-        },
-        {
-          "id": "uB_d_hol_salon",
-          "type": "door",
-          "wall_id": "uB_w_front_back",
-          "position_from_start": 3450,
+          "wall_id": "uA_w_front_back",
+          "position_from_start": 3000.0,
           "width": 700,
           "layer": "KAPI-PENCERE"
         },
         {
-          "id": "uB_d_hol_oda1",
+          "id": "uA_d_oda_hol",
           "type": "door",
-          "wall_id": "uB_w_front_back",
-          "position_from_start": 5075,
+          "wall_id": "uA_w_front_back",
+          "position_from_start": 5500.0,
           "width": 800,
           "layer": "KAPI-PENCERE"
         },
         {
-          "id": "uB_d_hol_oda2",
+          "id": "uA_d_hol_mutfak",
           "type": "door",
-          "wall_id": "uB_w_front_back",
-          "position_from_start": 6425,
-          "width": 600,
+          "wall_id": "uA_w_wetcolumn_hol",
+          "position_from_start": 1500.0,
+          "width": 800,
           "layer": "KAPI-PENCERE"
         },
         {
-          "id": "uB_d_hol_banyo",
+          "id": "uA_d_hol_banyo",
           "type": "door",
-          "wall_id": "uB_w_banyo_hol",
-          "position_from_start": 2850,
+          "wall_id": "uA_w_wetcolumn_hol",
+          "position_from_start": 4200.0,
           "width": 700,
           "layer": "KAPI-PENCERE"
         },
         {
-          "id": "uB_d_hol_wc",
+          "id": "uA_d_hol_wc",
           "type": "door",
-          "wall_id": "uB_w_hol_wc",
-          "position_from_start": 2850,
+          "wall_id": "uA_w_wetcolumn_hol",
+          "position_from_start": 5900.0,
           "width": 700,
           "layer": "KAPI-PENCERE"
         },
@@ -2728,34 +2536,42 @@
           "layer": "KAPI-PENCERE"
         },
         {
-          "id": "uB_win_oda2",
-          "type": "window",
-          "wall_id": "ext_bottom",
-          "position_from_start": 14575.0,
-          "width": 1200,
-          "layer": "KAPI-PENCERE"
-        },
-        {
-          "id": "uC_d_hol_salon",
+          "id": "uB_d_salon_hol",
           "type": "door",
-          "wall_id": "uC_w_front_back",
-          "position_from_start": 2500,
-          "width": 800,
-          "layer": "KAPI-PENCERE"
-        },
-        {
-          "id": "uC_d_hol_oda",
-          "type": "door",
-          "wall_id": "uC_w_front_back",
-          "position_from_start": 3850,
+          "wall_id": "uB_w_front_back",
+          "position_from_start": 3000.0,
           "width": 700,
           "layer": "KAPI-PENCERE"
         },
         {
-          "id": "uC_d_hol_banyo",
+          "id": "uB_d_oda_hol",
           "type": "door",
-          "wall_id": "uC_w_banyo_hol",
-          "position_from_start": 1300,
+          "wall_id": "uB_w_front_back",
+          "position_from_start": 5500.0,
+          "width": 800,
+          "layer": "KAPI-PENCERE"
+        },
+        {
+          "id": "uB_d_hol_mutfak",
+          "type": "door",
+          "wall_id": "uB_w_wetcolumn_hol",
+          "position_from_start": 1500.0,
+          "width": 800,
+          "layer": "KAPI-PENCERE"
+        },
+        {
+          "id": "uB_d_hol_banyo",
+          "type": "door",
+          "wall_id": "uB_w_wetcolumn_hol",
+          "position_from_start": 4200.0,
+          "width": 700,
+          "layer": "KAPI-PENCERE"
+        },
+        {
+          "id": "uB_d_hol_wc",
+          "type": "door",
+          "wall_id": "uB_w_wetcolumn_hol",
+          "position_from_start": 5900.0,
           "width": 700,
           "layer": "KAPI-PENCERE"
         },
@@ -2763,16 +2579,32 @@
           "id": "uC_win_salon",
           "type": "window",
           "wall_id": "ext_bottom",
-          "position_from_start": 16950.0,
+          "position_from_start": 17050.0,
           "width": 1600,
           "layer": "KAPI-PENCERE"
         },
         {
-          "id": "uC_win_oda",
-          "type": "window",
-          "wall_id": "ext_bottom",
-          "position_from_start": 19250.0,
-          "width": 1200,
+          "id": "uC_d_salon_oda",
+          "type": "door",
+          "wall_id": "uC_w_salon_oda",
+          "position_from_start": 2300.0,
+          "width": 800,
+          "layer": "KAPI-PENCERE"
+        },
+        {
+          "id": "uC_d_oda_banyo",
+          "type": "door",
+          "wall_id": "uC_w_oda_banyo",
+          "position_from_start": 3800.0,
+          "width": 700,
+          "layer": "KAPI-PENCERE"
+        },
+        {
+          "id": "uC_d_banyo_hol",
+          "type": "door",
+          "wall_id": "uC_w_banyo_hol",
+          "position_from_start": 800.0,
+          "width": 700,
           "layer": "KAPI-PENCERE"
         },
         {
@@ -2805,30 +2637,30 @@
         {
           "id": "uA_tezgah",
           "polygon": [
-            [0.0, 7600],
-            [600.0, 7600],
-            [600.0, 12700],
-            [0.0, 12700]
+            [0.0, 6600.0],
+            [600.0, 6600.0],
+            [600.0, 9700.0],
+            [0.0, 9700.0]
           ],
           "layer": "MOBILYA"
         },
         {
           "id": "uB_tezgah",
           "polygon": [
-            [7700.0, 7600],
-            [8300.0, 7600],
-            [8300.0, 12700],
-            [7700.0, 12700]
+            [7700.0, 6600.0],
+            [8300.0, 6600.0],
+            [8300.0, 9700.0],
+            [7700.0, 9700.0]
           ],
           "layer": "MOBILYA"
         },
         {
           "id": "uC_tezgah",
           "polygon": [
-            [15400.0, 7000],
-            [16000.0, 7000],
-            [16000.0, 10100],
-            [15400.0, 10100]
+            [19200.0, 500.0],
+            [19800.0, 500.0],
+            [19800.0, 3500.0],
+            [19200.0, 3500.0]
           ],
           "layer": "MOBILYA"
         }
@@ -2844,255 +2676,250 @@
         {
           "id": "elevator",
           "name": "Asansor",
+          "room_type": "asansor",
           "no": "01",
-          "area_m2": 3.0,
+          "area_m2": 6.3,
           "polygon": [
-            [0, 14500],
-            [1000, 14500],
-            [1000, 17500],
-            [0, 17500]
+            [0.0, 14500.0],
+            [2100.0, 14500.0],
+            [2100.0, 17500.0],
+            [0.0, 17500.0]
           ]
         },
         {
           "id": "stair",
           "name": "Merdiven",
+          "room_type": "merdiven",
           "no": "02",
           "area_m2": 12.0,
           "polygon": [
-            [1000, 14500],
-            [5000, 14500],
-            [5000, 17500],
-            [1000, 17500]
+            [2100.0, 14500.0],
+            [6100.0, 14500.0],
+            [6100.0, 17500.0],
+            [2100.0, 17500.0]
           ]
         },
         {
           "id": "band",
           "name": "Koridor",
+          "room_type": "koridor",
           "no": "03",
-          "area_m2": 75.0,
+          "area_m2": 71.7,
           "polygon": [
-            [0, 13000],
-            [20000, 13000],
-            [20000, 17500],
-            [5000, 17500],
-            [5000, 14500],
-            [0, 14500]
+            [0.0, 13000.0],
+            [20000.0, 13000.0],
+            [20000.0, 17500.0],
+            [6100.0, 17500.0],
+            [6100.0, 14500.0],
+            [0.0, 14500.0]
           ]
         },
         {
           "id": "uA_salon",
           "name": "Salon",
-          "no": "04",
-          "area_m2": 29.93,
+          "no": "11",
+          "area_m2": 27.3,
+          "room_type": "salon",
           "polygon": [
-            [0.0, 0],
-            [4100.0, 0],
-            [4100.0, 7300.0],
-            [0.0, 7300.0]
+            [0, 0],
+            [4200, 0],
+            [4200, 6500],
+            [0, 6500]
           ]
         },
         {
           "id": "uA_oda1",
-          "name": "Oda 1",
-          "no": "05",
-          "area_m2": 14.235,
+          "name": "Oda",
+          "no": "12",
+          "area_m2": 22.75,
+          "room_type": "yatak_odasi",
           "polygon": [
-            [4100.0, 0],
-            [6050.0, 0],
-            [6050.0, 7300.0],
-            [4100.0, 7300.0]
-          ]
-        },
-        {
-          "id": "uA_oda2",
-          "name": "Oda 2",
-          "no": "06",
-          "area_m2": 12.045,
-          "polygon": [
-            [6050.0, 0],
-            [7700.0, 0],
-            [7700.0, 7300.0],
-            [6050.0, 7300.0]
+            [4200, 0],
+            [7700, 0],
+            [7700, 6500],
+            [4200, 6500]
           ]
         },
         {
           "id": "uA_mutfak",
           "name": "Mutfak",
-          "no": "07",
-          "area_m2": 9.12,
+          "no": "13",
+          "area_m2": 6.27,
+          "room_type": "mutfak",
           "polygon": [
-            [0.0, 7300.0],
-            [1600.0, 7300.0],
-            [1600.0, 13000.0],
-            [0.0, 13000.0]
+            [0, 6500],
+            [1900, 6500],
+            [1900, 9800],
+            [0, 9800]
           ]
         },
         {
           "id": "uA_banyo",
           "name": "Banyo",
-          "no": "08",
-          "area_m2": 6.84,
+          "no": "14",
+          "area_m2": 3.8,
+          "room_type": "banyo",
           "polygon": [
-            [1600.0, 7300.0],
-            [2800.0, 7300.0],
-            [2800.0, 13000.0],
-            [1600.0, 13000.0]
-          ]
-        },
-        {
-          "id": "uA_hol",
-          "name": "Hol",
-          "no": "09",
-          "area_m2": 22.8,
-          "polygon": [
-            [2800.0, 7300.0],
-            [6800.0, 7300.0],
-            [6800.0, 13000.0],
-            [2800.0, 13000.0]
+            [0, 9800],
+            [1900, 9800],
+            [1900, 11800],
+            [0, 11800]
           ]
         },
         {
           "id": "uA_wc",
           "name": "WC",
-          "no": "10",
-          "area_m2": 5.13,
+          "no": "15",
+          "area_m2": 2.28,
+          "room_type": "wc",
           "polygon": [
-            [6800.0, 7300.0],
-            [7700.0, 7300.0],
-            [7700.0, 13000.0],
-            [6800.0, 13000.0]
+            [0, 11800],
+            [1900, 11800],
+            [1900, 13000],
+            [0, 13000]
+          ]
+        },
+        {
+          "id": "uA_hol",
+          "name": "Hol",
+          "no": "16",
+          "area_m2": 37.7,
+          "room_type": "koridor",
+          "polygon": [
+            [1900, 6500],
+            [7700, 6500],
+            [7700, 13000],
+            [1900, 13000]
           ]
         },
         {
           "id": "uB_salon",
           "name": "Salon",
-          "no": "11",
-          "area_m2": 29.93,
+          "no": "21",
+          "area_m2": 27.3,
+          "room_type": "salon",
           "polygon": [
-            [7700.0, 0],
-            [11800.0, 0],
-            [11800.0, 7300.0],
-            [7700.0, 7300.0]
+            [7700, 0],
+            [11900, 0],
+            [11900, 6500],
+            [7700, 6500]
           ]
         },
         {
           "id": "uB_oda1",
-          "name": "Oda 1",
-          "no": "12",
-          "area_m2": 14.235,
+          "name": "Oda",
+          "no": "22",
+          "area_m2": 22.75,
+          "room_type": "yatak_odasi",
           "polygon": [
-            [11800.0, 0],
-            [13750.0, 0],
-            [13750.0, 7300.0],
-            [11800.0, 7300.0]
-          ]
-        },
-        {
-          "id": "uB_oda2",
-          "name": "Oda 2",
-          "no": "13",
-          "area_m2": 12.045,
-          "polygon": [
-            [13750.0, 0],
-            [15400.0, 0],
-            [15400.0, 7300.0],
-            [13750.0, 7300.0]
+            [11900, 0],
+            [15400, 0],
+            [15400, 6500],
+            [11900, 6500]
           ]
         },
         {
           "id": "uB_mutfak",
           "name": "Mutfak",
-          "no": "14",
-          "area_m2": 9.12,
+          "no": "23",
+          "area_m2": 6.27,
+          "room_type": "mutfak",
           "polygon": [
-            [7700.0, 7300.0],
-            [9300.0, 7300.0],
-            [9300.0, 13000.0],
-            [7700.0, 13000.0]
+            [7700, 6500],
+            [9600, 6500],
+            [9600, 9800],
+            [7700, 9800]
           ]
         },
         {
           "id": "uB_banyo",
           "name": "Banyo",
-          "no": "15",
-          "area_m2": 6.84,
+          "no": "24",
+          "area_m2": 3.8,
+          "room_type": "banyo",
           "polygon": [
-            [9300.0, 7300.0],
-            [10500.0, 7300.0],
-            [10500.0, 13000.0],
-            [9300.0, 13000.0]
-          ]
-        },
-        {
-          "id": "uB_hol",
-          "name": "Hol",
-          "no": "16",
-          "area_m2": 22.8,
-          "polygon": [
-            [10500.0, 7300.0],
-            [14500.0, 7300.0],
-            [14500.0, 13000.0],
-            [10500.0, 13000.0]
+            [7700, 9800],
+            [9600, 9800],
+            [9600, 11800],
+            [7700, 11800]
           ]
         },
         {
           "id": "uB_wc",
           "name": "WC",
-          "no": "17",
-          "area_m2": 5.13,
+          "no": "25",
+          "area_m2": 2.28,
+          "room_type": "wc",
           "polygon": [
-            [14500.0, 7300.0],
-            [15400.0, 7300.0],
-            [15400.0, 13000.0],
-            [14500.0, 13000.0]
+            [7700, 11800],
+            [9600, 11800],
+            [9600, 13000],
+            [7700, 13000]
+          ]
+        },
+        {
+          "id": "uB_hol",
+          "name": "Hol",
+          "no": "26",
+          "area_m2": 37.7,
+          "room_type": "koridor",
+          "polygon": [
+            [9600, 6500],
+            [15400, 6500],
+            [15400, 13000],
+            [9600, 13000]
           ]
         },
         {
           "id": "uC_salon",
           "name": "Salon (Amerikan Mutfak)",
-          "no": "18",
-          "area_m2": 32.24,
+          "no": "31",
+          "area_m2": 19.32,
+          "room_type": "salon",
           "polygon": [
-            [15400.0, 0],
-            [18500.0, 0],
-            [18500.0, 10400.0],
-            [15400.0, 10400.0]
+            [15400, 0],
+            [20000, 0],
+            [20000, 4200],
+            [15400, 4200]
           ]
         },
         {
           "id": "uC_oda",
           "name": "Oda",
-          "no": "19",
-          "area_m2": 15.6,
+          "no": "32",
+          "area_m2": 14.72,
+          "room_type": "yatak_odasi",
           "polygon": [
-            [18500.0, 0],
-            [20000.0, 0],
-            [20000.0, 10400.0],
-            [18500.0, 10400.0]
+            [15400, 4200],
+            [20000, 4200],
+            [20000, 7400],
+            [15400, 7400]
           ]
         },
         {
           "id": "uC_banyo",
           "name": "Banyo",
-          "no": "20",
-          "area_m2": 4.94,
+          "no": "33",
+          "area_m2": 10.12,
+          "room_type": "banyo",
           "polygon": [
-            [15400.0, 10400.0],
-            [17300.0, 10400.0],
-            [17300.0, 13000.0],
-            [15400.0, 13000.0]
+            [15400, 7400],
+            [20000, 7400],
+            [20000, 9600],
+            [15400, 9600]
           ]
         },
         {
           "id": "uC_hol",
           "name": "Hol",
-          "no": "21",
-          "area_m2": 7.02,
+          "no": "34",
+          "area_m2": 15.64,
+          "room_type": "koridor",
           "polygon": [
-            [17300.0, 10400.0],
-            [20000.0, 10400.0],
-            [20000.0, 13000.0],
-            [17300.0, 13000.0]
+            [15400, 9600],
+            [20000, 9600],
+            [20000, 13000],
+            [15400, 13000]
           ]
         }
       ],
@@ -3127,128 +2954,23 @@
         },
         {
           "id": "core_div",
-          "start": [1000, 14500],
-          "end": [1000, 17500],
+          "start": [2100.0, 14500.0],
+          "end": [2100.0, 17500.0],
           "thickness": 200.0,
           "layer": "DUVARLAR"
         },
         {
           "id": "core_bottom",
-          "start": [0, 14500],
-          "end": [5000, 14500],
+          "start": [0.0, 14500.0],
+          "end": [6100.0, 14500.0],
           "thickness": 200.0,
           "layer": "DUVARLAR"
         },
         {
           "id": "core_right",
-          "start": [5000, 14500],
-          "end": [5000, 17500],
+          "start": [6100.0, 14500.0],
+          "end": [6100.0, 17500.0],
           "thickness": 200.0,
-          "layer": "DUVARLAR"
-        },
-        {
-          "id": "uA_w_salon_oda1",
-          "start": [4100.0, 0],
-          "end": [4100.0, 7300.0],
-          "thickness": 100.0,
-          "layer": "DUVARLAR"
-        },
-        {
-          "id": "uA_w_oda1_oda2",
-          "start": [6050.0, 0],
-          "end": [6050.0, 7300.0],
-          "thickness": 100.0,
-          "layer": "DUVARLAR"
-        },
-        {
-          "id": "uA_w_front_back",
-          "start": [0.0, 7300.0],
-          "end": [7700.0, 7300.0],
-          "thickness": 100.0,
-          "layer": "DUVARLAR"
-        },
-        {
-          "id": "uA_w_mutfak_banyo",
-          "start": [1600.0, 7300.0],
-          "end": [1600.0, 13000.0],
-          "thickness": 100.0,
-          "layer": "DUVARLAR"
-        },
-        {
-          "id": "uA_w_banyo_hol",
-          "start": [2800.0, 7300.0],
-          "end": [2800.0, 13000.0],
-          "thickness": 100.0,
-          "layer": "DUVARLAR"
-        },
-        {
-          "id": "uA_w_hol_wc",
-          "start": [6800.0, 7300.0],
-          "end": [6800.0, 13000.0],
-          "thickness": 100.0,
-          "layer": "DUVARLAR"
-        },
-        {
-          "id": "uB_w_salon_oda1",
-          "start": [11800.0, 0],
-          "end": [11800.0, 7300.0],
-          "thickness": 100.0,
-          "layer": "DUVARLAR"
-        },
-        {
-          "id": "uB_w_oda1_oda2",
-          "start": [13750.0, 0],
-          "end": [13750.0, 7300.0],
-          "thickness": 100.0,
-          "layer": "DUVARLAR"
-        },
-        {
-          "id": "uB_w_front_back",
-          "start": [7700.0, 7300.0],
-          "end": [15400.0, 7300.0],
-          "thickness": 100.0,
-          "layer": "DUVARLAR"
-        },
-        {
-          "id": "uB_w_mutfak_banyo",
-          "start": [9300.0, 7300.0],
-          "end": [9300.0, 13000.0],
-          "thickness": 100.0,
-          "layer": "DUVARLAR"
-        },
-        {
-          "id": "uB_w_banyo_hol",
-          "start": [10500.0, 7300.0],
-          "end": [10500.0, 13000.0],
-          "thickness": 100.0,
-          "layer": "DUVARLAR"
-        },
-        {
-          "id": "uB_w_hol_wc",
-          "start": [14500.0, 7300.0],
-          "end": [14500.0, 13000.0],
-          "thickness": 100.0,
-          "layer": "DUVARLAR"
-        },
-        {
-          "id": "uC_w_salon_oda",
-          "start": [18500.0, 0],
-          "end": [18500.0, 10400.0],
-          "thickness": 100.0,
-          "layer": "DUVARLAR"
-        },
-        {
-          "id": "uC_w_front_back",
-          "start": [15400.0, 10400.0],
-          "end": [20000.0, 10400.0],
-          "thickness": 100.0,
-          "layer": "DUVARLAR"
-        },
-        {
-          "id": "uC_w_banyo_hol",
-          "start": [17300.0, 10400.0],
-          "end": [17300.0, 13000.0],
-          "thickness": 100.0,
           "layer": "DUVARLAR"
         },
         {
@@ -3267,9 +2989,100 @@
         },
         {
           "id": "band_south",
-          "start": [0, 13000],
-          "end": [20000.0, 13000],
+          "start": [0.0, 13000.0],
+          "end": [20000.0, 13000.0],
           "thickness": 200.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "uA_w_salon_oda",
+          "start": [4200, 0],
+          "end": [4200, 6500],
+          "thickness": 100.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "uA_w_front_back",
+          "start": [0, 6500],
+          "end": [7700, 6500],
+          "thickness": 100.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "uA_w_wetcolumn_hol",
+          "start": [1900, 6500],
+          "end": [1900, 13000],
+          "thickness": 100.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "uA_w_mutfak_banyo",
+          "start": [0, 9800],
+          "end": [1900, 9800],
+          "thickness": 100.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "uA_w_banyo_wc",
+          "start": [0, 11800],
+          "end": [1900, 11800],
+          "thickness": 100.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "uB_w_salon_oda",
+          "start": [11900, 0],
+          "end": [11900, 6500],
+          "thickness": 100.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "uB_w_front_back",
+          "start": [7700, 6500],
+          "end": [15400, 6500],
+          "thickness": 100.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "uB_w_wetcolumn_hol",
+          "start": [9600, 6500],
+          "end": [9600, 13000],
+          "thickness": 100.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "uB_w_mutfak_banyo",
+          "start": [7700, 9800],
+          "end": [9600, 9800],
+          "thickness": 100.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "uB_w_banyo_wc",
+          "start": [7700, 11800],
+          "end": [9600, 11800],
+          "thickness": 100.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "uC_w_salon_oda",
+          "start": [15400, 4200],
+          "end": [20000, 4200],
+          "thickness": 100.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "uC_w_oda_banyo",
+          "start": [15400, 7400],
+          "end": [20000, 7400],
+          "thickness": 100.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "uC_w_banyo_hol",
+          "start": [15400, 9600],
+          "end": [20000, 9600],
+          "thickness": 100.0,
           "layer": "DUVARLAR"
         }
       ],
@@ -3278,56 +3091,8 @@
           "id": "door_stair",
           "type": "door",
           "wall_id": "core_bottom",
-          "position_from_start": 3000,
+          "position_from_start": 4100.0,
           "width": 900,
-          "layer": "KAPI-PENCERE"
-        },
-        {
-          "id": "uA_d_mutfak_salon",
-          "type": "door",
-          "wall_id": "uA_w_front_back",
-          "position_from_start": 800,
-          "width": 800,
-          "layer": "KAPI-PENCERE"
-        },
-        {
-          "id": "uA_d_hol_salon",
-          "type": "door",
-          "wall_id": "uA_w_front_back",
-          "position_from_start": 3450,
-          "width": 700,
-          "layer": "KAPI-PENCERE"
-        },
-        {
-          "id": "uA_d_hol_oda1",
-          "type": "door",
-          "wall_id": "uA_w_front_back",
-          "position_from_start": 5075,
-          "width": 800,
-          "layer": "KAPI-PENCERE"
-        },
-        {
-          "id": "uA_d_hol_oda2",
-          "type": "door",
-          "wall_id": "uA_w_front_back",
-          "position_from_start": 6425,
-          "width": 600,
-          "layer": "KAPI-PENCERE"
-        },
-        {
-          "id": "uA_d_hol_banyo",
-          "type": "door",
-          "wall_id": "uA_w_banyo_hol",
-          "position_from_start": 2850,
-          "width": 700,
-          "layer": "KAPI-PENCERE"
-        },
-        {
-          "id": "uA_d_hol_wc",
-          "type": "door",
-          "wall_id": "uA_w_hol_wc",
-          "position_from_start": 2850,
-          "width": 700,
           "layer": "KAPI-PENCERE"
         },
         {
@@ -3347,58 +3112,42 @@
           "layer": "KAPI-PENCERE"
         },
         {
-          "id": "uA_win_oda2",
-          "type": "window",
-          "wall_id": "ext_bottom",
-          "position_from_start": 6875.0,
-          "width": 1200,
-          "layer": "KAPI-PENCERE"
-        },
-        {
-          "id": "uB_d_mutfak_salon",
+          "id": "uA_d_salon_hol",
           "type": "door",
-          "wall_id": "uB_w_front_back",
-          "position_from_start": 800,
-          "width": 800,
-          "layer": "KAPI-PENCERE"
-        },
-        {
-          "id": "uB_d_hol_salon",
-          "type": "door",
-          "wall_id": "uB_w_front_back",
-          "position_from_start": 3450,
+          "wall_id": "uA_w_front_back",
+          "position_from_start": 3000.0,
           "width": 700,
           "layer": "KAPI-PENCERE"
         },
         {
-          "id": "uB_d_hol_oda1",
+          "id": "uA_d_oda_hol",
           "type": "door",
-          "wall_id": "uB_w_front_back",
-          "position_from_start": 5075,
+          "wall_id": "uA_w_front_back",
+          "position_from_start": 5500.0,
           "width": 800,
           "layer": "KAPI-PENCERE"
         },
         {
-          "id": "uB_d_hol_oda2",
+          "id": "uA_d_hol_mutfak",
           "type": "door",
-          "wall_id": "uB_w_front_back",
-          "position_from_start": 6425,
-          "width": 600,
+          "wall_id": "uA_w_wetcolumn_hol",
+          "position_from_start": 1500.0,
+          "width": 800,
           "layer": "KAPI-PENCERE"
         },
         {
-          "id": "uB_d_hol_banyo",
+          "id": "uA_d_hol_banyo",
           "type": "door",
-          "wall_id": "uB_w_banyo_hol",
-          "position_from_start": 2850,
+          "wall_id": "uA_w_wetcolumn_hol",
+          "position_from_start": 4200.0,
           "width": 700,
           "layer": "KAPI-PENCERE"
         },
         {
-          "id": "uB_d_hol_wc",
+          "id": "uA_d_hol_wc",
           "type": "door",
-          "wall_id": "uB_w_hol_wc",
-          "position_from_start": 2850,
+          "wall_id": "uA_w_wetcolumn_hol",
+          "position_from_start": 5900.0,
           "width": 700,
           "layer": "KAPI-PENCERE"
         },
@@ -3419,34 +3168,42 @@
           "layer": "KAPI-PENCERE"
         },
         {
-          "id": "uB_win_oda2",
-          "type": "window",
-          "wall_id": "ext_bottom",
-          "position_from_start": 14575.0,
-          "width": 1200,
-          "layer": "KAPI-PENCERE"
-        },
-        {
-          "id": "uC_d_hol_salon",
+          "id": "uB_d_salon_hol",
           "type": "door",
-          "wall_id": "uC_w_front_back",
-          "position_from_start": 2500,
-          "width": 800,
-          "layer": "KAPI-PENCERE"
-        },
-        {
-          "id": "uC_d_hol_oda",
-          "type": "door",
-          "wall_id": "uC_w_front_back",
-          "position_from_start": 3850,
+          "wall_id": "uB_w_front_back",
+          "position_from_start": 3000.0,
           "width": 700,
           "layer": "KAPI-PENCERE"
         },
         {
-          "id": "uC_d_hol_banyo",
+          "id": "uB_d_oda_hol",
           "type": "door",
-          "wall_id": "uC_w_banyo_hol",
-          "position_from_start": 1300,
+          "wall_id": "uB_w_front_back",
+          "position_from_start": 5500.0,
+          "width": 800,
+          "layer": "KAPI-PENCERE"
+        },
+        {
+          "id": "uB_d_hol_mutfak",
+          "type": "door",
+          "wall_id": "uB_w_wetcolumn_hol",
+          "position_from_start": 1500.0,
+          "width": 800,
+          "layer": "KAPI-PENCERE"
+        },
+        {
+          "id": "uB_d_hol_banyo",
+          "type": "door",
+          "wall_id": "uB_w_wetcolumn_hol",
+          "position_from_start": 4200.0,
+          "width": 700,
+          "layer": "KAPI-PENCERE"
+        },
+        {
+          "id": "uB_d_hol_wc",
+          "type": "door",
+          "wall_id": "uB_w_wetcolumn_hol",
+          "position_from_start": 5900.0,
           "width": 700,
           "layer": "KAPI-PENCERE"
         },
@@ -3454,16 +3211,32 @@
           "id": "uC_win_salon",
           "type": "window",
           "wall_id": "ext_bottom",
-          "position_from_start": 16950.0,
+          "position_from_start": 17050.0,
           "width": 1600,
           "layer": "KAPI-PENCERE"
         },
         {
-          "id": "uC_win_oda",
-          "type": "window",
-          "wall_id": "ext_bottom",
-          "position_from_start": 19250.0,
-          "width": 1200,
+          "id": "uC_d_salon_oda",
+          "type": "door",
+          "wall_id": "uC_w_salon_oda",
+          "position_from_start": 2300.0,
+          "width": 800,
+          "layer": "KAPI-PENCERE"
+        },
+        {
+          "id": "uC_d_oda_banyo",
+          "type": "door",
+          "wall_id": "uC_w_oda_banyo",
+          "position_from_start": 3800.0,
+          "width": 700,
+          "layer": "KAPI-PENCERE"
+        },
+        {
+          "id": "uC_d_banyo_hol",
+          "type": "door",
+          "wall_id": "uC_w_banyo_hol",
+          "position_from_start": 800.0,
+          "width": 700,
           "layer": "KAPI-PENCERE"
         },
         {
@@ -3496,30 +3269,30 @@
         {
           "id": "uA_tezgah",
           "polygon": [
-            [0.0, 7600],
-            [600.0, 7600],
-            [600.0, 12700],
-            [0.0, 12700]
+            [0.0, 6600.0],
+            [600.0, 6600.0],
+            [600.0, 9700.0],
+            [0.0, 9700.0]
           ],
           "layer": "MOBILYA"
         },
         {
           "id": "uB_tezgah",
           "polygon": [
-            [7700.0, 7600],
-            [8300.0, 7600],
-            [8300.0, 12700],
-            [7700.0, 12700]
+            [7700.0, 6600.0],
+            [8300.0, 6600.0],
+            [8300.0, 9700.0],
+            [7700.0, 9700.0]
           ],
           "layer": "MOBILYA"
         },
         {
           "id": "uC_tezgah",
           "polygon": [
-            [15400.0, 7000],
-            [16000.0, 7000],
-            [16000.0, 10100],
-            [15400.0, 10100]
+            [19200.0, 500.0],
+            [19800.0, 500.0],
+            [19800.0, 3500.0],
+            [19200.0, 3500.0]
           ],
           "layer": "MOBILYA"
         }
@@ -3535,255 +3308,250 @@
         {
           "id": "elevator",
           "name": "Asansor",
+          "room_type": "asansor",
           "no": "01",
-          "area_m2": 3.0,
+          "area_m2": 6.3,
           "polygon": [
-            [0, 14500],
-            [1000, 14500],
-            [1000, 17500],
-            [0, 17500]
+            [0.0, 14500.0],
+            [2100.0, 14500.0],
+            [2100.0, 17500.0],
+            [0.0, 17500.0]
           ]
         },
         {
           "id": "stair",
           "name": "Merdiven",
+          "room_type": "merdiven",
           "no": "02",
           "area_m2": 12.0,
           "polygon": [
-            [1000, 14500],
-            [5000, 14500],
-            [5000, 17500],
-            [1000, 17500]
+            [2100.0, 14500.0],
+            [6100.0, 14500.0],
+            [6100.0, 17500.0],
+            [2100.0, 17500.0]
           ]
         },
         {
           "id": "band",
           "name": "Koridor",
+          "room_type": "koridor",
           "no": "03",
-          "area_m2": 75.0,
+          "area_m2": 71.7,
           "polygon": [
-            [0, 13000],
-            [20000, 13000],
-            [20000, 17500],
-            [5000, 17500],
-            [5000, 14500],
-            [0, 14500]
+            [0.0, 13000.0],
+            [20000.0, 13000.0],
+            [20000.0, 17500.0],
+            [6100.0, 17500.0],
+            [6100.0, 14500.0],
+            [0.0, 14500.0]
           ]
         },
         {
           "id": "uA_salon",
           "name": "Salon",
-          "no": "04",
-          "area_m2": 29.93,
+          "no": "11",
+          "area_m2": 27.3,
+          "room_type": "salon",
           "polygon": [
-            [0.0, 0],
-            [4100.0, 0],
-            [4100.0, 7300.0],
-            [0.0, 7300.0]
+            [0, 0],
+            [4200, 0],
+            [4200, 6500],
+            [0, 6500]
           ]
         },
         {
           "id": "uA_oda1",
-          "name": "Oda 1",
-          "no": "05",
-          "area_m2": 14.235,
+          "name": "Oda",
+          "no": "12",
+          "area_m2": 22.75,
+          "room_type": "yatak_odasi",
           "polygon": [
-            [4100.0, 0],
-            [6050.0, 0],
-            [6050.0, 7300.0],
-            [4100.0, 7300.0]
-          ]
-        },
-        {
-          "id": "uA_oda2",
-          "name": "Oda 2",
-          "no": "06",
-          "area_m2": 12.045,
-          "polygon": [
-            [6050.0, 0],
-            [7700.0, 0],
-            [7700.0, 7300.0],
-            [6050.0, 7300.0]
+            [4200, 0],
+            [7700, 0],
+            [7700, 6500],
+            [4200, 6500]
           ]
         },
         {
           "id": "uA_mutfak",
           "name": "Mutfak",
-          "no": "07",
-          "area_m2": 9.12,
+          "no": "13",
+          "area_m2": 6.27,
+          "room_type": "mutfak",
           "polygon": [
-            [0.0, 7300.0],
-            [1600.0, 7300.0],
-            [1600.0, 13000.0],
-            [0.0, 13000.0]
+            [0, 6500],
+            [1900, 6500],
+            [1900, 9800],
+            [0, 9800]
           ]
         },
         {
           "id": "uA_banyo",
           "name": "Banyo",
-          "no": "08",
-          "area_m2": 6.84,
+          "no": "14",
+          "area_m2": 3.8,
+          "room_type": "banyo",
           "polygon": [
-            [1600.0, 7300.0],
-            [2800.0, 7300.0],
-            [2800.0, 13000.0],
-            [1600.0, 13000.0]
-          ]
-        },
-        {
-          "id": "uA_hol",
-          "name": "Hol",
-          "no": "09",
-          "area_m2": 22.8,
-          "polygon": [
-            [2800.0, 7300.0],
-            [6800.0, 7300.0],
-            [6800.0, 13000.0],
-            [2800.0, 13000.0]
+            [0, 9800],
+            [1900, 9800],
+            [1900, 11800],
+            [0, 11800]
           ]
         },
         {
           "id": "uA_wc",
           "name": "WC",
-          "no": "10",
-          "area_m2": 5.13,
+          "no": "15",
+          "area_m2": 2.28,
+          "room_type": "wc",
           "polygon": [
-            [6800.0, 7300.0],
-            [7700.0, 7300.0],
-            [7700.0, 13000.0],
-            [6800.0, 13000.0]
+            [0, 11800],
+            [1900, 11800],
+            [1900, 13000],
+            [0, 13000]
+          ]
+        },
+        {
+          "id": "uA_hol",
+          "name": "Hol",
+          "no": "16",
+          "area_m2": 37.7,
+          "room_type": "koridor",
+          "polygon": [
+            [1900, 6500],
+            [7700, 6500],
+            [7700, 13000],
+            [1900, 13000]
           ]
         },
         {
           "id": "uB_salon",
           "name": "Salon",
-          "no": "11",
-          "area_m2": 29.93,
+          "no": "21",
+          "area_m2": 27.3,
+          "room_type": "salon",
           "polygon": [
-            [7700.0, 0],
-            [11800.0, 0],
-            [11800.0, 7300.0],
-            [7700.0, 7300.0]
+            [7700, 0],
+            [11900, 0],
+            [11900, 6500],
+            [7700, 6500]
           ]
         },
         {
           "id": "uB_oda1",
-          "name": "Oda 1",
-          "no": "12",
-          "area_m2": 14.235,
+          "name": "Oda",
+          "no": "22",
+          "area_m2": 22.75,
+          "room_type": "yatak_odasi",
           "polygon": [
-            [11800.0, 0],
-            [13750.0, 0],
-            [13750.0, 7300.0],
-            [11800.0, 7300.0]
-          ]
-        },
-        {
-          "id": "uB_oda2",
-          "name": "Oda 2",
-          "no": "13",
-          "area_m2": 12.045,
-          "polygon": [
-            [13750.0, 0],
-            [15400.0, 0],
-            [15400.0, 7300.0],
-            [13750.0, 7300.0]
+            [11900, 0],
+            [15400, 0],
+            [15400, 6500],
+            [11900, 6500]
           ]
         },
         {
           "id": "uB_mutfak",
           "name": "Mutfak",
-          "no": "14",
-          "area_m2": 9.12,
+          "no": "23",
+          "area_m2": 6.27,
+          "room_type": "mutfak",
           "polygon": [
-            [7700.0, 7300.0],
-            [9300.0, 7300.0],
-            [9300.0, 13000.0],
-            [7700.0, 13000.0]
+            [7700, 6500],
+            [9600, 6500],
+            [9600, 9800],
+            [7700, 9800]
           ]
         },
         {
           "id": "uB_banyo",
           "name": "Banyo",
-          "no": "15",
-          "area_m2": 6.84,
+          "no": "24",
+          "area_m2": 3.8,
+          "room_type": "banyo",
           "polygon": [
-            [9300.0, 7300.0],
-            [10500.0, 7300.0],
-            [10500.0, 13000.0],
-            [9300.0, 13000.0]
-          ]
-        },
-        {
-          "id": "uB_hol",
-          "name": "Hol",
-          "no": "16",
-          "area_m2": 22.8,
-          "polygon": [
-            [10500.0, 7300.0],
-            [14500.0, 7300.0],
-            [14500.0, 13000.0],
-            [10500.0, 13000.0]
+            [7700, 9800],
+            [9600, 9800],
+            [9600, 11800],
+            [7700, 11800]
           ]
         },
         {
           "id": "uB_wc",
           "name": "WC",
-          "no": "17",
-          "area_m2": 5.13,
+          "no": "25",
+          "area_m2": 2.28,
+          "room_type": "wc",
           "polygon": [
-            [14500.0, 7300.0],
-            [15400.0, 7300.0],
-            [15400.0, 13000.0],
-            [14500.0, 13000.0]
+            [7700, 11800],
+            [9600, 11800],
+            [9600, 13000],
+            [7700, 13000]
+          ]
+        },
+        {
+          "id": "uB_hol",
+          "name": "Hol",
+          "no": "26",
+          "area_m2": 37.7,
+          "room_type": "koridor",
+          "polygon": [
+            [9600, 6500],
+            [15400, 6500],
+            [15400, 13000],
+            [9600, 13000]
           ]
         },
         {
           "id": "uC_salon",
           "name": "Salon (Amerikan Mutfak)",
-          "no": "18",
-          "area_m2": 32.24,
+          "no": "31",
+          "area_m2": 19.32,
+          "room_type": "salon",
           "polygon": [
-            [15400.0, 0],
-            [18500.0, 0],
-            [18500.0, 10400.0],
-            [15400.0, 10400.0]
+            [15400, 0],
+            [20000, 0],
+            [20000, 4200],
+            [15400, 4200]
           ]
         },
         {
           "id": "uC_oda",
           "name": "Oda",
-          "no": "19",
-          "area_m2": 15.6,
+          "no": "32",
+          "area_m2": 14.72,
+          "room_type": "yatak_odasi",
           "polygon": [
-            [18500.0, 0],
-            [20000.0, 0],
-            [20000.0, 10400.0],
-            [18500.0, 10400.0]
+            [15400, 4200],
+            [20000, 4200],
+            [20000, 7400],
+            [15400, 7400]
           ]
         },
         {
           "id": "uC_banyo",
           "name": "Banyo",
-          "no": "20",
-          "area_m2": 4.94,
+          "no": "33",
+          "area_m2": 10.12,
+          "room_type": "banyo",
           "polygon": [
-            [15400.0, 10400.0],
-            [17300.0, 10400.0],
-            [17300.0, 13000.0],
-            [15400.0, 13000.0]
+            [15400, 7400],
+            [20000, 7400],
+            [20000, 9600],
+            [15400, 9600]
           ]
         },
         {
           "id": "uC_hol",
           "name": "Hol",
-          "no": "21",
-          "area_m2": 7.02,
+          "no": "34",
+          "area_m2": 15.64,
+          "room_type": "koridor",
           "polygon": [
-            [17300.0, 10400.0],
-            [20000.0, 10400.0],
-            [20000.0, 13000.0],
-            [17300.0, 13000.0]
+            [15400, 9600],
+            [20000, 9600],
+            [20000, 13000],
+            [15400, 13000]
           ]
         }
       ],
@@ -3818,128 +3586,23 @@
         },
         {
           "id": "core_div",
-          "start": [1000, 14500],
-          "end": [1000, 17500],
+          "start": [2100.0, 14500.0],
+          "end": [2100.0, 17500.0],
           "thickness": 200.0,
           "layer": "DUVARLAR"
         },
         {
           "id": "core_bottom",
-          "start": [0, 14500],
-          "end": [5000, 14500],
+          "start": [0.0, 14500.0],
+          "end": [6100.0, 14500.0],
           "thickness": 200.0,
           "layer": "DUVARLAR"
         },
         {
           "id": "core_right",
-          "start": [5000, 14500],
-          "end": [5000, 17500],
+          "start": [6100.0, 14500.0],
+          "end": [6100.0, 17500.0],
           "thickness": 200.0,
-          "layer": "DUVARLAR"
-        },
-        {
-          "id": "uA_w_salon_oda1",
-          "start": [4100.0, 0],
-          "end": [4100.0, 7300.0],
-          "thickness": 100.0,
-          "layer": "DUVARLAR"
-        },
-        {
-          "id": "uA_w_oda1_oda2",
-          "start": [6050.0, 0],
-          "end": [6050.0, 7300.0],
-          "thickness": 100.0,
-          "layer": "DUVARLAR"
-        },
-        {
-          "id": "uA_w_front_back",
-          "start": [0.0, 7300.0],
-          "end": [7700.0, 7300.0],
-          "thickness": 100.0,
-          "layer": "DUVARLAR"
-        },
-        {
-          "id": "uA_w_mutfak_banyo",
-          "start": [1600.0, 7300.0],
-          "end": [1600.0, 13000.0],
-          "thickness": 100.0,
-          "layer": "DUVARLAR"
-        },
-        {
-          "id": "uA_w_banyo_hol",
-          "start": [2800.0, 7300.0],
-          "end": [2800.0, 13000.0],
-          "thickness": 100.0,
-          "layer": "DUVARLAR"
-        },
-        {
-          "id": "uA_w_hol_wc",
-          "start": [6800.0, 7300.0],
-          "end": [6800.0, 13000.0],
-          "thickness": 100.0,
-          "layer": "DUVARLAR"
-        },
-        {
-          "id": "uB_w_salon_oda1",
-          "start": [11800.0, 0],
-          "end": [11800.0, 7300.0],
-          "thickness": 100.0,
-          "layer": "DUVARLAR"
-        },
-        {
-          "id": "uB_w_oda1_oda2",
-          "start": [13750.0, 0],
-          "end": [13750.0, 7300.0],
-          "thickness": 100.0,
-          "layer": "DUVARLAR"
-        },
-        {
-          "id": "uB_w_front_back",
-          "start": [7700.0, 7300.0],
-          "end": [15400.0, 7300.0],
-          "thickness": 100.0,
-          "layer": "DUVARLAR"
-        },
-        {
-          "id": "uB_w_mutfak_banyo",
-          "start": [9300.0, 7300.0],
-          "end": [9300.0, 13000.0],
-          "thickness": 100.0,
-          "layer": "DUVARLAR"
-        },
-        {
-          "id": "uB_w_banyo_hol",
-          "start": [10500.0, 7300.0],
-          "end": [10500.0, 13000.0],
-          "thickness": 100.0,
-          "layer": "DUVARLAR"
-        },
-        {
-          "id": "uB_w_hol_wc",
-          "start": [14500.0, 7300.0],
-          "end": [14500.0, 13000.0],
-          "thickness": 100.0,
-          "layer": "DUVARLAR"
-        },
-        {
-          "id": "uC_w_salon_oda",
-          "start": [18500.0, 0],
-          "end": [18500.0, 10400.0],
-          "thickness": 100.0,
-          "layer": "DUVARLAR"
-        },
-        {
-          "id": "uC_w_front_back",
-          "start": [15400.0, 10400.0],
-          "end": [20000.0, 10400.0],
-          "thickness": 100.0,
-          "layer": "DUVARLAR"
-        },
-        {
-          "id": "uC_w_banyo_hol",
-          "start": [17300.0, 10400.0],
-          "end": [17300.0, 13000.0],
-          "thickness": 100.0,
           "layer": "DUVARLAR"
         },
         {
@@ -3958,9 +3621,100 @@
         },
         {
           "id": "band_south",
-          "start": [0, 13000],
-          "end": [20000.0, 13000],
+          "start": [0.0, 13000.0],
+          "end": [20000.0, 13000.0],
           "thickness": 200.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "uA_w_salon_oda",
+          "start": [4200, 0],
+          "end": [4200, 6500],
+          "thickness": 100.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "uA_w_front_back",
+          "start": [0, 6500],
+          "end": [7700, 6500],
+          "thickness": 100.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "uA_w_wetcolumn_hol",
+          "start": [1900, 6500],
+          "end": [1900, 13000],
+          "thickness": 100.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "uA_w_mutfak_banyo",
+          "start": [0, 9800],
+          "end": [1900, 9800],
+          "thickness": 100.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "uA_w_banyo_wc",
+          "start": [0, 11800],
+          "end": [1900, 11800],
+          "thickness": 100.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "uB_w_salon_oda",
+          "start": [11900, 0],
+          "end": [11900, 6500],
+          "thickness": 100.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "uB_w_front_back",
+          "start": [7700, 6500],
+          "end": [15400, 6500],
+          "thickness": 100.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "uB_w_wetcolumn_hol",
+          "start": [9600, 6500],
+          "end": [9600, 13000],
+          "thickness": 100.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "uB_w_mutfak_banyo",
+          "start": [7700, 9800],
+          "end": [9600, 9800],
+          "thickness": 100.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "uB_w_banyo_wc",
+          "start": [7700, 11800],
+          "end": [9600, 11800],
+          "thickness": 100.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "uC_w_salon_oda",
+          "start": [15400, 4200],
+          "end": [20000, 4200],
+          "thickness": 100.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "uC_w_oda_banyo",
+          "start": [15400, 7400],
+          "end": [20000, 7400],
+          "thickness": 100.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "uC_w_banyo_hol",
+          "start": [15400, 9600],
+          "end": [20000, 9600],
+          "thickness": 100.0,
           "layer": "DUVARLAR"
         }
       ],
@@ -3969,56 +3723,8 @@
           "id": "door_stair",
           "type": "door",
           "wall_id": "core_bottom",
-          "position_from_start": 3000,
+          "position_from_start": 4100.0,
           "width": 900,
-          "layer": "KAPI-PENCERE"
-        },
-        {
-          "id": "uA_d_mutfak_salon",
-          "type": "door",
-          "wall_id": "uA_w_front_back",
-          "position_from_start": 800,
-          "width": 800,
-          "layer": "KAPI-PENCERE"
-        },
-        {
-          "id": "uA_d_hol_salon",
-          "type": "door",
-          "wall_id": "uA_w_front_back",
-          "position_from_start": 3450,
-          "width": 700,
-          "layer": "KAPI-PENCERE"
-        },
-        {
-          "id": "uA_d_hol_oda1",
-          "type": "door",
-          "wall_id": "uA_w_front_back",
-          "position_from_start": 5075,
-          "width": 800,
-          "layer": "KAPI-PENCERE"
-        },
-        {
-          "id": "uA_d_hol_oda2",
-          "type": "door",
-          "wall_id": "uA_w_front_back",
-          "position_from_start": 6425,
-          "width": 600,
-          "layer": "KAPI-PENCERE"
-        },
-        {
-          "id": "uA_d_hol_banyo",
-          "type": "door",
-          "wall_id": "uA_w_banyo_hol",
-          "position_from_start": 2850,
-          "width": 700,
-          "layer": "KAPI-PENCERE"
-        },
-        {
-          "id": "uA_d_hol_wc",
-          "type": "door",
-          "wall_id": "uA_w_hol_wc",
-          "position_from_start": 2850,
-          "width": 700,
           "layer": "KAPI-PENCERE"
         },
         {
@@ -4038,58 +3744,42 @@
           "layer": "KAPI-PENCERE"
         },
         {
-          "id": "uA_win_oda2",
-          "type": "window",
-          "wall_id": "ext_bottom",
-          "position_from_start": 6875.0,
-          "width": 1200,
-          "layer": "KAPI-PENCERE"
-        },
-        {
-          "id": "uB_d_mutfak_salon",
+          "id": "uA_d_salon_hol",
           "type": "door",
-          "wall_id": "uB_w_front_back",
-          "position_from_start": 800,
-          "width": 800,
-          "layer": "KAPI-PENCERE"
-        },
-        {
-          "id": "uB_d_hol_salon",
-          "type": "door",
-          "wall_id": "uB_w_front_back",
-          "position_from_start": 3450,
+          "wall_id": "uA_w_front_back",
+          "position_from_start": 3000.0,
           "width": 700,
           "layer": "KAPI-PENCERE"
         },
         {
-          "id": "uB_d_hol_oda1",
+          "id": "uA_d_oda_hol",
           "type": "door",
-          "wall_id": "uB_w_front_back",
-          "position_from_start": 5075,
+          "wall_id": "uA_w_front_back",
+          "position_from_start": 5500.0,
           "width": 800,
           "layer": "KAPI-PENCERE"
         },
         {
-          "id": "uB_d_hol_oda2",
+          "id": "uA_d_hol_mutfak",
           "type": "door",
-          "wall_id": "uB_w_front_back",
-          "position_from_start": 6425,
-          "width": 600,
+          "wall_id": "uA_w_wetcolumn_hol",
+          "position_from_start": 1500.0,
+          "width": 800,
           "layer": "KAPI-PENCERE"
         },
         {
-          "id": "uB_d_hol_banyo",
+          "id": "uA_d_hol_banyo",
           "type": "door",
-          "wall_id": "uB_w_banyo_hol",
-          "position_from_start": 2850,
+          "wall_id": "uA_w_wetcolumn_hol",
+          "position_from_start": 4200.0,
           "width": 700,
           "layer": "KAPI-PENCERE"
         },
         {
-          "id": "uB_d_hol_wc",
+          "id": "uA_d_hol_wc",
           "type": "door",
-          "wall_id": "uB_w_hol_wc",
-          "position_from_start": 2850,
+          "wall_id": "uA_w_wetcolumn_hol",
+          "position_from_start": 5900.0,
           "width": 700,
           "layer": "KAPI-PENCERE"
         },
@@ -4110,34 +3800,42 @@
           "layer": "KAPI-PENCERE"
         },
         {
-          "id": "uB_win_oda2",
-          "type": "window",
-          "wall_id": "ext_bottom",
-          "position_from_start": 14575.0,
-          "width": 1200,
-          "layer": "KAPI-PENCERE"
-        },
-        {
-          "id": "uC_d_hol_salon",
+          "id": "uB_d_salon_hol",
           "type": "door",
-          "wall_id": "uC_w_front_back",
-          "position_from_start": 2500,
-          "width": 800,
-          "layer": "KAPI-PENCERE"
-        },
-        {
-          "id": "uC_d_hol_oda",
-          "type": "door",
-          "wall_id": "uC_w_front_back",
-          "position_from_start": 3850,
+          "wall_id": "uB_w_front_back",
+          "position_from_start": 3000.0,
           "width": 700,
           "layer": "KAPI-PENCERE"
         },
         {
-          "id": "uC_d_hol_banyo",
+          "id": "uB_d_oda_hol",
           "type": "door",
-          "wall_id": "uC_w_banyo_hol",
-          "position_from_start": 1300,
+          "wall_id": "uB_w_front_back",
+          "position_from_start": 5500.0,
+          "width": 800,
+          "layer": "KAPI-PENCERE"
+        },
+        {
+          "id": "uB_d_hol_mutfak",
+          "type": "door",
+          "wall_id": "uB_w_wetcolumn_hol",
+          "position_from_start": 1500.0,
+          "width": 800,
+          "layer": "KAPI-PENCERE"
+        },
+        {
+          "id": "uB_d_hol_banyo",
+          "type": "door",
+          "wall_id": "uB_w_wetcolumn_hol",
+          "position_from_start": 4200.0,
+          "width": 700,
+          "layer": "KAPI-PENCERE"
+        },
+        {
+          "id": "uB_d_hol_wc",
+          "type": "door",
+          "wall_id": "uB_w_wetcolumn_hol",
+          "position_from_start": 5900.0,
           "width": 700,
           "layer": "KAPI-PENCERE"
         },
@@ -4145,16 +3843,32 @@
           "id": "uC_win_salon",
           "type": "window",
           "wall_id": "ext_bottom",
-          "position_from_start": 16950.0,
+          "position_from_start": 17050.0,
           "width": 1600,
           "layer": "KAPI-PENCERE"
         },
         {
-          "id": "uC_win_oda",
-          "type": "window",
-          "wall_id": "ext_bottom",
-          "position_from_start": 19250.0,
-          "width": 1200,
+          "id": "uC_d_salon_oda",
+          "type": "door",
+          "wall_id": "uC_w_salon_oda",
+          "position_from_start": 2300.0,
+          "width": 800,
+          "layer": "KAPI-PENCERE"
+        },
+        {
+          "id": "uC_d_oda_banyo",
+          "type": "door",
+          "wall_id": "uC_w_oda_banyo",
+          "position_from_start": 3800.0,
+          "width": 700,
+          "layer": "KAPI-PENCERE"
+        },
+        {
+          "id": "uC_d_banyo_hol",
+          "type": "door",
+          "wall_id": "uC_w_banyo_hol",
+          "position_from_start": 800.0,
+          "width": 700,
           "layer": "KAPI-PENCERE"
         },
         {
@@ -4187,30 +3901,30 @@
         {
           "id": "uA_tezgah",
           "polygon": [
-            [0.0, 7600],
-            [600.0, 7600],
-            [600.0, 12700],
-            [0.0, 12700]
+            [0.0, 6600.0],
+            [600.0, 6600.0],
+            [600.0, 9700.0],
+            [0.0, 9700.0]
           ],
           "layer": "MOBILYA"
         },
         {
           "id": "uB_tezgah",
           "polygon": [
-            [7700.0, 7600],
-            [8300.0, 7600],
-            [8300.0, 12700],
-            [7700.0, 12700]
+            [7700.0, 6600.0],
+            [8300.0, 6600.0],
+            [8300.0, 9700.0],
+            [7700.0, 9700.0]
           ],
           "layer": "MOBILYA"
         },
         {
           "id": "uC_tezgah",
           "polygon": [
-            [15400.0, 7000],
-            [16000.0, 7000],
-            [16000.0, 10100],
-            [15400.0, 10100]
+            [19200.0, 500.0],
+            [19800.0, 500.0],
+            [19800.0, 3500.0],
+            [19200.0, 3500.0]
           ],
           "layer": "MOBILYA"
         }
@@ -4227,12 +3941,12 @@
           "id": "elevator",
           "name": "Asansor Makine Dairesi",
           "no": "01",
-          "area_m2": 3.0,
+          "area_m2": 6.3,
           "polygon": [
-            [0, 14500],
-            [1000, 14500],
-            [1000, 17500],
-            [0, 17500]
+            [0.0, 14500.0],
+            [2100.0, 14500.0],
+            [2100.0, 17500.0],
+            [0.0, 17500.0]
           ]
         },
         {
@@ -4241,24 +3955,25 @@
           "no": "02",
           "area_m2": 12.0,
           "polygon": [
-            [1000, 14500],
-            [5000, 14500],
-            [5000, 17500],
-            [1000, 17500]
+            [2100.0, 14500.0],
+            [6100.0, 14500.0],
+            [6100.0, 17500.0],
+            [2100.0, 17500.0]
           ]
         },
         {
           "id": "band",
           "name": "Cati Terasi",
+          "room_type": "koridor",
           "no": "03",
-          "area_m2": 75.0,
+          "area_m2": 71.7,
           "polygon": [
-            [0, 13000],
-            [20000, 13000],
-            [20000, 17500],
-            [5000, 17500],
-            [5000, 14500],
-            [0, 14500]
+            [0.0, 13000.0],
+            [20000.0, 13000.0],
+            [20000.0, 17500.0],
+            [6100.0, 17500.0],
+            [6100.0, 14500.0],
+            [0.0, 14500.0]
           ]
         },
         {
@@ -4305,22 +4020,22 @@
         },
         {
           "id": "core_div",
-          "start": [1000, 14500],
-          "end": [1000, 17500],
+          "start": [2100.0, 14500.0],
+          "end": [2100.0, 17500.0],
           "thickness": 200.0,
           "layer": "DUVARLAR"
         },
         {
           "id": "core_bottom",
-          "start": [0, 14500],
-          "end": [5000, 14500],
+          "start": [0.0, 14500.0],
+          "end": [6100.0, 14500.0],
           "thickness": 200.0,
           "layer": "DUVARLAR"
         },
         {
           "id": "core_right",
-          "start": [5000, 14500],
-          "end": [5000, 17500],
+          "start": [6100.0, 14500.0],
+          "end": [6100.0, 17500.0],
           "thickness": 200.0,
           "layer": "DUVARLAR"
         }
@@ -4330,7 +4045,7 @@
           "id": "door_stair",
           "type": "door",
           "wall_id": "core_bottom",
-          "position_from_start": 3000,
+          "position_from_start": 4100.0,
           "width": 900,
           "layer": "KAPI-PENCERE"
         }
@@ -4526,6 +4241,16 @@
       "rev": 18,
       "ts": "2026-09-24T12:00:00Z",
       "summary": "Kullanicinin AutoCAD'de gercek projeyi acinca aldigi 'Hatch - Large, Dense Hatch Patterns' uyarisi + uc ayri duzeltme talebi islendi (ekran goruntusu + metin talep). (1) KOK NEDEN BULUNDU VE DUZELTILDI: scripts/sections/ modulundeki kesit-duvar kesisim dolgusu 'hatch.set_pattern_fill(\"SOLID\")' cagiriyordu - bu GERCEK bir solid-fill API'si DEGILDI (ezdxf'te dogrusu 'hatch.set_solid_fill()'dur); \"SOLID\" bir PATTERN adi olarak arandi ve ~0.125 birim araliktaki bir cizgi deseni uygulandi - gercek projedeki 86 kesit-dolgusu (250x4000mm dikdortgenler) bu yuzden HER BIRI ~32000 paralel cizgi gerektiriyordu (elle dogrulandi: dxf.solid_fill=0). Duzeltme: hatch.set_solid_fill(); regresyon testi sections/selftest.py'ye eklendi. (2) KULLANICI KARARI 'aks cizgileri olculeri aks cizgileri ile ayni layerda olmali ve yalnizca akslar arasi mesafeleri gostermeli. akslar arasi mesafeler ve ikinci olarak en uctaki akslarin arasindaki mesafeyi vermeli.': incelemede aks (AKS) DIMENSION'larinin ok/metni dogru katmanda ama olcu/uzatma cizgilerinin hep '0' katmaninda oldugu bulundu - ezdxf 1.4.4'un render/dim_base.py::BaseDimensionRenderer.add_line'i katman dahil birlesmis attribs sozlugunu hesaplayip KULLANMADAN orijinal (katmansiz) dxfattribs'i geometri blogunda geciriyor (kutuphane kaynagi degistirilemedigi icin scripts/dimensions/linear.py::LinearDim.render'da render SONRASI duzeltme uygulandi: _fix_geometry_block_layer). AYRICA AxisGrid._dim_chain_x/y'ye, bir kenarda 2'den fazla aks varsa ardisik-mesafe zincirinin YANINA [min(xs),max(xs)]'ten tek-segmentli bir TOPLAM zinciri eklendi (TAM 2 aksta tekrarlanmiyor - ayni sayi olurdu); toplam zincirin baseline'i aksin kendi baloncuk/uzama bolgesinin (extension+bubble_radius=1650) total_dimension_clearance (300) kadar OTESINDE durur (elle dogrulandi, bubble'a girmez). (3) KULLANICI KARARI 'duvarlarin kalinliklarini vs. aks olculerinin yaninda gostermemeli bu kafa karistirir, duvar olculeri sistem uzerinde simdilik hicbir yerde gosterilmeyecek.': kok neden, meta.dimensions'in 'mahal' kademesinin bir bolme duvarinin IKI YUZU arasinda (yani SADECE duvar kalinligi) kucuk bir segment uretebilmesiydi - bu, aks olcusune yakin sasirtici bir sayi olarak goruluyordu. 'dimensions' modulu KALDIRILMADI (golden/aciklik_varyantlari onu sinamaya devam eder, meta.dimensions.enabled=true birakildi orada) - SADECE bu projenin context.json::meta.dimensions.enabled alani true -> false'ya cekildi (rev-13'ten beri acikti, simdi belgelenmis varsayilana dondu). (4) KULLANICI KARARI 'ilave olarak her pafta icerisinde olcek gibi bir sey var, 0-5 arasi degerler ile birlikte, onu istemiyorum, kaldir.': rev-17'de AYNI DEV-025 talebinin ikinci parcasi olarak eklenen pafta::ScaleBar (+ nice_scale_length_m, format_scale_value) TAMAMEN KALDIRILDI - generate_dxf.py/preview.py'deki tum cagri yerleri, northarrow/selftest.py'deki test gruplari ve ilgili CLAUDE.md bolumleri (pafta, northarrow, kok) silindi; kuzey oku (NorthArrow) etkilenmedi. sections::draw_cut_marker_on_floor artik etiket yuksekligini ScaleBar'dan odunc almak yerine kendi PRINTED_MARKER_LABEL_MM sabitinden turetiyor (bagimsizlastirma). (5) DOGRULAMA: iki yeni test grubu (dimensions::check_rendered_layer, axis::check_total_span_dimension) + bir yeni assertion (sections::check_section_sheet_entity_count icinde solid_fill kontrolu) - ON modul self-test'i hala calisiyor. py_compile, validate, generate (PaftaOverflowError FIRLAMADI), preview, 5 semantik kural, 5 golden referans (--golden-set --update), doc_check - hepsi temiz. Gercek ciktida dogrudan dogrulandi: 86 kesit-HATCH'i artik dxf.solid_fill==1; 88 AKS DIMENSION'inin TAMAMI AKS katmaninda (host+geometri blogu); OLCU katmanli DIMENSION 402'den 0'a dustu. (6) GOLDEN ETKISI: ana proje DEGISTI (olcu/ScaleBar entity'leri kayboldu, HATCH'ler gercek solid-fill oldu, aks olcusune toplam satiri eklendi) - docs/development/plan-golden-report.json ve tum golden/*/expected.json --update ile yeniden uretildi; golden/aciklik_varyantlari kasitli olarak meta.dimensions.enabled=true BIRAKILDI (fixture'in amaci zaten o ozelligi sinamak)."
+    },
+    {
+      "rev": 19,
+      "ts": "2026-09-28T08:11:00Z",
+      "summary": "Kullanici talebi: 'simdi bu yeni uygulanmis planlarimiz ile birlikte mevcut planimizi guncelle. mevcut planlarin oranlari vs. hep bozuk berbat durumda.' DEV-036 (scripts/standards/) bu revizyonla ILK KEZ gercek projeye uygulandi: 115 odaya rooms[].room_type etiketi eklendi (mahal ADINDAN turetildi, orn. 'Asansor'->'asansor', 'Banyo'->'banyo', 'Oda 1'/'Oda 2'/'Oda'->'yatak_odasi', 'Hol'->'koridor'; cati katinin asansor/merdiven odalari FARKLI islevde oldugu - makine dairesi/cati cikisi - icin BILEREK etiketlenmedi). Sonuc: validate.py artik 121 UYARI (sartname) uretiyor - kullanicinin sikayetini SAYISALLASTIRDI: asansor kuyusu HER 8 katta oran 3.00 (izin verilen [1.00,1.50] disinda, kisa kenar 1000mm<1400mm), 5 normal katin (K1-K5) HER BIRINDE 3 dairenin (A/B/C) neredeyse TUM odalari (yatak odalari, mutfak, banyo, wc, salon) 3.35-6.93 araliginda oranlarla ciddi sekilde ihlalde - kok CLAUDE.md'nin zaten 'bilinen basitlestirme' olarak not dustugu 'birim bandi' deseninin (odalar bandin TAM DERINLIGINI paylasiyor) somut, olculebilir kanitidir. BU REVIZYONDA GEOMETRI DEGISTIRILMEDI: room_type etiketleme UYARI URETIMI ICIN yeterliydi ve output/plan.dxf GEOMETRIK olarak DEGISMEDI (dogrulandi). Politika kullanicinin kendi kuraliyla (DEV-036) tutarli calisti: 121 uyariye RAGMEN validate.py BASARILI dondu, uretim DURMADI (WARN-not-FORBID). Odalarin GERCEK oranlarinin nasil duzeltilecegi icin kullaniciya soruldu (cekirdek mi once yoksa daire ici de mi); kullanici 'daire ici odalar da' dedi - bu devam eden bir sonraki revizyonun (rev-20) kapsamidir, bu revizyon SADECE tespit/etiketleme asamasidir."
+    },
+    {
+      "rev": 20,
+      "ts": "2026-09-28T08:45:00Z",
+      "summary": "rev-19'un devami: 121 UYARI'nin (sartname) TAMAMI cozuldu, validate.py artik SIFIR uyari uretiyor. (1) SIRKULASYON CEKIRDEGI (9 kat): scripts/templates::generate_circulation_core, elevator_width=2100mm'e (eskiden 1000mm) cekilen ozel bir CirculationCoreTemplate ile TUM 9 kata uygulandi - asansor orani 3.00->1.43 (standards::STANDARDS['asansor'] siniri [1.00,1.50] icinde), core_bottom/core_div/core_right duvarlari + door_stair konumu + L-sekilli koridor poligonu AYNI fonksiyondan yeniden hesaplandi. scripts/templates/__init__.py'nin KENDI varsayilani da (elevator_width) AYNI ANDA 2100mm'e guncellendi - 'gercek projeden cikarildi' iddiasinin dogru KALMASI icin (bkz. HD notlari). 16 uyari cozuldu (121->105). (2) DAIRE ICI YENIDEN TASARIM (5 normal kat, K1-K5): kullaniciya soruldu 'salon+2 yatak odasi 7700mm birim genisliginde YAN YANA (hepsi pencereli) sigmiyor, benim yatak_odasi standardimin (min 2700mm genislik) MATEMATIKSEL olarak imkansiz kildigi bir durum (3000+2700+2700=8400mm > 7700mm mevcut)' - kullanici 'oda sayisini azalt' dedi (2+1 -> 1+1, A ve B birimleri). YENI birim A/B duzeni: on bant (y:0-6500, tam genislik) salon(4200mm)+oda(3500mm) YAN YANA, HER IKISI DE cepheye (ext_bottom, pencereli) bakiyor; arka bolge (y:6500-13000) bir 'islak sutun' (1900mm genislik: mutfak/banyo/wc DIKEY istiflenmis) + HOL (5800mm genislik, TAM derinlik, hem salon+oda'ya hem islak alanlara AYRI kapilarla baglaniyor). Unit C oda SAYISI DEGISMEDI (zaten tek yatak odaliydi) - yalnizca 4 bandli (salon/oda/banyo/hol) duzenle ORANLARI duzeltildi. TUM oda-tipi (room_type etiketli) odalar artik standards siniri ICINDE - 105 uyari SIFIRA indi. Mahal numaralari (no) yeniden verildi (K1-11..K1-34 gibi) - eski numaralar cekirdek odalariyla (01/02/03) CAKISIYORDU, bu HATA yakalanip duzeltildi. Kapi/pencere: cephe pencereleri (uA_win_salon/oda1 vb.) ext_bottom uzerinde AYNI konumlarda kaldi (yeni oda sinirlarinin icinde dogal olarak kaliyorlardi); giris kapilari (door_entry_1/2/3) AYNI x-konumlarinda kaldi (yeni HOL'lerin genis x-araliginin icinde kaliyorlar). (3) DOGRULAMA: validate.py SIFIR hata SIFIR uyari; generate_dxf.py PaftaOverflowError FIRLATMADI; mahal etiketlerinin GERCEK DXF bounding box'lari (ezdxf.bbox ile dogrudan olculdu, en dar oda olan WC dahil - etiket genislik 752.9mm < oda genislik 1900mm, etiket yukseklik 716.5mm < oda yukseklik 1200mm) TUM odalarda TASMADAN sigdi (onizleme PNG'sindeki gorunen sikisiklik yalnizca matplotlib'in font degisimi kaynakli bir GORSEL artefaktti, GERCEK DXF'te dogrulanmadi). 16 modul selftest'i, golden_report.py --golden-set (8 referans), doc_check.py hepsi temiz; docs/development/plan-golden-report.json --write ile YENIDEN uretildi (entity/layer/block sayilari GERCEKTEN degisti - beklenen, kasitli). (4) KULLANICI AYRICA onemli bir GELECEK GEREKSINIM belirtti: 'ilgili oturum alanların daire sayısı sigmamasi gibi durumlari da kontrol edip kullaniciya donmeliyiz' - yani sistem, bir bolgeye istenen oda programinin (sayi+tip) SIGIP SIGMADIGINI ONCEDEN kontrol edip HATA/UYARI vermeli, boylece bu turden bir imkansizlik gelecekte ELLE kesfedilmek yerine ARACIN KENDISI tarafindan yakalansin. Bu 'sonraki plan olarak kayit altina al' talimatiyla DEVELOPMENT_TASKS.md'ye yeni bir PLANNED gorev olarak eklendi (uygulama izni DEGILDIR) - bkz. DEV-038. (5) BAGIMSIZ REVIEWER BULGUSU VE DUZELTMESI (commit'ten ONCE): floors[].counters[] (mutfak tezgahlari, uA_tezgah/uB_tezgah/uC_tezgah) yeniden tasarimda UNUTULMUS - eski (2 yatak odali) duzenin konumlarinda KALMISLARDI ve YENI ic duvarlarin (uA_w_mutfak_banyo, uA_w_banyo_wc vb.) TAM ORTASINDAN geciyorlardi (validate.py bunu YAKALAYAMAZ - scripts/collision/ counters[] icin bir ayak izi saglayicisi TASIMIYOR, bkz. scripts/collision/CLAUDE.md 'counters[] denetlenmez'). Bagimsiz bir reviewer bunu GERCEK DXF LWPOLYLINE koordinatlarini okuyarak yakaladi. Uc tezgah da YENI hedef odalarinin (uA_mutfak/uB_mutfak/uC_salon) icine, duvarlardan asgari 100-500mm net bosluklu olarak yeniden konumlandirildi; nokta-poligon (bbox) kontroluyle DOGRULANDI ve gercek uretilmis DXF'teki LWPOLYLINE koordinatlari okunarak (99050-99650 gibi pafta-ofsetli degerler) dogrulandi."
     }
   ]
 }

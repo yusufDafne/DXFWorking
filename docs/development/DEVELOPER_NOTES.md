@@ -328,6 +328,37 @@ karşılaştırmasıyla sağlandı. 16 modül self-test'i, `doc_check.py`,
 hâlâ BLOCKED). Daire/birim içi oda bölüntüsü (bu görevin dışarıda
 bıraktığı kısım) henüz bir `DEV-0XX` numarası almadı.
 
+**PROJE REVİZYONU rev-19/rev-20 (aynı oturumun devamı, sistem geliştirme
+DEĞİL — `project-operator` işi):** kullanıcı `DEV-036`/`DEV-037`'yi
+gerçek projeye UYGULAMAMIZI istedi ("mevcut planların oranları vs. hep
+bozuk berbat durumda"). rev-19: 115 odaya `room_type` etiketlendi (addan
+türetildi), `validate.py` 121 sartname UYARISI üretti — kullanıcının
+şikayetini sayısallaştırdı (asansör oranı 3.00, 5 normal katın hemen
+tüm daire odaları 3.35-6.93 aralığında). rev-20: TÜMÜ sıfıra indirildi —
+(1) `templates::generate_circulation_core`, elevator_width 2100mm'e
+çekilen ÖZEL bir şablonla 9 kata uygulandı (asansör oranı 1.43'e düştü);
+modülün KENDİ varsayılanı da AYNI ANDA güncellendi (bkz. `scripts/
+templates/CLAUDE.md` "rev-20 düzeltmesi" — ilk varsayılan, kullanıcının
+BAŞLANGIÇTA şikayet ettiği KUSURUN ta kendisiydi, kendi kendini düzelten
+ilginç bir örnek). (2) Birim A/B'de GERÇEK bir imkansızlık bulundu:
+salon(≥3000mm)+2 yatak odası(≥2700mm her biri), hepsi pencereli/yan
+yana, 7700mm birim genişliğine MATEMATİKSEL OLARAK sığmıyordu
+(8400mm>7700mm) — kullanıcıya soruldu, "oda sayısını azalt" dendi (2+1
+→ 1+1). Yeniden tasarlanan birimler `validate.py`yi SIFIR hata SIFIR
+uyariyla geçti; mahal etiketlerinin gerçek DXF bounding box'ları
+doğrudan ölçülüp (en dar oda WC dahil) TAŞMADIĞI kanıtlandı (önizleme
+PNG'sindeki görünen sıkışıklık salt matplotlib font-değişimi
+artefaktıydı). **Bu iş sırasında iki kendi script hatam** (bir dry-run
+`open(path,'w')` context.json'ı anlık BOŞALTTI, bir başka deneme
+`json.dumps` ile TÜM dosyayı yeniden biçimlendirdi) ANINDA fark edilip
+(hiçbiri git'e YAZILMADAN) düzeltildi — sıfır veri kaybı, ama bundan
+sonra context.json'a programatik yazım için `/tmp/ctx_format.py`
+(mevcut "skaler dizi tek satır" biçimini round-trip KANITLANMIŞ şekilde
+koruyan özel bir serializer) kullanıldı. Kullanıcı ayrıca ÖNEMLİ bir
+GELECEK gereksinim belirtti: sistem bir oda programının verilen bir alana
+sığıp sığmadığını ÖNCEDEN kontrol edip bildirmeli — bu `DEV-038` olarak
+kayıt altına alındı (**uygulama izni DEĞİLDİR**, yalnızca PLANNED).
+
 ## İlk okuma sırası
 
 1. Bu dosya.

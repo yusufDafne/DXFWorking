@@ -34,8 +34,10 @@ kararlar").
 **Varsayılan ölçüler NEREDEN geliyor:** icat edilmedi — gerçek projenin
 `context.json`ındaki (`normal1` katı) ZATEN ÇALIŞAN, `validate.py`den
 geçmiş sirkülasyon çekirdeğinden BİREBİR çıkarıldı (elevator genişliği
-1000mm, merdiven genişliği 4000mm, koridor "bacağı" derinliği 1500mm, bant
-derinliği 4500mm). `scripts/templates/selftest.py` bunu doğrudan sınar:
+2100mm — rev-20'de 1000mm'den düzeltildi, bkz. `CirculationCoreTemplate`
+"rev-20 düzeltmesi" -, merdiven genişliği 4000mm, koridor "bacağı"
+derinliği 1500mm, bant derinliği 4500mm). `scripts/templates/selftest.py`
+bunu doğrudan sınar:
 `generate_circulation_core(20000, 17500)` gerçek projenin (`normal1`)
 oda/duvar verisiyle BİREBİR eşleşir.
 
@@ -61,9 +63,22 @@ class CirculationCoreTemplate:
 
     Varsayılanlar gerçek projeden ÇIKARILDI (yukarı bakınız, modül
     dokstring'i) - icat edilmiş sayı DEĞİLDİR.
+
+    **rev-20 düzeltmesi:** `elevator_width` ilk sürümde (DEV-037,
+    2026-09-28) 1000mm idi - o anki gercek projeden BIREBIR cikarilmisti,
+    ama bu deger `standards::STANDARDS['asansor']` (ayni gun, DEV-036'da
+    kurulan) oran sinirini (max_ratio=1.5) İHLAL EDIYORDU (1000x3000mm ->
+    oran 3.0). Bu, kullanicinin sistemi kurarken verdigi TAM ORNEKTI
+    ("asansor kuyusu 3 m2 ama piyasada karsiligi olmayan bir oran").
+    rev-20'de gercek proje BU sablon araciligiyla duzeltildi (2100mm'ye
+    genisletildi, oran 1.43'e dustu) VE bu varsayilan da AYNI ANDA
+    guncellendi - "gercek projeden cikarildi" iddiasinin dogru KALMASI
+    icin (bkz. scripts/standards/CLAUDE.md "Gelecek guncelleme
+    sozlesmesi" ile AYNI disiplin: kaynak veri degisince varsayilan da
+    ONUNLA birlikte gunceller).
     """
 
-    elevator_width: float = 1000.0
+    elevator_width: float = 2100.0
     stair_width: float = 4000.0
     corridor_leg_depth: float = 1500.0
     band_depth: float = 4500.0

@@ -47,7 +47,7 @@ tutulmalidir asansor/merdiven duseyde hizali olsun diye").
 ## Varsayılan ölçüler NEREDEN geliyor — icat edilmedi, ÇIKARILDI
 
 `CirculationCoreTemplate`in varsayılan değerleri (asansör genişliği
-1000mm, merdiven genişliği 4000mm, koridor "bacağı" derinliği 1500mm, bant
+2100mm, merdiven genişliği 4000mm, koridor "bacağı" derinliği 1500mm, bant
 derinliği 4500mm) gerçek projenin `context.json`ındaki (`normal1` katı)
 ZATEN `validate.py`den geçmiş, çalışan sirkülasyon çekirdeğinden BİREBİR
 çıkarıldı — `scripts/standards/`in v1 kataloğundeki "pratik varsayılan"
@@ -56,6 +56,21 @@ makuliyet, burada gerçekten ŞU AN ÇALIŞAN bir tasarım). `selftest.py`
 bunu doğrudan kanıtlar: `generate_circulation_core(20000, 17500)`,
 `normal1` katının oda poligonlarıyla/alanlarıyla/duvar konumlarıyla/kapı
 konumuyla **BİREBİR** eşleşir.
+
+**rev-20 düzeltmesi (kendi kendini düzelten bir örnek):** DEV-037'nin ilk
+sürümünde (2026-09-28) bu varsayılan `elevator_width=1000mm` idi ve o
+zamanki gerçek projeden ÇIKARILMIŞTI — ama bu değer `scripts/standards/`
+(AYNI GÜN, DEV-036'da kurulan) `asansor` oran sınırını (max_ratio=1.5)
+İHLAL EDİYORDU (1000×3000mm → oran 3.0). Bu, kullanıcının sistemi
+kurarken verdiği TAM ÖRNEKTİ ("asansör kuyusu 3 m² ama piyasada karşılığı
+olmayan bir oran") — yani bu modülün "kanıtlanmış, sağlam" diye tanıttığı
+ilk varsayılan, aslında kullanıcının şikayet ettiği KUSURUN TA KENDİSİYDİ.
+rev-20'de gerçek proje bu şablon aracılığıyla düzeltildi (2100mm'ye
+genişletildi, oran 1.43'e düştü) VE bu varsayılan AYNI ANDA güncellendi —
+"gerçek projeden çıkarıldı" iddiasının doğru KALMASI için (bkz.
+`scripts/standards/CLAUDE.md` "Gelecek güncelleme sözleşmesi" ile AYNI
+disiplin: kaynak veri değişince varsayılan da ONUNLA birlikte güncellenir,
+aksi halde iddia yalan söylemeye başlar).
 
 ## Çıktı context.json'a YAZILMAZ (açık karar)
 
