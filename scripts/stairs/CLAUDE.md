@@ -118,7 +118,12 @@ değil" gerekçesi.
   sessizce geçersiz bir basamak üretmek yerine `StairFitError` fırlatır
   (bkz. `DEVELOPMENT_HISTORY.md` ilgili HD kaydı — örnek projenin gerçek
   `Merdiven` odası bu sınırı BİREBİR karşılıyor, bu yüzden `context.json`a
-  henüz `stairs[]` verisi EKLENMEDİ).
+  henüz `stairs[]` verisi EKLENMEDİ). **Kullanıcı bunu (2026-09-28) aktif
+  bir eksiklik olarak işaretledi** ("merdiven modülü oraya merdiven
+  çizmeli") — çok kollu/sahanlıklı destek artık `DEVELOPMENT_TASKS.md`
+  `DEV-046` (PLANNED) olarak kayıtlı; ardından merdiven çıkış noktasının
+  kat koridoru kapısıyla hizalanması `DEV-047` (PLANNED, `DEV-046`ya
+  bağımlı).
 - **Kesit entegrasyonu bu revizyonun KAPSAMINDA DEĞİL.** `sections::
   SectionFeatureHook` genişletme noktası merdiven kırılma çizgisi için
   hazır tutuluyor (bkz. `scripts/sections/CLAUDE.md`) ama bu modül henüz

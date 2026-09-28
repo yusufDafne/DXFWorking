@@ -10,7 +10,9 @@ Yaptigi kontroller:
      - Her oda poligonu en az 3 nokta iceriyor mu
      - Beyan edilen oda alani (area_m2), poligondan hesaplanan alanla tutarli mi
      - Duvar agi sarkan (baglantisiz) uc icermeden kapali bir yapi olusturuyor mu
-       (kose VE T-kesisimi taniniyor)
+       (kose VE T-kesisimi taniniyor); bir T-kesisim, kesistigi duvarin bir
+       kapi/pencere BOSLUGUNA denk gelmiyor mu (DEV-041 - duvar kapinin
+       ORTASINDA "havada" bitemez, walls.gaps_for_wall ile denetlenir)
      - Her kapi/pencere, var olan bir duvara (wall_id) referans veriyor mu ve
        genisligi o duvarin uzunlugundan kucuk mu, duvar sinirlari icinde mi
      - Iki oda poligonu birbiriyle cakisiyor mu (convex/dikdortgen varsayimiyla)
@@ -85,7 +87,7 @@ from architect import (  # noqa: E402
     check_door_core_balance,
     check_entry_sightlines,
 )
-from walls import WallCatalog  # noqa: E402
+from walls import Wall, WallCatalog, gaps_for_wall  # noqa: E402
 
 AREA_TOLERANCE_RATIO = 0.03  # oda alani vs poligon alani icin tolerans
 
@@ -130,6 +132,42 @@ def point_on_segment(pt, seg_a, seg_b, tol: float) -> bool:
         return False
     t = (apx * abx + apy * aby) / (seg_len ** 2)
     return -1e-6 <= t <= 1 + 1e-6
+
+
+def point_position_on_segment(pt, seg_a, seg_b, tol: float) -> float | None:
+    """`point_on_segment`in AYNI testi ama BOOLEAN yerine, nokta segment
+    UZERINDEYSE `seg_a`dan ITIBAREN mm cinsinden mesafeyi (s) doner;
+    degilse None. DEV-041: bir T-kesisim NOKTASININ, kesistigi duvarin
+    HANGI konumuna denk geldigini bulmak icin (sonra o konumun bir kapi/
+    pencere BOSLUGUNA denk gelip gelmedigini kontrol edebilmek icin)
+    kullanilir - `point_on_segment`in KENDISI DEGISTIRILMEDI (geriye
+    donuk uyumluluk), bu YENI bir kardes fonksiyondur."""
+    ax, ay = seg_a
+    bx, by = seg_b
+    px, py = pt
+    abx, aby = bx - ax, by - ay
+    seg_len = (abx ** 2 + aby ** 2) ** 0.5
+    if seg_len == 0:
+        return None
+    apx, apy = px - ax, py - ay
+    cross = abx * apy - aby * apx
+    dist = abs(cross) / seg_len
+    if dist > tol:
+        return None
+    t = (apx * abx + apy * aby) / (seg_len ** 2)
+    if not (-1e-6 <= t <= 1 + 1e-6):
+        return None
+    return t * seg_len
+
+
+def wall_gap_ranges(wall_dict: dict, openings: list[dict]) -> list[tuple[float, float]]:
+    """Bir duvarin kapi/pencere ACIKLIK araliklarini (s cinsinden, [0,
+    duvar_uzunlugu] icinde) dondurur - `walls.gaps_for_wall`in (duvar
+    aciklik hesabinin TEK kaynagi, bkz. openings/CLAUDE.md) DOGRUDAN
+    yeniden kullanimidir, ikinci bir aciklik-hesaplama YAZILMAZ (rev-13
+    swing-geometri dersiyle AYNI disiplin)."""
+    wall_obj = Wall.from_context(wall_dict, WallCatalog())
+    return [(g_start, g_end) for g_start, g_end, _opening in gaps_for_wall(wall_obj, openings)]
 
 
 def check_rooms(units: str, rooms: list[dict]) -> list[str]:
@@ -182,12 +220,13 @@ def check_rooms(units: str, rooms: list[dict]) -> list[str]:
     return errors
 
 
-def check_walls(units: str, walls: list[dict]) -> list[str]:
+def check_walls(units: str, walls: list[dict], openings: list[dict] | None = None) -> list[str]:
     errors: list[str] = []
 
     if not walls:
         return errors
 
+    openings = openings or []
     tol = 1.0 if units == "mm" else 0.001
 
     endpoint_count: dict[tuple[float, float], int] = {}
@@ -201,15 +240,39 @@ def check_walls(units: str, walls: list[dict]) -> list[str]:
             key = round_point(pt, units)
             if endpoint_count[key] >= 2:
                 continue
-            supported = any(
-                other["id"] != wall["id"] and point_on_segment(pt, other["start"], other["end"], tol)
-                for other in walls
-            )
+            supported = False
+            blocked_by_gap = False
+            for other in walls:
+                if other["id"] == wall["id"]:
+                    continue
+                s = point_position_on_segment(pt, other["start"], other["end"], tol)
+                if s is None:
+                    continue
+                # DEV-041: bir T-kesisim, kesistigi duvarin DOLU (malzeme)
+                # kismina degil bir kapi/pencere BOSLUGUNA denk geliyorsa
+                # bu GECERLI bir baglanti DEGILDIR - gorsel olarak duvar
+                # kapinin ORTASINDA "havada" biter (rev-22'de GERCEKTEN
+                # olan bir hata, bkz. scripts/walls/CLAUDE.md "Bilinen
+                # sinirlar"). Boslugun TAM SINIRINA (jamb) denk gelmek
+                # (esitlik) GECERLIDIR - yalnizca KESIN ICERIDE (s bir
+                # aciklik araliginin ICINDE) ise BOSLUGA baglaniyor sayilir.
+                if any(g_start < s < g_end for g_start, g_end in wall_gap_ranges(other, openings)):
+                    blocked_by_gap = True
+                    continue
+                supported = True
+                break
             if not supported:
-                errors.append(
-                    f"Duvar '{wall['id']}' ucu ({pt[0]}, {pt[1]}) baska hicbir "
-                    f"duvara (kose veya T-kesisimi olarak) baglanmiyor (sarkan uc)."
-                )
+                if blocked_by_gap:
+                    errors.append(
+                        f"Duvar '{wall['id']}' ucu ({pt[0]}, {pt[1]}) bir kapi/pencere "
+                        f"BOSLUGUNA baglaniyor - bu gecerli bir baglanti degildir (duvar "
+                        f"kapinin/pencerenin ORTASINDA 'havada' bitiyor)."
+                    )
+                else:
+                    errors.append(
+                        f"Duvar '{wall['id']}' ucu ({pt[0]}, {pt[1]}) baska hicbir "
+                        f"duvara (kose veya T-kesisimi olarak) baglanmiyor (sarkan uc)."
+                    )
 
     for wall in walls:
         length = ((wall["end"][0] - wall["start"][0]) ** 2 + (wall["end"][1] - wall["start"][1]) ** 2) ** 0.5
@@ -311,7 +374,7 @@ def check_floor(units: str, floor: dict) -> list[str]:
     errors: list[str] = []
     prefix = f"[{floor['id']}] "
     errors += [prefix + e for e in check_rooms(units, floor["rooms"])]
-    errors += [prefix + e for e in check_walls(units, floor["walls"])]
+    errors += [prefix + e for e in check_walls(units, floor["walls"], floor["openings"])]
     errors += [prefix + e for e in check_openings(floor["openings"], floor["walls"])]
     # DEV-036: room_type VERILMIS ama standards.STANDARDS'ta TANIMSIZ bir
     # deger YAZIM HATASIDIR (arity-1, walls.kind ile AYNI desen) - HATA.

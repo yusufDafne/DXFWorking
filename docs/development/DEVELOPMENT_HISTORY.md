@@ -4,6 +4,189 @@ Aktif geçmiş kapasitesi: **50 kayıt**. En eski tamamlanmış kayıt, 51. kay�
 alınırken silinir. Ayrıntılı teknik değişiklikler git geçmişi ve ilgili proje
 provenance kayıtlarıyla ilişkilendirilir.
 
+## HD-021 — `rooms/`: içbükey (L/T-şekilli) odalarda mahal etiketi konumlandırması (DEV-044)
+
+- **Durum:** COMPLETED
+- **Tamamlanma:** 2026-09-28
+- **Kökeni:** `HD-020` (`DEV-041`) ile AYNI kritik geri bildirim turunun
+  bir başka maddesi: *"L şeklinde hol isimlendirmelerini yaparken
+  geometrik orta nokta değil, hol sınırları içerisinde yazmalısın mahal
+  ismini. sınırlara dikkat ederek mahal etiketlerini yerleştirmelisin."*
+  Kullanıcının belirlediği "efektif sıralama"da (`DEVELOPMENT_TASKS.md`
+  "Uygulama sırası") DEV-044 ikinci sıradaydı — "küçük, bağımsız, DIŞ
+  KARAR gerektirmeyen bir modül düzeltmesi" olarak DEV-041'in hemen
+  ardından, kullanıcının "sonraki geliştirme planını uygula" komutuyla
+  uygulandı.
+
+### Kök neden ve çözüm: "pole of inaccessibility"
+
+`rooms::RoomLabeler` etiketi oda poligonunun geometrik centroid'ine
+yerleştiriyordu. Bu, projedeki odaların neredeyse tamamen dikdörtgen
+(convex) olması nedeniyle bugüne kadar sorun çıkarmıyordu — zaten
+`rooms/CLAUDE.md`'de "bilinen sınırlama" olarak NOT edilmişti. `DEV-039`/
+rev-22'de tanıtılan L-şekilli hol'ler (`uA_hol`, `uB_hol`) İÇBÜKEYDİR
+(concave) ve bu varsayımı GERÇEKTEN kırdı: içbükey bir poligonun
+centroid'i, poligonun "çentiğine" denk gelip odanın DIŞINA düşebilir.
+
+Plan metninin kendi "Fikir 1 (önerilen)"i UYGULANDI: yeni
+`PolygonOps.pole_of_inaccessibility`, Mapbox'un `polylabel` algoritmasıyla
+AYNI deterministik izgara-arama yöntemidir (üçüncü parti kütüphane
+KULLANILMADI — kök `CLAUDE.md`'nin "deterministik üretim ilkesi" gereği
+kendi implementasyonu; iteratif grid-arama bilinen bir yöntemdir). Bir
+noktanın poligon sınırına imzalı mesafesini (`_distance_to_boundary`,
+içerideyse pozitif/dışarıdaysa negatif) giderek küçülen hücrelerle
+maksimize eden noktayı bulur — sınıra en uzak, dolayısıyla HER ZAMAN
+poligonun GERÇEKTEN içinde kalan nokta.
+
+### Convex davranış BİREBİR korundu (bir kanıt tesadüf değil, tasarım)
+
+Arama, adaylardan biri olarak HER ZAMAN `centroid`i VE bbox-merkezini
+dener (`best_cell` başlangıcı); bir dikdörtgen için bu iki nokta zaten
+ANALİTİK OLARAK aynı ve maksimum mesafeye sahip TEK noktadır — hiçbir
+izgara hücresi bunu KESİN OLARAK (`>`, `>=` değil) geçemez. Sonuç:
+dikdörtgen odalarda `pole_of_inaccessibility` == `centroid`, **1e-6
+toleransla BİREBİR**. Bu, `DEV-018`in `check_block_matches_raw_formula`
+testinin (hard-coded `center_x, center_y = 3000.0, 2500.0` bekleyen,
+1e-6 toleranslı bir regresyon testi) TEK SATIR DEĞİŞMEDEN geçmeye devam
+etmesiyle KANITLANDI — bu tesadüf değil, `bbox_cell`in bilinçli olarak
+aday havuzuna eklenmesinin doğrudan sonucudur.
+
+### Sığdırma kutusu da düzeltildi: TAM AABB değil, yerel açıklık
+
+Plan metninin "Açık kararlar"ından biri buydu: etiketin sığacağı
+genişlik/yükseklik eskiden odanın TAM AABB'inden geliyordu — içbükey bir
+odada bu, çentikteki BOŞ alanı da sayarak MEVCUT OLMAYAN bir genişlik/
+yükseklik uydururdu (taşma riski). Yeni `PolygonOps.local_extent(polygon,
+origin)`, capa noktasından dört eksen yönünde (+x/-x/+y/-y) GERÇEK kenar
+kesişimine kadar ölçer; dikdörtgende AABB ile AYNI sonucu verir, kesişim
+bulunamazsa (dejenere durum) eski AABB hesabına DÜŞÜLÜR (güvenlik ağı).
+
+### Kasıtlı bozma kanıtı + golden referans + tek kaynak disiplini
+
+`scripts/rooms/selftest.py`ye 4 yeni grup eklendi (toplam 8): ikisi
+regresyon (dikdörtgende pole==centroid, local_extent==AABB), ikisi
+DEV-044'ün kendisi. `L_SHAPED_HOL` sabiti (`uA_hol`/`uB_hol` ile AYNI
+kategoride, elle hesaplanmış L-şekil) ile: (1) geometrik centroid'in
+(2165.93, 1515.93) GERÇEKTEN poligonun dışında (çentikte) kaldığı elle
+kanıtlandı — bu, DEV-044 öncesi hatanın ta kendisidir; (2)
+`pole_of_inaccessibility`in HER ZAMAN içeride kaldığı; (3) uçtan uca
+`RoomLabeler.draw`in GERÇEKTEN çizdiği `INSERT` konumunun oda sınırları
+içinde olduğu (yalnızca ham geometri fonksiyonu değil, fiili çizim çıktısı
+sınandı).
+
+Yeni proje-geneli golden referans `golden/hol_l_sekli` eklendi (`uA_hol`/
+`uB_hol` ile AYNI L-şekil, tek odalı minimal bir kat) — `--golden-set`
+üzerinden UÇTAN UCA (pipeline + `rule_room_labels`) doğrulandı.
+`golden_report.py::rule_room_labels` bu vesileyle güncellendi:
+artık `PolygonOps.centroid` DEĞİL, `RoomLabeler.draw`in KENDİ kullandığı
+`pole_of_inaccessibility`i çağırıyor — `HD-020`deki (`DEV-041`)
+`wall_gap_ranges` ile AYNI "tek kaynak" disiplini (kontrol, üretimin
+okuduğu FONKSİYONUN KENDİSİNİ okur, geometrik bir varsayımı YENİDEN
+YAZMAZ). Bu güncelleme olmasaydı, gelecekte eklenecek İÇBÜKEY bir golden
+fixture'da kural YANLIŞLIKLA başarısız olurdu (centroid dışarıda kalırken
+gerçek etiket doğru şekilde içeride olurdu).
+
+### Kapsam BİLEREK dar tutuldu
+
+`DEV-044`'ün "İlişkili modüller"i yalnızca `rooms/` (asıl uygulama),
+`architect/` (concave hol üreten taraf) ve `pafta/` (`fit_text_height`
+etkileşimi) idi. `scripts/ceiling/`in RCP (tavan) paftası etiketi de
+`centroid` kullanıyor ama bu görevin kapsamı DIŞINDA BİLİNÇLİ olarak
+bırakıldı — ayrı bir görev gerektirir.
+
+- **Etkilenen dosyalar:** `scripts/rooms/__init__.py` (`PolygonOps.
+  pole_of_inaccessibility`, `_distance_to_boundary`, `_point_in_polygon`,
+  `_point_to_segment_distance`, `local_extent`, `_ray_hit_distance`;
+  `RoomLabeler.draw` iç mantığı), `scripts/rooms/selftest.py` (4 yeni
+  grup), `scripts/golden_report.py` (`rule_room_labels`), `scripts/
+  rooms/CLAUDE.md`, `golden/hol_l_sekli/` (YENİ golden referans).
+- **Golden etkisi:** mevcut TÜM fixture'lar (`--golden-set`)
+  DEĞİŞMEDEN geçti (hepsi convex/dikdörtgen); YENİ bir fixture
+  (`golden/hol_l_sekli`) eklendi.
+- **Sonraki adım:** "Uygulama sırası"na göre `DEV-042`→`DEV-043` (aynı
+  temalı `architect/` kuralları) — bkz. `docs/development/
+  DEVELOPMENT_TASKS.md`.
+
+## HD-020 — `walls/`+`validate.py`: duvar ucu / kapı boşluğu çakışması denetimi (DEV-041)
+
+- **Durum:** COMPLETED
+- **Tamamlanma:** 2026-09-28
+- **Kökeni:** kullanıcının, `architect/` (DEV-039/rev-21/rev-22) çıktısını
+  gerçek dünya mimar gözüyle incelediği kritik geri bildirim turu: *"bir
+  tane duvar, kapının ortasında bitmiş, bu kritik bir hata ve kabul
+  edilemez, bunun denetlenip bir daha olmaması gerekiyor. kontrol
+  mekanizmalarını iyileştir ve bu problemi çöz."* Aynı mesajda gelen
+  altı diğer gözlem (koridor→hol→oda→banyo sirkülasyonu, WC kapı
+  yakınlığı, L-hol etiket konumu, ölü alan, merdiven oranı/sahanlık)
+  PLANLAMA olarak `DEV-042`…`DEV-047`e ayrıldı; kullanıcı DEV-041'i
+  "temel güvenlik ağı" olarak en öncelikli sıraya koydu ve doğrudan
+  "dev 41 geliştirmesini gerçekleştir" komutuyla uygulanmasını istedi.
+
+### Arite kararı: `collision/` değil, `validate.py::check_walls`
+
+Soru DEV-019/DEV-039'daki AYNI arite ayrımıyla çözüldü: bu bir duvarın
+KENDİ bağlantısının geçerli olup olmadığıdır (arity-1: "bir T-kesişim
+NOKTASI, kesiştiği duvarın kapı/pencere boşluğuna mı denk geliyor"),
+"iki FARKLI eleman sınıfı aynı yeri mi işgal ediyor" (arity-2+, örn.
+tefriş↔duvar) DEĞİL. Bu yüzden `collision/`e değil, `walls`ın kendi
+geçerliliğini zaten denetleyen `validate.py::check_walls`e eklendi.
+
+### Tek kaynak: ikinci bir açıklık-hesabı YAZILMADI
+
+`wall_gap_ranges` adlı yeni yardımcı, `walls.gaps_for_wall`i (host
+duvarın kapı/pencere boşluk aralıklarının TEK hesaplandığı yer)
+DOĞRUDAN çağırır. Bu, rev-13'te gerçekten yaşanan bir hatadan
+(çizilen kapı yayı ile denetlenen sektörün AYRI hesaplanıp sessizce
+ayrışması) bilinçli olarak kaçınma kararıdır — kök `CLAUDE.md`'nin
+"tek kaynak" disiplini burada birebir uygulandı. Yeni
+`point_position_on_segment`, mevcut boolean `point_on_segment`in bir
+yan ürünüdür: nokta segment üzerindeyse `seg_a`dan itibaren s-mesafesini
+(mm) döner. Bir T-kesişim ucu bir boşluğun KESİN İÇİNDEYSE (`g_start <
+s < g_end`, sınır eşitliği HARİÇ — bir duvar tam kapı pervazında/jamb'da
+bitmesi mimari olarak GEÇERLİDİR) artık "sarkan uç" sayılır ve mesaj
+özel olarak boşluğu adlandırır (`"...BOSLUGUNA baglaniyor..."`),
+genel "sarkan uç" mesajından AYRI tutulur.
+
+### İlk kez: `validate.py`nin kendi kontrolüne odaklı selftest
+
+`scripts/validate_selftest.py` (YENİ dosya) — `check_walls` bugüne
+kadar yalnızca `golden_report.py --golden-set` üzerinden DOLAYLI test
+ediliyordu (zaten GEÇERLİ golden context'lerle); hata yolu hiç
+DOĞRUDAN sınanmamıştı. Kök `CLAUDE.md`'nin "kasıtlı bozma +
+yanlış-pozitif" disiplini beş grupla uygulandı: (1) kapı boşluğuna
+giren uç HATA verir, (2) boşluktan uzak normal bir T-kesişimi
+YANLIŞ-POZİTİF üretmez, (3) boşluğun TAM SINIRINDAKİ (jamb) bir uç
+YANLIŞ-POZİTİF üretmez (sınır eşitliği de HATA sayılsaydı bu gerçek
+bir yanlış-pozitif olurdu — mimari olarak bir duvar kapı pervazında
+bitebilir), (4) GERÇEK sarkan uç hâlâ eski mesajıyla yakalanır
+(regresyon yok), (5) gerçek `context.json`daki İKİ bilinen hata
+(`w_unit_A_B`, `uA_w_hol_mutfak_v`) GERÇEKTEN yakalanır. İlk fixture
+denemesi (iki bağlantısız duvar) kendi kendine sarkan uçlar ürettiği
+için kirli sayımlar verdi; kapalı bir dikdörtgen + tek bir T-duvarıyla
+yeniden kurularak TEK değişken izole edildi.
+
+### Kapsam BİLEREK dar tutuldu: kontrol kuruldu, gerçek hata DÜZELTİLMEDİ
+
+Bu görevin kapsamı yalnızca KONTROLÜ kurmaktı, gerçek projedeki iki
+somut hatayı düzeltmek DEĞİL — bu, kullanıcının kendi önceliklendirmesiyle
+("önceliğimiz modül iyileştirilmesidir ... revizeleri kullanacaksın")
+tutarlıdır: modül işi önce, veri düzeltmesi (bir proje revizyonu olarak)
+sonra. Sonuç olarak `python scripts/validate.py` şu an gerçek `context.
+json` üzerinde BAŞARISIZ dönüyor — bu bir regresyon DEĞİL, kontrolün
+tam olarak beklendiği gibi çalıştığının kanıtıdır (önceden bu iki hata
+sessizce üretiliyordu). Düzeltme ayrı bir gelecek proje revizyonu
+bekliyor.
+
+- **Etkilenen dosyalar:** `scripts/validate.py` (`point_position_on_segment`,
+  `wall_gap_ranges`, `check_walls` imzası + iç mantığı), `scripts/
+  validate_selftest.py` (YENİ), `scripts/walls/CLAUDE.md` ("Doğrulama" +
+  "Bilinen sınırlar").
+- **Golden etkisi:** yok (`--golden-set` zaten geçerli fixture'lar
+  kullanır, hiçbiri bir kapı boşluğuna giren T-kesişimi İÇERMİYOR).
+- **Sonraki adım:** `DEV-042`…`DEV-047` (kullanıcının aynı geri
+  bildiriminden türeyen kalan altı plan), belirlenen "Uygulama sırası"na
+  göre — bkz. `docs/development/DEVELOPMENT_TASKS.md`.
+
 ## HD-019 — `architect/` modülü: mekansal ilişki/mimari mantık kuralları (DEV-039)
 
 - **Durum:** COMPLETED

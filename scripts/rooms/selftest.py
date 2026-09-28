@@ -15,6 +15,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import ezdxf  # noqa: E402
 
 from rooms import (  # noqa: E402
+    PolygonOps,
     ROOM_LABEL_ATTDEF_TAGS,
     ROOM_LABEL_BLOCK_NAME,
     ROOM_LABEL_LINE_GAP,
@@ -22,6 +23,12 @@ from rooms import (  # noqa: E402
 )
 
 TOLERANCE = 1e-6
+
+# L-sekilli (icbukey) hol - `golden/hol_l_sekli` ile AYNI geometri (DEV-044).
+# Elle hesaplanan geometrik centroid (2165.93, 1515.93) poligonun DISINDA
+# (centikte) kalir; `pole_of_inaccessibility` HER ZAMAN icerde kalmalidir.
+L_SHAPED_HOL = [[100.0, 100.0], [5900.0, 100.0], [5900.0, 1300.0],
+                [1300.0, 1300.0], [1300.0, 4600.0], [100.0, 4600.0]]
 
 
 def _room(**overrides) -> dict:
@@ -142,12 +149,80 @@ def check_attdef_tags_match_lines() -> list[str]:
     return errors
 
 
+def check_pole_matches_centroid_for_rectangle() -> list[str]:
+    """DEV-044: convex/dikdortgen bir odada `pole_of_inaccessibility`,
+    `centroid` ile TAM (1e-6 tolerransla) ORTUSMELIDIR - davranis
+    DEGISMEMELIDIR (regresyon testi, bkz. modul CLAUDE.md)."""
+    errors: list[str] = []
+    polygon = [[0.0, 0.0], [6000.0, 0.0], [6000.0, 5000.0], [0.0, 5000.0]]
+    cx, cy = PolygonOps.centroid(polygon)
+    px, py = PolygonOps.pole_of_inaccessibility(polygon)
+    if abs(px - cx) > TOLERANCE or abs(py - cy) > TOLERANCE:
+        errors.append(f"dikdortgende pole {px, py} != centroid {cx, cy}.")
+    return errors
+
+
+def check_pole_stays_inside_concave_l_shape() -> list[str]:
+    """KASITLI BOZMA: `L_SHAPED_HOL`in GEOMETRIK centroid'i (elle
+    hesaplanabilir, (2165.93, 1515.93)) poligonun DISINDA (centikte)
+    kaliyor - DEV-044 ONCESI hatanin ta kendisi budur. `pole_of_
+    inaccessibility` HER ZAMAN poligonun GERCEKTEN ICINDE kalan bir nokta
+    dondurmelidir."""
+    errors: list[str] = []
+    cx, cy = PolygonOps.centroid(L_SHAPED_HOL)
+    if PolygonOps._point_in_polygon((cx, cy), L_SHAPED_HOL):
+        errors.append(
+            f"test fixture'i BOZULDU: centroid {cx, cy} artik poligonun "
+            f"ICINDE - bu test artik hicbir sey KANITLAMIYOR."
+        )
+    px, py = PolygonOps.pole_of_inaccessibility(L_SHAPED_HOL)
+    if not PolygonOps._point_in_polygon((px, py), L_SHAPED_HOL):
+        errors.append(f"pole_of_inaccessibility {px, py} poligonun DISINDA - HATA.")
+    return errors
+
+
+def check_local_extent_matches_aabb_for_rectangle() -> list[str]:
+    """DEV-044: convex bir odada `local_extent`, eski AABB genislik/
+    yukseklik hesabiyla (`max(xs)-min(xs)`, `max(ys)-min(ys)`) AYNI
+    sonucu vermelidir - sigdirma davranisi DEGISMEMELIDIR."""
+    errors: list[str] = []
+    polygon = [[0.0, 0.0], [6000.0, 0.0], [6000.0, 5000.0], [0.0, 5000.0]]
+    origin = PolygonOps.pole_of_inaccessibility(polygon)
+    width, height = PolygonOps.local_extent(polygon, origin)
+    if abs(width - 6000.0) > TOLERANCE or abs(height - 5000.0) > TOLERANCE:
+        errors.append(f"local_extent {width, height} != AABB (6000, 5000).")
+    return errors
+
+
+def check_draw_places_label_inside_concave_room() -> list[str]:
+    """Uctan uca: `RoomLabeler.draw` L-sekilli bir odada etiketi GERCEKTEN
+    oda SINIRLARI icine cizmelidir (yanlis-pozitif testi: yalnizca capa
+    NOKTASI degil, fiilen cizilen INSERT konumu da poligonun ICINDE mi)."""
+    errors: list[str] = []
+    room = _room(id="hol", name="Hol", no="01", area_m2=10.92, polygon=L_SHAPED_HOL)
+    doc = ezdxf.new()
+    msp = doc.modelspace()
+    RoomLabeler.draw(msp, room, max_text_height=300.0, units="mm", floor_code="K1")
+    inserts = list(msp.query("INSERT"))
+    if len(inserts) != 1:
+        errors.append(f"1 INSERT bekleniyordu, {len(inserts)} bulundu.")
+        return errors
+    position = inserts[0].dxf.insert
+    if not PolygonOps._point_in_polygon((position.x, position.y), L_SHAPED_HOL):
+        errors.append(f"etiket konumu {position.x, position.y} oda SINIRLARININ DISINDA.")
+    return errors
+
+
 def main() -> int:
     groups = (
         ("blok konumu eski duz-TEXT formuluyle ortusuyor", check_block_matches_raw_formula()),
         ("eksik kod -> raw-text fallback (kenar durum)", check_missing_code_falls_back_to_raw_text()),
         ("blok tanimi tek kez olusuyor (yanlis-pozitif)", check_block_definition_reused()),
         ("ATTDEF sirasi", check_attdef_tags_match_lines()),
+        ("dikdortgende pole == centroid (regresyon)", check_pole_matches_centroid_for_rectangle()),
+        ("L-sekilli holde pole ICERDE, centroid DISARIDA (DEV-044)", check_pole_stays_inside_concave_l_shape()),
+        ("dikdortgende local_extent == AABB (regresyon)", check_local_extent_matches_aabb_for_rectangle()),
+        ("L-sekilli holde etiket GERCEKTEN oda icinde cizilir", check_draw_places_label_inside_concave_room()),
     )
     failed = False
     for name, errors in groups:

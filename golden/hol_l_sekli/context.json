@@ -1,0 +1,164 @@
+{
+  "meta": {
+    "project_name": "Fixture - L-sekilli Hol Mahal Etiketi (DEV-044)",
+    "schema_version": "1.0.0",
+    "units": "mm",
+    "scale": "1:50",
+    "project_type": "MIMARI_UYGULAMA",
+    "fonts": {
+      "default": "arialn.ttf",
+      "room_label": "arialn.ttf"
+    },
+    "cover": {
+      "signature_fields": ["YONETIM", "MIMAR"]
+    },
+    "floor_width": 6000.0,
+    "floor_depth": 9000.0
+  },
+  "layers": [
+    {
+      "name": "DUVARLAR",
+      "color": 7
+    },
+    {
+      "name": "KAPI-PENCERE",
+      "color": 5
+    },
+    {
+      "name": "METIN",
+      "color": 7
+    },
+    {
+      "name": "CERCEVE",
+      "color": 8
+    },
+    {
+      "name": "OLCU",
+      "color": 3
+    }
+  ],
+  "grid": {
+    "vertical_axes": [
+      {
+        "label": "1",
+        "position": 0.0
+      },
+      {
+        "label": "2",
+        "position": 6000.0
+      }
+    ],
+    "horizontal_axes": [
+      {
+        "label": "A",
+        "position": 0.0
+      },
+      {
+        "label": "B",
+        "position": 4700.0
+      }
+    ]
+  },
+  "floors": [
+    {
+      "id": "kat1",
+      "label": "ORNEK KAT",
+      "code": "K1",
+      "rooms": [
+        {
+          "id": "hol",
+          "name": "Hol",
+          "no": "01",
+          "area_m2": 10.92,
+          "polygon": [
+            [100, 100],
+            [5900, 100],
+            [5900, 1300],
+            [1300, 1300],
+            [1300, 4600],
+            [100, 4600]
+          ],
+          "room_type": "koridor"
+        }
+      ],
+      "walls": [
+        {
+          "id": "w_alt",
+          "start": [0, 0],
+          "end": [6000.0, 0],
+          "thickness": 200.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "w_sag",
+          "start": [6000.0, 0],
+          "end": [6000.0, 1400.0],
+          "thickness": 200.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "w_ic_yatay",
+          "start": [6000.0, 1400.0],
+          "end": [1400.0, 1400.0],
+          "thickness": 200.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "w_ic_dusey",
+          "start": [1400.0, 1400.0],
+          "end": [1400.0, 4700.0],
+          "thickness": 200.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "w_ust",
+          "start": [1400.0, 4700.0],
+          "end": [0, 4700.0],
+          "thickness": 200.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "w_sol",
+          "start": [0, 4700.0],
+          "end": [0, 0],
+          "thickness": 200.0,
+          "layer": "DUVARLAR"
+        }
+      ],
+      "openings": [
+        {
+          "id": "kapi_giris",
+          "type": "door",
+          "wall_id": "w_alt",
+          "position_from_start": 3000.0,
+          "width": 900.0,
+          "layer": "KAPI-PENCERE"
+        }
+      ],
+      "labels": []
+    }
+  ],
+  "elevations": [
+    {
+      "id": "on_cephe",
+      "label": "ON CEPHE",
+      "width": 6000.0,
+      "axis_source": "vertical",
+      "levels": [
+        {
+          "label": "ZEMIN KAT",
+          "height": 3000.0,
+          "window_count": 1,
+          "door": true
+        }
+      ]
+    }
+  ],
+  "rev_history": [
+    {
+      "rev": 1,
+      "ts": "2026-09-28T00:00:00Z",
+      "summary": "DEV-044 golden referansi: L-sekilli (icbukey) tek odali 'Hol' - kullanicinin rev-22 sonrasi gozlemiyle AYNI kategori (`uA_hol`/`uB_hol`). Poligonun GEOMETRIK CENTROID'i (2166.48, 1516.0) elle hesaplandi ve odanin DISINDA (centikte) kaldigi KANITLANDI - DEV-044 oncesi RoomLabeler bu noktaya etiket cizerdi. `PolygonOps.pole_of_inaccessibility` bunun yerine poligonun GERCEKTEN ICINDE kalan bir nokta doner; `rule_room_labels` bu fixture'da 0 hata ile gecer."
+    }
+  ]
+}

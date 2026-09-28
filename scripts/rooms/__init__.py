@@ -1,6 +1,8 @@
 """Validated room geometry views and deterministic room labels."""
 from __future__ import annotations
 
+import heapq
+import math
 from dataclasses import dataclass
 
 from ezdxf.enums import TextEntityAlignment
@@ -65,6 +67,139 @@ class PolygonOps:
                 if intersects(a, b, c, d):
                     return True
         return False
+
+    @staticmethod
+    def _point_to_segment_distance(pt, seg_a, seg_b) -> float:
+        px, py = pt
+        ax, ay = seg_a
+        bx, by = seg_b
+        abx, aby = bx - ax, by - ay
+        ab_len_sq = abx * abx + aby * aby
+        if ab_len_sq == 0:
+            return math.hypot(px - ax, py - ay)
+        t = max(0.0, min(1.0, ((px - ax) * abx + (py - ay) * aby) / ab_len_sq))
+        cx, cy = ax + t * abx, ay + t * aby
+        return math.hypot(px - cx, py - cy)
+
+    @staticmethod
+    def _point_in_polygon(pt, polygon: list[list[float]]) -> bool:
+        x, y = pt
+        inside = False
+        n = len(polygon)
+        for i in range(n):
+            x1, y1 = polygon[i]
+            x2, y2 = polygon[(i + 1) % n]
+            if (y1 > y) != (y2 > y):
+                x_at_y = (x2 - x1) * (y - y1) / (y2 - y1) + x1
+                if x < x_at_y:
+                    inside = not inside
+        return inside
+
+    @staticmethod
+    def _distance_to_boundary(pt, polygon: list[list[float]]) -> float:
+        """`pt`den poligon SINIRINA olan en kisa mesafe; nokta poligonun
+        ICINDEYSE pozitif, DISINDAYSA negatif isaretlidir (polylabel'in
+        standart "signed distance" tanimi)."""
+        n = len(polygon)
+        min_dist = min(
+            PolygonOps._point_to_segment_distance(pt, polygon[i], polygon[(i + 1) % n])
+            for i in range(n)
+        )
+        sign = 1.0 if PolygonOps._point_in_polygon(pt, polygon) else -1.0
+        return sign * min_dist
+
+    @staticmethod
+    def pole_of_inaccessibility(polygon: list[list[float]], precision: float = 1.0) -> tuple[float, float]:
+        """Poligon SINIRINA en UZAK ic nokta (Mapbox `polylabel` ile AYNI
+        deterministik izgara-arama yontemi - ucuncu parti kutuphane
+        KULLANILMAZ, bkz. DEV-044). Convex/dikdortgen bir oda icin bu,
+        `centroid`in KENDISIYLE (tam esit) sonuclanir - `centroid` de aday
+        olarak sinandigi icin (asagida) davranis DEGISMEZ. Icbukey (L/T
+        seklinde) bir odada ise HER ZAMAN poligonun GERCEKTEN ICINDE kalan
+        bir nokta doner - centroid disari dusebilirken bu dusmez."""
+        xs = [p[0] for p in polygon]
+        ys = [p[1] for p in polygon]
+        min_x, max_x = min(xs), max(xs)
+        min_y, max_y = min(ys), max(ys)
+        width, height = max_x - min_x, max_y - min_y
+        cell_size = min(width, height)
+        if cell_size <= 0:
+            return PolygonOps.centroid(polygon)
+
+        def make_cell(cx: float, cy: float, half: float):
+            d = PolygonOps._distance_to_boundary((cx, cy), polygon)
+            return (-(d + half * math.sqrt(2)), cx, cy, half, d)
+
+        half = cell_size / 2.0
+        queue: list[tuple[float, float, float, float, float]] = []
+        x = min_x
+        while x < max_x:
+            y = min_y
+            while y < max_y:
+                heapq.heappush(queue, make_cell(x + half, y + half, half))
+                y += cell_size
+            x += cell_size
+
+        centroid = PolygonOps.centroid(polygon)
+        best_cell = make_cell(centroid[0], centroid[1], 0.0)
+        bbox_cell = make_cell(min_x + width / 2.0, min_y + height / 2.0, 0.0)
+        if bbox_cell[4] > best_cell[4]:
+            best_cell = bbox_cell
+
+        while queue:
+            neg_max, cx, cy, cell_half, d = heapq.heappop(queue)
+            if d > best_cell[4]:
+                best_cell = (neg_max, cx, cy, cell_half, d)
+            if (-neg_max) - best_cell[4] <= precision:
+                continue
+            child_half = cell_half / 2.0
+            for dx, dy in ((-child_half, -child_half), (child_half, -child_half),
+                           (-child_half, child_half), (child_half, child_half)):
+                heapq.heappush(queue, make_cell(cx + dx, cy + dy, child_half))
+
+        return best_cell[1], best_cell[2]
+
+    @staticmethod
+    def _ray_hit_distance(polygon: list[list[float]], origin: tuple[float, float],
+                           direction: tuple[float, float]) -> float:
+        """`origin`den eksen-hizali `direction` yonunde en yakin kenar
+        kesisimine olan mesafe; kesisim yoksa sonsuz doner."""
+        ox, oy = origin
+        dx, dy = direction
+        best = math.inf
+        n = len(polygon)
+        for i in range(n):
+            ax, ay = polygon[i]
+            bx, by = polygon[(i + 1) % n]
+            ex, ey = bx - ax, by - ay
+            denom = dx * ey - dy * ex
+            if abs(denom) < 1e-12:
+                continue
+            t = ((ax - ox) * ey - (ay - oy) * ex) / denom
+            if t <= 1e-9:
+                continue
+            if abs(ex) > abs(ey):
+                s = (ox + t * dx - ax) / ex
+            else:
+                s = (oy + t * dy - ay) / ey
+            if -1e-9 <= s <= 1 + 1e-9:
+                best = min(best, t)
+        return best
+
+    @staticmethod
+    def local_extent(polygon: list[list[float]], origin: tuple[float, float]) -> tuple[float, float]:
+        """`origin` (etiket capa noktasi) merkezli, poligonun GERCEK yerel
+        acikligindan turetilen genislik/yukseklik - poligonun TAM AABB'i
+        DEGIL (DEV-044): icbukey bir odada AABB, centikteki bos alani da
+        sayarak MEVCUT OLMAYAN bir genislik/yukseklik uydurur; bu fonksiyon
+        yerine dort eksen yonunde GERCEK kenar kesisimine kadar olcer."""
+        right = PolygonOps._ray_hit_distance(polygon, origin, (1.0, 0.0))
+        left = PolygonOps._ray_hit_distance(polygon, origin, (-1.0, 0.0))
+        up = PolygonOps._ray_hit_distance(polygon, origin, (0.0, 1.0))
+        down = PolygonOps._ray_hit_distance(polygon, origin, (0.0, -1.0))
+        width = right + left if math.isfinite(right) and math.isfinite(left) else 0.0
+        height = up + down if math.isfinite(up) and math.isfinite(down) else 0.0
+        return width, height
 
 
 @dataclass(frozen=True)
@@ -219,11 +354,24 @@ class RoomLabeler:
         data = room if isinstance(room, dict) else room.__dict__
         Room.from_context(data, units)
         polygon = data["polygon"]
-        center_x, center_y = PolygonOps.centroid(polygon)
-        xs = [point[0] for point in polygon]
-        ys = [point[1] for point in polygon]
-        available_width = max(0.0, max(xs) - min(xs) - 2 * ROOM_LABEL_MARGIN)
-        available_height = max(0.0, max(ys) - min(ys) - 2 * ROOM_LABEL_MARGIN)
+        # DEV-044: centroid degil "pole of inaccessibility" - icbukey (L/T
+        # seklinde) bir odada geometrik centroid odanin DISINA dusebilir
+        # (bkz. modul CLAUDE.md "Bilinen sinirlamalar"). Convex/dikdortgen
+        # bir oda icin bu iki nokta AYNIDIR (davranis DEGISMEZ).
+        center_x, center_y = PolygonOps.pole_of_inaccessibility(polygon)
+        # Sigdirma kutusu artik TAM AABB degil, capa noktasi cevresindeki
+        # GERCEK yerel acikliktir - AABB icbukey bir odada centikteki bos
+        # alani da saydigi icin MEVCUT OLMAYAN bir genislik/yukseklik
+        # uydururdu.
+        width, height = PolygonOps.local_extent(polygon, (center_x, center_y))
+        if width <= 0.0:
+            xs = [point[0] for point in polygon]
+            width = max(xs) - min(xs)
+        if height <= 0.0:
+            ys = [point[1] for point in polygon]
+            height = max(ys) - min(ys)
+        available_width = max(0.0, width - 2 * ROOM_LABEL_MARGIN)
+        available_height = max(0.0, height - 2 * ROOM_LABEL_MARGIN)
 
         lines = [(text, factor) for text, factor in RoomLabeler.lines(data, floor_code) if text]
         if not lines:

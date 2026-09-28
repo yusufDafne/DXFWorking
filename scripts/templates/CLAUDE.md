@@ -151,3 +151,14 @@ NORMAL `validate.py` akışından geçer.
 - **`units="m"` desteği TEST EDİLMEDİ** (yalnızca `mm` gerçek projeyle
   karşılaştırılarak sınandı) — `to_m2` dönüşümü kod olarak doğru
   görünüyor ama `m` birimli bir golden referansla henüz KANITLANMADI.
+- **`band_depth`/`corridor_leg_depth` sabitleri `floor_width`e/servis
+  edilen birim sayısına göre ÖLÇEKLENMEZ** — bu projede (`floor_width`
+  20000mm) L-şekilli koridorun uzun kolu bu yüzden ORANTISIZ büyüyor ve
+  ~41.7 m² kullanılmayan alan bırakıyor (kullanıcı: "sağ üstteki alan
+  tamamıyla ölü bir alan"); bkz. `DEVELOPMENT_TASKS.md` `DEV-045`
+  (PLANNED).
+- **`stair_width`in oda-oranı varsayılanı gerçek bir merdiven kolunun
+  (uzun-ince) oranını YANSITMAZ** — `standards::STANDARDS['merdiven']`
+  sınırının alt ucuna yakın ama kare'ye YAKIN bir oda ayırır, bu yüzden
+  tek-kollu merdiven SIĞMIYOR (bkz. `scripts/stairs/CLAUDE.md`); bkz.
+  `DEVELOPMENT_TASKS.md` `DEV-046` (PLANNED).

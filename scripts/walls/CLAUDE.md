@@ -102,6 +102,10 @@ DEĞİŞMEDİĞİ (regresyon testi), tuğla/cam duvarların açıklığı doğru
 dışladığı ve standardın birden fazla duvarda yeniden kullanılabildiği
 (yanlış-pozitif) sınanır.
 
+`python scripts/validate_selftest.py` (DEV-041, TAMAMLANDI) —
+`validate.py::check_walls`in T-kesişim/kapı-boşluğu kontrolü, bu modülün
+`gaps_for_wall`ini YENİDEN KULLANARAK. Bkz. aşağıdaki "Bilinen sınırlar".
+
 ## Çakışma ayak izi (rev-12)
 
 `walls/collision.py::footprints(floor, context)`, her duvar için MERKEZ ÇİZGİ
@@ -128,3 +132,16 @@ kalınlığa bakar, görsel sunuma değil. Ayrıntı: `scripts/collision/CLAUDE.
   `meta.column_hatch` gibi) — sabit `ANSI31`/`1.5`. 1:50 ve 1:100'de aynı
   desen okunaklı olmayabilir (kolonlarınkiyle AYNI açık soru).
 - `wall_fill_spans` köşe/T miter'ini dikkate almaz (bkz. yukarıdaki not).
+- ~~KRİTİK, KANITLANMIŞ hata: bir T-kesişim, host duvarın kapı
+  AÇIKLIĞINA denk gelebiliyordu.~~ **`DEV-041`'de KAPANDI:**
+  `validate.py::check_walls` artık her T-kesişim adayı için host duvarın
+  `walls.gaps_for_wall`ini (bu modülün TEK açıklık-hesabı kaynağı)
+  ÇAĞIRIR; nokta bir açıklığın KESİN İÇİNDEYSE (sınıra/jamb'a denk
+  gelmek GEÇERLİDİR) bu artık "sarkan uç" sayılır ve HATA verir. Gerçek
+  projede İKİ somut örnek (`w_unit_A_B`, `uA_w_hol_mutfak_v` — ikisi de
+  `band_south` üzerindeki bir kapı açıklığının İÇİNDE bitiyordu) bu
+  kontrolle GERÇEKTEN yakalanıyor — `python scripts/validate_selftest.py`
+  bunu kanıtlar. **Bu iki gerçek hata context.json'da henüz
+  DÜZELTİLMEDİ** (bu görevin kapsamı yalnızca kontrolü kurmaktı) — bu
+  yüzden `python scripts/validate.py` gerçek projede şu an BAŞARISIZ
+  dönüyor; düzeltme AYRI bir proje revizyonu bekliyor.

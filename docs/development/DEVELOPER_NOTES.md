@@ -127,6 +127,52 @@ sistem mimarı direktifi güncellenir.
   `DEV-038` bu modüle ABSORBE edildi (`study::check_fits`). Üç turluk bir
   kullanıcı diyaloğuyla netleşen bir plandan uygulandı — bu, "plan onayı"
   ile "implementasyon izni"nin ayrı ayrı istendiği bir örnek oldu.
+- **Kullanıcının rev-22 sonrası kritik gerçek-dünya incelemesi (7 gözlem)
+  PLANLAMA olarak `DEV-041`…`DEV-047`e ayrıldı, "efektif sıralama"
+  belirlendi** (`DEVELOPMENT_TASKS.md`da "Uygulama sırası"): DEV-041
+  önce (kritik güvenlik ağı), DEV-044 ikinci (bağımsız hızlı düzeltme),
+  DEV-042→DEV-043 birlikte (aynı temalı architect/ kuralları),
+  DEV-046→DEV-047 sıralı (sert bağımlılık), DEV-045 son.
+- **`DEV-041` UYGULANDI (2026-09-28, `HD-020`):** `validate.py::
+  check_walls`e yeni bir arity-1 kontrol eklendi — bir T-kesişim ucunun,
+  kesiştiği duvarın kapı/pencere boşluğunun KESİN İÇİNDE bitip
+  bitmediği (sınır/jamb eşitliği GEÇERLİDİR). Yeni `wall_gap_ranges`
+  yardımcı fonksiyonu `walls.gaps_for_wall`i (TEK açıklık kaynağı)
+  DOĞRUDAN yeniden kullanır, ikinci bir hesap YAZILMADI (rev-13
+  swing-geometry dersiyle AYNI disiplin). İlk kez `validate.py`nin
+  kendi kontrolüne odaklı bir selftest kuruldu (`scripts/
+  validate_selftest.py`, 5 grup, kasıtlı-bozma + yanlış-pozitif).
+  **KRİTİK operasyonel durum:** bu kontrol gerçek projedeki İKİ bilinen
+  hatayı (`w_unit_A_B` @ `(7700,13000)`, `uA_w_hol_mutfak_v` @
+  `(3200,13000)` — ikisi de `band_south` üzerindeki bir kapı boşluğuna
+  bağlanıyor) GERÇEKTEN yakalıyor; bu yüzden **`python scripts/
+  validate.py` şu an gerçek `context.json` üzerinde BAŞARISIZ dönüyor**
+  (10 hata, 5 kat × 2 duvar). Bu bir regresyon DEĞİL — bu görevin
+  kapsamı yalnızca kontrolü kurmaktı, veri düzeltmesi BİLEREK bu
+  revizyonun DIŞINDA bırakıldı ve ayrı bir proje revizyonu bekliyor
+  (bir sonraki geliştirici/agent bunu proje revizyonu olarak ELE
+  ALMALI, yoksa pipeline gerçek proje için ÇALIŞMAZ durumda kalır).
+- **`DEV-044` UYGULANDI (2026-09-28, `HD-021`, kullanıcı: "sonraki
+  geliştirme planını uygula"):** "Uygulama sırası"nda DEV-041'in hemen
+  ardından ikinci sıradaydı. `rooms::PolygonOps`e `pole_of_
+  inaccessibility` (Mapbox `polylabel` ile AYNI deterministik izgara-
+  arama, 3. parti kütüphane YOK) ve `local_extent` eklendi;
+  `RoomLabeler.draw` artık etiketi centroid'e değil bu noktaya
+  yerleştiriyor — içbükey (L-şekilli) bir hol'de centroid odanın
+  DIŞINA (çentiğe) düşebiliyordu, bu YENİ algoritma HER ZAMAN poligonun
+  GERÇEKTEN içinde kalan bir nokta buluyor. Convex/dikdörtgen odalarda
+  davranış **1e-6 toleransla BİREBİR** korundu (arama her zaman
+  centroid'i aday olarak dener; DEV-018'in `check_block_matches_raw_
+  formula` testi TEK SATIR DEĞİŞMEDEN geçti — regresyon YOK). Kasıtlı
+  bozma ile kanıtlandı: `L_SHAPED_HOL` test poligonunun elle hesaplanan
+  centroid'i (2165.93, 1515.93) GERÇEKTEN poligonun dışında kalıyor.
+  Yeni golden referans `golden/hol_l_sekli` eklendi; `golden_report.py::
+  rule_room_labels` artık `PolygonOps.centroid` değil `RoomLabeler`in
+  KENDİ kullandığı fonksiyonu çağırıyor (DEV-041'deki `wall_gap_ranges`
+  ile AYNI tek-kaynak disiplini). `scripts/ceiling/`in RCP etiketi
+  BİLİNÇLİ olarak kapsam DIŞINDA bırakıldı (DEV-044'ün "İlişkili
+  modüller"i yalnızca `rooms/`/`architect/`/`pafta/`). Sıradaki adım
+  "Uygulama sırası"na göre `DEV-042`→`DEV-043`dür, henüz BAŞLANMADI.
 
 ## Sıradaki iş
 

@@ -306,6 +306,16 @@ karşılığıdır. Bir sonraki adım, kullanıcının bunlardan hangisini/hangi
 sırayla açacağına karar vermesidir (bkz. `DEVELOPMENT_TASKS.md`
 `DEV-040`).
 
+**rev-22'nin GERÇEK plan çıktısından çıkan SOMUT kural boşlukları
+(`DEV-042`/`DEV-043`, PLANNED):** `DEV-040`'ın SPEKÜLATİF fikirlerinden
+FARKLI olarak, bunlar kullanıcının BİZZAT üretilmiş DXF/preview üzerinde
+bulduğu gerçek hatalardan çıkarıldı — bugünkü v1 kural kataloğu (6
+kural) bunları YAKALAMADI: (1) bir ıslak hacmin (banyo/wc) TEK erişim
+yolunun bir yatak odasından geçmesi (`uC`'de `hol→oda→banyo` zinciri,
+`check_bedroom_via_corridor`in kapsamı DIŞINDA — o kural yalnızca
+"salon" komşuluğuna bakıyor), (2) banyo/wc kapılarının birbirinden ÇOK
+uzak olması (tesisat kümelenmesi ilkesi, bugün HİÇ kontrol edilmiyor).
+
 ## Bilinen sınırlamalar
 
 - **Giriş-WC görüş hattı bir v1 basitleştirmesidir** (yukarı bakınız) —

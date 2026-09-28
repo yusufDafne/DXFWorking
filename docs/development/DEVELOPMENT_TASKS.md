@@ -41,6 +41,13 @@ Tamamlanan işlerin ayrıntılı gerekçesi, karar süreci ve ölçülen etkisi
 | DEV-038 | Oda programı ↔ mevcut alan sığma (feasibility) kontrolü | COMPLETED (2026-09-28) — `DEV-039`e absorbe edildi |
 | DEV-039 | `scripts/architect/` — mekansal ilişki/mimari mantık kuralları (adjacency & circulation logic) | COMPLETED (2026-09-28) |
 | DEV-040 | `architect/` — 2. nesil mimari mantık motoru (genişleme yol haritası) | PLANNED |
+| DEV-041 | `walls/`+`validate.py` — duvar ucu / kapı boşluğu çakışması denetimi | COMPLETED (2026-09-28) |
+| DEV-042 | `architect/` — ıslak hacmin mahremiyet odası üzerinden erişilmemesi kuralı | PLANNED |
+| DEV-043 | `architect/` — banyo/wc kapı yakınlığı (ıslak hacim kümelenmesi) kuralı | PLANNED |
+| DEV-044 | `rooms/` — içbükey (L/T-şekilli) odalarda mahal etiketi konumlandırması | COMPLETED (2026-09-28) |
+| DEV-045 | `templates/`+`architect/` — kat sirkülasyon bandının ölü alan analizi | PLANNED |
+| DEV-046 | `stairs/`+`templates/`+`standards/` — merdiven oda oranı + çok kollu merdiven desteği | PLANNED |
+| DEV-047 | `stairs/`+`architect/` — merdiven sahanlık çıkış noktası ↔ koridor kapısı hizalaması | PLANNED |
 
 ## READY
 
@@ -80,6 +87,47 @@ bölüm artık üç tür maddeyi tutar:
 > iç yapı, v1 kural kataloğu, şema kararı, kural şiddeti kullanıcı
 > tarafından TEK TEK onaylandı) nihaileşti, sonra "planı uygula" ile
 > tamamlandı. Bkz. `## COMPLETED` `DEV-039`.
+
+> **`DEV-041`…`DEV-047`** BEŞİNCİ bir türdür: `DEV-039`'un gerçek projeye
+> uygulanmasının (rev-21/rev-22) SOMUT SONUCUNDAN — kullanıcının bizzat
+> üretilmiş plan üzerinde bulduğu gerçek hatalardan — çıkarılmış modül
+> iyileştirme planlarıdır. Kullanıcının açık talimatı: *"tüm bu gerçek
+> dünya yorumlarımı ayrı revize planları olarak kaydet, şu anda planda
+> bir değişiklik değil ... önceliğimiz modül iyileştirilmesidir."* Yani
+> bu maddeler `context.json`'a DOKUNMAZ — hiçbiri bir proje revizyonu
+> DEĞİLDİR, hepsi `scripts/` altındaki İLGİLİ modülün YETENEĞİNİ
+> genişletme/düzeltme planıdır. `DEV-041` KRİTİK işaretlidir (gerçek,
+> kanıtlanmış bir üretim hatası); diğerleri gerçek plan çıktısından
+> gözlemlenen tasarım kalitesi boşluklarıdır.
+
+**Uygulama sırası (kullanıcı talebi, 2026-09-28: "bu planları en
+efektif şekilde sırayla yapacağız, efektif sıralamayı belirle"):**
+
+1. ~~**`DEV-041`** (KRİTİK, temel güvenlik ağı)~~ **TAMAMLANDI**
+   (2026-09-28) — bkz. `## COMPLETED`. Geri kalan altı madde artık bu
+   GÜVENCE altında ilerliyor.
+2. ~~**`DEV-044`** — küçük, bağımsız, DIŞ KARAR gerektirmeyen bir modül
+   düzeltmesi (`rooms/`, algoritma değişimi).~~ **TAMAMLANDI** (2026-09-28)
+   — bkz. `## COMPLETED`.
+3. **`DEV-042`** → **`DEV-043`** (birlikte) — ikisi de `architect/
+   rules.py`ye ekleniyor, ikisi de AYNI "ıslak hacim" temasında; ARDI
+   ARDINA yapılmaları test altyapısını (yeni kural + selftest deseni)
+   TEKRAR KURMAZ. `DEV-042` önce (daha yüksek önem — kullanıcının
+   somut örneği bu), `DEV-043` hemen ardından (aynı dosyada, daha
+   basit bir eşik kontrolü).
+4. **`DEV-046`** → **`DEV-047`** (sırayla, `DEV-047` `DEV-046`ya
+   BAĞIMLI olduğu için başka türlü mümkün değil) — `stairs/`e yeni bir
+   geometri motoru (çok kollu/sahanlıklı merdiven) eklemek bu listenin
+   en büyük/en yeni mühendislik çalışmasıdır; daha küçük/net kapsamlı
+   maddeler (1-3) BİTTİKTEN sonra, tek bir uzun odaklı çalışma bloğu
+   olarak ele alınması tercih edilir.
+5. **`DEV-045`** — EN SONA bırakıldı, çünkü (a) GERÇEK bir tasarım
+   kararı gerektiriyor (ölü alanın YERİNE ne konacağı UYDURULAMAZ,
+   kullanıcı diyaloğu gerekir — mekanik bir modül düzeltmesi DEĞİLDİR),
+   (b) `DEV-046`/`DEV-047` TAMAMLANDIKTAN sonra merdiven alanının
+   gerçek şekli/oranı değişeceği için "ne kadarı gerçekten ölü alan"
+   sorusunun cevabı da o zaman GÜNCEL kalır — önce sormak yarım bilgiyle
+   karar vermek olurdu.
 
 > **`DEV-040`** bir DÖRDÜNCÜ türdür: `DEV-039` TAMAMLANIP gerçek projeye
 > uygulandıktan HEMEN sonra kullanıcının verdiği bir STRATEJİK yönelim
@@ -428,6 +476,194 @@ ayrımının ve "yalnızca aynı kat" sınırlamasının emsali), `columns/`
 (düşey hizalama sınırlamasının emsali), `DEV-027` (kaçış planı —
 "acil çıkış mesafesi" gibi bir gelecek kural ile kavramsal KOMŞU).
 
+### DEV-042 — `architect/` — ıslak hacmin mahremiyet odası üzerinden erişilmemesi kuralı
+
+- **Durum:** PLANNED
+
+**Neden boşluk:** kullanıcı kendi ürettiğim rev-22 tasarımında somut bir
+hata buldu: *"yapmış olduğun bir daire tasarımında da koridor -> hol ->
+oda -> banyo şeklinde bir yol var, bu bir konut projesi ya da herhangi
+bir otel projesinde asla kabul edilebilir bir mimari yaklaşım değildir."*
+Doğrulandı: `uC` biriminde sirkülasyon `hol → oda (uC_d_oda_hol) → banyo
+(uC_d_banyo_oda)` şeklinde zincirlenmiş — banyoya ulaşmak için YATAK
+ODASINDAN geçmek ZORUNLU. `DEV-039`'un `check_bedroom_via_corridor`
+kuralı bunu KAÇIRDI çünkü SADECE "yatak odası SALONA doğrudan açılıyor
+mu" diye bakıyor; "yatak odası, BAŞKA bir odaya (örn. ıslak hacim)
+ulaşmak için ZORUNLU bir GEÇİŞ odası mı" sorusunu hiç SORMUYOR — tam
+olarak rev-22'yi tasarlarken salon-oda bitişikliğinden KAÇINMAYA
+odaklanıp bu İKİNCİ tuzağı gözden kaçırmamın nedeni budur.
+
+**Fikir 1 (önerilen):** yeni bir kural, `check_wet_area_reachable_
+without_bedroom` (adlandırma tartışmaya açık) — bir birimdeki HER
+banyo/wc odası için, o odaya ulaşan TÜM yolların (oda-kapı komşuluk
+GRAFİĞİNDE, hol/koridor tipi bir odadan başlayan bir gezinme) bir
+`yatak_odasi`ndan GEÇMEDEN mümkün olup olmadığı kontrol edilir — TEK
+yol bir yatak odasından geçiyorsa UYARI.
+
+**Açık kararlar:**
+- Bu bir GRAF gezinme algoritması gerektiriyor — bugünkü 4 kuralın
+  hepsi "iki komşu oda" düzeyinde (tek adım); bu YENİ bir karmaşıklık
+  seviyesidir. `architect/rules.py`ye mi eklenir yoksa ayrı bir
+  `architect/graph.py` mi açılır (oda-kapı komşuluk grafiğinin İNŞASI,
+  `rules._rooms_touching_point`in tekrar tekrar çağrılması yerine TEK
+  seferlik bir graf yapısına çıkarılması)?
+- Otel gibi çok odalı/çok banyolu birimlerde (bir banyo başka bir
+  yoldan da erişilebilirse) kural doğru davranmalı — graf gezinmesinin
+  "TEK yol" değil "HİÇBİR yol yatak-odasız değilse" testi olması gerekir.
+
+**İlişkili modüller:** `architect/` (`rules.py` genişlemesi, muhtemelen
+yeni bir `graph.py`), `rooms/` (oda-kapı ilişkisinin veri kaynağı).
+
+### DEV-043 — `architect/` — banyo/wc kapı yakınlığı (ıslak hacim kümelenmesi) kuralı
+
+- **Durum:** PLANNED
+
+**Neden boşluk:** kullanıcı: *"hol yapısı nispeten kabul edilebilir ...
+fakat banyo wc kapıları genelde yan yana olur, kapıları birbirinden çok
+uzak yapma mümkünse."* Bu, tesisat ekonomisi (ıslak hacimlerin AYNI
+duvar hattı/şaftı paylaşması) açısından da yaygın kabul gören bir
+mimari pratiktir — `DEV-039`'un v1 kural kataloğunda bu YOK.
+
+**Fikir 1 (önerilen):** aynı `unit_id`deki banyo VE wc kapıları (ikisi
+de varsa) arasındaki mesafe (kapı orta noktaları, `rules._door_midpoint`
+YENİDEN kullanılarak) bir eşiği aşarsa UYARI —
+`check_wet_area_door_proximity` gibi.
+
+**Açık kararlar:**
+- Eşik değeri (kaç mm "yakın" sayılır — büyük olasılıkla birkaç bin mm
+  mertebesinde bir "pratik varsayılan", `standards/`in kataloğuyla AYNI
+  disiplinde, kullanıcı onayı/deneyimiyle kalibre edilecek).
+- Yalnızca kapı-kapı mesafesi mi ölçülmeli, yoksa iki oda arasında
+  DOĞRUDAN bir ortak duvar (adjacency) olması mı tercih edilen asıl
+  sinyal — mesafe eşiği YANLIŞ-POZİTİF üretebilir (iki kapı mesafece
+  yakın ama aralarında başka bir oda/duvar olabilir).
+
+**İlişkili modüller:** `architect/` (`rules.py`), `DEV-042` ile aynı
+"ıslak hacim" temasında KOMŞU ama farklı bir kontrol sınıfı (kümelenme
+vs. erişilebilirlik).
+
+### DEV-045 — `templates/`+`architect/` — kat sirkülasyon bandının ölü alan analizi
+
+- **Durum:** PLANNED
+
+**Neden boşluk:** kullanıcı: *"şu anda örnek planımızda kat planında sağ
+üstteki alan tamamıyla ölü bir alan."* Ölçüldü: ortak kat koridorunu
+(`band`) temsil eden L-şekilli poligonun `x:6100-20000, y:14500-17500`
+bölgesi (13900mm × 3000mm ≈ **41.7 m²**) TAMAMEN boş sirkülasyon
+alanıdır — hiçbir işlevsel mahal İÇERMEZ, yalnızca geçiş.
+
+**Kök neden:** `templates::generate_circulation_core`nin `band_depth`
+(4500mm) ve `corridor_leg_depth` (1500mm) sabitleri, KAÇ birime/hangi
+genişliğe hizmet ettiğine BAKMAKSIZIN her zaman AYNI büyüklükte bir
+L-şekilli koridor üretiyor (bkz. `scripts/templates/CLAUDE.md`); bu
+projede `floor_width` (20000mm) büyüdükçe L'nin "uzun kolu" ORANTISIZ
+büyüyor, çünkü fonksiyon yalnızca "koridorun doğu ucunun nerede
+biteceğini" bilir, alan VERİMLİLİĞİNİ hiç DEĞERLENDİRMEZ.
+
+**Fikir 1 (önerilen) — `architect/`e yeni bir floor-seviyesi kural:**
+ortak sirkülasyon alanı, hizmet ettiği TOPLAM birim (net) alanına göre
+makul bir oranın üzerindeyse UYARI — uA/uB/uC'nin KENDİ hol'lerine
+uygulanan `check_circulation_area_share` mantığının BİNA/KAT
+SEVİYESİNE genellenmesi (yeni bir fonksiyon, aynı desende).
+
+**Fikir 2 — `templates::generate_circulation_core`nin KENDİSİ optimize
+edilir:** `corridor_leg_depth`/`band_depth` sabit değil, `floor_width`e
+ya da servis edilen birim SAYISINA göre PARAMETRİK/oranlı hale getirilir.
+
+**Açık kararlar:**
+- Fikir 1 mi Fikir 2 mi yoksa İKİSİ DE mi (öneri: ikisi de — Fikir 1
+  DENETLER, Fikir 2 DÜZELTİR, `standards`+`templates` ikilisinin
+  DEV-036/037'deki ilişkisiyle AYNI desen).
+- "Makul oran" eşiği ne olmalı.
+- **Bu ölü alanın YERİNE ne konabileceği GERÇEK bir tasarım kararıdır,
+  UYDURULMAZ** — örn. ortak depo/sığınak/teknik oda gibi `DEV-039`'un
+  "Gelecek yönü" bölümünde ZATEN bahsedilen ortak mahaller (bkz.
+  `scripts/architect/CLAUDE.md`); kullanıcı onayı GEREKİR.
+
+**İlişkili modüller:** `templates/` (`band_depth`/`corridor_leg_depth`
+sabitleri), `architect/` (yeni floor-seviyesi kural), `DEV-040` Fikir 2
+(bina tipi profilleri) ile kavramsal KOMŞU.
+
+### DEV-046 — `stairs/`+`templates/`+`standards/` — merdiven oda oranı + çok kollu merdiven desteği
+
+- **Durum:** PLANNED
+
+**Neden boşluk:** kullanıcı: *"sol üstte merdiven var ki o da istediğin
+en boy oranına sahip değil, merdiven için ayrılan alan daha ince uzun
+olmalı ve merdiven modülü oraya merdiven çizmeli."* Ölçüldü: `stair`
+odası 4000mm × 3000mm (oran 1.333) — `standards::STANDARDS['merdiven']`
+sınırının (`[1.3, 2.4]`) alt ucuna YAKIN ama gerçek bir tek-kollu
+merdivenin oranından (eni, boyunun genelde 2-3 katı UZUN olmalı) ÇOK
+uzak. Bugün bu odaya HİÇ merdiven ÇİZİLMİYOR — kök `CLAUDE.md`'nin
+"Bilinen basitleştirmeler" bölümünde ZATEN belgelenmiş: *"~3000mm kat
+yuksekligi icin tek duz kolla SIGMIYOR (resolve_stair bunu
+StairFitError ile dogru sekilde yakaliyor)."*
+
+**Kök neden:** `scripts/stairs/` bugün YALNIZCA tek düz kollu merdiveni
+destekliyor (`scripts/stairs/CLAUDE.md` "Bilinen sınırlamalar") — bu
+kat yüksekliği/basamak sayısı için tek kolla SIĞMIYOR, bu yüzden hiç
+çizilmiyor.
+
+**Fikir 1 (önerilen):** `stairs/`e sahanlıklı/çift kollu (U veya L
+dönüşlü) merdiven desteği eklenir — `resolve_stair`in genişletilmesi,
+`StairResolution`a sahanlık geometrisi eklenmesi.
+
+**Fikir 2 (Fikir 1 ile BİRLİKTE gerekli):** `templates::
+generate_circulation_core`nin `stair_width`/oda oranı varsayılanı
+GÖZDEN GEÇİRİLİR (daha ince-uzun bir oda ayırır), `standards::
+STANDARDS['merdiven']` oran sınırları da BU YENİ gerçek çok-kollu
+geometriye göre KALİBRE edilir.
+
+**Açık kararlar:**
+- Çift kollu merdiven sahanlık genişliği/derinliği varsayılanları
+  (yeni bir "pratik varsayılan" kataloğu mu gerekir, `standards/`
+  gibi).
+- Tek-kollu/çift-kollu SEÇİMİNİN otomatik mi (kat yüksekliğine göre
+  `auto_flex` gibi) yoksa opt-in bir `stairs[].kind` alanı mı olacağı.
+- Bu, `DEV-047`nin ÖN KOŞULUDUR (sıralama önemli).
+
+**İlişkili modüller:** `stairs/` (asıl uygulama), `templates/` (oda
+oranı varsayılanı), `standards/` (merdiven oranı kataloğu).
+
+### DEV-047 — `stairs/`+`architect/` — merdiven sahanlık çıkış noktası ↔ koridor kapısı hizalaması
+
+- **Durum:** PLANNED — **`DEV-046`ya BAĞIMLI**, ondan ÖNCE ele
+  alınamaz.
+
+**Neden boşluk:** kullanıcı: *"merdivenin sahanlıklarına göre çıkış
+noktalarını belirlemeli, örneğin basamaklar bittiği an kat başlar ya da
+her merdivenin kat sahanlığından dönerek koridora çıkılır gibi."`
+DEV-046` çok kollu merdiven desteğini getirdiğinde, merdivenin GERÇEK
+çıkış noktası (kat sahanlığının konumu/yönü) artık odanın GEOMETRİK bir
+köşesi değil, merdiven GEOMETRİSİNİN kendisinden TÜREYEN bir noktadır.
+
+**Kök neden:** kapı yerleşimi (`openings/`) ile merdiven geometrisi
+(`stairs/`) arasında BUGÜN hiçbir bağlantı YOK — `door_stair`nin konumu
+`templates::generate_circulation_core`de SABİT bir formülle
+(`elevator_width + stair_width/2`) hesaplanıyor, merdivenin GERÇEKTEN
+nereden çıktığını hiç SORMUYOR.
+
+**Fikir 1 (önerilen, `DEV-046` TAMAMLANDIKTAN SONRA):** `stairs::
+resolve_stair`in döndürdüğü `StairResolution`a bir "çıkış noktası/yönü"
+alanı eklenir; `door_stair`nin konumu bu değerden TÜRETİLİR (ya
+`templates/` ya da yeni bir entegrasyon noktası aracılığıyla) —
+`openings::swing_geometry`nin çizim VE denetimin AYNI kaynaktan
+beslenmesi ilkesiyle AYNI disiplin (rev-13 dersi TEKRARLANMAZ).
+
+**Açık kararlar:**
+- "Kat sahanlığından dönerek" ifadesinin GEOMETRİK karşılığı (90 derece
+  dönüş mü, 180 derece mi) merdiven TİPİNE (U dönüşlü/L dönüşlü) göre
+  DEĞİŞİR — tek bir kurala indirgenemeyebilir, `DEV-046`nın seçtiği
+  merdiven tipi/tipleriyle BİRLİKTE netleşecek.
+- Bu ilişki `stairs/`in KENDİ arity-1 sorumluluğu mu (kendi çıkış
+  noktasını hesaplar) yoksa `architect/`in arity-2+ bir kontrolü mü
+  (merdiven çıkışı ile kapı arasındaki UYUMU denetler) — muhtemelen
+  İKİSİ: `stairs/` HESAPLAR, `architect/` (ya da `validate.py`) DENETLER.
+
+**İlişkili modüller:** `stairs/` (çıkış noktası kaynağı, `DEV-046`ya
+bağımlı), `templates/` (`door_stair` konumu), `openings/`
+(`swing_geometry` ile AYNI "tek kaynak" deseni emsali).
+
 ## COMPLETED
 
 > Ayrıntılı gerekçe, karar süreci, bulunan gerçek hatalar ve ölçülen etki
@@ -633,6 +869,62 @@ ayrımının ve "yalnızca aynı kat" sınırlamasının emsali), `columns/`
   sorusu "tasarım mantıklı mı", golden'ınki "çıktı değişti mi"; hiçbir
   DXF entity'si üretilmediği için bir karşılaştırma bu mantığı sınamaz).
   (`HD-019`)
+
+### DEV-041 — `walls/`+`validate.py` — duvar ucu / kapı boşluğu çakışması denetimi
+
+- **Durum:** COMPLETED (2026-09-28)
+- **Özet:** Kullanıcının gerçek projede bizzat gördüğü "bir duvar kapının
+  ortasında bitmiş" hatasını (`w_unit_A_B`, `uA_w_hol_mutfak_v`) yakalayan
+  arity-1 kontrol `validate.py::check_walls`e eklendi — bu bir eleman
+  sınıfları arası çakışma DEĞİL ("bir duvarın KENDİ bağlantısının geçerli
+  olup olmadığı"), o yüzden `collision/`e değil buraya ait. İkinci bir
+  açıklık-hesabı YAZILMADI: yeni `wall_gap_ranges` yardımcı fonksiyonu
+  `walls.gaps_for_wall`i (bu modülün TEK açıklık kaynağı) DOĞRUDAN
+  yeniden kullanır — rev-13'teki swing-geometry ikilemesi tekrarlanmadı.
+  Yeni `point_position_on_segment` bir T-kesişim noktasının host duvarın
+  hangi konumuna denk geldiğini (s-mesafesi) döner; bu konum bir kapı/
+  pencere boşluğunun KESİN İÇİNDEYSE (sınıra/jamb'a denk gelmek GEÇERLİ)
+  artık "sarkan uç" sayılır ve HATA verir. İlk kez `validate.py`nin
+  kendi orkestrasyon kontrolüne odaklı bir selftest (`scripts/
+  validate_selftest.py`) eklendi — önceden `check_walls` yalnızca zaten
+  GEÇERLİ golden fixture'lar üzerinden dolaylı sınanıyordu, hata yolu
+  hiç doğrudan test edilmemişti. Kasıtlı-bozma + yanlış-pozitif
+  disiplini uygulandı: kapı boşluğuna giren uç HATA, boşluktan uzak
+  normal bir T-kesişimi HATA DEĞİL, boşluğun tam sınırındaki (jamb) uç
+  HATA DEĞİL (sınır eşitliği geçerli bir bağlantıdır), gerçek sarkan uç
+  hâlâ eski mesajıyla yakalanıyor (regresyon yok), gerçek projedeki iki
+  bilinen hata GERÇEKTEN yakalanıyor. **Bu görevin kapsamı yalnızca
+  KONTROLÜ kurmaktı** — gerçek `context.json`daki iki hata henüz
+  DÜZELTİLMEDİ, bu yüzden `python scripts/validate.py` şu an gerçek
+  projede BAŞARISIZ dönüyor (beklenen davranış: kontrol işini yapıyor,
+  düzeltme ayrı bir revizyon bekliyor). Ayrıntı: `scripts/walls/
+  CLAUDE.md` "Bilinen sınırlar". (`HD-020`)
+
+### DEV-044 — `rooms/` — içbükey (L/T-şekilli) odalarda mahal etiketi konumlandırması
+
+- **Durum:** COMPLETED (2026-09-28)
+- **Özet:** Fikir 1 (önerilen) uygulandı: `PolygonOps.pole_of_
+  inaccessibility` — Mapbox'un `polylabel` algoritmasıyla AYNI
+  deterministik izgara-arama yöntemi (üçüncü parti kütüphane YOK).
+  `RoomLabeler.draw` artık centroid değil bu noktayı kullanıyor; sığdırma
+  kutusu da (`PolygonOps.local_extent`) artık TAM AABB değil, capa
+  noktasından dört eksen yönünde GERÇEK kenar kesişimine kadar ölçülen
+  yerel açıklık. Convex/dikdörtgen bir odada davranış **BİREBİR AYNI
+  KALDI** (arama her zaman centroid'i VE bbox-merkezini aday olarak
+  dener; bir dikdörtgende bu ikisi zaten analitik maksimumdur) —
+  `check_block_matches_raw_formula` (DEV-018'den, 1e-6 tolerans) TEK
+  SATIR DEĞİŞMEDEN geçmeye devam etti. İçbükey `L_SHAPED_HOL` test
+  fixture'ıyla (gerçek `uA_hol`/`uB_hol` ile AYNI kategori) kasıtlı bozma
+  ile kanıtlandı: elle hesaplanan geometrik centroid (2165.93, 1515.93)
+  poligonun DIŞINDA (çentikte) kalıyor, `pole_of_inaccessibility` HER
+  ZAMAN içeride kalıyor. Yeni golden referans `golden/hol_l_sekli`
+  eklendi; `golden_report.py::rule_room_labels` artık `PolygonOps.
+  centroid` değil `RoomLabeler`in KENDİ kullandığı `pole_of_
+  inaccessibility`i çağırıyor (DEV-041'deki `wall_gap_ranges` ile AYNI
+  "tek kaynak" disiplini). `scripts/ceiling/`in RCP etiketi BİLİNÇLİ
+  olarak kapsam DIŞINDA bırakıldı (`DEV-044`'ün "İlişkili modüller"i
+  yalnızca `rooms/`/`architect/`/`pafta/`). Ayrıntı: `scripts/rooms/
+  CLAUDE.md` "İçbükey oda etiket konumlandırması (DEV-044)". (`HD-021`)
 
 ## Görev tamamlama kuralı
 

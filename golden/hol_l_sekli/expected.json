@@ -1,0 +1,38 @@
+{
+  "source": "golden/hol_l_sekli",
+  "entity_count": 185,
+  "entity_types": {
+    "ARC": 1,
+    "ATTRIB": 3,
+    "CIRCLE": 20,
+    "DIMENSION": 5,
+    "HATCH": 4,
+    "INSERT": 1,
+    "LINE": 55,
+    "LWPOLYLINE": 29,
+    "TEXT": 67
+  },
+  "layers": {
+    "AKS": 55,
+    "CERCEVE": 35,
+    "DUVARLAR": 21,
+    "KAPI-PENCERE": 4,
+    "KESIT": 10,
+    "KOT": 12,
+    "METIN": 38,
+    "OLCU": 10
+  },
+  "modelspace_bbox": [
+    -500.0,
+    -4150.0,
+    70200.0,
+    13150.0
+  ],
+  "blocks": [
+    "MAHAL_ETIKET",
+    "_CLOSEDFILLED"
+  ],
+  "block_inserts": {
+    "MAHAL_ETIKET": 1
+  }
+}

@@ -167,7 +167,13 @@ def rule_room_labels(doc, context: dict) -> list[str]:
             xs = [p[0] for p in polygon]
             ys = [p[1] for p in polygon]
             expected = [t for t, _ in RoomLabeler.lines(room, code) if t]
-            cx, cy = PolygonOps.centroid(polygon)
+            # DEV-044: RoomLabeler.draw ARTIK centroid degil
+            # `pole_of_inaccessibility` kullaniyor - bu kural AYNI capa
+            # fonksiyonunu cagirir (tek kaynak, DEV-041'deki
+            # `wall_gap_ranges` ile AYNI disiplin); icbukey bir odada
+            # centroid'in KENDISI odanin disina dusebilir ve bu kontrolu
+            # yanlislikla BASARISIZ yapardi.
+            cx, cy = PolygonOps.pole_of_inaccessibility(polygon)
             found = [e for e in texts
                      if e.dxf.text in expected
                      and abs(e.get_placement()[1][0] - cx) < 1.0
