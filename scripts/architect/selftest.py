@@ -353,34 +353,40 @@ def check_place_unit_entry_doors_empty_when_infeasible() -> list[str]:
 
 
 # --------------------------------------------------------------------------
-# 8) Gercek proje kaniti: rev-20'nin hol-orani ihlali (rev-21'de unit_id
-# gercek projeye EKLENDI - bkz. context.json rev_history, requests.jsonl).
+# 8) Gercek proje kaniti: rev-21'de unit_id EKLENDI, rev-22'de rev-20'nin
+# hol-orani/kapi-cekirdek/goru-hatti/yatak-odasi-salon ihlalleri GIDERILDI
+# (bkz. context.json rev_history, requests.jsonl). Bu grup artik GERCEK
+# projenin TEMIZ oldugunu kanitlar - "ihlali yakalar" kaniti SENTETIK
+# fixture'larda (yukaridaki gruplar) kalici olarak durur, GERCEK proje
+# verisine BAGLI DEGILDIR (proje revize edildikce bu test KIRILMAZ).
 # --------------------------------------------------------------------------
 
-def check_circulation_share_catches_real_project_violation() -> list[str]:
-    """GERCEK context.json'daki uA_* odalarinin `unit_id` ARTIK GERCEK
-    proje verisidir (rev-21'de eklendi, id-onek konvansiyonundan BIREBIR
-    TURETILDI). Elle hesap: hol=37.7, toplam=27.3+22.75+6.27+3.8+2.28+37.7
-    =100.1, pay=%37.66 - varsayilan ust sinir %15'i ACIKCA asiyor. Gercek
+def check_real_project_is_clean_after_rev22_redesign() -> list[str]:
+    """rev-22'de uA/uB/uC'nin BACK BAND'i (hol/mutfak/banyo/wc/oda) yeniden
+    tasarlandi. GERCEK projede artik circulation-share/bedroom-via-corridor/
+    entry-sightline UCU DA sifir uyari vermeli (check_door_core_balance
+    HARIC - bu, templates::generate_circulation_core'un cekirdegi HER ZAMAN
+    sol-alt kosede sabitlemesinden kaynaklanan YAPISAL bir sinirlamadir,
+    bkz. context.json rev-22 ozeti - bu revizyonun kapsami DISINDA
+    birakildi, DEV-040 Fikir 4'un isaret ettigi gelecek calisma). Gercek
     dosya yoksa test ATLANIR."""
     if not REAL_CONTEXT_PATH.exists():
         return []
     context = json.loads(REAL_CONTEXT_PATH.read_text(encoding="utf-8"))
-    floor = next(f for f in context["floors"] if f["id"] == "normal1")
-    unit_a_rooms = [r for r in floor["rooms"] if r["id"].startswith("uA_")]
-    errors = []
-    total = sum(r["area_m2"] for r in unit_a_rooms)
-    if abs(total - 100.1) > 0.05:
-        errors.append(f"beklenen toplam alan ~100.1 m2, gercek dosyada {total} bulundu "
-                       f"(context.json degisti olabilir, bu test guncellenmeli)")
-    if not all(r.get("unit_id") == "uA" for r in unit_a_rooms):
-        errors.append("uA_* odalarinin TUMU unit_id='uA' TASIMALIYDI "
-                       "(rev-21 kapsami degisti olabilir)")
-    warnings = check_circulation_area_share(unit_a_rooms)
-    if len(warnings) != 1:
-        errors.append(f"GERCEK proje verisinde TAM 1 uyari beklenirdi, {len(warnings)} geldi: {warnings}")
-    elif "uA" not in warnings[0]:
-        errors.append(f"uyari 'uA' birimini ADLANDIRMALIYDI: {warnings[0]}")
+    errors: list[str] = []
+    for floor in context["floors"]:
+        if floor["id"] not in ("normal1", "normal2", "normal3", "normal4", "normal5"):
+            continue
+        rooms, walls, openings = floor["rooms"], floor["walls"], floor["openings"]
+        share_warnings = check_circulation_area_share(rooms)
+        bedroom_warnings = check_bedroom_via_corridor(rooms, walls, openings)
+        sightline_warnings = check_entry_sightlines(rooms, walls, openings)
+        if share_warnings:
+            errors.append(f"[{floor['id']}] hol-orani ihlali HALA VAR: {share_warnings}")
+        if bedroom_warnings:
+            errors.append(f"[{floor['id']}] yatak odasi-salon komsulugu HALA VAR: {bedroom_warnings}")
+        if sightline_warnings:
+            errors.append(f"[{floor['id']}] giris-WC goru hatti HALA VAR: {sightline_warnings}")
     return errors
 
 
@@ -422,7 +428,7 @@ def main() -> int:
         ("options_for_core_placement giris kenarini YUKSEK puanlar", check_options_for_core_placement_scores_entry_side_higher()),
         ("place_unit_entry_doors zone MERKEZLERINE kapi koyar", check_place_unit_entry_doors_centers_on_zones()),
         ("place_unit_entry_doors sigmayan planda BOS doner", check_place_unit_entry_doors_empty_when_infeasible()),
-        ("GERCEK proje uA verisi hol-orani ihlalini YAKALAR", check_circulation_share_catches_real_project_violation()),
+        ("GERCEK proje rev-22 sonrasi TEMIZ (hol/yatak-salon/goru-hatti)", check_real_project_is_clean_after_rev22_redesign()),
         ("unit_id SOYULUNCE opt-in HALA GECERLI", check_opt_in_still_holds_when_unit_id_is_stripped()),
     )
     failed = False

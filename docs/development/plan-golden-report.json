@@ -1,22 +1,22 @@
 {
   "source": "output/plan.dxf",
-  "sha256": "d8c61001985aefdf6eb4a83df5f73ef77e6e7ccc44582948da69e3baba8a9356",
-  "entity_count": 2569,
+  "sha256": "8fadf1d1f16eecb922afb470516ca537c8489aedb7f640f64411c9d83cdef786",
+  "entity_count": 2614,
   "entity_types": {
     "ARC": 95,
     "ATTRIB": 345,
     "CIRCLE": 176,
     "DIMENSION": 88,
-    "HATCH": 71,
+    "HATCH": 76,
     "INSERT": 115,
-    "LINE": 1114,
+    "LINE": 1154,
     "LWPOLYLINE": 187,
     "TEXT": 378
   },
   "layers": {
     "AKS": 528,
     "CERCEVE": 80,
-    "DUVARLAR": 867,
+    "DUVARLAR": 912,
     "KAPI-PENCERE": 271,
     "KESIT": 90,
     "KOT": 80,

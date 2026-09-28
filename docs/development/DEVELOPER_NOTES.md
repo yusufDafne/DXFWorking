@@ -102,8 +102,28 @@ sistem mimarı direktifi güncellenir.
   sınırını aşıyor — uA/uB %37.7, uC %26.2; `uC_oda`→`uC_salon` doğrudan
   kapı; `door_entry_3`↔`uC_d_banyo_hol` görüş hattı; uA/uC arası
   kapı-çekirdek dengesizliği oran 4.38). Bunlar UYARI sınıfında,
-  üretimi DURDURMUYOR; rev-20 birim tasarımının bu uyarılara göre
-  yeniden gözden geçirilmesi AYRI, sonraki bir revizyon konusu.
+  üretimi DURDURMUYOR.
+  **rev-22'de (kullanıcı: "rev20 şimdi başla") uA/uB/uC'nin arka bandı
+  yeniden tasarlandı** — hol payı %37.7/%37.7/%26.2 → %14.64/%14.64/
+  %13.08'e indi (mutfak 6.27→23.18 m², "açık mutfak-yemek" konsepti,
+  standards sınırı İÇİNDE), uC'nin 4 bantlı istifi YENİDEN SIRALANDI
+  (salon-banyo-oda-hol) — `oda` artık YALNIZCA hol'e kapı açıyor, salona
+  DOĞRUDAN kapı YOK. `check_circulation_area_share`/`check_bedroom_via_
+  corridor`/`check_entry_sightlines` üçü de GERÇEK projede SIFIRA indi
+  (mesajlar `architect.rules`in GERÇEK fonksiyonlarıyla, context.json'a
+  yazılmadan ÖNCE izole bir script'te doğrulandı). **`check_door_core_
+  balance` TEK KALAN UYARIDIR** (oran ~4.52) — kök neden `templates::
+  generate_circulation_core`nin çekirdeği HER ZAMAN sol-alt köşede sabit
+  tutması (`DEV-037` "Bilinen sınırlamalar"); uA (çekirdeğe bitişik) ile
+  uC (20000mm'lik koridorun en ucu) arasındaki bu oran çekirdek YER
+  DEĞİŞTİRMEDEN yapısal olarak ÇÖZÜLEMEZ — `DEV-040` Fikir 4'ün
+  (`options_for_core_placement`in `templates/`e bağlanması) tam olarak
+  işaret ettiği gelecek çalışmadır, bu revizyonun kapsamı DIŞINDA
+  bilinçli olarak bırakıldı. `architect/selftest.py`nin gerçek-proje
+  testi güncellendi (artık projenin rev-22 sonrası TEMİZ olduğunu
+  kanıtlıyor; "ihlali yakalar" kanıtı artık kalıcı SENTETİK fixture'larda
+  durur, gerçek proje verisine bağlı değil — proje revize edildikçe bu
+  test bir daha KIRILMAZ).
   `DEV-038` bu modüle ABSORBE edildi (`study::check_fits`). Üç turluk bir
   kullanıcı diyaloğuyla netleşen bir plandan uygulandı — bu, "plan onayı"
   ile "implementasyon izni"nin ayrı ayrı istendiği bir örnek oldu.
@@ -446,18 +466,22 @@ uyumlu değilse uygulamayı durdur ve sistem mimarı kararı iste.
 - `context.json` programatik yazılırken mevcut biçim korunmalıdır (skaler
   dizi tek satır, nesne dizisi açılmış). Düz `json.dumps(indent=2)` dosyayı
   baştan biçimlendirip ~4000 satırlık sahte diff üretir.
-- Gerçek projeye `rooms[].unit_id` rev-21'de YAZILDI (`id`-önek
-  konvansiyonundan TÜRETİLEREK). Bu, `architect/`in 6 UYARI üretmesine
-  yol açtı (hol-oranı × 3 birim, giriş-WC görüş hattı, kapı-çekirdek
-  dengesizliği, yatak odası-salon komşuluğu) — HİÇBİRİ üretimi
-  DURDURMUYOR. rev-20 birim tasarımının bu uyarılara göre yeniden
-  gözden geçirilmesi (özellikle hol-oranı) hâlâ AYRI, sonraki bir
-  revizyon konusudur; kullanıcı açıkça talep etmeden yapılmaz.
+- Gerçek projeye `rooms[].unit_id` rev-21'de YAZILDI, rev-22'de
+  (kullanıcı: "rev20 şimdi başla") uA/uB/uC'nin arka bandı yeniden
+  tasarlanarak hol-oranı/yatak-odası-salon/giriş-WC-görüş-hattı
+  uyarılarının ÜÇÜ DE giderildi. **`check_door_core_balance` TEK KALAN
+  UYARIDIR** (oran ~4.52, sınır 1.6) — çekirdeğin `templates::
+  generate_circulation_core`de HER ZAMAN sol-alt köşede sabit olmasından
+  kaynaklanan YAPISAL bir sınırlama, çekirdek yer değiştirmeden
+  çözülemez. Bu, `DEV-040` Fikir 4'ün (`options_for_core_placement`in
+  `templates/`e bağlanması) tam karşılığıdır — kullanıcı açıkça talep
+  etmeden ele alınmaz.
 - `architect::options_for_core_placement` bugün `templates::
   generate_circulation_core`yi ÇAĞIRMIYOR — o fonksiyon henüz bir
   `position`/`corner` parametresi taşımıyor (DEV-037'nin "Bilinen
   sınırlamalar"ı). Eklenmesi `templates/`in `CONTRACT_VERSION`ını
-  artırır.
+  artırır. **Bu, `check_door_core_balance`in tek kalan uyarısını
+  giderebilecek gerçek çözümdür** (yukarı bakınız).
 
 ## Çalışma kuralı
 
