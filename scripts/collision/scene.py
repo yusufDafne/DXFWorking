@@ -93,6 +93,18 @@ COLLISION_EXEMPT: dict[str, str] = {
                  "SONRA, NORMAL pipeline (rooms/walls/openings.collision) "
                  "zaten kapsar - importer ile AYNI 'aday veri uretir, "
                  "denetimi KENDI yapmaz' gerekcesi.",
+    "architect": "Iliskisel/mimari mantik kural kutuphanesidir (DEV-039); "
+                 "standards ile AYNI 'salt kutuphane, sifir cizim' "
+                 "gerekcesi - HIC ezdxf kullanmaz, YENI bir FIZIKSEL ayak "
+                 "izi URETMEZ. rules.py yalnizca zaten rooms.collision/"
+                 "walls.collision/openings.collision'in kapsadigi AYNI "
+                 "oda/duvar/kapi verisini OKUYUP birbirine GORE (mesafe/"
+                 "goru hatti/alan payi) YORUMLAR - bu fiziksel CAKISMA "
+                 "degil mimari SAGDUYUDUR (arity ayrimi, bkz. modul "
+                 "dokstring'i), collision motorunun kapsami DISINDADIR. "
+                 "study.py/options.py/design.py ise templates ile AYNI "
+                 "'hesaplar, cizmez' sinirindadir - ciktilari context.json'a "
+                 "hic yazilmadigi surece denetlenecek bir GEOMETRI yoktur.",
 }
 
 

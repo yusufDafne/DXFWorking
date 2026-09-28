@@ -38,7 +38,9 @@ Tamamlanan işlerin ayrıntılı gerekçesi, karar süreci ve ölçülen etkisi
 | DEV-035 | `roof/` — çatı planı | PLANNED |
 | DEV-036 | `standards/` — şartname + oransal mahal kural kütüphanesi | COMPLETED (2026-09-28) |
 | DEV-037 | Kat planı / daire yerleşimi şablon kütüphanesi + generator | COMPLETED (2026-09-28) |
-| DEV-038 | Oda programı ↔ mevcut alan sığma (feasibility) kontrolü | PLANNED |
+| DEV-038 | Oda programı ↔ mevcut alan sığma (feasibility) kontrolü | COMPLETED (2026-09-28) — `DEV-039`e absorbe edildi |
+| DEV-039 | `scripts/architect/` — mekansal ilişki/mimari mantık kuralları (adjacency & circulation logic) | COMPLETED (2026-09-28) |
+| DEV-040 | `architect/` — 2. nesil mimari mantık motoru (genişleme yol haritası) | PLANNED |
 
 ## READY
 
@@ -58,21 +60,35 @@ bölüm artık üç tür maddeyi tutar:
 
 1. **`DEV-007`** — tek gerçek BLOCKED madde, yukarıya bakınız.
 2. **`DEV-023`…`DEV-028`** (2026-09-24), **`DEV-031`…`DEV-035`**
-   (2026-09-28), **`DEV-036`…`DEV-037`** (2026-09-28, kullanıcının
-   şartname/oransal kural + kat planı şablon kütüphanesi talebiyle) ve
-   **`DEV-038`** (2026-09-28, `DEV-037`nin gerçek projeye uygulanması
-   sırasında ORTAYA ÇIKAN bir sığma/feasibility boşluğu) —
-   kullanıcı talebiyle eklenen, **endüstri standardı bir mimari çizim
-   setinde bulunan ama bu projede henüz olmayan** modül/geliştirme
-   fikirleri (`DEV-021`/`DEV-025` rev-17'de, `DEV-022` 2026-09-25'te,
-   `DEV-023`/`DEV-036`/`DEV-037` 2026-09-28'de seçilip tamamlandı, bkz.
-   `## COMPLETED`). Bunlar bir mimarın ufkunu açmak ve gerçekten gözden
-   kaçan bir şey olup
+   (2026-09-28) — kullanıcı talebiyle eklenen, **endüstri standardı bir
+   mimari çizim setinde bulunan ama bu projede henüz olmayan** modül/
+   geliştirme fikirleri (`DEV-021`/`DEV-025` rev-17'de, `DEV-022`
+   2026-09-25'te, `DEV-023`/`DEV-036`/`DEV-037`/`DEV-038`/`DEV-039`
+   2026-09-28'de seçilip tamamlandı, bkz. `## COMPLETED`). Bunlar bir
+   mimarın ufkunu açmak ve gerçekten gözden kaçan bir şey olup
    olmadığını değerlendirmek için yazılmıştır — **uygulama izni
    DEĞİLDİR**. Her biri `PLANNED` seviyesinde bir taslaktır; gerçek
    Fikir 1/Fikir 2/Açık kararlar analizi (mevcut modüllerdeki gibi) o
    madde açıkça seçildiğinde yapılır. Sistem mimarı bir maddeyi seçip
    kendi yönlendirmesini eklemeden agent kod yazmaz.
+
+> `DEV-036`…`DEV-039` bu ikisinden AYRI bir üçüncü tür örneğidir:
+> `DEV-039`, kullanıcının bizzat "modül adı ve mevcut modüllere sığıp
+> sığmayacağı belli değil, sen planla, ben tartışayım" diyerek
+> DOĞRUDAN istediği bir tartışmaydı, bir agent'ın kendi inisiyatifiyle
+> yazdığı "ufuk notu" DEĞİLDİ — üç tur süren bir diyalogla (modül adı,
+> iç yapı, v1 kural kataloğu, şema kararı, kural şiddeti kullanıcı
+> tarafından TEK TEK onaylandı) nihaileşti, sonra "planı uygula" ile
+> tamamlandı. Bkz. `## COMPLETED` `DEV-039`.
+
+> **`DEV-040`** bir DÖRDÜNCÜ türdür: `DEV-039` TAMAMLANIP gerçek projeye
+> uygulandıktan HEMEN sonra kullanıcının verdiği bir STRATEJİK yönelim
+> notu ("bu programı gerçek bir mimar yapan en önemli yapı taşının
+> temellerini atıyoruz") — tek bir modülün genişleme YOL HARİTASINI
+> (fikir listesi + değişmez ilke) kayıt altına alır, `DEV-021`…`DEV-035`
+> gibi bir agent inisiyatifi DEĞİLDİR ama `DEV-039` gibi kod da
+> ÜRETMEZ — salt planlama. Ayrıntı `scripts/architect/CLAUDE.md`
+> "Gelecek yönü" bölümünde.
 (`DEV-029` — kot/datum yönetim mantığı — ve `DEV-030` — katman renk
 organizasyonu — 2026-09-25'te seçilip tamamlandı, bkz. `## COMPLETED`.)
 
@@ -356,68 +372,61 @@ standardının bir PLAN paftası da beklediği gerçeğiyle KISMEN çelişir ama
 **İlişkili modüller:** `elevations/`+`sections/` (çatı siluetinin cephe/
 kesitte görünmesi), `pafta/` (yeni pafta türü, Fikir 1 seçilirse).
 
-### DEV-038 — Oda programı ↔ mevcut alan sığma (feasibility) kontrolü
+### DEV-040 — `architect/` — 2. nesil mimari mantık motoru (genişleme yol haritası)
 
-- **Durum:** PLANNED
+- **Durum:** PLANNED — bu bir "seç ve başlat" maddesi DEĞİLDİR, kullanıcının
+  2026-09-28'de (DEV-039 commit'inden ÖNCE) verdiği bir STRATEJİK
+  yönelim notudur. Hiçbir alt-fikir onaylanmadı/uygulanmadı; bu madde
+  sadece fikirlerin TEK bir yerden (bu görev + `scripts/architect/
+  CLAUDE.md` "Gelecek yönü") izlenebilmesi için açıldı.
 
-**Neden boşluk (kullanıcı talebi, 2026-09-28 — DEV-037'nin gerçek projeye
-uygulanması sırasında KEŞFEDİLDİ):** Birim A/B'nin sirkülasyon çekirdeği
-dışındaki 7700mm genişliğine salon (`standards::STANDARDS['salon']` asgari
-kısa kenar 3000mm) + 2 yatak odası (asgari 2700mm×2) yan yana, hepsi
-pencereli, sığdırılmak istendiğinde toplam asgari genişlik (3000+2700+2700
-=8400mm) mevcut genişliği (7700mm) **matematiksel olarak** aşıyordu — bu
-yalnızca elle hesaplanarak fark edildi. Kullanıcının kendi sözleriyle:
-*"ilgili oturum alanların daire sayısı sığmaması gibi durumları da
-kontrol edip kullanıcıya dönmeliyiz."* Bugün sistemde `standards/`
-yalnızca **üretilmiş bir odanın** oranını denetliyor; **henüz üretilmemiş
-bir oda programının verilen bir alana sığıp sığmayacağını** hiçbir modül
-kontrol etmiyor — bu, tasarım AŞAMASINDA (üretimden önce) yakalanması
-gereken bir boşluktur.
+**Neden bu madde (kullanıcının kendi sözleriyle):** *"bu yaptığın
+çalışmanın genel altyapı konusunda en önemli ve kritik nokta olduğunu
+bilmeni istiyorum. bu programı gerçek bir mimar yapan en önemli yapı
+taşının temellerini atıyoruz ... bu sistem aslında birçok mimari çizim
+konusunda ciddi belirleyicilik ve kısıtlayıcılık oluşturacak, hatta
+müşteri taleplerine göre bazı projelerin saçmalık seviyesi ya da
+imkansızlığı gibi durumlar ortaya çıkacak gelecekte (imkansız diye bir
+şey yok tabii, müşteri kapının önüne wc koy derse koyacağız 🙂 sadece
+örnek verdim)."*
 
-**Fikir 1 (önerilen) — `scripts/standards/`e basit bir "1D sığma" testi
-eklemek.** Verilen bir bant genişliği + istenen oda tipi listesi
-(`room_type` + sayı) için, her tipin `STANDARDS`taki asgari kısa kenarını
-TOPLAYIP mevcut genişlikle karşılaştıran bir fonksiyon (örn.
-`fits_side_by_side(available_width, room_types) -> FeasibilityReport`).
-v1 KASITLI OLARAK basit tutulur — bu oturumda ELLE yapılan hesabın
-(toplam asgari genişlik ≤ mevcut genişlik) BİREBİR koda dökülmüş hali;
-karmaşık 2D yerleşim/bin-packing optimizasyonu YAPILMAZ (`stairs`/
-`ceiling` ile AYNI "net bir v1 sınırı" disiplini).
+**Değişmez ilke (bu maddenin ANAYASASI):** modül ne kadar büyürse
+büyüsün, hiçbir kural kullanıcının açık kararı olmadan `collision/`in
+`FORBID` sınıfına ÇEKİLMEZ — `architect/`in konusu fiziksel imkânsızlık
+değil mimari SAĞDUYUDUR, ve sağduyu müşterinin bilinçli tercihiyle HER
+ZAMAN ezilebilir kalmalıdır. Büyüyen şey kuralların SAYISI/KAPSAMIdır,
+ŞİDDET SINIFI (WARN) değil.
 
-**Fikir 2 — `scripts/templates/`e entegre bir ön-kontrol.**
-`generate_circulation_core` gibi bir üretici fonksiyon, ürettiği
-yerleşimin `standards` sınırlarını karşılayıp karşılamadığını KENDİSİ
-üretim SIRASINDA kontrol edip erken bir hata/uyarı fırlatır (üretim
-SONRASI `validate.py`ye bırakmak yerine). Fikir 1'den daha entegre ama
-`templates/`in "sadece deterministik geometri üretir, karar vermez"
-sınırını (bkz. `scripts/templates/CLAUDE.md`) bulanıklaştırabilir.
+**Fikirler (ayrıntı `scripts/architect/CLAUDE.md` "Gelecek yönü — 2.
+nesil mimari mantık motoru" bölümünde, TEK kaynak orada tutulur, burada
+TEKRARLANMAZ):**
 
-**Açık kararlar:**
+1. Uyarı şiddeti bir SAYI (0.0-1.0 severity) olsun — spektrum, hâlâ
+   bloklamaz.
+2. Bina tipi profilleri (`standards/`in "mahal tipi -> eşik" deseninde,
+   bina tipi -> kural kümesi).
+3. Katlar ARASI ilişkiler — bugün `architect/` (`collision/` ile AYNI
+   bilinen sınırlama) yalnızca AYNI katta çalışıyor; ıslak hacim düşey
+   istifi, kolon/taşıyıcı düşey hizası gibi konular YENİ bir arite
+   boyutu gerektirir.
+4. `options.py`nin (seçenek kataloğu) HER önemli tasarım karar noktasına
+   (birim karışımı, ıslak hacim sütunu konumu, giriş cephesi seçimi)
+   yaygınlaştırılması.
+5. Proje bazlı kural profili/eşik override'ı (`meta.architect_profile`
+   gibi) — kök `CLAUDE.md`nin "çizim sabiti context'e sızmamalı"
+   ilkesiyle GERİLİM içerebilir, dikkatli değerlendirilmeli.
+6. Bilinçli göz ardı etmenin (bir UYARI'nın gerekçeyle kabul edilmesi)
+   yapılandırılmış bir izinin tutulması fikri — henüz net değil.
 
-- Fikir 1 mi Fikir 2 mi, yoksa YENİ bir modül mü (`scripts/feasibility/`)?
-  Kapsam küçük olduğu için muhtemelen `standards/`in DOĞAL bir uzantısı
-  (Fikir 1) — ama `templates/`in gelecekteki birim-içi şablon
-  genişlemesiyle (bkz. `DEV-037` "bilinen sınırlamalar") doğrudan
-  ilişkili olduğu için orada da yaşayabilir.
-- Sonuç `standards`ın "ihlal HER ZAMAN UYARIdır" felsefesiyle mi tutarlı
-  olacak (rapor, engellemez), yoksa "sığmıyor" durumu gerçekten
-  ÜRETİMİ DURDURAN bir HATA mı olmalı? Bu ikisi FARKLI bir karardır —
-  "mevcut bir odanın oranı kötü" (düzeltilebilir, üretilmiş) ile "istenen
-  program bu alana HİÇ sığmıyor" (üretilecek bir şey yok, üretim
-  anlamsız) kavramsal olarak FARKLI ağırlıktadır.
-- v1 yalnızca GENİŞLİK (yan yana) mi test eder, yoksa DERİNLİK (üst üste
-  bant) sığması da mı eklenir? (Öneri: ikisi de basit toplama testleriyle
-  yapılabilir, aynı fonksiyonun iki modu.)
-- Bu kontrol `templates::generate_circulation_core` gibi bir üretici
-  ÇAĞRILMADAN ÖNCE mi çalıştırılacak (agent'ın kendi kendine "bu program
-  bu alana sığar mı" diye SORABİLMESİ), yoksa yalnızca üretilmiş bir
-  context.json'u SONRADAN mı denetleyecek?
+**Açık kararlar:** hangi fikrin/fikirlerin, hangi sırayla, ne zaman
+`DEV-0XX` olarak somutlaştırılıp seçileceği TAMAMEN kullanıcı kararıdır.
+Bu madde kendi başına hiçbir kodu TETİKLEMEZ.
 
-**İlişkili modüller:** `standards/` (asgari kısa kenar/oran verisinin TEK
-kaynağı), `templates/` (yerleşim üreticisi, bu kontrolün en doğal
-entegrasyon/çağrı noktası — bkz. `scripts/templates/CLAUDE.md` "Bilinen
-sınırlamalar": "Bina ana girişi/kaç daire gibi üst-seviye 'arketip
-seçimi' mantığı YOK" notuyla AYNI ailede bir gelecek genişleme).
+**İlişkili modüller:** `scripts/architect/` (uygulanacağı yer),
+`standards/` (bina tipi profili deseninin emsali), `collision/` (arite
+ayrımının ve "yalnızca aynı kat" sınırlamasının emsali), `columns/`
+(düşey hizalama sınırlamasının emsali), `DEV-027` (kaçış planı —
+"acil çıkış mesafesi" gibi bir gelecek kural ile kavramsal KOMŞU).
 
 ## COMPLETED
 
@@ -580,6 +589,50 @@ seçimi' mantığı YOK" notuyla AYNI ailede bir gelecek genişleme).
   17500)`in gerçek proje verisiyle (poligon/alan/duvar/kapı konumu)
   BİREBİR eşleştiğini doğrudan kanıtlıyor. Çıktı bir `dict`tir,
   context.json'a OTOMATİK YAZILMAZ (açık karar). (`HD-018`)
+
+### DEV-038 — Oda programı ↔ mevcut alan sığma (feasibility) kontrolü
+
+- **Durum:** COMPLETED (2026-09-28) — `DEV-039`e ABSORBE edildi.
+- **Özet:** Ayrı bir modül/görev olarak KALMADI; `scripts/architect/
+  study.py::check_fits` olarak uygulandı (DEV-038'in kendi "Fikir 1"i —
+  1D sığma testi — BİREBİR kod hâli). Ayrıntı için `DEV-039`e bakınız.
+
+### DEV-039 — `scripts/architect/` — mekansal ilişki/mimari mantık kuralları
+
+- **Durum:** COMPLETED (2026-09-28)
+- **Özet:** Yeni `scripts/architect/` modülü, üç turluk kullanıcı
+  diyaloğu sonucunda netleşen bir plandan uygulandı ("standartları büyük
+  oranda belirlediğimize göre yeni bir plan oluşturmamızın vakti geldi
+  ... bu modül, mimarın gerçek anlamda yaptığı işi yapacak"). Arity
+  ayrımı `collision/`in `rooms/`den ayrılmasıyla AYNI gerekçeyi mimari
+  SAĞDUYUya taşıdı: `standards/` bir odanın KENDİ oranını denetler
+  (arity-1), bu modül iki/N elemanın BİRBİRİNE GÖRE mantıklı olup
+  olmadığını denetler (arity-2+). TEK modül, dört dosya: `rules.py`
+  (dört ilişkisel WARN kuralı — kapı-çekirdek dengesizliği, giriş-WC
+  görüş hattı, hol/sirkülasyon alan payı, yatak odası-salon komşuluğu),
+  `study.py` (etüt: `DEV-038`in absorbe edilen sığma testi + kaba 1D
+  zonlama), `options.py` (seçenek kataloğu — dil modelinin "o anki
+  duruma göre hangi seçenekler geçerli" diye SORABİLECEĞİ, ön-puanlanmış
+  bir liste), `design.py` (mimari: zonlama planından kapı kararı,
+  geometriyi KENDİSİ çizmez). Politika `standards/` ile AYNI: HER ZAMAN
+  UYARI, asla HATA — kullanıcı mahremiyet kuralları için bile daha ciddi
+  bir sınıf İSTEMEDİ. Yeni `rooms[].unit_id` (opsiyonel, opt-in) şema
+  alanı eklendi — eskiden yalnızca `uA_`/`uB_`/`uC_` id-önek
+  konvansiyonuyla ÖRTÜK olan "hangi oda hangi daireye ait" bilgisi artık
+  AÇIK; kullanıcının gerekçesi bunu DEV-039'un ötesine taşıyor
+  (gelecekteki "emsal" hesabı da aynı gruplamaya bağımlı olacak).
+  **rev-21'de (aynı gün, kullanıcı talebiyle) gerçek projeye UYGULANDI**
+  — 80 birim odasına `id`-önek konvansiyonundan BİREBİR türetilerek
+  yazıldı; dört kural artık GERÇEKTEN çalışıyor ve 6 UYARI üretiyor
+  (hol-oranı × 3 birim — uA/uB %37.7, uC %26.2, sınır %15 —, giriş-WC
+  görüş hattı, kapı-çekirdek dengesizliği oran 4.38, yatak odası-salon
+  komşuluğu), hiçbiri üretimi DURDURMUYOR. `selftest.py` hem bu GERÇEK
+  ihlalin yakalandığını hem `unit_id` bellek-içi SOYULDUĞUNDA opt-in'in
+  hâlâ geçerli kaldığını ayrı ayrı kanıtlıyor. Golden fixture BİLİNÇLİ
+  olarak eklenmedi (`collision/`in kendi gerekçesiyle AYNI — bu modülün
+  sorusu "tasarım mantıklı mı", golden'ınki "çıktı değişti mi"; hiçbir
+  DXF entity'si üretilmediği için bir karşılaştırma bu mantığı sınamaz).
+  (`HD-019`)
 
 ## Görev tamamlama kuralı
 

@@ -1,13 +1,14 @@
 {
-  "generated_at": "2026-09-28T08:52:08+00:00",
+  "generated_at": "2026-09-28T11:22:22+00:00",
   "project_name": "Cok Katli Konut + Ticaret Binasi",
-  "project_revision": 20,
+  "project_revision": 21,
   "schema_version": {
     "project": "1.0.0",
     "project_declared": true,
     "system": "1.0.0"
   },
   "module_contracts": {
+    "architect": "1.0",
     "axis": "1.1",
     "ceiling": "1.0",
     "collision": "1.0",
@@ -30,6 +31,6 @@
     "typography": "1.0",
     "walls": "1.0"
   },
-  "git_commit": "436d734",
+  "git_commit": "b517aa4",
   "output": "plan.dxf"
 }

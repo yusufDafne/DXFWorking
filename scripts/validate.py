@@ -27,6 +27,11 @@ Yaptigi kontroller:
       (aksi HATA - yazim hatasi korumasi); en-boy orani/asgari kisa kenar/
       asgari alan esik DISINDAYSA bu HER ZAMAN UYARIdir - kullanici karari
       geregi uretimi DURDURMAZ.
+  3e) ILISKISEL/MIMARI MANTIK KURALLARI (DEV-039, scripts/architect):
+      arity-2+ kontroller - kapi-cekirdek dengesizligi, giris-wc goru
+      hatti, hol/sirkulasyon alan payi, yatak odasi-salon komsulugu.
+      `rooms[].unit_id` OPT-IN'dir; hic verilmezse bu kontroller SESSIZCE
+      atlanir. standards ile AYNI politika: HER ZAMAN UYARI, asla HATA.
   4) SURUM KAPISI (DEV-020): meta.schema_version ile sistemin SCHEMA_VERSION'u
      arasinda MAJOR fark varsa uretim DURUR. Bkz. scripts/version.py.
   5) CAKISMA DENETIMI (DEV-019): moduller arasi girisim - tefris odanin
@@ -74,6 +79,12 @@ from version import (  # noqa: E402
 )
 from stairs import StairFitError, resolve_stair  # noqa: E402
 from standards import check_room_proportions, check_room_types  # noqa: E402
+from architect import (  # noqa: E402
+    check_bedroom_via_corridor,
+    check_circulation_area_share,
+    check_door_core_balance,
+    check_entry_sightlines,
+)
 from walls import WallCatalog  # noqa: E402
 
 AREA_TOLERANCE_RATIO = 0.03  # oda alani vs poligon alani icin tolerans
@@ -404,6 +415,7 @@ def run_validation(context_path: Path = DEFAULT_CONTEXT_PATH) -> bool:
 
     stair_warnings: list[str] = []
     standards_warnings: list[str] = []
+    architect_warnings: list[str] = []
     for floor in context["floors"]:
         all_errors += check_floor(units, floor)
         floor_stair_errors, floor_stair_warnings = check_stairs(floor)
@@ -415,6 +427,20 @@ def run_validation(context_path: Path = DEFAULT_CONTEXT_PATH) -> bool:
             f"[{floor['id']}] " + w
             for w in check_room_proportions(floor["rooms"], units)
         ]
+        # DEV-039: iliskisel (arity-2+) mimari mantik kurallari - standards
+        # ile AYNI politika (HER ZAMAN UYARI, asla HATA). Tumu rooms[].
+        # unit_id OPT-IN'dir; alan verilmeyen bir projede (bugunku gercek
+        # context.json dahil) bu liste SESSIZCE bos kalir.
+        rooms, walls, openings = floor["rooms"], floor["walls"], floor["openings"]
+        architect_warnings += [
+            f"[{floor['id']}] " + w
+            for w in (
+                check_circulation_area_share(rooms)
+                + check_bedroom_via_corridor(rooms, walls, openings)
+                + check_entry_sightlines(rooms, walls, openings)
+                + check_door_core_balance(rooms, walls, openings)
+            )
+        ]
 
     for elevation in context["elevations"]:
         all_errors += check_elevation(elevation)
@@ -425,6 +451,8 @@ def run_validation(context_path: Path = DEFAULT_CONTEXT_PATH) -> bool:
         print(f"UYARI (merdiven): {warning}")
     for warning in standards_warnings:
         print(f"UYARI (sartname): {warning}")
+    for warning in architect_warnings:
+        print(f"UYARI (mimari): {warning}")
 
     if all_errors:
         print("DOGRULAMA BASARISIZ (geometri/mantik):")

@@ -40,6 +40,10 @@
         "room_type": {
           "type": "string",
           "description": "Mahal TIPI (scripts/standards, DEV-036) - orn. 'asansor', 'merdiven', 'banyo'. Sabit bir sema enum'u DEGILDIR (kod-sahipli standards.STANDARDS katalogunun buyudugu/gelistigi bir gelecekte sema degismesin diye); gecerli degerler validate.py::check_room_types tarafindan calisma zamaninda kontrol edilir (wall.kind ile AYNI desen - STANDARDS'ta TANIMSIZ bir deger YAZIM HATASI sayilir ve HATAdir). Alan HIC VERILMEZSE bu oda oransal denetimden gecmez - opt-in (ceiling/levels ile AYNI desen)."
+        },
+        "unit_id": {
+          "type": "string",
+          "description": "Bu odanin ait oldugu bagimsiz bolum/daire kimligi (scripts/architect, DEV-039) - orn. 'uA', 'uB'. Eskiden yalnizca 'uA_'/'uB_'/'uC_' id-onek KONVANSIYONUYLA ORTUK idi; artik ACIKCA bildirilir (kirilgan bir ad-onek tahminine guvenilmez). scripts/architect/rules.py'deki TUM iliskisel (arity-2+) kurallar (kapi-cekirdek dengesi, giris-wc goru hatti, hol/sirkulasyon alan payi, yatak odasi-salon komsulugu) bu alani OPT-IN olarak okur - alan HIC VERILMEZSE o oda ilgili kontrole HIC GIRMEZ (room_type ile AYNI desen). Ayrica gelecekteki 'emsal' (imar alani orani) hesabinin da GUVENILIR bagimliligi olacaktir - bu yuzden DEV-039'un otesinde bir altyapi alanidir."
         }
       }
     },

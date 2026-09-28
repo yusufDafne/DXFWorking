@@ -121,6 +121,22 @@ kalanını bilmeye ihtiyaç duymadan o modül üzerinde derinlemesine/izole
   istemediği, ayrıca büyük bir açık-karar seti gerektiren bir genişleme).
   Çıktı `dict`tir, context.json'a OTOMATİK YAZILMAZ — bkz.
   `scripts/templates/CLAUDE.md`.
+- ✅ **`scripts/architect/`** — `DEV-039` (2026-09-28): mekansal ilişki/
+  mimari mantık kural kütüphanesi. `standards/`dan farkı ARİTEDİR:
+  `standards/` bir odanın KENDİ oranını denetler (arity-1), bu modül
+  iki/N elemanın BİRBİRİNE GÖRE mantıklı olup olmadığını denetler
+  (arity-2+) — kapı-çekirdek dengesizliği, giriş-WC görüş hattı, hol/
+  sirkülasyon alan payı, yatak odası-salon komşuluğu. Politika `standards/`
+  ile AYNI: HER ZAMAN UYARI, asla HATA. Yeni `rooms[].unit_id` (opsiyonel,
+  opt-in) alanıyla sürülür — `DEV-038`in sığma kontrolü BURAYA absorbe
+  edildi (`study::check_fits`). Çıktı üreten `study/options/design`
+  dosyaları `templates/` ile AYNI "hesaplar, çizmez" sınırındadır —
+  bkz. `scripts/architect/CLAUDE.md`. **rev-21'de gerçek projeye
+  `unit_id` uygulandı** (id-önek konvansiyonundan türetilerek), dört
+  kural artık gerçek projede çalışıyor. Kullanıcı bu modülü "programı
+  gerçek bir mimar yapan en önemli yapı taşı" olarak çerçeveledi ve bir
+  genişleme yol haritası istedi — bkz. `DEV-040` ve `scripts/architect/
+  CLAUDE.md` "Gelecek yönü".
 
 ## Modül bağımsızlığı ve çapraz kontrol (kullanıcı ilkesi)
 
@@ -260,6 +276,7 @@ Ortak desen (pafta + walls ile kanitlandi):
 | `ceiling/`    | `CeilingSheet`, `RoomCeilingData`, `resolve_room_ceilings`, `floor_has_ceiling_data`, `draw_ceiling_label`, `ensure_ceiling_layer` | UYGULANDI (DEV-023, 2026-09-28); RCP - ayri pafta, oda-bazli tavan kotu, v1 armatursuz |
 | `standards/`  | `RoomStandard`, `STANDARDS`, `room_aspect_ratio`, `validate_standards`, `check_room_types`, `check_room_proportions` | UYGULANDI (DEV-036, 2026-09-28); sartname/oransal mahal kutuphanesi, ihlal HER ZAMAN UYARI |
 | `templates/`  | `CirculationCoreTemplate`, `DEFAULT_TEMPLATE`, `generate_circulation_core` | UYGULANDI (DEV-037, 2026-09-28); sirkulasyon cekirdegi sablon ureteci, v1 yalnizca cekirdek (birim ici bolme YOK) |
+| `architect/`  | `check_circulation_area_share`, `check_bedroom_via_corridor`, `check_entry_sightlines`, `check_door_core_balance`, `FeasibilityReport`, `check_fits`, `ZoneAssignment`, `ZoningPlan`, `resolve_unit_zoning`, `PlacementOption`, `options_for_core_placement`, `place_unit_entry_doors` | UYGULANDI (DEV-039, 2026-09-28); iliskisel (arity-2+) mimari mantik kurallari, DEV-038 absorbe edildi, `rooms[].unit_id` opt-in |
 
 > Bu tablo `scripts/doc_check.py` tarafindan DENETLENIR: `UYGULANDI` isaretli bir
 > satirda anilan her sinif adi, o modulde gercekten tanimli olmalidir. Yalnizca
@@ -287,6 +304,11 @@ rev-10'da semaya EKLENENLER:
 - `floors[].columns[]` -> kolon yerlesimi (merkez + kesit + rotasyon + ad)
 - `meta.column_hatch` -> kolon taramasi (varsayilan ANSI33 / 3.0)
 - `meta.column_label` -> kolon adi gosterimi (varsayilan KAPALI)
+
+DEV-039'da (2026-09-28) semaya EKLENEN:
+
+- `rooms[].unit_id` -> bagimsiz bolum/daire kimligi (opsiyonel, opt-in);
+  `scripts/architect/rules.py`in TUM iliskisel kurallari bunu okur
 
 ## Planlanan sınıflar (durum: henüz yok — fikir notu)
 

@@ -4,6 +4,163 @@ Aktif geçmiş kapasitesi: **50 kayıt**. En eski tamamlanmış kayıt, 51. kay�
 alınırken silinir. Ayrıntılı teknik değişiklikler git geçmişi ve ilgili proje
 provenance kayıtlarıyla ilişkilendirilir.
 
+## HD-019 — `architect/` modülü: mekansal ilişki/mimari mantık kuralları (DEV-039)
+
+- **Durum:** COMPLETED
+- **Tamamlanma:** 2026-09-28
+- **Kökeni:** kullanıcının, `standards/`+`templates/`in gerçek projeye
+  uygulanmasından (rev-19/rev-20) HEMEN sonra gelen üçüncü büyük talebi:
+  *"standartları büyük oranda belirlediğimize göre yeni bir plan
+  oluşturmamızın vakti geldi ... bu modül, mimarın gerçek anlamda yaptığı
+  işi yapacak aslında, planlama ... gerçek bir mimar gibi düşünüp oda,
+  koridor, wc, mutfak vs. her şeyin planını endüstri standardına uygun
+  biçimde yapacak."* Kullanıcı BİLEREK modül adını/kapsamını vermedi
+  ("modülün adının ne olacağını ... ben bilmiyorum henüz ... sen plana
+  detaylıca açıklayacaksın ben de onun üzerine seninle tartışıp planı
+  geliştireceğim") — bu görev üç turluk bir DİYALOG sonucunda netleşti
+  (modül adı, iç yapı, v1 kural kataloğunun tamamı, şema kararı, kural
+  şiddeti kullanıcı tarafından TEK TEK onaylandı), sonra "planı uygula"
+  ile implementasyon başladı.
+
+### Arity ayrımının fiziksel çakışmadan mimari sağduyuya genişlemesi
+
+`DEV-019`da (`collision/`) kurulan "arite ayrımı" ilkesi (arity-1 =
+kendi verin geçerli mi, ilgili modülün işi; arity-2+ = iki farklı eleman
+birbirine göre mantıklı mı, ayrı bir motorun işi) BİREBİR AYNI şekilde
+buraya taşındı — sadece konu fiziksel ÇAKIŞMA değil mimari SAĞDUYU.
+Kullanıcının verdiği üç somut örnek (kapı-çekirdek dengesizliği,
+giriş-WC görüş hattı, hol'ün büyütülüp diğer odaların küçültülmesi)
+HİÇBİRİ tek bir odanın kendi ölçüsüyle ilgili değildi — üçü de iki/N
+elemanın birbirine göreliydi. Kullanıcının üçüncü örneği (hol optimum
+olmalı) doğrudan bir öz-eleştiriydi: rev-20'de az önce kurulan `uA`/`uB`
+birimlerinin hol alanları (%45-55 pay) tam olarak bu tuzağa düşmüştü —
+bu bağlantı plan dokümanında AÇIKÇA belirtildi, gizlenmedi.
+
+### Üç turluk plan diyaloğu: nihai kararlar
+
+1. **Modül adı: `scripts/architect/`** — kullanıcının kendi gerekçesi:
+   "en mimari fikirleri sunacak/planlayacak karar verici burası."
+2. **İç yapı: TEK modül, dört dosya** (`rules.py`/`study.py`/
+   `options.py`/`design.py`) — `pafta/`/`elevations/`in "sıkıca ardışık,
+   aynı bağlamı paylaşan sınıflar ayrı modüllere BÖLÜNMEZ" deseniyle AYNI
+   gerekçe. Kullanıcının "çok genişse ayrı modülde de olur" notu bir
+   gelecek kaçış kapısı olarak dokümana yazıldı, ön koşul DEĞİL.
+3. **v1 kapsamı TAMAMI baştan** (`stairs`/`ceiling`in kademeli-v1
+   disiplini burada BİLEREK uygulanmadı, kullanıcı kararı).
+4. **`rooms[].unit_id` yeni şema alanı** — eskiden `uA_`/`uB_`/`uC_`
+   id-önek konvansiyonuyla ÖRTÜK olan "hangi oda hangi daireye ait"
+   bilgisi artık AÇIK. Kullanıcının gerekçesi bunu DEV-039'un ötesine
+   taşıyor: gelecekteki "emsal" (imar alanı oranı) hesabı da AYNI
+   güvenilir gruplamaya bağımlı olacak.
+5. **Kural şiddeti: `standards/` ile AYNI, HER ZAMAN UYARI** — kullanıcı
+   mahremiyet kuralları (giriş-WC, yatak odası-salon) için bile daha
+   ciddi bir sınıf İSTEMEDİ ("hayır").
+6. **Hol payı eşiği: %12-15 varsayılan, ama esnetilebilir** — kod
+   katalog sabiti (`DEFAULT_CIRCULATION_SHARE_MAX = 0.15`) + her
+   `check_*` fonksiyonunun bir override parametresi.
+7. **`DEV-038`in absorpsiyonu ONAYLANDI** — sığma kontrolü etüdün
+   ZATEN yapması gereken ilk adım olduğu için ayrı bir görev olarak
+   KALMADI, `study::check_fits` oldu.
+8. **Ajanın önerdiği 2 ek kural (5, 6) ONAYLANDI** — yatak odasının
+   salon üzerinden değil hol üzerinden erişilmesi, hol payının SAYISAL
+   bir eşiğe bağlanması (madde 3'ü ÖLÇÜLEBİLİR hale getirir).
+
+### Oda-kapı komşuluğu: `collision/geometry.py`nin YENİDEN kullanımı
+
+Bir kapının duvar-merkez-çizgisi üzerindeki orta noktası, hangi
+oda(lar)ın poligon KENARINA değdiğini bulmak için `collision.geometry.
+point_on_boundary`yi (projedeki poligon matematiğinin TEK sahibi)
+doğrudan kullanır — ikinci bir kopya YAZILMADI. Giriş-WC görüş hattı
+kontrolü kendi çapraz-çarpım segment-kesişim testini (`rules.
+_segments_intersect`) taşır; bu, `standards`ın AABB basitleştirmesiyle
+AYNI kategoride, dürüstçe belgelenmiş bir v1 basitleştirmesidir (mobilya/
+kapı açılım yayı hesaba katılmaz).
+
+### `check_fits`/`resolve_unit_zoning`: `validate.py` akışının PARÇASI DEĞİL
+
+DEV-038'in "sığma kontrolü" bir ÖN-KONTROLDÜR (bir ajan
+`generate_circulation_core` gibi bir üreticiyi çağırmadan ÖNCE sorar);
+odalar zaten üretilmişse anlamı kalmaz (`standards::
+check_room_proportions` zaten üretilmiş odayı denetler). Bu yüzden
+YALNIZCA `rules.py`nin dört ilişkisel `check_*` fonksiyonu
+`validate.py`ye bağlandı (standards_warnings ile AYNI desende,
+`UYARI (mimari): ...` olarak basılır, `all_errors`a HİÇ girmez).
+
+### Golden output etkisi
+
+- **Ana proje geometrik olarak DEĞİŞMEDİ** — `architect/` hiçbir yeni
+  DXF entity üretmez/context.json'a yazmaz; `output/plan.dxf` diff'i
+  yalnızca her üretimde değişen zaman damgası/GUID metadata'sıdır (kod
+  seviyesinde doğrulandı: git diff yalnızca `$TDCREATE`/`$FINGERPRINTGUID`
+  gibi alanları gösterdi, hiçbir entity/koordinat satırı DEĞİŞMEDİ).
+- **8 golden referansın HİÇBİRİ değişmedi** (`--golden-set` temiz döndü).
+- **Ayrı bir golden fixture EKLENMEDİ** (bilinçli karar) — `collision/`ın
+  KENDİ gerekçesiyle AYNI: bu modülün sorusu "tasarım mantıklı mı" olduğu
+  için (golden'ın sorusu "çıktı beklenmedik şekilde değişti mi" değil),
+  bir entity/layer/bbox karşılaştırması `rules.py`nin dört fonksiyonunu
+  SINAMAZ (hiçbiri DXF'e dokunmuyor) — tek gerçek kanıt `selftest.py`nin
+  kasıtlı-bozma testleridir.
+
+### Modül self-test'i
+
+`python scripts/architect/selftest.py` — 20 kontrol grubu: dört
+`rules.py` fonksiyonunun her biri hem bir İHLAL hem (giriş-WC görüş
+hattı için İKİ farklı: koni-dışı VE duvarla-engellenmiş) bir
+YANLIŞ-POZİTİF senaryosuyla; `check_fits`in DEV-038'in GERÇEK keşfettiği
+7700mm/8400mm senaryosunu elle-hesaplanabilir biçimde doğrulaması;
+`resolve_unit_zoning`in boşluğu eşit dağıtması; `options_for_core_
+placement`in giriş kenarını yüksek puanlaması; `place_unit_entry_doors`in
+zone merkezlerine kapı koyması; VE gerçek `context.json`'daki (rev-20)
+`uA_*` oda verisine bellek-içi `unit_id` eklenerek hol-oranı ihlalinin
+GERÇEKTEN yakalandığının (`unit_id` eklenmeden projenin SESSİZ kaldığı da
+ayrıca kanıtlanarak) doğrulanması. Tüm 17 modül self-test'i,
+`validate.py`, `generate_dxf.py`, `golden_report.py --golden-set` ve
+`doc_check.py` ayrıca çalıştırılıp temiz döndü.
+
+### Açık risk / bilinen sınırlama
+
+- **Gerçek projeye bugün hiçbir `unit_id` verisi EKLENMEDİ** — bu bilinçli,
+  ayrı bir sonraki revizyon konusudur (`standards::room_type`in rev-19'a
+  kadar boş kalmasıyla AYNI desen); bu yüzden `architect/`in dört kuralı
+  bugün gerçek projede SESSİZCE hiçbir uyarı ÜRETMEZ.
+- **Giriş-WC görüş hattı bir v1 basitleştirmesidir** (yukarı bakınız).
+- **`resolve_unit_zoning` yalnızca TEK SATIRLIK (1D) bir yerleşimdir** —
+  karmaşık 2D bin-packing YAPILMAZ.
+- **`options_for_core_placement` bugün `templates::
+  generate_circulation_core`yi ÇAĞIRMAZ** — o fonksiyon henüz bir
+  `position` parametresi taşımıyor (küçük, bloke etmeyen bir teknik
+  detay olarak plana not düşüldü).
+
+### Sonraki direktif
+
+Rev-20'nin hol-oranı ihlalinin (ve varsa diğer `architect/` uyarılarının)
+gerçek projeye UYGULANMASI (`unit_id` eklenmesi dahil) AYRI, sonraki bir
+revizyon konusudur — sistem mimarı bunu açıkça talep ettiğinde ele
+alınır. `DEVELOPMENT_TASKS.md::PLANLANAN GÖREVLER`de kalan maddeler:
+`DEV-007` (BLOCKED), `DEV-024` (`site/`), `DEV-026`/`DEV-028`
+(`legend/` genişletmeleri), `DEV-027` (kaçış planı), `DEV-031`…`DEV-035`.
+
+### rev-21 notu (AYNI GÜN, kullanıcı talebiyle — "unit id planlamasını da
+gerçekleştir")
+
+Yukarıdaki "Açık risk" ve "Sonraki direktif" bu görev TAMAMLANDIĞI anda
+doğruydu (`unit_id` henüz yoktu); birkaç saat içinde AYNI oturumda
+kullanıcı bunu da istedi. `rooms[].unit_id`, `id`-önek konvansiyonundan
+BİREBİR türetilerek 80 birim odasına (normal1-normal5, her katta 16'şar)
+proje revizyonu olarak eklendi (`context.json::rev_history` rev-21,
+`requests.jsonl`). Sonuç: `architect/rules.py`nin dört kuralı artık
+GERÇEKTEN çalışıyor ve kat başına 6 UYARI üretiyor — hol-oranı üç birimde
+de aşıyor (uA/uB %37.7, uC %26.2, sınır %15 — bu görevin "Neden boşluk"
+bölümünde önceden işaret edilen rev-20 eleştirisinin AYNEN kanıtı),
+`uC_oda`→`uC_salon` kapısı doğrudan salona açılıyor, `door_entry_3` ile
+`uC_d_banyo_hol` aynı görüş hattında (36° sapma), uA/uC birimleri
+cekirdeğe göre dengesiz (oran 4.38 — kullanıcının orijinal "bir dairenin
+kapısı direkt merdivene açılıyor" örneğinin GERÇEK bir örneği). Tüm
+UYARI sınıfında, üretimi DURDURMADI; `output/plan.dxf` GEOMETRİK olarak
+DEĞİŞMEDİ (`unit_id` hiçbir çizimi etkilemez). Bu uyarıların GİDERİLMESİ
+(rev-20 birim tasarımının yeniden gözden geçirilmesi) HÂLÂ AYRI, sonraki
+bir revizyon konusudur.
+
 ## HD-018 — `templates/` modülü: sirkülasyon çekirdeği şablon üreteci (DEV-037)
 
 - **Durum:** COMPLETED

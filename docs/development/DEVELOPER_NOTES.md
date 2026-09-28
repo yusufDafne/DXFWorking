@@ -85,6 +85,28 @@ sistem mimarı direktifi güncellenir.
   projede `false`ya çekildi (duvar/oda ölçüleri aks ölçüsünün yanında kafa
   karıştırıyordu) — özellik `golden/aciklik_varyantlari`de sınanmaya
   devam ediyor, sadece bu projenin sunum tercihi değişti.
+- **rev-19/rev-20: `standards/`+`templates/` gerçek projeye uygulandı**
+  (`room_type` 115 odaya eklendi; sirkülasyon çekirdeği `elevator_width`
+  2100mm'ye düzeltildi — `standards`'ın kendi asansör-oranı ihlalini
+  BİZZAT taşıyordu; birim A/B 2+1'den 1+1'e küçültüldü çünkü salon+2 yatak
+  odası 7700mm genişliğe MATEMATİKSEL OLARAK sığmıyordu). Bu sığmazlık
+  keşfi `DEV-038` olarak kayıt altına alındı.
+- **`scripts/architect/` eklendi (DEV-039, 2026-09-28, `HD-019`):**
+  ilişkisel (arity-2+) mimari mantık kural kütüphanesi — kapı-çekirdek
+  dengesizliği, giriş-WC görüş hattı, hol/sirkülasyon alan payı, yatak
+  odası-salon komşuluğu. Politika `standards/` ile AYNI (HER ZAMAN
+  UYARI). Yeni `rooms[].unit_id` (opsiyonel, opt-in) şema alanı eklendi.
+  **rev-21'de gerçek projeye UYGULANDI** (id-önek konvansiyonundan
+  BİREBİR türetilerek, 80 birim odasına): dört kural artık GERÇEKTEN
+  çalışıyor ve 6 farklı UYARI üretiyor (hol-oranı üç birimde de %15
+  sınırını aşıyor — uA/uB %37.7, uC %26.2; `uC_oda`→`uC_salon` doğrudan
+  kapı; `door_entry_3`↔`uC_d_banyo_hol` görüş hattı; uA/uC arası
+  kapı-çekirdek dengesizliği oran 4.38). Bunlar UYARI sınıfında,
+  üretimi DURDURMUYOR; rev-20 birim tasarımının bu uyarılara göre
+  yeniden gözden geçirilmesi AYRI, sonraki bir revizyon konusu.
+  `DEV-038` bu modüle ABSORBE edildi (`study::check_fits`). Üç turluk bir
+  kullanıcı diyaloğuyla netleşen bir plandan uygulandı — bu, "plan onayı"
+  ile "implementasyon izni"nin ayrı ayrı istendiği bir örnek oldu.
 
 ## Sıradaki iş
 
@@ -424,6 +446,18 @@ uyumlu değilse uygulamayı durdur ve sistem mimarı kararı iste.
 - `context.json` programatik yazılırken mevcut biçim korunmalıdır (skaler
   dizi tek satır, nesne dizisi açılmış). Düz `json.dumps(indent=2)` dosyayı
   baştan biçimlendirip ~4000 satırlık sahte diff üretir.
+- Gerçek projeye `rooms[].unit_id` rev-21'de YAZILDI (`id`-önek
+  konvansiyonundan TÜRETİLEREK). Bu, `architect/`in 6 UYARI üretmesine
+  yol açtı (hol-oranı × 3 birim, giriş-WC görüş hattı, kapı-çekirdek
+  dengesizliği, yatak odası-salon komşuluğu) — HİÇBİRİ üretimi
+  DURDURMUYOR. rev-20 birim tasarımının bu uyarılara göre yeniden
+  gözden geçirilmesi (özellikle hol-oranı) hâlâ AYRI, sonraki bir
+  revizyon konusudur; kullanıcı açıkça talep etmeden yapılmaz.
+- `architect::options_for_core_placement` bugün `templates::
+  generate_circulation_core`yi ÇAĞIRMIYOR — o fonksiyon henüz bir
+  `position`/`corner` parametresi taşımıyor (DEV-037'nin "Bilinen
+  sınırlamalar"ı). Eklenmesi `templates/`in `CONTRACT_VERSION`ını
+  artırır.
 
 ## Çalışma kuralı
 

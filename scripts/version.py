@@ -54,6 +54,7 @@ DEFAULT_SCHEMA_VERSION = "1.0.0"
 # `CONTRACT_VERSION` tasiyan moduller. Liste ACIKTIR: yeni bir modul buraya
 # eklenmezse provenance'a girmez, bu yuzden `doc_check.py` bunu denetler.
 CONTRACT_MODULES: tuple[str, ...] = (
+    "architect",
     "axis",
     "ceiling",
     "collision",
