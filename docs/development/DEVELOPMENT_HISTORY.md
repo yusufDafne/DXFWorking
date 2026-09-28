@@ -4,6 +4,109 @@ Aktif geçmiş kapasitesi: **50 kayıt**. En eski tamamlanmış kayıt, 51. kay�
 alınırken silinir. Ayrıntılı teknik değişiklikler git geçmişi ve ilgili proje
 provenance kayıtlarıyla ilişkilendirilir.
 
+## HD-016 — `ceiling/` modülü: yansıtılmış tavan planı / RCP (DEV-023)
+
+- **Durum:** COMPLETED
+- **Tamamlanma:** 2026-09-28
+- **Kökeni:** Kullanıcı `DEV-023`ü açıkça seçti ("DEV-023'ü (ceiling/) seçip
+  başlat") ve sistemin sunduğu Fikir 1/Fikir 2/açık kararlar analizine üç
+  net yönlendirme verdi: **Fikir 1** (ayrı, bağımsız `scripts/ceiling/`
+  modülü + AYRI RCP paftası — kat planına bindirme REDDEDİLDİ), tavan
+  yüksekliği verisi **oda başına** (`rooms[]` içinde, kat başına tek
+  varsayılan DEĞİL), ve v1 kapsamı **aydınlatma armatürünü İÇERMEZ**
+  (yalnızca tavan kotu + malzeme).
+- **Kapsam:** `scripts/ceiling/` (yeni modül: `__init__.py`, `CLAUDE.md`,
+  `selftest.py`), `schema/design.schema.json` (`room.ceiling_height_mm`/
+  `room.ceiling_finish`), `scripts/generate_dxf.py` (import + `ceiling_floors`
+  hesabı + `all_labels`/`content_ranges` genişletmesi + `draw_ceiling_sheet`
+  döngüsü), `scripts/palette/__init__.py` (`TAVAN` girdisi, mor/eflatun),
+  `scripts/collision/scene.py` (`COLLISION_EXEMPT`), `scripts/version.py`
+  (`CONTRACT_MODULES`), `scripts/golden_report.py` (`_code_owned_layers`e
+  `TAVAN` + `rule_opening_symbols` düzeltmesi, aşağı bakınız), yeni
+  `golden/tavan_ornek/` (RCP'yi uçtan uca sınayan referans), kök `CLAUDE.md`
+  (bu görev için ayrıca güncellenmedi — mimari ilke zaten mevcuttu) +
+  `scripts/CLAUDE.md` (modül kaydı + roadmap tablosu satırı).
+
+### Opt-in veri disiplini: gerçek proje HİÇ değişmedi
+
+`floor_has_ceiling_data(floor)` bir katın RCP paftasının hiç üretilip
+üretilmeyeceğinin TEK kaynağıdır — `resolve_room_ceilings` gibi o da
+`rooms[].ceiling_height_mm` alanının context'te AÇIKÇA verilip
+verilmediğine bakar, hiçbir varsayım/türetme yapmaz. Gerçek projenin
+bugünkü `context.json`ında bu alan HİÇ yok — bu yüzden `output/plan.dxf`
+üretiminde `ceiling_floors` boş liste döndü ve dosyada **`TAVAN` katmanı
+hiç açılmadı, tek bir yeni entity eklenmedi**: `git diff -- output/plan.dxf`
+yalnızca zaman damgası/GUID/`CLASS` blok sırası gibi üretimden üretime
+DEĞİŞEN, geometri-dışı alanları gösterdi (elle doğrulandı). Kuzey oku/kot
+ile AYNI "veri yoksa uydurma, veri yoksa çizme" deseni.
+
+### Gerçek bir golden-kural boşluğu bulundu ve düzeltildi
+
+`CeilingSheet.draw`, kat planının kullandığı AYNI `walls::draw_wall_network`
+çağrısını AYNI `floor['openings']` verisiyle YENİDEN yapar — bu, kapı
+sembolünün açılım yayını (ARC) da RCP paftasında YENİDEN çizdiği anlamına
+gelir (bilerek; bkz. `scripts/ceiling/CLAUDE.md` "Bilinen sınırlamalar" —
+RCP pratiğinde bazı ofisler açıklığı gizler, bu proje basitlik için
+GÖSTERME'yi seçti). `golden/tavan_ornek`i ilk `--golden-set --update`
+denemesinde `rule_opening_symbols` kuralı BAŞARISIZ oldu: kural "ARC sayısı
+= kapı sayısı" varsayıyordu, oysa RCP'li bir katta kapı yayı katta 2 kez
+(kat planı + RCP) çizilir. Kural, paftayı açan AYNI TEK kaynağı
+(`ceiling.floor_has_ceiling_data`) okuyacak şekilde düzeltildi — katın RCP
+paftası varsa beklenen ARC sayısı o kat için ×2'lenir. Bu, `MIN_GOING_MM`
+(DEV-022) ve `PaftaOverflowError` (DEV-029) ile AYNI sınıf bir bulgu:
+golden altyapısı gerçekten yeni bir modülün varsayımları BOZDUĞU bir kuralı
+yakaladı, kör geçmedi.
+
+### Golden output etkisi
+
+- **Ana proje DEĞİŞMEDİ** (yukarı bakınız — `ceiling_floors` boş, geometrik
+  fark sıfır). `docs/development/plan-golden-report.json`
+  (`--compare`) YENİDEN üretilmeye gerek KALMADAN eşleşti.
+- **6 mevcut golden referansın HİÇBİRİ değişmedi** (hiçbiri
+  `ceiling_height_mm` taşımıyor — RCP'nin opt-in olduğunun ayrıca kanıtı).
+- **Yeni `golden/tavan_ornek`:** `golden/minimal` ile AYNI küçük kat (2 oda,
+  5 duvar, 1 kapı, 1 pencere) + iki odaya `ceiling_height_mm` (biri
+  `ceiling_finish` ile, diğeri olmadan — `draw_ceiling_label`in her iki
+  dalını da sınar). RCP paftası eklenince entity sayısı 222 → 282 (+60,
+  yeni paftanın kendi aks ızgarası + duvar ağı + çerçeve + 3 `TAVAN` TEXT'i
+  — 2 satır [kot+malzeme] + 1 satır [yalnız kot] = elle hesaplanabilir).
+  `--golden-set --update` sonrası ikinci (update'siz) çalıştırma birebir
+  aynı raporu üretti (determinizm doğrulandı). `PaftaOverflowError`
+  TETİKLENMEDİ.
+
+### Modül self-test'i
+
+`python scripts/ceiling/selftest.py` — 5 kontrol grubu: `resolve_room_
+ceilings`in elle hesaplanabilir sonucu (4000×3000 dikdörtgen → centroid
+(2000,1500), veri taşımayan oda yanlış-pozitifi), `floor_has_ceiling_data`in
+her iki yönü, `draw_ceiling_label`in malzeme var/yok durumunda ürettiği
+TAM entity sayısı + metin içeriği (kot formatı `+2.50`/`-0.20` + BÜYÜK HARF
+malzeme), `CeilingSheet.draw`in bağımsız ölçülen duvar-ağı entity sayısına
+etiket sayısını EKLEDİĞİNİN doğrulanması, katman RGB'sinin kod-sahipli
+olduğu. Tüm 14 modül self-test'i (`collision`…`stairs`) ve
+`scripts/doc_check.py` ayrıca çalıştırılıp temiz döndü.
+
+### Açık risk / bilinen sınırlama
+
+- **Aydınlatma armatür yerleşimi YOK** (v1 kapsam sınırı, kullanıcı kararı
+  — ayrı bir gelecek görev olarak `docs/development/DEVELOPER_NOTES.md`da
+  not düşüldü).
+- **Malzeme kod listesi standartlaştırılmamış** — serbest metin.
+- **Kapı/pencere açıklıkları RCP'de de gösterilir** (bilerek; yukarıdaki
+  golden-kural bulgusunun kökeni de budur).
+- **`validate.py`de tavan kotu ↔ duvar/kat yüksekliği çapraz kontrolü YOK**
+  — proje henüz `rooms[]` seviyesinde kat yüksekliği bilmiyor, çapraz
+  kontrol için veri yok (bkz. `scripts/ceiling/CLAUDE.md`).
+
+### Sonraki direktif
+
+`DEVELOPMENT_TASKS.md::PLANLANAN GÖREVLER`de kalan maddeler: `DEV-007`
+(BLOCKED), `DEV-024` (`site/`), `DEV-026`/`DEV-028` (`legend/`
+genişletmeleri), `DEV-027` (kaçış planı), `DEV-031`…`DEV-035` (2026-09-28'de
+eklenen 5 yeni aday: `electrical/`, `plumbing/`, `walls/` detay kesiti,
+`columns/`+`walls/` statik kalıp, `roof/`). Sistem mimarı bir sonraki
+maddeyi seçip yönlendirme verene kadar kod yazılmaz.
+
 ## HD-015 — `levels/` modülü: kot (seviye/datum) standardı (DEV-029)
 
 - **Durum:** COMPLETED

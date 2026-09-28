@@ -55,6 +55,7 @@ DEFAULT_SCHEMA_VERSION = "1.0.0"
 # eklenmezse provenance'a girmez, bu yuzden `doc_check.py` bunu denetler.
 CONTRACT_MODULES: tuple[str, ...] = (
     "axis",
+    "ceiling",
     "collision",
     "columns",
     "dimensions",

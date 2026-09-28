@@ -206,6 +206,57 @@ madde seçilmedi — sistem mimarının yönlendirmesi bekleniyor (`DEV-023`
 `ceiling/`, `DEV-024` `site/`, `DEV-026`/`DEV-028` `legend/` genişletmeleri,
 `DEV-027` kaçış planı; `DEV-007` hâlâ BLOCKED).
 
+**2026-09-28 durumu:** Kullanıcı üç şey istedi: (1) `DEV-023`ü seç ve
+başlat, (2) `DEVELOPMENT_TASKS.md::## COMPLETED`deki en eski 12 maddeyi
+(`DEV-001`…`DEV-006`, `DEV-008`…`DEV-013`) dosyadan TAMAMEN kaldır
+(zaten `DEVELOPMENT_HISTORY.md`de eksiksiz duruyorlar), (3) 5 yeni
+endüstri-standardı boşluk/geliştirme fikri ekle. Üçü de yapıldı:
+- `DEV-023` (`ceiling/`) için tam Fikir1/Fikir2/açık kararlar analizi
+  yazıldı (Fikir 1 önerildi: yeni bağımsız modül + AYRI RCP paftası,
+  `sections`/`elevations` ile AYNI desen) — **kod HENÜZ yazılmadı**,
+  kullanıcının açık kararlara (mimari seçim, tavan kotu veri seviyesi,
+  armatür kapsamı, malzeme kod listesi) yönlendirmesi bekleniyor.
+- 12 eski COMPLETED madde kaldırıldı (tablo satırı + gövde birlikte,
+  `doc_check.py`nin "tabloda var ama maddesi yok" kuralı ikisinin
+  SENKRON kaldırılmasını zorunlu kılıyor).
+- `DEV-031`…`DEV-035` eklendi: `electrical/` (elektrik tesisatı),
+  `plumbing/` (ıslak hacim tesisatı — kullanıcının AÇIKÇA belirttiği iki
+  boşluk), `walls/` genişletmesi (duvar katman/yalıtım detay kesiti —
+  zaten tanınan ama hiç kullanılmayan `DETAY` proje tipine bağlanır),
+  `columns/`+`walls/` genişletmesi (statik kalıp planı — zaten tanınan
+  ama hiç kullanılmayan `STATIK_KALIP` proje tipine bağlanır), `roof/`
+  (çatı planı — bugün "ÇATI/TERAS" düz teras olarak modelleniyor, kırma
+  çatı yok). Hepsi `PLANNED`, **uygulama izni DEĞİLDİR**.
+- Kullanıcı uzun vadeli vizyonu netleştirdi: gelecekte bir mimar bu
+  dizinde agent terminali açıp uzun bir talep girecek (tefriş/duvar
+  kalınlığı/kapı çeşidi/pencere/ıslak hacim/elektrik/vaziyet planı vb.)
+  ve sistem BELLİ STANDARTLARDA bir proje üretecek — **tamamen Python
+  sınıf/modülleriyle, dil modeliyle DXF üretmeden** (mimari işlerde
+  deterministik olmayan bir yaklaşım KABUL EDİLEMEZ). Bu, projenin zaten
+  kurulu "Deterministik üretim ilkesi"sinin (kök `CLAUDE.md`) doğrudan
+  teyididir; yeni bir karar değil, mevcut mimarinin NEDEN doğru olduğunun
+  kullanıcı tarafından yeniden teyit edilmesidir.
+
+**`DEV-023` COMPLETED (aynı oturumun devamı):** kullanıcı üç açık kararı
+"Recommended" seçenekleriyle yanıtladı — Fikir 1 (ayrı RCP paftası), tavan
+kotu oda başına, v1 armatürsüz. Yeni `scripts/ceiling/` modülü + `rooms[].
+ceiling_height_mm`/`ceiling_finish` şema alanları + `generate_dxf.py`
+entegrasyonu (import, `ceiling_floors`, `all_labels`/`content_ranges`
+genişletmesi, `draw_ceiling_sheet` döngüsü) yazıldı. Gerçek projenin
+`context.json`ında bu veri YOK — `output/plan.dxf` GEOMETRİK OLARAK
+değişmedi (yalnızca zaman damgası/GUID farkı, elle `git diff` ile
+doğrulandı), RCP'nin opt-in olduğunun somut kanıtı. `golden/tavan_ornek`
+(yeni, `golden/minimal`in RCP'li versiyonu) uçtan uca sınadı ve gerçek bir
+golden-kural boşluğunu ortaya çıkardı: `rule_opening_symbols` "ARC sayısı =
+kapı sayısı" varsayıyordu, RCP kapı yayını YENİDEN çizdiği için bu katta
+ikiye katlanıyordu — kural `ceiling.floor_has_ceiling_data`yı (paftayı açan
+AYNI kaynak) okuyacak şekilde düzeltildi. 14 modül self-test'i, `doc_check.py`,
+`--golden-set` (7 referans, update sonrası ikinci update'siz koşu ile
+determinizm doğrulandı) ve `--compare` hepsi temiz. Ayrıntı `HD-016`.
+Sıradaki `PLANNED` madde seçilmedi — sistem mimarının yönlendirmesi
+bekleniyor (`DEV-024` `site/`, `DEV-026`/`DEV-028` `legend/` genişletmeleri,
+`DEV-027` kaçış planı, `DEV-031`…`DEV-035`; `DEV-007` hâlâ BLOCKED).
+
 ## İlk okuma sırası
 
 1. Bu dosya.

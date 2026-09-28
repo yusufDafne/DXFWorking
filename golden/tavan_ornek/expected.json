@@ -1,0 +1,39 @@
+{
+  "source": "golden/tavan_ornek",
+  "entity_count": 282,
+  "entity_types": {
+    "ARC": 2,
+    "ATTRIB": 6,
+    "CIRCLE": 36,
+    "DIMENSION": 15,
+    "HATCH": 5,
+    "INSERT": 2,
+    "LINE": 90,
+    "LWPOLYLINE": 33,
+    "TEXT": 93
+  },
+  "layers": {
+    "AKS": 105,
+    "CERCEVE": 40,
+    "DUVARLAR": 42,
+    "KAPI-PENCERE": 11,
+    "KESIT": 10,
+    "KOT": 12,
+    "METIN": 49,
+    "OLCU": 10,
+    "TAVAN": 3
+  },
+  "modelspace_bbox": [
+    -500.0,
+    -4150.0,
+    84500.0,
+    13150.0
+  ],
+  "blocks": [
+    "MAHAL_ETIKET",
+    "_CLOSEDFILLED"
+  ],
+  "block_inserts": {
+    "MAHAL_ETIKET": 2
+  }
+}

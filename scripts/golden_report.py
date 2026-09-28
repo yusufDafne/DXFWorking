@@ -199,18 +199,31 @@ def rule_opening_symbols(doc, context: dict) -> list[str]:
     rev-13 (DEV-016): kural "her kapi = 1 ARC" varsayiyordu; cift kanat 2,
     surme ve katlanir 0 yay uretir. Beklenen sayi artik
     `openings.ARCS_PER_VARIANT` tablosundan okunur - kural ile cizim ayni
-    kaynaga bakar ve sessizce ayrisamaz."""
+    kaynaga bakar ve sessizce ayrisamaz.
+
+    DEV-023: RCP (tavan) paftasi bir katin acikliklarini (kapi yayi DAHIL)
+    AYNI `openings[]` verisinden YENIDEN cizer (bkz. scripts/ceiling/
+    CLAUDE.md "Bilinen sinirlamalar" - bilerek, gizlenmez). Bu yuzden
+    RCP paftasi olan bir katin kapi yaylari BELGE'de IKI KEZ gorunur.
+    `ceiling.floor_has_ceiling_data` - `generate_dxf.py`nin bir katin RCP
+    paftasi acip acmayacagina karar verdigi AYNI TEK kaynak - burada da
+    carpani belirler; iki yer sessizce ayrisamaz."""
     from openings import ARCS_PER_VARIANT, VARIANT_SINGLE
+    from ceiling import floor_has_ceiling_data
 
     msp = doc.modelspace()
     arcs = len(msp.query("ARC"))
     expected = 0
     for floor in context["floors"]:
+        floor_expected = 0
         for opening in floor["openings"]:
             if opening["type"] != "door":
                 continue
             variant = opening.get("variant", VARIANT_SINGLE)
-            expected += ARCS_PER_VARIANT.get(variant, 1)
+            floor_expected += ARCS_PER_VARIANT.get(variant, 1)
+        if floor_has_ceiling_data(floor):
+            floor_expected *= 2
+        expected += floor_expected
     if arcs != expected:
         return [f"Kapi sembolu sayisi tutmuyor: varyantlara gore {expected} "
                 f"ARC beklendi, {arcs} cizildi."]
@@ -255,6 +268,7 @@ def rule_block_references(doc, context: dict) -> list[str]:
 def _code_owned_layers() -> set[str]:
     """Context'te bildirilmeyen, KOD tarafindan zorunlu kilinan layer'lar
     (aks, tefris gruplari, kolon). Bunlarin rengi/adi modullerin sorumlulugudur."""
+    from ceiling import CEILING_LAYER
     from columns import COLUMN_HATCH_LAYER, COLUMN_LAYER, COLUMN_TEXT_LAYER
     from furniture import FURNITURE_GROUPS
     from levels import LEVEL_LAYER
@@ -262,7 +276,7 @@ def _code_owned_layers() -> set[str]:
     from stairs import STAIR_LAYER
 
     layers = {"AKS", "0", COLUMN_LAYER, COLUMN_HATCH_LAYER, COLUMN_TEXT_LAYER, CUT_LAYER,
-              STAIR_LAYER, LEVEL_LAYER}
+              STAIR_LAYER, LEVEL_LAYER, CEILING_LAYER}
     layers |= {group.layer for group in FURNITURE_GROUPS.values()}
     return layers
 

@@ -91,6 +91,14 @@ kalanını bilmeye ihtiyaç duymadan o modül üzerinde derinlemesine/izole
   tarafında (`floors[].level_marks[]`) GERÇEK proje verisidir (rampa/teras
   kademe farkı), verilmezse hiçbir işaret çizilmez — bkz.
   `scripts/levels/CLAUDE.md`.
+- ✅ **`scripts/ceiling/`** — `DEV-023` (2026-09-28): yansıtılmış tavan
+  planı (RCP), kat planından AYRI bir pafta — `sections`/`elevations`
+  ile AYNI "kendi paftası olan modül" deseni (kullanıcı kararı: aynı
+  paftaya bindirme endüstri standardıyla çelişir). `rooms[].
+  ceiling_height_mm` oda başına GERÇEK proje verisidir, TÜRETİLMEZ; kot
+  metni `levels::format_level`i DOĞRUDAN yeniden kullanır. v1 kapsamı
+  aydınlatma armatürünü İÇERMEZ (kullanıcı kararı). Veri taşımayan bir
+  katın RCP paftası HİÇ üretilmez — bkz. `scripts/ceiling/CLAUDE.md`.
 
 ## Modül bağımsızlığı ve çapraz kontrol (kullanıcı ilkesi)
 
@@ -227,6 +235,7 @@ Ortak desen (pafta + walls ile kanitlandi):
 | `stairs/`     | `resolve_stair`, `StairResolution`, `StairFitError`, `StairDrawingStandard`, `DefaultStairStandard`, `ensure_stair_layer`, `draw_stairs_on_floor` | UYGULANDI (DEV-022, 2026-09-25); tek duz kollu merdiven, auto_flex ile riser/going esnetme |
 | `palette/`    | `PALETTE`, `LayerColor`, `color_for`, `validate_palette`, `CONTRAST_MIN_DISTANCE` | UYGULANDI (DEV-030, 2026-09-25); tum kod-sahipli katman renklerinin tek kaydi, ayni-renk + yakin-kontrast denetimi |
 | `levels/`     | `LevelMark`, `LevelMarkStyle`, `DefaultLevelMarkStyle`, `format_level`, `level_boundaries_from_placements`, `draw_level_marks`, `draw_plan_level_marks` | UYGULANDI (DEV-029, 2026-09-25); kot/datum standardi, elevations::LevelStack'i TUKETIR, kendi kat yuksekligi hesaplamaz |
+| `ceiling/`    | `CeilingSheet`, `RoomCeilingData`, `resolve_room_ceilings`, `floor_has_ceiling_data`, `draw_ceiling_label`, `ensure_ceiling_layer` | UYGULANDI (DEV-023, 2026-09-28); RCP - ayri pafta, oda-bazli tavan kotu, v1 armatursuz |
 
 > Bu tablo `scripts/doc_check.py` tarafindan DENETLENIR: `UYGULANDI` isaretli bir
 > satirda anilan her sinif adi, o modulde gercekten tanimli olmalidir. Yalnizca

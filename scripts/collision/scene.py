@@ -64,6 +64,11 @@ COLLISION_EXEMPT: dict[str, str] = {
                   "(basligi/aksi gibi) - proje geometrisiyle (oda/duvar/"
                   "tefris) hicbir mekansal iliskisi yoktur (axis/typography "
                   "ile AYNI gerekce, politika matrisinde IGNORE).",
+    "ceiling": "Yansitilmis tavan plani (RCP, DEV-023) YENI bir mekansal "
+               "ayak izi URETMEZ - duvarlar zaten walls.collision'in "
+               "kapsadigi AYNI veriden yeniden cizilir; tavan kotu/"
+               "malzeme etiketi bir ANOTASYONDUR (dimensions/stairs "
+               "etiketiyle AYNI gerekce).",
     "levels": "Kot (seviye/datum) isareti (DEV-029) bir ANOTASYONDUR "
               "(bayrak+metin) - dimensions/axis ile AYNI gerekce, plan "
               "geometrisinde anlamli bir alan kaplamaz.",
