@@ -4,6 +4,233 @@ Aktif geçmiş kapasitesi: **50 kayıt**. En eski tamamlanmış kayıt, 51. kay�
 alınırken silinir. Ayrıntılı teknik değişiklikler git geçmişi ve ilgili proje
 provenance kayıtlarıyla ilişkilendirilir.
 
+## HD-018 — `templates/` modülü: sirkülasyon çekirdeği şablon üreteci (DEV-037)
+
+- **Durum:** COMPLETED
+- **Tamamlanma:** 2026-09-28
+- **Kökeni:** `DEV-036`in AYNI oturumunda kullanıcının ikinci talebi:
+  *"kat planları ve oda yerleşimleri için genel şablonlara sahip olacak,
+  bir de şablon oluşturucu generator'ü olacak ... örneğin yerleşim
+  planlarındaki bina ana girişi, dairelerin yerleşimi, kattaki daire
+  sayısına göre efektif yerleşimler vs gibi verileri sağlayacak."*
+  Kullanıcı yönlendirmesi (yine "best practices bir yaklaşım ile ...
+  gerçekleştir") açık kararların çözümünü sisteme bıraktı.
+
+### Kapsam BİLEREK küçültüldü: yalnızca sirkülasyon çekirdeği
+
+`DEV-037` planı v1 için tek bir arketip önermişti; bu tek arketip bile
+"bina ana girişi" + "daire yerleşimi" + "kaç daireye göre efektif
+yerleşim" gibi birkaç farklı tasarım kararını içerebilirdi. Uygulama
+sırasında kapsam DAHA DA daraltıldı: **yalnızca sirkülasyon çekirdeği**
+(asansör + merdiven + L-şekilli koridor + güney giriş duvarı) üretildi;
+**daire/birim İÇİ oda bölüntüsü (salon/mutfak/banyo yerleşimi) v1
+KAPSAMI DIŞINDA bırakıldı.** Gerekçe: gerçek projenin üç birimi
+(`uA_*`/`uB_*`/`uC_*`) ÜÇÜ DE farklı tasarlanmış (farklı oda sayısı,
+farklı oranlar, farklı kapı yerleşimi) — bu GERÇEK bir tasarım kararıdır
+ve parametrik hale getirmek kendi başına büyük bir açık-karar seti
+(kaç oda, hangi oranlarda, şablonun çıktısı context parçası mı öneri
+raporu mu) gerektirir. Sirkülasyon çekirdeği seçildi çünkü tek
+BELİRSİZLİKSİZ, kanıtlanmış desendir — kök `CLAUDE.md`nin "Çok katli bina
+yapisi" bölümünde ZATEN belgelenmiştir ve gerçek projenin HER katında
+AYNI konumda kullanılır.
+
+### Kritik mimari not: kendi eklenen bir kısıt, kullanıcı İSTEMEDİ
+
+Kullanıcı "generator" kelimesini kullandı ama bunun dil modeline geometri
+ürettirmek anlamına GELMEDİĞİ modülün dokstring'inde ve
+`scripts/templates/CLAUDE.md`de AÇIKÇA yazıldı: `generate_circulation_core`
+tamamen deterministik bir Python fonksiyonudur, parametrelerden koordinat
+HESAPLAR; rastgele/LLM-uydurma HİÇBİR koordinat üretmez. Bu, kök
+`CLAUDE.md`nin "Deterministik üretim ilkesi"yle çelişmemek için modülü
+yazan ajan tarafından EKLENEN bir kısıttır — kullanıcı açıkça istemedi,
+ama kullanıcının AYNI mesajda tekrar ettiği "dil modeli ile dxf oluşturmak
+... mimari çalışmalarda kabul edilemez" ilkesiyle DOĞRUDAN bağlantılıdır.
+
+### Varsayılan ölçüler: icat edilmedi, gerçek projeden ÇIKARILDI
+
+`CirculationCoreTemplate`in varsayılan değerleri (asansör 1000mm, merdiven
+4000mm, koridor bacağı 1500mm, bant derinliği 4500mm) gerçek projenin
+`context.json`ındaki (`normal1` katı) ZATEN `validate.py`den geçmiş
+sirkülasyon çekirdeğinden BİREBİR çıkarıldı — `standards/`in v1
+kataloğundeki "pratik varsayılan" değerlerinden bile DAHA sağlam bir
+temele sahiptir (orada genel mimari makuliyet, burada GERÇEKTEN ŞU AN
+ÇALIŞAN bir tasarım). `selftest.py::check_matches_real_project_ground_truth`
+bunu doğrudan kanıtlar: `generate_circulation_core(20000, 17500)`,
+gerçek projenin `elevator`/`stair`/`band` odalarının poligonlarını VE
+alanlarını (3.0/12.0/75.0 m²), `core_bottom`/`core_div`/`core_right`/
+`band_south` duvarlarının konumlarını/kalınlığını, `door_stair` kapısının
+konumunu/genişliğini **BİREBİR** üretir.
+
+### Çıktı context.json'a YAZILMAZ (açık karar)
+
+`DEV-036`daki AYNI kararla tutarlı: `generate_circulation_core` salt bir
+`dict` (`rooms`/`walls`/`openings`) döndürür, context dosyasına DOKUNMAZ,
+DXF çizmez. Bunu context.json'a birleştirmek AYRI, insan onaylı bir sonraki
+adımdır — kök `CLAUDE.md`nin "context.json proje tasarım verisidir"
+ilkesiyle tutarlı.
+
+### Golden output etkisi
+
+- **Ana proje DEĞİŞMEDİ** — bu modül context.json'a hiç yazmadığı, hiçbir
+  entegrasyon noktası eklemediği için `output/plan.dxf` ZATEN etkilenmedi.
+- **8 golden referansın HİÇBİRİ değişmedi** — bu görev yeni bir golden
+  fixture EKLEMEDİ (çıktı context.json'a yazılmadığı için "uçtan uca"
+  kanıt zaten `selftest.py`nin gerçek-proje-karşılaştırmasıyla sağlandı,
+  ayrı bir golden fixture'a gerek kalmadı).
+
+### Modül self-test'i
+
+`python scripts/templates/selftest.py` — 5 kontrol grubu: varsayılan
+şablonun gerçek proje verisiyle BİREBİR eşleşmesi (yukarı bakınız),
+çekirdek konumunun `floor_width` değişse de SABİT kaldığı (yalnızca
+koridorun doğu ucu büyüdüğü), `include_band_south` anahtarının YALNIZCA
+o duvarı etkilediği (bodrum/çatı gibi açık geçişli katlar için), `id_prefix`in
+tüm üretilen kimliklere uygulandığı (çoklu çekirdek çakışmasını önler),
+özel bir `CirculationCoreTemplate`in enjekte edilebildiği. Tüm 16 modül
+self-test'i ve `doc_check.py` ayrıca çalıştırılıp temiz döndü.
+
+### Açık risk / bilinen sınırlama
+
+- **Daire/birim içi oda bölüntüsü YOK** (v1 kapsam sınırı, yukarı
+  bakınız).
+- **Bina ana girişi/kaç daire gibi üst-seviye "arketip seçimi" mantığı
+  YOK** — bu fonksiyon yalnızca BİR çekirdeği üretir.
+- **Dış çerçeve duvarlarını ÜRETMEZ** — yalnızca çekirdeğin iç duvarları.
+- **`units="m"` desteği gerçek veriyle KARŞILAŞTIRILARAK sınanmadı**
+  (yalnızca `mm`, gerçek projeyle).
+
+### Sonraki direktif
+
+`DEVELOPMENT_TASKS.md::PLANLANAN GÖREVLER`de kalan maddeler: `DEV-007`
+(BLOCKED), `DEV-024` (`site/`), `DEV-026`/`DEV-028` (`legend/`
+genişletmeleri), `DEV-027` (kaçış planı), `DEV-031`…`DEV-035`. Daire/birim
+içi oda bölüntüsü (bu görevin v1 kapsamı DIŞI bıraktığı kısım) henüz bir
+`DEV-0XX` numarası ALMADI — sistem mimarı isterse bunu AYRI bir gelecek
+görev olarak açabilir.
+
+## HD-017 — `standards/` modülü: şartname + oransal mahal kural kütüphanesi (DEV-036)
+
+- **Durum:** COMPLETED
+- **Tamamlanma:** 2026-09-28
+- **Kökeni:** Kullanıcı somut, kendi projesinden örneklerle bir boşluk tarif
+  etti: *"her mahal için bir oran en boy oran limitleri alt üst limiti
+  olacak, default ayarlarda bunlar esnetilmeyecek ... sistem uyarı verecek
+  ama kullanıcı istemeye devam edersek isteği doğrultusunda bu oransal
+  mahaller gerçekleştirilecek."* Örnekler: asansör kuyusu 3 m² ama piyasada
+  karşılığı olmayan bir en-boy oranında; merdiven alanı makul ama KARE
+  (dikdörtgen olmalı); "çubuk gibi ince uzun" bir banyo. Görev planı
+  (Fikir1/Fikir2/açık kararlar) `DEV-036` olarak önce yazıldı, kullanıcı
+  ardından *"bu oluşturduğumuz planları uygula ... best practices bir
+  yaklaşım ile bu işlemi gerçekleştir"* diyerek açık kararların çözümünü
+  (mimari seçim, `room_type` şeması, eşik kaynağı, gerçek projeye veri
+  eklenip eklenmeyeceği) sisteme bıraktı.
+- **Kapsam:** `scripts/standards/` (yeni modül: `__init__.py`, `CLAUDE.md`,
+  `selftest.py`), `schema/design.schema.json` (`room.room_type`),
+  `scripts/validate.py` (`check_room_types` HATA + `check_room_proportions`
+  UYARI entegrasyonu), `scripts/collision/scene.py` (`COLLISION_EXEMPT`),
+  `scripts/version.py` (`CONTRACT_MODULES`), yeni `golden/oran_ornek/`,
+  `scripts/CLAUDE.md` (modül kaydı + roadmap satırı),
+  `docs/development/{DEVELOPMENT_TASKS,DEVELOPER_NOTES}.md`.
+
+### Açık kararların çözümü (kullanıcı yönlendirmesi "best practices" idi)
+
+Üç açık karar, kullanıcının delege ettiği "best practices" ilkesiyle şöyle
+çözüldü:
+- **Fikir 1 seçildi** (yeni bağımsız modül, `rooms/`e genişletme değil) —
+  kapsamın (çok sayıda mahal tipi + gelecekteki `DEV-037` şablon
+  üreticisiyle ilişki) `rooms/`in bugünkü "etiketleme" sorumluluğunu
+  aştığı gerekçesiyle.
+- **`room_type` sabit bir şema enum'u YAPILMADI**, serbest string olarak
+  bırakıldı ve geçerlilik `validate.py::check_room_types`te (çalışma
+  zamanında, `walls.kind` ile AYNI desen) denetlendi. Bu, kullanıcının
+  ayrıca belirttiği gelecek gereksinimle ("ilerleyen zamanlarda ...
+  standart verilerini güncellediğimde diğer modüllerin uyumunu mümkün
+  olduğu kadar koruması gerekir") doğrudan bağlantılı: yeni bir mahal
+  tipi eklemek artık bir ŞEMA değişikliği DEĞİL, yalnızca `STANDARDS`
+  sözlüğüne bir satır eklemektir.
+- **Gerçek projeye `room_type` verisi EKLENMEDİ** — `ceiling`/`levels`
+  emsali izlendi: altyapı opt-in kurulur, gerçek projeye veri eklemek AYRI
+  bir karardır. `output/plan.dxf` bu yüzden GEOMETRİK olarak değişmedi
+  (yalnızca zaman damgası/GUID farkı, `git diff` ile doğrulandı).
+
+### Sayıların doğası: "v1 pratik varsayılan", resmi atıf İDDİASI DEĞİL
+
+`STANDARDS` kataloğundaki eşiklerin (asansör min_ratio=1.0/max_ratio=1.5,
+merdiven min_ratio=1.3 vb.) hiçbiri doğrulanmış bir TS/yönetmelik madde
+numarasına dayanmıyor — bunlar kullanıcının kendi örneklerinden çıkarılan
+MAKUL başlangıç değerleridir ve her `RoomStandard.source` alanı bunu
+"v1 pratik varsayılan" diye AÇIKÇA işaretler. Bu, kök `CLAUDE.md`'nin
+"ölçü/standart UYDURULMAZ" ilkesini DELMEZ: uydurulmayan şey PROJE
+GEOMETRİSİdir (gerçek bir odanın koordinatı) — bu kütüphane, tefriş
+kataloğunun "ofis/katalog standardı (çizim sabiti)" olmasıyla AYNI
+kategoridedir. Kullanıcının ileride gerçek şartname belgeleri vermesi
+BEKLENİYOR; bu yüzden `CONTRACT_VERSION` disiplini özellikle "katalog
+DEĞERİ serbestçe değişir, `RoomStandard`'ın ALAN ŞEKLİ değişirse sürüm
+artar" şeklinde tasarlandı (bkz. `scripts/standards/CLAUDE.md` "Gelecek
+güncelleme sözleşmesi") — amaç, bir gelecek şartname-güncelleme
+oturumunun `validate.py`yi KIRMADAN yalnızca `STANDARDS` sözlüğünü
+değiştirebilmesidir.
+
+### Politika: UYARI, asla HATA — golden fixture'la UÇTAN UCA kanıtlandı
+
+Yeni `golden/oran_ornek`, `golden/minimal` ile TAMAMEN AYNI oda
+geometrisini (2800×8800mm, oran 3.14) kullanır — tek fark iki odaya
+`room_type` etiketi eklenmesidir: `oda_sol` → `koridor` (max_ratio=8.0,
+AYNI oran sınırlar İÇİNDE → UYARI YOK), `oda_sag` → `banyo` (max_ratio=2.2,
+AYNI oran sınırı AŞAR → TAM 1 UYARI). `validate.py` her iki durumda da
+BAŞARILI döner (WARN asla FORBID değildir) ve DXF entity raporu
+`golden/minimal`ınkiyle BİREBİR AYNIDIR (`room_type` hiçbir yeni DXF
+varlığı üretmez, yalnızca `validate.py` çıktısında bir UYARI satırı
+ekler) — bu, `diff` ile doğrulandı.
+
+### Golden output etkisi
+
+- **Ana proje DEĞİŞMEDİ** (yukarı bakınız). `--compare` YENİDEN üretilmeye
+  gerek KALMADAN eşleşti.
+- **7 mevcut golden referansın HİÇBİRİ değişmedi** (hiçbiri `room_type`
+  taşımıyor).
+- **Yeni `golden/oran_ornek`:** `--golden-set --update` sonrası ikinci
+  (update'siz) çalıştırma birebir aynı raporu üretti (determinizm
+  doğrulandı); entity raporu `golden/minimal`inkiyle (kaynak alanı hariç)
+  BİREBİR eşleşiyor.
+
+### Modül self-test'i
+
+`python scripts/standards/selftest.py` — 8 kontrol grubu: `room_aspect_ratio`
+elle hesaplanabilir (+ dejenere/sıfır-kenar durumu), `check_room_types`
+(yazım hatası YAKALANIR, eksik alan sessizce atlanır), `check_room_proportions`
+oran/kısa-kenar/alan ihlallerinin HER BİRİ İZOLE fixture'larla ayrı ayrı
+sınandı (bir fixture'ın YALNIZCA bir sınırı ihlal etmesi elle kurgulandı,
+aksi halde testler birbirine karışırdı), sınır İÇİNDEKİ bir oda için
+yanlış-pozitif YOK, `room_type` verilmeyen oda opt-in olarak atlanıyor,
+"m" biriminde kısa-kenar mm'ye doğru çevriliyor, `validate_standards`
+gerçek kataloğun TEMİZ döndüğünü VE kasıtlı bozulmuş bir kopyanın
+YAKALANDIĞINI (geçici `STANDARDS` girdisi eklenip `try/finally` ile geri
+alınarak) doğruluyor. Tüm 15 modül self-test'i ve `doc_check.py` ayrıca
+çalıştırılıp temiz döndü.
+
+### Açık risk / bilinen sınırlama
+
+- **v1 kataloğundaki eşiklerin çoğu resmi bir TS/yönetmelik atfı TAŞIMAZ**
+  (yukarı bakınız) — kullanıcının gerçek belgelerle güncellemesi
+  BEKLENİYOR.
+- **AABB (eksen hizalı sınırlayıcı kutu) yaklaşımı** döndürülmüş veya
+  L-şekilli bir oda için YANLIŞ olabilir; bu projedeki odalar dikdörtgen/
+  eksen-hizalı olduğu için bugün sorun çıkarmıyor (`rooms/CLAUDE.md`deki
+  AYNI sınırlama sınıfı).
+- **Modüller arası tek-kaynak fırsatı** (`stairs::MIN_GOING_MM` gibi
+  sabitlerin buraya taşınması) v1 KAPSAMINA DAHİL EDİLMEDİ — ayrı bir
+  gelecek migrasyon konusu.
+
+### Sonraki direktif
+
+`DEVELOPMENT_TASKS.md::PLANLANAN GÖREVLER`de kalan maddeler: `DEV-007`
+(BLOCKED), `DEV-024` (`site/`), `DEV-026`/`DEV-028` (`legend/`
+genişletmeleri), `DEV-027` (kaçış planı), `DEV-031`…`DEV-035`, ve
+**`DEV-037`** (kat planı/daire yerleşimi şablon kütüphanesi + generator —
+kullanıcının AYNI oturumda "best practices ile uygula" dediği ikinci
+madde; bu görevden HEMEN SONRA ele alınacak).
+
 ## HD-016 — `ceiling/` modülü: yansıtılmış tavan planı / RCP (DEV-023)
 
 - **Durum:** COMPLETED

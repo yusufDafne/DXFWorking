@@ -257,6 +257,77 @@ Sıradaki `PLANNED` madde seçilmedi — sistem mimarının yönlendirmesi
 bekleniyor (`DEV-024` `site/`, `DEV-026`/`DEV-028` `legend/` genişletmeleri,
 `DEV-027` kaçış planı, `DEV-031`…`DEV-035`; `DEV-007` hâlâ BLOCKED).
 
+**2026-09-28 devamı — 2 yeni PLANNED madde eklendi (kod YAZILMADI):**
+Kullanıcı somut bir boşluk tarif etti — mevcut projenin bazı mahalleri
+(örn. asansör kuyusu, merdiven) geometrik olarak GEÇERLİ ama oransal
+olarak SAÇMA (piyasa karşılığı olmayan en-boy oranı); "hiçbir endüstri
+standardı bu formatı kabul etmez". İki madde eklendi:
+- `DEV-036` — `standards/`: mahal tipi başına hardcoded min/max en-boy
+  oranı (+ opsiyonel min kısa kenar/alan) kütüphanesi. Kullanıcının kuralı
+  AYNEN yazıldı: varsayılan olarak sınırlar esnetilmez, ihlal
+  **UYARI**dır (mevcut `collision` WARN / `stairs::auto_flex` ile AYNI
+  disiplin — ÜRETİMİ DURDURMAZ), kullanıcı ısrar ederse (context.json'da
+  o geometri kalırsa) üretim gerçekleşir. Mahal tipi eşlemesi
+  `rooms[].name` string'inden TAHMİN EDİLMEZ — yeni opsiyonel
+  `room_type` alanı önerildi (opt-in, `ceiling`/`levels` ile AYNI desen).
+- `DEV-037` — kat planı/daire yerleşimi ŞABLON kütüphanesi + "generator".
+  Kullanıcının uzun vadeli vizyonuyla (agent'a uzun bir talep verilip
+  standart bir proje üretilmesi) doğrudan bağlantılı. **Kritik mimari
+  not kendim ekledim:** "generator" dil modeline geometri ÜRETTİRMEZ —
+  şablonlar PARAMETRİK Python veri yapılarıdır, dil modeli yalnızca
+  PARAMETRE seçer (talep → yapılandırılmış patch akışının bir öncüsü),
+  gerçek koordinatları YİNE deterministik Python kodu üretir. Bu ayrım
+  kök `CLAUDE.md`nin "Deterministik üretim ilkesi"yle çelişmemesi için
+  ZORUNLU, kullanıcı bunu açıkça istemedi ama görev metnine ekledim.
+  İki görev BİRBİRİNE bağlı ama BAĞIMSIZ seçilebilir (`DEV-037`,
+  `DEV-036` olmadan da çalışır).
+Her ikisi de `PLANLANAN GÖREVLER`de tam Fikir1/Fikir2/açık kararlar
+analiziyle yazıldı, **uygulama izni DEĞİLDİR** — sistem mimarı seçip
+yönlendirme vermeden kod yazılmaz.
+
+**`DEV-036` COMPLETED (aynı oturumun devamı):** kullanıcı "bu oluşturduğumuz
+planları uygula ... best practices bir yaklaşım ile bu işlemi gerçekleştir"
+dedi ve açık kararların çözümünü sisteme bıraktı — Fikir 1 (bağımsız
+`scripts/standards/` modülü) seçildi, `room_type` sabit bir şema enum'u
+YAPILMADI (serbest string + `validate.py::check_room_types`te çalışma
+zamanı kontrolü, `walls.kind` ile AYNI desen — kullanıcının "gelecekte
+standart verilerini güncellediğimde diğer modüllerin uyumunu korusun"
+isteğiyle DOĞRUDAN bağlantılı: yeni mahal tipi eklemek artık şema
+değişikliği DEĞİL). Katalogdaki eşiklerin ÇOĞU resmi bir TS/yönetmelik
+atfı TAŞIMAZ — her girişin `source` alanı bunu "v1 pratik varsayılan"
+diye AÇIKÇA işaretler (tefriş kataloğunun "ofis/katalog standardı" olması
+ile AYNI kategori, proje GEOMETRİSİ uydurulmadı). Politika (UYARI, asla
+HATA) yeni `golden/oran_ornek`le uçtan uca kanıtlandı: `golden/minimal`
+ile AYNI oda geometrisi (oran 3.14), bir tipte (koridor) UYARISIZ geçiyor,
+AYNI oranın başka bir tipte (banyo) TAM 1 UYARI üretip yine de ÇİZİLDİĞİni
+gösteriyor — DXF entity raporu `golden/minimal`inkiyle BİREBİR aynı
+(`room_type` yeni bir varlık üretmez). Gerçek projeye veri eklenmedi
+(`ceiling`/`levels` emsali), `output/plan.dxf` GEOMETRİK olarak değişmedi.
+15 modül self-test'i, `doc_check.py`, `--golden-set` (8 referans,
+determinizm doğrulandı) ve `--compare` hepsi temiz. Ayrıntı `HD-017`.
+`DEV-037` (şablon kütüphanesi + generator) HEMEN SONRA ele alınacak —
+kendi mimari notumla (generator dil modeline geometri ÜRETTİRMEZ, yalnızca
+parametre seçtirir) sınırlandırılmış v1 kapsamıyla.
+
+**`DEV-037` COMPLETED (aynı oturumun devamı):** kapsam BİLEREK dar
+tutuldu — yalnızca sirkülasyon çekirdeği (asansör+merdiven+L-şekilli
+koridor+güney duvarı), daire/birim İÇİ oda bölüntüsü KAPSAM DIŞI (gerçek
+projenin üç biriminin (`uA`/`uB`/`uC`) üçü de farklı tasarlanmış olması,
+bunu parametrikleştirmenin kendi başına büyük bir açık-karar seti
+gerektirdiğini gösteriyor). Varsayılan ölçüler icat EDİLMEDİ — gerçek
+projenin `normal1` katındaki ZATEN çalışan çekirdekten BİREBİR çıkarıldı;
+`selftest.py` bunu doğrudan (poligon/alan/duvar/kapı konumu birebir
+eşleşmesiyle) kanıtlıyor — bu, `standards/`in v1 kataloğundan bile daha
+sağlam bir temel (orada genel makuliyet, burada GERÇEKTEN ÇALIŞAN bir
+tasarım). Çıktı `dict`tir, context.json'a YAZILMAZ (`DEV-036` ile AYNI
+karar). Yeni bir golden fixture EKLENMEDİ — kanıt zaten gerçek-proje
+karşılaştırmasıyla sağlandı. 16 modül self-test'i, `doc_check.py`,
+`--golden-set` ve `--compare` hepsi temiz. Ayrıntı `HD-018`. Sıradaki
+`PLANNED` madde seçilmedi — sistem mimarının yönlendirmesi bekleniyor
+(`DEV-024`, `DEV-026`/`DEV-028`, `DEV-027`, `DEV-031`…`DEV-035`; `DEV-007`
+hâlâ BLOCKED). Daire/birim içi oda bölüntüsü (bu görevin dışarıda
+bıraktığı kısım) henüz bir `DEV-0XX` numarası almadı.
+
 ## İlk okuma sırası
 
 1. Bu dosya.

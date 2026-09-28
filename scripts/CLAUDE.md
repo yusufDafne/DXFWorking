@@ -99,6 +99,28 @@ kalanını bilmeye ihtiyaç duymadan o modül üzerinde derinlemesine/izole
   metni `levels::format_level`i DOĞRUDAN yeniden kullanır. v1 kapsamı
   aydınlatma armatürünü İÇERMEZ (kullanıcı kararı). Veri taşımayan bir
   katın RCP paftası HİÇ üretilmez — bkz. `scripts/ceiling/CLAUDE.md`.
+- ✅ **`scripts/standards/`** — `DEV-036` (2026-09-28): şartname + oransal
+  mahal kural kütüphanesi (tefriş/duvar kataloğuyla AYNI konum, proje
+  VERİSİ değil). Her mahal tipi için en-boy oranı (+ opsiyonel asgari kısa
+  kenar/alan) tutar; ihlal kullanıcı kararı gereği HER ZAMAN UYARIdır,
+  üretimi DURDURMAZ. `rooms[].room_type` opt-in alanıyla eşlenir (addan
+  TAHMİN EDİLMEZ); `STANDARDS`ta tanımsız bir tip `walls.kind` ile AYNI
+  desende HATA olur. v1 kataloğu çoğunlukla "pratik varsayılan" (resmi
+  şartname atfı DEĞİL) — kullanıcının gerçek belgelerle güncellemesi
+  beklenir, bkz. `scripts/standards/CLAUDE.md` "Gelecek güncelleme
+  sözleşmesi".
+- ✅ **`scripts/templates/`** — `DEV-037` (2026-09-28): sirkülasyon
+  çekirdeği (asansör+merdiven+L-şekilli koridor+güney duvarı) şablon
+  üreteci. **"Generator" dil modeline geometri ÜRETTİRMEZ** — tamamen
+  deterministik bir Python fonksiyonu, parametrelerden koordinat HESAPLAR
+  (kullanıcı bunu açıkça istemedi, "Deterministik üretim ilkesi"yle
+  çelişmemek için eklendi). Varsayılan ölçüler icat EDİLMEDİ, gerçek
+  projenin ZATEN çalışan sirkülasyon çekirdeğinden ÇIKARILDI (`selftest.py`
+  gerçek proje verisiyle BİREBİR eşleşmeyi kanıtlar). v1 kapsamı daire/
+  birim İÇİ oda bölüntüsünü İÇERMEZ (kullanıcının kendisinin bile
+  istemediği, ayrıca büyük bir açık-karar seti gerektiren bir genişleme).
+  Çıktı `dict`tir, context.json'a OTOMATİK YAZILMAZ — bkz.
+  `scripts/templates/CLAUDE.md`.
 
 ## Modül bağımsızlığı ve çapraz kontrol (kullanıcı ilkesi)
 
@@ -236,6 +258,8 @@ Ortak desen (pafta + walls ile kanitlandi):
 | `palette/`    | `PALETTE`, `LayerColor`, `color_for`, `validate_palette`, `CONTRAST_MIN_DISTANCE` | UYGULANDI (DEV-030, 2026-09-25); tum kod-sahipli katman renklerinin tek kaydi, ayni-renk + yakin-kontrast denetimi |
 | `levels/`     | `LevelMark`, `LevelMarkStyle`, `DefaultLevelMarkStyle`, `format_level`, `level_boundaries_from_placements`, `draw_level_marks`, `draw_plan_level_marks` | UYGULANDI (DEV-029, 2026-09-25); kot/datum standardi, elevations::LevelStack'i TUKETIR, kendi kat yuksekligi hesaplamaz |
 | `ceiling/`    | `CeilingSheet`, `RoomCeilingData`, `resolve_room_ceilings`, `floor_has_ceiling_data`, `draw_ceiling_label`, `ensure_ceiling_layer` | UYGULANDI (DEV-023, 2026-09-28); RCP - ayri pafta, oda-bazli tavan kotu, v1 armatursuz |
+| `standards/`  | `RoomStandard`, `STANDARDS`, `room_aspect_ratio`, `validate_standards`, `check_room_types`, `check_room_proportions` | UYGULANDI (DEV-036, 2026-09-28); sartname/oransal mahal kutuphanesi, ihlal HER ZAMAN UYARI |
+| `templates/`  | `CirculationCoreTemplate`, `DEFAULT_TEMPLATE`, `generate_circulation_core` | UYGULANDI (DEV-037, 2026-09-28); sirkulasyon cekirdegi sablon ureteci, v1 yalnizca cekirdek (birim ici bolme YOK) |
 
 > Bu tablo `scripts/doc_check.py` tarafindan DENETLENIR: `UYGULANDI` isaretli bir
 > satirda anilan her sinif adi, o modulde gercekten tanimli olmalidir. Yalnizca

@@ -80,6 +80,19 @@ COLLISION_EXEMPT: dict[str, str] = {
               "poligonunun ICINE basamak/yon-oku anotasyonu cizer (AYNI oda, "
               "AYNI koordinat uzayi). dimensions/axis ile AYNI 'anotasyon, "
               "madde degil' gerekcesi.",
+    "standards": "Sartname/oransal mahal kural kutuphanesi (DEV-036) HIC "
+                 "GEOMETRI URETMEZ ve ezdxf kullanmaz - yalnizca "
+                 "zaten rooms.collision'in kapsadigi AYNI oda poligonunu "
+                 "OKUYUP oranini/kisa kenarini OLCER, HICBIR sekil "
+                 "uretmez. typography/palette ile AYNI 'salt kutuphane, "
+                 "sifir cizim' gerekcesi.",
+    "templates": "Sirkulasyon cekirdegi sablon uretecidir (DEV-037); "
+                 "context.json'a HIC YAZMAZ, DXF cizmez, kendi cakisma "
+                 "denetimi YAPMAZ. Uretilen rooms/walls/openings PARCASI "
+                 "bir insan/agent tarafindan bir floor'a birlestirildikten "
+                 "SONRA, NORMAL pipeline (rooms/walls/openings.collision) "
+                 "zaten kapsar - importer ile AYNI 'aday veri uretir, "
+                 "denetimi KENDI yapmaz' gerekcesi.",
 }
 
 
