@@ -52,15 +52,20 @@ from __future__ import annotations
 from .design import place_unit_entry_doors
 from .options import CORNERS, PlacementOption, options_for_core_placement
 from .rules import (
+    BEDROOM_ROOM_TYPES,
+    CIRCULATION_ROOM_TYPES,
     CORE_ROOM_TYPES,
     DEFAULT_CIRCULATION_SHARE_MAX,
     DEFAULT_DOOR_CORE_BALANCE_RATIO,
     DEFAULT_SIGHTLINE_CONE_DEGREES,
+    DEFAULT_WET_AREA_DOOR_MAX_DISTANCE,
     WC_ROOM_TYPES,
     check_bedroom_via_corridor,
     check_circulation_area_share,
     check_door_core_balance,
     check_entry_sightlines,
+    check_wet_area_door_proximity,
+    check_wet_area_reachable_without_bedroom,
 )
 from .study import (
     FeasibilityReport,
@@ -81,8 +86,11 @@ CONTRACT_VERSION = "1.0"
 __all__ = [
     "check_circulation_area_share", "check_bedroom_via_corridor",
     "check_entry_sightlines", "check_door_core_balance",
+    "check_wet_area_reachable_without_bedroom", "check_wet_area_door_proximity",
     "DEFAULT_CIRCULATION_SHARE_MAX", "DEFAULT_DOOR_CORE_BALANCE_RATIO",
-    "DEFAULT_SIGHTLINE_CONE_DEGREES", "WC_ROOM_TYPES", "CORE_ROOM_TYPES",
+    "DEFAULT_SIGHTLINE_CONE_DEGREES", "DEFAULT_WET_AREA_DOOR_MAX_DISTANCE",
+    "WC_ROOM_TYPES", "CORE_ROOM_TYPES", "CIRCULATION_ROOM_TYPES",
+    "BEDROOM_ROOM_TYPES",
     "FeasibilityReport", "check_fits", "ZoneAssignment", "ZoningPlan",
     "resolve_unit_zoning", "PlacementOption", "options_for_core_placement",
     "CORNERS", "place_unit_entry_doors", "CONTRACT_VERSION",

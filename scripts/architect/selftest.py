@@ -23,6 +23,8 @@ from architect import (  # noqa: E402
     check_door_core_balance,
     check_entry_sightlines,
     check_fits,
+    check_wet_area_door_proximity,
+    check_wet_area_reachable_without_bedroom,
     options_for_core_placement,
     place_unit_entry_doors,
     resolve_unit_zoning,
@@ -361,6 +363,179 @@ def check_place_unit_entry_doors_empty_when_infeasible() -> list[str]:
 # verisine BAGLI DEGILDIR (proje revize edildikce bu test KIRILMAZ).
 # --------------------------------------------------------------------------
 
+# --------------------------------------------------------------------------
+# 6) check_wet_area_reachable_without_bedroom (DEV-042)
+# --------------------------------------------------------------------------
+
+def _wet_area_chain_fixture(direct_bypass: bool) -> tuple[list[dict], list[dict], list[dict]]:
+    """`hol` (koridor) - `oda` (yatak_odasi) HER ZAMAN komsu. `direct_
+    bypass=False` ise `banyo` SADECE `oda` uzerinden erisilir (kullanicinin
+    somut ornegi: 'koridor -> hol -> oda -> banyo'); `True` ise `banyo`
+    `hol`e DOGRUDAN de acilir (oda HALA unit'te var ama tek yol DEGIL)."""
+    hol = {"id": "hol", "unit_id": "u1", "room_type": "koridor", "area_m2": 4.0,
+           "polygon": [[0, 0], [2000, 0], [2000, 2000], [0, 2000]]}
+    oda = {"id": "oda", "unit_id": "u1", "room_type": "yatak_odasi", "area_m2": 4.0,
+           "polygon": [[2000, 0], [4000, 0], [4000, 2000], [2000, 2000]]}
+    walls = [{"id": "w_hol_oda", "start": [2000.0, 0.0], "end": [2000.0, 2000.0],
+              "thickness": 200.0, "layer": "DUVARLAR"}]
+    openings = [{"id": "d_hol_oda", "type": "door", "wall_id": "w_hol_oda",
+                 "position_from_start": 1000.0, "width": 900.0, "layer": "KAPI-PENCERE"}]
+    if direct_bypass:
+        banyo = {"id": "banyo", "unit_id": "u1", "room_type": "banyo", "area_m2": 4.0,
+                 "polygon": [[0, 2000], [2000, 2000], [2000, 4000], [0, 4000]]}
+        walls.append({"id": "w_hol_banyo", "start": [0.0, 2000.0], "end": [2000.0, 2000.0],
+                      "thickness": 200.0, "layer": "DUVARLAR"})
+        openings.append({"id": "d_hol_banyo", "type": "door", "wall_id": "w_hol_banyo",
+                         "position_from_start": 1000.0, "width": 900.0, "layer": "KAPI-PENCERE"})
+    else:
+        banyo = {"id": "banyo", "unit_id": "u1", "room_type": "banyo", "area_m2": 4.0,
+                 "polygon": [[4000, 0], [6000, 0], [6000, 2000], [4000, 2000]]}
+        walls.append({"id": "w_oda_banyo", "start": [4000.0, 0.0], "end": [4000.0, 2000.0],
+                      "thickness": 200.0, "layer": "DUVARLAR"})
+        openings.append({"id": "d_oda_banyo", "type": "door", "wall_id": "w_oda_banyo",
+                         "position_from_start": 1000.0, "width": 900.0, "layer": "KAPI-PENCERE"})
+    return [hol, oda, banyo], walls, openings
+
+
+def check_wet_area_blocked_by_bedroom_flags() -> list[str]:
+    """hol -> oda (yatak_odasi) -> banyo zincirinde, banyo'ya hol'den
+    yatak odasindan GECMEDEN ulasan BASKA bir yol YOK -> TAM 1 uyari."""
+    rooms, walls, openings = _wet_area_chain_fixture(direct_bypass=False)
+    warnings = check_wet_area_reachable_without_bedroom(rooms, walls, openings)
+    if len(warnings) != 1:
+        return [f"1 uyari beklenirdi, {len(warnings)} geldi: {warnings}"]
+    if "banyo" not in warnings[0]:
+        return [f"uyari 'banyo' odasini ADLANDIRMALIYDI: {warnings[0]}"]
+    return []
+
+
+def check_wet_area_direct_bypass_false_positive() -> list[str]:
+    """AYNI 3 oda (hol/oda/banyo) ama banyo'ya hol'den DOGRUDAN (yatak
+    odasindan GECMEDEN) bir kapi da var - oda unit'te var olmaya devam
+    etse de TEK yol DEGIL, EN AZ bir yol yatak-odasiz -> uyari OLMAMALI."""
+    rooms, walls, openings = _wet_area_chain_fixture(direct_bypass=True)
+    warnings = check_wet_area_reachable_without_bedroom(rooms, walls, openings)
+    return ([f"dogrudan bypass'i olan bir islak hacim uyari URETMEMELIYDI: {warnings}"]
+            if warnings else [])
+
+
+def check_wet_area_real_project_catches_uC_chain() -> list[str]:
+    """GERCEK projede (`normal1`), rev-22 uC'yi 'salon-banyo-oda-hol'
+    olarak yeniden sıraladi ama `uC_hol`un TEK komsusu HALA `uC_oda`
+    (yatak_odasi) - yani `uC_banyo`'ya `uC_hol`den yatak odasindan
+    GECMEDEN ulasan bir yol YOK (kullanicinin 'koridor->hol->oda->banyo'
+    sikayetinin rev-22'den SONRA da KISMEN hayatta kalan somut bir
+    ornegi). uA/uB'nin T-sekilli hol'u ise banyo/wc'ye DOGRUDAN acildigi
+    icin TEMIZ olmali. Gercek dosya yoksa test ATLANIR."""
+    if not REAL_CONTEXT_PATH.exists():
+        return []
+    context = json.loads(REAL_CONTEXT_PATH.read_text(encoding="utf-8"))
+    floor = next(f for f in context["floors"] if f["id"] == "normal1")
+    rooms, walls, openings = floor["rooms"], floor["walls"], floor["openings"]
+    warnings = check_wet_area_reachable_without_bedroom(rooms, walls, openings)
+    errors = []
+    if not any("uC_banyo" in w for w in warnings):
+        errors.append(f"uC_banyo'nun yatak-odasi zinciri YAKALANMALIYDI: {warnings}")
+    if any("uA_" in w or "uB_" in w for w in warnings):
+        errors.append(f"uA/uB TEMIZ olmaliydi (T-sekilli hol dogrudan acilir): {warnings}")
+    return errors
+
+
+# --------------------------------------------------------------------------
+# 7) check_wet_area_door_proximity (DEV-043)
+# --------------------------------------------------------------------------
+
+def _wet_area_proximity_fixture(distance: float) -> tuple[list[dict], list[dict], list[dict]]:
+    """Iki islak hacim kapisinin orta noktalari TAM (0,0) ve (`distance`,0)
+    olacak sekilde - mesafe ELLE dogrulanabilir (oklid mesafesi =
+    `distance`, cunku ikisi de y=0'da)."""
+    rooms = [
+        {"id": "banyo", "unit_id": "u1", "room_type": "banyo", "area_m2": 4.0,
+         "polygon": [[-500, 0], [500, 0], [500, 2000], [-500, 2000]]},
+        {"id": "wc", "unit_id": "u1", "room_type": "wc", "area_m2": 4.0,
+         "polygon": [[distance - 500, 0], [distance + 500, 0],
+                     [distance + 500, 2000], [distance - 500, 2000]]},
+    ]
+    walls = [
+        {"id": "w_banyo", "start": [-500.0, 0.0], "end": [500.0, 0.0],
+         "thickness": 200.0, "layer": "DUVARLAR"},
+        {"id": "w_wc", "start": [distance - 500.0, 0.0], "end": [distance + 500.0, 0.0],
+         "thickness": 200.0, "layer": "DUVARLAR"},
+    ]
+    openings = [
+        {"id": "d_banyo", "type": "door", "wall_id": "w_banyo",
+         "position_from_start": 500.0, "width": 900.0, "layer": "KAPI-PENCERE"},
+        {"id": "d_wc", "type": "door", "wall_id": "w_wc",
+         "position_from_start": 500.0, "width": 900.0, "layer": "KAPI-PENCERE"},
+    ]
+    return rooms, walls, openings
+
+
+def check_wet_area_door_proximity_flags_far_doors() -> list[str]:
+    """Iki islak hacim kapisi TAM 6000mm uzakta (ELLE: (0,0)-(6000,0)
+    oklid mesafesi = 6000), varsayilan ust sinir 5000mm'yi asiyor -> TAM
+    1 uyari, mesafe metninde 6000 GECMELI."""
+    rooms, walls, openings = _wet_area_proximity_fixture(distance=6000.0)
+    warnings = check_wet_area_door_proximity(rooms, walls, openings)
+    if len(warnings) != 1:
+        return [f"1 uyari beklenirdi, {len(warnings)} geldi: {warnings}"]
+    if "6000" not in warnings[0]:
+        return [f"uyari mesafeyi (6000mm) ICERMELIYDI: {warnings[0]}"]
+    return []
+
+
+def check_wet_area_door_proximity_false_positive_close() -> list[str]:
+    """AYNI kurulum ama mesafe 3000mm (varsayilan 5000mm sinirinin
+    ALTINDA) -> uyari OLMAMALI."""
+    rooms, walls, openings = _wet_area_proximity_fixture(distance=3000.0)
+    warnings = check_wet_area_door_proximity(rooms, walls, openings)
+    return [f"sinir altindaki bir mesafe uyari URETMEMELIYDI: {warnings}"] if warnings else []
+
+
+def check_wet_area_door_proximity_custom_threshold() -> list[str]:
+    """`max_distance` OVERRIDE parametresi gercekten calisiyor mu - AYNI
+    3000mm mesafe, ama esik 2000mm'ye DUSURULUNCE artik UYARI VERMELI."""
+    rooms, walls, openings = _wet_area_proximity_fixture(distance=3000.0)
+    warnings = check_wet_area_door_proximity(rooms, walls, openings, max_distance=2000.0)
+    if len(warnings) != 1:
+        return [f"dusuk esikle 1 uyari beklenirdi, {len(warnings)} geldi: {warnings}"]
+    return []
+
+
+def check_wet_area_door_proximity_real_project_clean() -> list[str]:
+    """GERCEK projede uA/uB banyo-wc kapi mesafesi 4016mm (elle olculmus,
+    rev-22) - varsayilan 5000mm sinirinin ALTINDA, bu yuzden GERCEK
+    projede SIFIR uyari beklenir (bu, `DEFAULT_WET_AREA_DOOR_MAX_DISTANCE`
+    secilirken KASITLI bir kalibrasyon noktasiydi, bkz. rules.py). Gercek
+    dosya yoksa test ATLANIR."""
+    if not REAL_CONTEXT_PATH.exists():
+        return []
+    context = json.loads(REAL_CONTEXT_PATH.read_text(encoding="utf-8"))
+    floor = next(f for f in context["floors"] if f["id"] == "normal1")
+    rooms, walls, openings = floor["rooms"], floor["walls"], floor["openings"]
+    warnings = check_wet_area_door_proximity(rooms, walls, openings)
+    return [f"GERCEK proje TEMIZ olmaliydi: {warnings}"] if warnings else []
+
+
+def check_wet_area_checks_are_opt_in() -> list[str]:
+    """Her iki YENI kural da `unit_id` OPT-IN'dir (diger dort kuralla AYNI
+    desen) - AYNI ihlal geometrileri ama `unit_id` bellek-ici SOYULUNCE
+    HICBIR uyari URETMEMELI."""
+    errors: list[str] = []
+    rooms, walls, openings = _wet_area_chain_fixture(direct_bypass=False)
+    stripped = [{k: v for k, v in r.items() if k != "unit_id"} for r in rooms]
+    warnings = check_wet_area_reachable_without_bedroom(stripped, walls, openings)
+    if warnings:
+        errors.append(f"unit_id SOYULUNCE erisim kurali SESSIZ KALMALIYDI: {warnings}")
+
+    rooms2, walls2, openings2 = _wet_area_proximity_fixture(distance=6000.0)
+    stripped2 = [{k: v for k, v in r.items() if k != "unit_id"} for r in rooms2]
+    warnings2 = check_wet_area_door_proximity(stripped2, walls2, openings2)
+    if warnings2:
+        errors.append(f"unit_id SOYULUNCE yakinlik kurali SESSIZ KALMALIYDI: {warnings2}")
+    return errors
+
+
 def check_real_project_is_clean_after_rev22_redesign() -> list[str]:
     """rev-22'de uA/uB/uC'nin BACK BAND'i (hol/mutfak/banyo/wc/oda) yeniden
     tasarlandi. GERCEK projede artik circulation-share/bedroom-via-corridor/
@@ -428,6 +603,14 @@ def main() -> int:
         ("options_for_core_placement giris kenarini YUKSEK puanlar", check_options_for_core_placement_scores_entry_side_higher()),
         ("place_unit_entry_doors zone MERKEZLERINE kapi koyar", check_place_unit_entry_doors_centers_on_zones()),
         ("place_unit_entry_doors sigmayan planda BOS doner", check_place_unit_entry_doors_empty_when_infeasible()),
+        ("hol->oda->banyo zinciri (DEV-042) UYARI verir", check_wet_area_blocked_by_bedroom_flags()),
+        ("hol->banyo DOGRUDAN bypass'i YANLIS-POZITIF uretmez", check_wet_area_direct_bypass_false_positive()),
+        ("GERCEK projede uC_hol->uC_oda->uC_banyo zinciri YAKALANIR", check_wet_area_real_project_catches_uC_chain()),
+        ("uzak islak hacim kapilari (DEV-043) UYARI verir", check_wet_area_door_proximity_flags_far_doors()),
+        ("yakin islak hacim kapilari YANLIS-POZITIF uretmez", check_wet_area_door_proximity_false_positive_close()),
+        ("max_distance OVERRIDE parametresi calisir", check_wet_area_door_proximity_custom_threshold()),
+        ("GERCEK projede uA/uB banyo-wc mesafesi (4016mm) TEMIZ", check_wet_area_door_proximity_real_project_clean()),
+        ("DEV-042/043 ikisi de unit_id OPT-IN'dir", check_wet_area_checks_are_opt_in()),
         ("GERCEK proje rev-22 sonrasi TEMIZ (hol/yatak-salon/goru-hatti)", check_real_project_is_clean_after_rev22_redesign()),
         ("unit_id SOYULUNCE opt-in HALA GECERLI", check_opt_in_still_holds_when_unit_id_is_stripped()),
     )

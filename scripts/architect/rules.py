@@ -44,9 +44,15 @@ except ImportError:
 DEFAULT_CIRCULATION_SHARE_MAX = 0.15
 DEFAULT_DOOR_CORE_BALANCE_RATIO = 1.6
 DEFAULT_SIGHTLINE_CONE_DEGREES = 45.0
+# DEV-043: gercek projenin KENDI uA/uB banyo-wc kapi mesafesi (4016mm,
+# rev-22) bu sinirin ALTINDA kalacak sekilde secildi - "ayni kanat"
+# sayilacak kaba bir ust sinir, metre hassasiyetinde bir olcum DEGIL.
+DEFAULT_WET_AREA_DOOR_MAX_DISTANCE = 5000.0
 
 WC_ROOM_TYPES = frozenset({"wc", "banyo"})
 CORE_ROOM_TYPES = frozenset({"asansor", "merdiven"})
+CIRCULATION_ROOM_TYPES = frozenset({"koridor"})
+BEDROOM_ROOM_TYPES = frozenset({"yatak_odasi"})
 
 # Oda-kapi komsulugu ararken kullanilan tolerans (mm). Bu projede duvar
 # kalinligi 200mm ve oda poligonlari cogunlukla duvar MERKEZ cizgisiyle
@@ -315,9 +321,161 @@ def check_door_core_balance(
     return warnings
 
 
+def _build_unit_adjacency(rooms: list[dict], walls: list[dict],
+                           openings: list[dict], unit_id: str) -> dict[str, set[str]]:
+    """`unit_id`li odalar arasinda, bir kapi ile DOGRUDAN baglantili
+    olanlarin komsuluk grafini kurar. Graf BILEREK yalnizca BU birimin
+    kendi odalariyla sinirlidir (ortak/sirkulasyon alani veya baska bir
+    birim DAHIL EDILMEZ) - DEV-042'nin sorusu "bu birimin KENDI holunden
+    islak hacime yatak odasina UGRAMADAN gidilebilir mi", bina genelindeki
+    erisim DEGIL. Kenarlar `rules._door_midpoint`/`_rooms_touching_point`i
+    (bu modulun TEK oda-kapi komsuluk kaynagi) YENIDEN kullanir."""
+    unit_rooms = [r for r in rooms if r.get("unit_id") == unit_id]
+    walls_by_id = {w["id"]: w for w in walls}
+    adjacency: dict[str, set[str]] = {r["id"]: set() for r in unit_rooms}
+    for door in openings:
+        if door.get("type") != "door":
+            continue
+        point = _door_midpoint(door, walls_by_id)
+        if point is None:
+            continue
+        touching_ids = [r["id"] for r in _rooms_touching_point(point, unit_rooms)]
+        for i in range(len(touching_ids)):
+            for j in range(i + 1, len(touching_ids)):
+                a, b = touching_ids[i], touching_ids[j]
+                adjacency[a].add(b)
+                adjacency[b].add(a)
+    return adjacency
+
+
+def _reachable_avoiding(adjacency: dict[str, set[str]], start_ids: set[str],
+                         target_id: str, blocked_ids: set[str]) -> bool:
+    """`blocked_ids`deki dugumlerden GECMEDEN, `start_ids`den herhangi
+    birinden `target_id`e bir yol var mi (genis-oncelikli arama)."""
+    visited: set[str] = set()
+    queue: list[str] = [s for s in start_ids if s not in blocked_ids]
+    visited.update(queue)
+    while queue:
+        current = queue.pop()
+        if current == target_id:
+            return True
+        for neighbor in adjacency.get(current, ()):
+            if neighbor in blocked_ids or neighbor in visited:
+                continue
+            visited.add(neighbor)
+            queue.append(neighbor)
+    return target_id in visited
+
+
+def check_wet_area_reachable_without_bedroom(
+    rooms: list[dict], walls: list[dict], openings: list[dict],
+) -> list[str]:
+    """[DEV-042] Ayni birimdeki bir ıslak hacme (banyo/wc), birimin KENDI
+    hol/koridor odasindan bir yatak odasindan GECMEDEN ulasilan EN AZ bir
+    yol yoksa UYARI - kullanicinin somut ornegi: *"koridor -> hol -> oda
+    -> banyo ... bu asla kabul edilebilir bir yaklasim degildir."*
+
+    `check_bedroom_via_corridor` (DEV-039) bunu KACIRDI cunku SADECE
+    "yatak odasi SALONA dogrudan aciliyor mu" diye bakiyor; "yatak odasi,
+    BASKA bir odaya ulasmak icin ZORUNLU bir GECIS odasi mi" sorusunu HIC
+    SORMUYOR. Bu kontrol bir graf gezinmesidir (bugune kadarki dort
+    kuralin "iki komsu oda" tek-adim testinden FARKLI bir karmasiklik
+    seviyesi) - TEK yolun yatak odasindan gecmesi DEGIL, HICBIR yolun
+    gecmeMEmesi arandigi icin (otel gibi coklu-erisimli birimlerde YANLIS-
+    POZITIF uretmemek icin BILEREK boyle), bir yatak odasi "engelli dugum"
+    sayilarak BFS ile test edilir (`_reachable_avoiding`).
+
+    `unit_id` VE `room_type` OPT-IN'dir (diger uc kuralla AYNI desen):
+    hicbiri yoksa kontrol SESSIZCE atlanir."""
+    warnings: list[str] = []
+    by_unit: dict[str, list[dict]] = {}
+    for room in rooms:
+        unit_id = room.get("unit_id")
+        if unit_id:
+            by_unit.setdefault(unit_id, []).append(room)
+
+    for unit_id, unit_rooms in sorted(by_unit.items()):
+        wet_rooms = [r for r in unit_rooms if r.get("room_type") in WC_ROOM_TYPES]
+        corridor_ids = {r["id"] for r in unit_rooms
+                         if r.get("room_type") in CIRCULATION_ROOM_TYPES}
+        if not wet_rooms or not corridor_ids:
+            continue
+        bedroom_ids = {r["id"] for r in unit_rooms
+                       if r.get("room_type") in BEDROOM_ROOM_TYPES}
+        adjacency = _build_unit_adjacency(rooms, walls, openings, unit_id)
+
+        for wet_room in wet_rooms:
+            if _reachable_avoiding(adjacency, corridor_ids, wet_room["id"], bedroom_ids):
+                continue
+            warnings.append(
+                f"Birim '{unit_id}': ıslak hacim '{wet_room['id']}' odasına "
+                f"hol/koridordan yatak odasından GEÇMEDEN ulaşan bir yol "
+                f"yok - tüm erişim yolları en az bir yatak odasından geçiyor."
+            )
+    return warnings
+
+
+def check_wet_area_door_proximity(
+    rooms: list[dict], walls: list[dict], openings: list[dict], *,
+    max_distance: float = DEFAULT_WET_AREA_DOOR_MAX_DISTANCE,
+) -> list[str]:
+    """[DEV-043] Ayni birimdeki ıslak hacim (banyo/wc) kapilari
+    birbirinden `max_distance`den uzaksa UYARI - kullanicinin somut
+    ornegi: *"banyo wc kapıları genelde yan yana olur, kapıları
+    birbirinden çok uzak yapma mümkünse."* Bu ayni zamanda yaygin kabul
+    goren bir tesisat ekonomisi pratigidir (islak hacimler AYNI duvar
+    hatti/sahft'i paylasirsa daha ucuzdur).
+
+    **v1 basitlestirmesi (bilerek, `check_entry_sightlines`in gorus-hatti
+    basitlestirmesiyle AYNI kategoride):** yalnizca kapi-ORTA-NOKTASI
+    mesafesi olculur, iki oda arasinda GERCEK bir ortak duvar (adjacency)
+    olup olmadigi KONTROL EDILMEZ - bu, mesafece yakin ama araya baska bir
+    oda/duvar giren bir YANLIS-POZITIF uretebilir (bkz. `DEVELOPMENT_
+    TASKS.md` DEV-043 "Acik kararlar"). Esik, `standards/`in kataloguyla
+    AYNI disiplinde bir "pratik varsayilan"dir, metre hassasiyetinde bir
+    olcum DEGIL."""
+    warnings: list[str] = []
+    walls_by_id = {w["id"]: w for w in walls}
+    wet_rooms_by_unit: dict[str, list[dict]] = {}
+    for room in rooms:
+        unit_id = room.get("unit_id")
+        if unit_id and room.get("room_type") in WC_ROOM_TYPES:
+            wet_rooms_by_unit.setdefault(unit_id, []).append(room)
+
+    doors = [o for o in openings if o.get("type") == "door"]
+    for unit_id, wet_rooms in sorted(wet_rooms_by_unit.items()):
+        wet_ids = {r["id"] for r in wet_rooms}
+        wet_doors: list[tuple[str, tuple[float, float]]] = []
+        for door in doors:
+            point = _door_midpoint(door, walls_by_id)
+            if point is None:
+                continue
+            touching_ids = {r["id"] for r in _rooms_touching_point(point, wet_rooms)}
+            if touching_ids & wet_ids:
+                wet_doors.append((door["id"], point))
+
+        for i in range(len(wet_doors)):
+            for j in range(i + 1, len(wet_doors)):
+                door_a, point_a = wet_doors[i]
+                door_b, point_b = wet_doors[j]
+                dist = ((point_a[0] - point_b[0]) ** 2
+                        + (point_a[1] - point_b[1]) ** 2) ** 0.5
+                if dist > max_distance:
+                    warnings.append(
+                        f"Birim '{unit_id}': ıslak hacim kapıları '{door_a}' "
+                        f"ve '{door_b}' birbirinden {dist:.0f}mm uzakta "
+                        f"(izin verilen üst sınır {max_distance:.0f}mm) - "
+                        f"tesisat ekonomisi için yakın olmaları tercih edilir."
+                    )
+    return warnings
+
+
 __all__ = [
     "DEFAULT_CIRCULATION_SHARE_MAX", "DEFAULT_DOOR_CORE_BALANCE_RATIO",
-    "DEFAULT_SIGHTLINE_CONE_DEGREES", "WC_ROOM_TYPES", "CORE_ROOM_TYPES",
-    "check_circulation_area_share", "check_bedroom_via_corridor",
-    "check_entry_sightlines", "check_door_core_balance",
+    "DEFAULT_SIGHTLINE_CONE_DEGREES", "DEFAULT_WET_AREA_DOOR_MAX_DISTANCE",
+    "WC_ROOM_TYPES", "CORE_ROOM_TYPES", "CIRCULATION_ROOM_TYPES",
+    "BEDROOM_ROOM_TYPES", "check_circulation_area_share",
+    "check_bedroom_via_corridor", "check_entry_sightlines",
+    "check_door_core_balance", "check_wet_area_reachable_without_bedroom",
+    "check_wet_area_door_proximity",
 ]

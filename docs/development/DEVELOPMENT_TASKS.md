@@ -42,8 +42,8 @@ Tamamlanan işlerin ayrıntılı gerekçesi, karar süreci ve ölçülen etkisi
 | DEV-039 | `scripts/architect/` — mekansal ilişki/mimari mantık kuralları (adjacency & circulation logic) | COMPLETED (2026-09-28) |
 | DEV-040 | `architect/` — 2. nesil mimari mantık motoru (genişleme yol haritası) | PLANNED |
 | DEV-041 | `walls/`+`validate.py` — duvar ucu / kapı boşluğu çakışması denetimi | COMPLETED (2026-09-28) |
-| DEV-042 | `architect/` — ıslak hacmin mahremiyet odası üzerinden erişilmemesi kuralı | PLANNED |
-| DEV-043 | `architect/` — banyo/wc kapı yakınlığı (ıslak hacim kümelenmesi) kuralı | PLANNED |
+| DEV-042 | `architect/` — ıslak hacmin mahremiyet odası üzerinden erişilmemesi kuralı | COMPLETED (2026-10-02) |
+| DEV-043 | `architect/` — banyo/wc kapı yakınlığı (ıslak hacim kümelenmesi) kuralı | COMPLETED (2026-10-02) |
 | DEV-044 | `rooms/` — içbükey (L/T-şekilli) odalarda mahal etiketi konumlandırması | COMPLETED (2026-09-28) |
 | DEV-045 | `templates/`+`architect/` — kat sirkülasyon bandının ölü alan analizi | PLANNED |
 | DEV-046 | `stairs/`+`templates/`+`standards/` — merdiven oda oranı + çok kollu merdiven desteği | PLANNED |
@@ -109,12 +109,9 @@ efektif şekilde sırayla yapacağız, efektif sıralamayı belirle"):**
 2. ~~**`DEV-044`** — küçük, bağımsız, DIŞ KARAR gerektirmeyen bir modül
    düzeltmesi (`rooms/`, algoritma değişimi).~~ **TAMAMLANDI** (2026-09-28)
    — bkz. `## COMPLETED`.
-3. **`DEV-042`** → **`DEV-043`** (birlikte) — ikisi de `architect/
-   rules.py`ye ekleniyor, ikisi de AYNI "ıslak hacim" temasında; ARDI
-   ARDINA yapılmaları test altyapısını (yeni kural + selftest deseni)
-   TEKRAR KURMAZ. `DEV-042` önce (daha yüksek önem — kullanıcının
-   somut örneği bu), `DEV-043` hemen ardından (aynı dosyada, daha
-   basit bir eşik kontrolü).
+3. ~~**`DEV-042`** → **`DEV-043`** (birlikte) — ikisi de `architect/
+   rules.py`ye ekleniyor, ikisi de AYNI "ıslak hacim" temasında.~~
+   **TAMAMLANDI** (2026-10-02) — bkz. `## COMPLETED`.
 4. **`DEV-046`** → **`DEV-047`** (sırayla, `DEV-047` `DEV-046`ya
    BAĞIMLI olduğu için başka türlü mümkün değil) — `stairs/`e yeni bir
    geometri motoru (çok kollu/sahanlıklı merdiven) eklemek bu listenin
@@ -476,71 +473,6 @@ ayrımının ve "yalnızca aynı kat" sınırlamasının emsali), `columns/`
 (düşey hizalama sınırlamasının emsali), `DEV-027` (kaçış planı —
 "acil çıkış mesafesi" gibi bir gelecek kural ile kavramsal KOMŞU).
 
-### DEV-042 — `architect/` — ıslak hacmin mahremiyet odası üzerinden erişilmemesi kuralı
-
-- **Durum:** PLANNED
-
-**Neden boşluk:** kullanıcı kendi ürettiğim rev-22 tasarımında somut bir
-hata buldu: *"yapmış olduğun bir daire tasarımında da koridor -> hol ->
-oda -> banyo şeklinde bir yol var, bu bir konut projesi ya da herhangi
-bir otel projesinde asla kabul edilebilir bir mimari yaklaşım değildir."*
-Doğrulandı: `uC` biriminde sirkülasyon `hol → oda (uC_d_oda_hol) → banyo
-(uC_d_banyo_oda)` şeklinde zincirlenmiş — banyoya ulaşmak için YATAK
-ODASINDAN geçmek ZORUNLU. `DEV-039`'un `check_bedroom_via_corridor`
-kuralı bunu KAÇIRDI çünkü SADECE "yatak odası SALONA doğrudan açılıyor
-mu" diye bakıyor; "yatak odası, BAŞKA bir odaya (örn. ıslak hacim)
-ulaşmak için ZORUNLU bir GEÇİŞ odası mı" sorusunu hiç SORMUYOR — tam
-olarak rev-22'yi tasarlarken salon-oda bitişikliğinden KAÇINMAYA
-odaklanıp bu İKİNCİ tuzağı gözden kaçırmamın nedeni budur.
-
-**Fikir 1 (önerilen):** yeni bir kural, `check_wet_area_reachable_
-without_bedroom` (adlandırma tartışmaya açık) — bir birimdeki HER
-banyo/wc odası için, o odaya ulaşan TÜM yolların (oda-kapı komşuluk
-GRAFİĞİNDE, hol/koridor tipi bir odadan başlayan bir gezinme) bir
-`yatak_odasi`ndan GEÇMEDEN mümkün olup olmadığı kontrol edilir — TEK
-yol bir yatak odasından geçiyorsa UYARI.
-
-**Açık kararlar:**
-- Bu bir GRAF gezinme algoritması gerektiriyor — bugünkü 4 kuralın
-  hepsi "iki komşu oda" düzeyinde (tek adım); bu YENİ bir karmaşıklık
-  seviyesidir. `architect/rules.py`ye mi eklenir yoksa ayrı bir
-  `architect/graph.py` mi açılır (oda-kapı komşuluk grafiğinin İNŞASI,
-  `rules._rooms_touching_point`in tekrar tekrar çağrılması yerine TEK
-  seferlik bir graf yapısına çıkarılması)?
-- Otel gibi çok odalı/çok banyolu birimlerde (bir banyo başka bir
-  yoldan da erişilebilirse) kural doğru davranmalı — graf gezinmesinin
-  "TEK yol" değil "HİÇBİR yol yatak-odasız değilse" testi olması gerekir.
-
-**İlişkili modüller:** `architect/` (`rules.py` genişlemesi, muhtemelen
-yeni bir `graph.py`), `rooms/` (oda-kapı ilişkisinin veri kaynağı).
-
-### DEV-043 — `architect/` — banyo/wc kapı yakınlığı (ıslak hacim kümelenmesi) kuralı
-
-- **Durum:** PLANNED
-
-**Neden boşluk:** kullanıcı: *"hol yapısı nispeten kabul edilebilir ...
-fakat banyo wc kapıları genelde yan yana olur, kapıları birbirinden çok
-uzak yapma mümkünse."* Bu, tesisat ekonomisi (ıslak hacimlerin AYNI
-duvar hattı/şaftı paylaşması) açısından da yaygın kabul gören bir
-mimari pratiktir — `DEV-039`'un v1 kural kataloğunda bu YOK.
-
-**Fikir 1 (önerilen):** aynı `unit_id`deki banyo VE wc kapıları (ikisi
-de varsa) arasındaki mesafe (kapı orta noktaları, `rules._door_midpoint`
-YENİDEN kullanılarak) bir eşiği aşarsa UYARI —
-`check_wet_area_door_proximity` gibi.
-
-**Açık kararlar:**
-- Eşik değeri (kaç mm "yakın" sayılır — büyük olasılıkla birkaç bin mm
-  mertebesinde bir "pratik varsayılan", `standards/`in kataloğuyla AYNI
-  disiplinde, kullanıcı onayı/deneyimiyle kalibre edilecek).
-- Yalnızca kapı-kapı mesafesi mi ölçülmeli, yoksa iki oda arasında
-  DOĞRUDAN bir ortak duvar (adjacency) olması mı tercih edilen asıl
-  sinyal — mesafe eşiği YANLIŞ-POZİTİF üretebilir (iki kapı mesafece
-  yakın ama aralarında başka bir oda/duvar olabilir).
-
-**İlişkili modüller:** `architect/` (`rules.py`), `DEV-042` ile aynı
-"ıslak hacim" temasında KOMŞU ama farklı bir kontrol sınıfı (kümelenme
-vs. erişilebilirlik).
 
 ### DEV-045 — `templates/`+`architect/` — kat sirkülasyon bandının ölü alan analizi
 
@@ -925,6 +857,45 @@ bağımlı), `templates/` (`door_stair` konumu), `openings/`
   olarak kapsam DIŞINDA bırakıldı (`DEV-044`'ün "İlişkili modüller"i
   yalnızca `rooms/`/`architect/`/`pafta/`). Ayrıntı: `scripts/rooms/
   CLAUDE.md` "İçbükey oda etiket konumlandırması (DEV-044)". (`HD-021`)
+
+### DEV-042 — `architect/` — ıslak hacmin mahremiyet odası üzerinden erişilmemesi kuralı
+
+- **Durum:** COMPLETED (2026-10-02)
+- **Özet:** Plan metninin kendi "Fikir 1"i uygulandı:
+  `check_wet_area_reachable_without_bedroom` — birimin KENDİ hol/koridor
+  odasından bir ıslak hacme (banyo/wc) bir yatak odasından GEÇMEDEN
+  ulaşan EN AZ bir yol yoksa UYARI. "Açık kararlar"ın ikisi de çözüldü:
+  graf, `rules.py`ye eklendi (ayrı `graph.py` açılmadı — kod küçük ve
+  zaten var olan `_door_midpoint`/`_rooms_touching_point`i yeniden
+  kullanıyor); test "HİÇBİR yol yatak-odasız değilse" semantiğiyle BFS
+  (bir yatak odası "engelli düğüm") olarak yazıldı (otel gibi
+  çok-erişimli birimlerde yanlış-pozitif üretmemek için). Graf BİLEREK
+  yalnızca birimin kendi odalarıyla sınırlı. Kasıtlı bozma + yanlış-
+  pozitif (doğrudan bypass) ile kanıtlandı; GERÇEK projede BEKLENMEDİK
+  ama GERÇEK bir örnek yakaladı: rev-22 `uC`yi "salon-banyo-oda-hol"
+  olarak yeniden sıraladı ama `uC_hol`ün TEK komşusu hâlâ `uC_oda`
+  (yatak odası) — `uC_banyo`ya yatak odasından geçmeden ulaşan bir yol
+  YOK, kullanıcının orijinal `koridor→hol→oda→banyo` şikâyetinin KISMEN
+  hayatta kalan somut bir örneği (`uA`/`uB` TEMİZ). Bu görevin kapsamı
+  yalnızca KONTROLÜ kurmaktı (DEV-041 ile AYNI disiplin) — `uC`nin
+  GERÇEK düzeltilmesi AYRI bir revizyon konusu. Ayrıntı: `scripts/
+  architect/CLAUDE.md` "DEV-042/DEV-043: ıslak hacim kuralları". (`HD-022`)
+
+### DEV-043 — `architect/` — banyo/wc kapı yakınlığı (ıslak hacim kümelenmesi) kuralı
+
+- **Durum:** COMPLETED (2026-10-02)
+- **Özet:** Plan metninin kendi "Fikir 1"i uygulandı:
+  `check_wet_area_door_proximity` — aynı birimdeki ıslak hacim (banyo/wc)
+  kapı-orta-nokta mesafesi `DEFAULT_WET_AREA_DOOR_MAX_DISTANCE`i
+  (5000mm) aşarsa UYARI, `max_distance` override edilebilir. v1
+  basitleştirmesi BİLİNÇLİ bırakıldı (yalnızca mesafe, gerçek adjacency
+  kontrol edilmiyor — plan metninin kendi "Açık kararlar"ı). Eşik,
+  gerçek projenin KENDİ uA/uB banyo-wc mesafesi (4016mm) sınırın ALTINDA
+  kalacak şekilde kalibre edildi — `standards/`in kataloğuyla AYNI
+  "pratik varsayılan" disiplini. Kasıtlı bozma + yanlış-pozitif + özel
+  eşik testiyle kanıtlandı; gerçek projede (uA/uB) SIFIR uyarı
+  (kalibrasyonun doğrudan kanıtı). Ayrıntı: `scripts/architect/
+  CLAUDE.md` "DEV-042/DEV-043: ıslak hacim kuralları". (`HD-022`)
 
 ## Görev tamamlama kuralı
 

@@ -1,4 +1,4 @@
-# architect modülü (mekansal ilişki/mimari mantık kuralları) — DEV-039
+# architect modülü (mekansal ilişki/mimari mantık kuralları) — DEV-039 + DEV-042 + DEV-043
 
 Bir mahalin geometrik olarak GEÇERLİ (`validate.py::check_rooms`) VE
 oransal olarak MAKUL (`standards::check_room_proportions`) olabileceği,
@@ -127,7 +127,9 @@ v1 sınırı). Kontrol iki adımdır:
 from architect import (
     check_circulation_area_share, check_bedroom_via_corridor,
     check_entry_sightlines, check_door_core_balance,
+    check_wet_area_reachable_without_bedroom, check_wet_area_door_proximity,
     DEFAULT_CIRCULATION_SHARE_MAX, DEFAULT_DOOR_CORE_BALANCE_RATIO,
+    DEFAULT_WET_AREA_DOOR_MAX_DISTANCE,
     FeasibilityReport, check_fits, ZoneAssignment, ZoningPlan,
     resolve_unit_zoning, PlacementOption, options_for_core_placement,
     place_unit_entry_doors,
@@ -183,19 +185,101 @@ için (yalnızca UYARI metni döndürür, DXF'e hiçbir entity eklemez/
 çıkarmaz) bir entity/layer/bbox karşılaştırması bu modülün mantığını
 SINAMAZ — `selftest.py`nin kasıtlı-bozma testleri tek gerçek kanıttır.
 
+## DEV-042/DEV-043: ıslak hacim kuralları
+
+İkisi de aynı "ıslak hacim" temasındaki KOMŞU ama FARKLI kontrol
+sınıflarıdır: DEV-042 erişilebilirlik (bir yola GİRMEK zorunlu mu),
+DEV-043 kümelenme (iki kapı birbirine YAKIN mı). Her ikisi de diğer dört
+kuralla AYNI politikayı (HER ZAMAN UYARI) ve AYNI `unit_id`/`room_type`
+opt-in desenini izler.
+
+### `check_wet_area_reachable_without_bedroom` (DEV-042)
+
+Kullanıcının somut örneği: *"koridor -> hol -> oda -> banyo şeklinde bir
+yol var, bu bir konut projesi ya da herhangi bir otel projesinde asla
+kabul edilebilir bir mimari yaklaşım değildir."* `check_bedroom_via_
+corridor` (DEV-039) bunu KAÇIRIYORDU çünkü SADECE "yatak odası SALONA
+doğrudan açılıyor mu" diye bakıyor; "yatak odası, BAŞKA bir odaya
+ulaşmak için ZORUNLU bir GEÇİŞ odası mı" sorusunu hiç SORMUYORDU.
+
+**Bu bir graf gezinme problemidir** (diğer dört kuralın "iki komşu oda"
+tek-adım testinden FARKLI bir karmaşıklık seviyesi) — plan metninin
+kendi "Açık kararlar"ı burada ÇÖZÜLDÜ:
+
+- **`architect/rules.py`ye mi, ayrı bir `graph.py`ye mi?** `rules.py`ye
+  EKLENDİ, ayrı dosya AÇILMADI — bu modülün "sıkıca ardışık, aynı
+  bağlamı paylaşan sınıflar ayrı modüllere BÖLÜNMEZ" mottosunun AYNI
+  gerekçesi: graf kurucu (`_build_unit_adjacency`) ve BFS (`_reachable_
+  avoiding`) birlikte ~35 satır, zaten var olan `_door_midpoint`/
+  `_rooms_touching_point`i YENİDEN kullanıyor, bağımsız bir modül
+  gerektirecek kadar büyümedi.
+- **"TEK yol" mu, "HİÇBİR yol" mu?** Plan metninin önerdiği gibi
+  "HİÇBİR yol yatak-odasız değilse" UYARI — otel gibi çok erişimli
+  birimlerde YANLIŞ-POZİTİF üretmemek için BİLEREK böyle. Bir yatak
+  odası "engelli düğüm" (`blocked_ids`) sayılarak BFS ile test edilir:
+  birimin KENDİ hol/koridor odalarından başlayıp, yatak odası
+  düğümlerine HİÇ girmeden ıslak hacme ulaşılabiliyor mu.
+
+**Graf BİLEREK yalnızca bu birimin kendi odalarıyla sınırlıdır**
+(`_build_unit_adjacency`, `unit_id` filtresi) — ortak/sirkülasyon alanı
+veya başka bir birim DAHİL EDİLMEZ, çünkü soru "bu birimin KENDİ
+holünden ıslak hacme gidilebilir mi"dir, bina genelindeki erişim
+DEĞİLDİR.
+
+**Gerçek projede GERÇEK bir örnek yakaladı (beklenmedik, ama dürüstçe
+belgelenir):** rev-22 `uC`'yi "salon-banyo-oda-hol" olarak yeniden
+sıraladı ve "oda artık hol VE banyoya kapı açıyor, salona DOĞRUDAN kapı
+YOK" diye düzeltildiği kaydedildi — ama bu, `uC_hol`ün TEK komşusunun
+HÂLÂ `uC_oda` (yatak odası) olduğu, dolayısıyla `uC_banyo`ya `uC_hol`den
+yatak odasından GEÇMEDEN ulaşan bir yolun OLMADIĞI gerçeğini
+değiştirmedi — kullanıcının orijinal şikâyetinin (`koridor→hol→oda→
+banyo`) KISMEN hayatta kalan somut bir örneği. `uA`/`uB`'nin T-şekilli
+hol'ü ise banyo/wc'ye DOĞRUDAN açıldığı için TEMİZDİR.
+`selftest.py::check_wet_area_real_project_catches_uC_chain` bunu
+kanıtlar. **Bu görevin kapsamı yalnızca KONTROLÜ kurmaktı** (DEV-041 ile
+AYNI disiplin) — `uC`nin GERÇEK düzeltilmesi (hol'ü banyoya da doğrudan
+açmak, veya farklı bir bant sıralaması) AYRI, sonraki bir revizyon
+konusudur.
+
+### `check_wet_area_door_proximity` (DEV-043)
+
+Kullanıcının somut örneği: *"banyo wc kapıları genelde yan yana olur,
+kapıları birbirinden çok uzak yapma mümkünse."* Aynı zamanda yaygın
+kabul gören bir tesisat ekonomisi pratiğidir (ıslak hacimler AYNI duvar
+hattı/şaftı paylaşırsa daha ucuzdur).
+
+**v1 basitleştirmesi (bilerek, `check_entry_sightlines`in görüş-hattı
+basitleştirmesiyle AYNI kategoride):** yalnızca kapı-ORTA-NOKTASI
+mesafesi ölçülür, iki oda arasında GERÇEK bir ortak duvar (adjacency)
+olup olmadığı KONTROL EDİLMEZ — plan metninin kendi "Açık kararlar"ından
+biri buydu, BİLİNÇLİ olarak basit tarafta bırakıldı: mesafece yakın ama
+araya başka bir oda/duvar giren bir YANLIŞ-POZİTİF üretebilir. Bu, diğer
+v1 basitleştirmeleriyle (AABB oranı, görüş-hattı koni testi) AYNI
+"pratik yeterli, mükemmel değil" disiplinindedir.
+
+**Eşik kalibrasyonu (`DEFAULT_WET_AREA_DOOR_MAX_DISTANCE = 5000.0`):**
+gerçek projenin KENDİ uA/uB banyo-wc kapı mesafesi (4016mm, rev-22'den
+beri değişmedi) bu sınırın ALTINDA kalacak şekilde seçildi — bir
+"pratik varsayılan" (`standards/`in kataloğuyla AYNI disiplin), metre
+hassasiyetinde bir ölçüm DEĞİL. `uC` bu kuralda hesaba KATILMAZ (yalnızca
+`uC_banyo` var, eşleşecek bir `wc` yok — "ikisi de varsa" ön koşulu
+plan metninde zaten vardı).
+
 ## Doğrulama
 
-`python scripts/architect/selftest.py` — yirmi kontrol grubu: dört
+`python scripts/architect/selftest.py` — yirmi yedi kontrol grubu: altı
 `rules.py` fonksiyonunun her biri hem bir İHLAL hem (giriş-WC görüş
-hattı için İKİ farklı: koni-dışı VE duvarla-engellenmiş) bir
+hattı için İKİ farklı: koni-dışı VE duvarla-engellenmiş; ıslak hacim
+yakınlığı için ayrıca bir `max_distance` OVERRIDE testi) bir
 YANLIŞ-POZİTİF senaryosuyla; `check_fits`/`resolve_unit_zoning`in elle
 hesaplanabilir sonuçları (DEV-038'in gerçek keşfettiği 7700mm/8400mm
 senaryosu DAHİL); `options_for_core_placement`in giriş kenarını YÜKSEK
 puanladığı; `place_unit_entry_doors`in zone merkezlerine kapı koyduğu;
 VE gerçek `context.json`'daki (rev-21'den itibaren gerçek `unit_id`
-taşıyan) `uA_*` oda verisiyle hol-oranı ihlalinin GERÇEKTEN yakalandığı
-(`unit_id` bellek-içi SOYULDUĞUNDA opt-in'in hâlâ geçerli kaldığı da
-ayrıca kanıtlanır).
+taşıyan) oda verisiyle hol-oranı ihlalinin VE `uC`'nin yatak-odası
+zincirinin GERÇEKTEN yakalandığı, `uA`/`uB`'nin bu iki YENİ kuralda
+TEMİZ kaldığı (`unit_id` bellek-içi SOYULDUĞUNDA opt-in'in hâlâ geçerli
+kaldığı da ayrıca kanıtlanır).
 
 ## Gelecek yönü — 2. nesil mimari mantık motoru (planlama notu, 2026-09-28)
 
@@ -307,14 +391,16 @@ sırayla açacağına karar vermesidir (bkz. `DEVELOPMENT_TASKS.md`
 `DEV-040`).
 
 **rev-22'nin GERÇEK plan çıktısından çıkan SOMUT kural boşlukları
-(`DEV-042`/`DEV-043`, PLANNED):** `DEV-040`'ın SPEKÜLATİF fikirlerinden
-FARKLI olarak, bunlar kullanıcının BİZZAT üretilmiş DXF/preview üzerinde
-bulduğu gerçek hatalardan çıkarıldı — bugünkü v1 kural kataloğu (6
-kural) bunları YAKALAMADI: (1) bir ıslak hacmin (banyo/wc) TEK erişim
-yolunun bir yatak odasından geçmesi (`uC`'de `hol→oda→banyo` zinciri,
-`check_bedroom_via_corridor`in kapsamı DIŞINDA — o kural yalnızca
-"salon" komşuluğuna bakıyor), (2) banyo/wc kapılarının birbirinden ÇOK
-uzak olması (tesisat kümelenmesi ilkesi, bugün HİÇ kontrol edilmiyor).
+(`DEV-042`/`DEV-043`, TAMAMLANDI):** `DEV-040`'ın SPEKÜLATİF
+fikirlerinden FARKLI olarak, bunlar kullanıcının BİZZAT üretilmiş DXF/
+preview üzerinde bulduğu gerçek hatalardan çıkarıldı — o zamanki v1
+kural kataloğu (4 kural) bunları YAKALAMIYORDU: (1) bir ıslak hacmin
+(banyo/wc) TEK erişim yolunun bir yatak odasından geçmesi (`uC`'de
+`hol→oda→banyo` zinciri, `check_bedroom_via_corridor`in kapsamı
+DIŞINDA — o kural yalnızca "salon" komşuluğuna bakıyor), (2) banyo/wc
+kapılarının birbirinden ÇOK uzak olması (tesisat kümelenmesi ilkesi,
+önceden HİÇ kontrol edilmiyordu). İkisi de aşağıda "DEV-042/DEV-043:
+ıslak hacim kuralları" bölümünde ayrıntılı anlatılır.
 
 ## Bilinen sınırlamalar
 
@@ -335,6 +421,21 @@ uzak olması (tesisat kümelenmesi ilkesi, bugün HİÇ kontrol edilmiyor).
   kararı gereği üretimi DURDURMUYOR, ama rev-20 birim tasarımının
   gözden geçirilmesi AYRI, sonraki bir revizyon konusudur (bkz.
   `context.json::rev_history` rev-21).
+- **`DEV-042`'nin GERÇEK projede yakaladığı `uC_hol`→`uC_oda`→`uC_banyo`
+  zinciri henüz GİDERİLMEDİ** (yukarı bakınız, "Gerçek projede GERÇEK
+  bir örnek yakaladı") — bu da üretimi DURDURMUYOR, düzeltme AYRI bir
+  revizyon konusudur.
+- **`check_wet_area_door_proximity` (DEV-043) yalnızca kapı-orta-nokta
+  mesafesi ölçer, gerçek adjacency (ortak duvar) KONTROL ETMEZ** (yukarı
+  bakınız) — mesafece yakın ama araya başka bir oda/duvar giren bir
+  YANLIŞ-POZİTİF teorik olarak mümkündür; plan metninin kendi "Açık
+  kararlar"ında bilinçli bırakıldı.
+- **`check_wet_area_reachable_without_bedroom` (DEV-042) yalnızca
+  DOĞRUDAN kapı-komşuluğu graf kenarı kurar** — iki oda arasında kapı
+  YOKSA (yalnızca duvarla komşularsa) bir kenar OLUŞMAZ; bu, modülün
+  "oda-kapı komşuluğu" tanımıyla (yukarı bakınız) tutarlıdır ama bir
+  odadan diğerine PENCEREDEN/açık plan geçişle (kapısız) geçilen —
+  bugünkü şemada zaten desteklenmeyen — bir senaryoyu MODELLEMEZ.
 - **Kural ağırlıkları/eşikleri "v1 pratik varsayılan"dır** —
   `standards/`in kendi "Gelecek güncelleme sözleşmesi" ile AYNI
   disiplin, kullanıcının gerçek şartname/deneyimle güncellemesi

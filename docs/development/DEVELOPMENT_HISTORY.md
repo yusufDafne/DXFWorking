@@ -4,6 +4,96 @@ Aktif geçmiş kapasitesi: **50 kayıt**. En eski tamamlanmış kayıt, 51. kay�
 alınırken silinir. Ayrıntılı teknik değişiklikler git geçmişi ve ilgili proje
 provenance kayıtlarıyla ilişkilendirilir.
 
+## HD-022 — `architect/`: ıslak hacim erişilebilirliği + kapı yakınlığı kuralları (DEV-042, DEV-043)
+
+- **Durum:** COMPLETED
+- **Tamamlanma:** 2026-10-02
+- **Kökeni:** `HD-020`/`HD-021` (`DEV-041`/`DEV-044`) ile AYNI kritik
+  geri bildirim turunun iki maddesi daha: *"koridor -> hol -> oda ->
+  banyo şeklinde bir yol var, bu ... asla kabul edilebilir bir mimari
+  yaklaşım değildir ... banyo wc kapıları genelde yan yana olur,
+  kapıları birbirinden çok uzak yapma mümkünse."* Kullanıcının
+  belirlediği "efektif sıralama"da (`DEVELOPMENT_TASKS.md` "Uygulama
+  sırası") üçüncü sıradaydı — DEV-041 ve DEV-044'ün hemen ardından,
+  "sıradaki planı uygulamaya başlayabilirsin" komutuyla uygulandı.
+
+### DEV-042: graf gezinmesi — iki "açık karar" da ÇÖZÜLDÜ
+
+`check_bedroom_via_corridor` (DEV-039) yalnızca "yatak odası SALONA
+doğrudan açılıyor mu" diye bakıyordu; "yatak odası BAŞKA bir odaya
+ulaşmak için ZORUNLU bir GEÇİŞ odası mı" sorusunu hiç SORMUYORDU. Yeni
+`check_wet_area_reachable_without_bedroom`, birimin KENDİ hol/koridor
+odasından bir ıslak hacme yatak odasından GEÇMEDEN ulaşan EN AZ bir yol
+olup olmadığını BFS ile test eder (`_build_unit_adjacency` + `_reachable_
+avoiding`, yeni yardımcılar). Plan metninin bıraktığı iki açık karar bu
+görevde çözüldü:
+
+1. **Ayrı `graph.py` mi, `rules.py`ye mi?** `rules.py`ye EKLENDİ — yeni
+   kod ~35 satır, zaten var olan `_door_midpoint`/`_rooms_touching_point`i
+   YENİDEN kullanıyor, bağımsız bir modül gerektirecek kadar büyümedi
+   (`pafta/`/`elevations/`in "sıkıca ardışık sınıflar ayrı modüllere
+   BÖLÜNMEZ" mottosuyla AYNI gerekçe).
+2. **"TEK yol" mu, "HİÇBİR yol" mu?** Plan metninin önerdiği gibi
+   "HİÇBİR yol yatak-odasız değilse" UYARI semantiği seçildi (bir yatak
+   odası BFS'te "engelli düğüm") — otel gibi çok-erişimli birimlerde
+   YANLIŞ-POZİTİF üretmemek için. Graf BİLEREK yalnızca birimin KENDİ
+   odalarıyla sınırlı (ortak alan/başka birim DAHİL EDİLMEZ).
+
+### Gerçek projede BEKLENMEDİK ama GERÇEK bir örnek yakaladı
+
+Kasıtlı-bozma + yanlış-pozitif (doğrudan bypass) testlerinin YANI SIRA,
+kuralın gerçek `context.json` üzerinde çalıştırılması rev-22'nin
+TAMAMEN gidermediği bir kalıntı ortaya çıkardı: rev-22 `uC`yi
+"salon-banyo-oda-hol" olarak yeniden sıraladı ve "oda artık hol VE
+banyoya kapı açıyor, salona DOĞRUDAN kapı YOK" diye düzeltildiği
+kaydedilmişti — ama `uC_hol`ün TEK komşusu HÂLÂ `uC_oda` (yatak odası),
+yani `uC_banyo`ya `uC_hol`den yatak odasından GEÇMEDEN ulaşan bir yol
+YOK. Bu, kullanıcının orijinal `koridor→hol→oda→banyo` şikâyetinin
+rev-22'den SONRA da KISMEN hayatta kalan somut bir örneğidir — `DEV-041`
+(`w_unit_A_B`/`uA_w_hol_mutfak_v`) ve `DEV-044` (`uB_hol` centroid'i)
+ile AYNI desende, yeni bir kontrolün gerçek veri üzerinde beklenmedik
+ama GERÇEK bir sorunu yakaladığı üçüncü örnek. `uA`/`uB`'nin T-şekilli
+hol'ü banyo/wc'ye DOĞRUDAN açıldığı için bu iki birimde TEMİZ.
+`architect/selftest.py::check_wet_area_real_project_catches_uC_chain`
+bunu kanıtlar. **Bu görevin kapsamı yalnızca KONTROLÜ kurmaktı** (DEV-041
+ile BİREBİR AYNI disiplin) — `uC`nin GERÇEK düzeltilmesi context.json'a
+DOKUNMADAN bilinçli olarak bu revizyonun DIŞINDA bırakıldı, ayrı bir
+proje revizyonu bekliyor.
+
+### DEV-043: mesafe eşiği gerçek projeden KALİBRE edildi, ona UYDURULMADI
+
+`check_wet_area_door_proximity`, aynı birimdeki ıslak hacim kapılarının
+orta-nokta mesafesi `DEFAULT_WET_AREA_DOOR_MAX_DISTANCE`i aşarsa UYARI
+verir (`max_distance` override edilebilir, diğer tüm kurallarla AYNI
+desen). v1 basitleştirmesi plan metninin kendi "Açık kararlar"ında
+BİLİNÇLİ bırakıldığı gibi korundu: yalnızca mesafe ölçülür, iki oda
+arasında GERÇEK bir ortak duvar (adjacency) kontrol EDİLMEZ.
+
+Eşik seçimi (5000mm) ayrıca belgelenmeye değer bir karardır: gerçek
+projenin KENDİ uA/uB banyo-wc kapı mesafesi tam olarak **4016mm**
+ölçüldü (`_door_midpoint` ile elle doğrulandı). Bu sınırı 4000mm gibi
+"temiz" bir sayıya YUVARLAMAK, gerçek projeyi 16mm'lik keyfi bir farkla
+tam sınırda bırakırdı — bunun yerine 5000mm seçildi: hem gerçek projeyi
+rahatça TEMİZ bırakan hem de `standards/`in kataloğuyla AYNI "pratik
+varsayılan, metre hassasiyetinde bir ölçüm DEĞİL" disiplinine uyan bir
+yuvarlak sayı. Kasıtlı-bozma + yanlış-pozitif + `max_distance` override
+testiyle kanıtlandı; gerçek projede (uA/uB) SIFIR uyarı üretmesi bu
+kalibrasyonun doğrudan kanıtıdır.
+
+- **Etkilenen dosyalar:** `scripts/architect/rules.py` (`check_wet_area_
+  reachable_without_bedroom`, `check_wet_area_door_proximity`,
+  `_build_unit_adjacency`, `_reachable_avoiding`, yeni sabitler),
+  `scripts/architect/__init__.py` (public API), `scripts/validate.py`
+  (iki yeni kontrolün `check_floor` akışına bağlanması), `scripts/
+  architect/selftest.py` (9 yeni grup, toplam 27), `scripts/architect/
+  CLAUDE.md`.
+- **Golden etkisi:** yok (`architect/` hâlâ `collision/`in kendi
+  gerekçesiyle AYNI nedenle golden referanstan MUAF — hiç geometri
+  üretmiyor/değiştirmiyor).
+- **Sonraki adım:** "Uygulama sırası"na göre `DEV-046`→`DEV-047`
+  (`stairs/`e yeni bir geometri motoru) — bkz. `docs/development/
+  DEVELOPMENT_TASKS.md`.
+
 ## HD-021 — `rooms/`: içbükey (L/T-şekilli) odalarda mahal etiketi konumlandırması (DEV-044)
 
 - **Durum:** COMPLETED

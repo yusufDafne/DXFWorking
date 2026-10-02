@@ -171,8 +171,40 @@ sistem mimarı direktifi güncellenir.
   KENDİ kullandığı fonksiyonu çağırıyor (DEV-041'deki `wall_gap_ranges`
   ile AYNI tek-kaynak disiplini). `scripts/ceiling/`in RCP etiketi
   BİLİNÇLİ olarak kapsam DIŞINDA bırakıldı (DEV-044'ün "İlişkili
-  modüller"i yalnızca `rooms/`/`architect/`/`pafta/`). Sıradaki adım
-  "Uygulama sırası"na göre `DEV-042`→`DEV-043`dür, henüz BAŞLANMADI.
+  modüller"i yalnızca `rooms/`/`architect/`/`pafta/`).
+- **`DEV-042` + `DEV-043` UYGULANDI (2026-10-02, `HD-022`, kullanıcı:
+  "sıradaki planı uygulamaya başlayabilirsin"):** "Uygulama sırası"nda
+  DEV-041/DEV-044'ün hemen ardından üçüncü sıradaydı. `architect/
+  rules.py`ye iki yeni ilişkisel (arity-2+) kural eklendi:
+  - `check_wet_area_reachable_without_bedroom` (DEV-042) — birimin
+    KENDİ hol/koridor odasından bir ıslak hacme (banyo/wc) bir yatak
+    odasından GEÇMEDEN ulaşan EN AZ bir yol yoksa UYARI. Yeni `_build_
+    unit_adjacency`/`_reachable_avoiding` ile BFS tabanlı bir graf
+    gezinmesi — plan metninin iki açık kararı da çözüldü (`rules.py`ye
+    eklendi, ayrı `graph.py` AÇILMADI; "TEK yol" değil "HİÇBİR yol
+    yatak-odasız değilse" semantiği, otel gibi çok-erişimli birimler
+    için). **KRİTİK gerçek-dünya bulgusu:** gerçek projede ÇALIŞTIRILINCA
+    `uC_hol`→`uC_oda`→`uC_banyo` zincirinin rev-22'den SONRA da KISMEN
+    hayatta kaldığını yakaladı (`uC_hol`ün TEK komşusu hâlâ `uC_oda`
+    yatak odası) — kullanıcının orijinal `koridor→hol→oda→banyo`
+    şikâyetinin somut bir kalıntısı, `DEV-041`/`DEV-044` ile AYNI desende
+    üçüncü "yeni kontrol gerçek veride beklenmedik bir şey buldu" örneği.
+    `uA`/`uB` TEMİZ. Bu görevin kapsamı yalnızca KONTROLÜ kurmaktı —
+    `uC`nin GERÇEK düzeltilmesi context.json'a DOKUNULMADAN AYRI bir
+    revizyona bırakıldı.
+  - `check_wet_area_door_proximity` (DEV-043) — aynı birimdeki ıslak
+    hacim kapı-orta-nokta mesafesi `DEFAULT_WET_AREA_DOOR_MAX_DISTANCE`i
+    (5000mm) aşarsa UYARI. Eşik, gerçek projenin KENDİ uA/uB mesafesinden
+    (4016mm, elle ölçüldü) KALİBRE edildi — 4000 gibi "temiz" bir sayı
+    gerçek projeyi 16mm'lik keyfi bir farkla sınırda bırakırdı, bu yüzden
+    5000mm seçildi. Gerçek projede (uA/uB) SIFIR uyarı üretir.
+  `scripts/validate.py::check_floor` akışına BAĞLANDI (standards/
+  architect ile AYNI politika: HER ZAMAN UYARI, asla HATA).
+  `architect/selftest.py`ye 9 yeni grup eklendi (toplam 27) —
+  kasıtlı-bozma + yanlış-pozitif + `unit_id` opt-in + gerçek-proje
+  doğrulaması hepsi için. Ayrıntı: `scripts/architect/CLAUDE.md`
+  "DEV-042/DEV-043: ıslak hacim kuralları". Sıradaki adım "Uygulama
+  sırası"na göre `DEV-046`→`DEV-047`dür (stairs/), henüz BAŞLANMADI.
 
 ## Sıradaki iş
 
