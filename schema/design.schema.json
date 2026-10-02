@@ -161,6 +161,20 @@
           "type": "string",
           "enum": ["N", "S", "E", "W"],
           "description": "Yon oku ve kesme cizgisinin hangi uca cizilecegini belirtir (merdivenin 'yukari' ucu). Verilmezse yon oku ve kesme cizgisi HIC cizilmez (yon uydurulmaz) - yalniz basamak cizgileri cizilir. Merdivenin uzun ekseniyle tutarli olmalidir (orn. dogu-bati uzanan bir merdivende yalnizca 'E'/'W' gecerlidir)."
+        },
+        "kind": {
+          "type": "string",
+          "enum": ["single_flight", "dog_leg"],
+          "description": "DEV-046. Verilmezse 'single_flight' (eski/tek davranis). 'dog_leg' (sahanlikli, 180 derece donuslu cift kollu merdiven) oda kisa eksenini iki kola boler; kucuk/kare'ye yakin odalarda tek kollun sigmadigi durumlar icin."
+        },
+        "landing_depth_mm": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "YALNIZCA kind='dog_leg' icin anlamlidir. Sahanlik derinligi. Verilmezse DEFAULT_LANDING_DEPTH_MM=1100 kullanilir - bu bir olcu degil, ofis cizim standardidir (riser/going varsayilanlariyla AYNI kategoride)."
+        },
+        "exit_door_id": {
+          "type": "string",
+          "description": "DEV-047 (opsiyonel, opt-in). Bu merdivenin GERCEK cikisini temsil eden kapinin openings[].id degeri. Verilirse validate.py, kapinin merdivenin hesapladigi cikis YONUYLE (resolve_stair::exit_direction) ayni duvarda olup olmadigini denetler (UYARI, HATA degil)."
         }
       }
     },

@@ -1,0 +1,39 @@
+{
+  "source": "golden/merdiven_cift_kollu",
+  "entity_count": 202,
+  "entity_types": {
+    "ARC": 1,
+    "ATTRIB": 3,
+    "CIRCLE": 20,
+    "DIMENSION": 5,
+    "HATCH": 4,
+    "INSERT": 1,
+    "LINE": 72,
+    "LWPOLYLINE": 29,
+    "TEXT": 67
+  },
+  "layers": {
+    "AKS": 55,
+    "CERCEVE": 35,
+    "DUVARLAR": 17,
+    "KAPI-PENCERE": 2,
+    "KESIT": 10,
+    "KOT": 12,
+    "MERDIVEN": 23,
+    "METIN": 38,
+    "OLCU": 10
+  },
+  "modelspace_bbox": [
+    -500.0,
+    -4150.0,
+    64000.0,
+    12350.0
+  ],
+  "blocks": [
+    "MAHAL_ETIKET",
+    "_CLOSEDFILLED"
+  ],
+  "block_inserts": {
+    "MAHAL_ETIKET": 1
+  }
+}

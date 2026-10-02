@@ -4,6 +4,134 @@ Aktif geçmiş kapasitesi: **50 kayıt**. En eski tamamlanmış kayıt, 51. kay�
 alınırken silinir. Ayrıntılı teknik değişiklikler git geçmişi ve ilgili proje
 provenance kayıtlarıyla ilişkilendirilir.
 
+## HD-023 — `stairs/`: çift kollu (dog-leg) merdiven + çıkış noktası/yönü hizalaması (DEV-046, DEV-047)
+
+- **Durum:** COMPLETED
+- **Tamamlanma:** 2026-10-02
+- **Kökeni:** `HD-020`/`HD-021`/`HD-022` ile AYNI kritik geri bildirim
+  turunun KALAN en büyük/en karmaşık iki maddesi: *"sol üstte merdiven
+  var ki o da istediğin en boy oranına sahip değil, merdiven için
+  ayrılan alan daha ince uzun olmalı ve merdiven modülü oraya merdiven
+  çizmeli ... merdivenin sahanlıklarına göre çıkış noktalarını
+  belirlemeli, örneğin basamaklar bittiği an kat başlar ya da her
+  merdivenin kat sahanlığından dönerek koridora çıkılır gibi."*
+  Kullanıcının "efektif sıralama"sında (`DEVELOPMENT_TASKS.md` "Uygulama
+  sırası") BİLEREK son sıraya (küçük maddelerden SONRA) bırakılmıştı —
+  "bu listenin en büyük/en yeni mühendislik çalışması ... tek bir uzun
+  odaklı çalışma bloğu olarak ele alınması tercih edilir" — ve
+  kullanıcının "sıradaki planı uygulamaya başlayabilirsin" komutuyla,
+  ikisi TEK bir blokta (plan metninin kendi sıra bağımlılığına uygun
+  şekilde) uygulandı.
+
+### DEV-046: "neden gerekti" önce SAYISAL olarak doğrulandı
+
+Gerçek `Merdiven` odası (4000×3000mm) tek kollu merdiven için
+`MIN_GOING_MM`i ihlal ediyordu — oda büyütülmeden çözüm farklı bir
+merdiven TÜRÜ gerektiriyordu. Uygulamaya geçmeden önce, 3000mm (bodrum/
+normal katlar) VE 4000mm (zemin) kat yüksekliklerinin İKİSİ için de
+dog-leg'in gerçekten sığıp sığmadığı elle hesaplandı (landing_depth
+1100mm varsayılanıyla): 3000mm'de 18 basamak/9+9 kol, gerekli koşu
+2160mm ≤ mevcut 2900mm (narrowing GEREKMİYOR); 4000mm'de 24 basamak/
+12+12 kol, gerekli koşu 2970mm > 2900mm (hafif bir narrowing, going
+270→263.6mm, hâlâ `MIN_GOING_MM` üzerinde). Bu doğrulama UYGULAMADAN
+ÖNCE yapıldığı için, kodun KENDİSİ bu iki senaryoyu "kasıtlı bozma"
+testleri olarak DOĞRUDAN miras aldı — tahmin değil, önceden kanıtlanmış
+bir sonucun regresyon testi.
+
+### Geometri: oda kısa ekseni ikiye bölünür, kollar TERS yönde gider
+
+`resolve_stair`e `kind` parametresi eklendi (`single_flight` varsayılan,
+`dog_leg` yeni — `walls.kind` ile AYNI opt-in + "bilinmeyen değer HATA"
+deseni). `dog_leg` için: oda kısa ekseni (perpendicular) ortadan ikiye
+bölünür (her yarı `MIN_FLIGHT_WIDTH_MM=900` altına düşerse YENİ bir
+`StairFitError` — tek kolda hiç var olmayan bir başarısızlık modu);
+basamaklar `flight1=ceil(step_count/2)`/`flight2=step_count-flight1`
+olarak dağıtılır; kol 1 girişten `landing_depth_mm` (varsayılan 1100mm,
+riser/going ile AYNI "ofis pratik varsayılanı" disiplini) genişliğinde
+bir sahanlığa çıkar; kol 2 sahanlıktan TERS yönde geri döner. Going-
+narrowing/MIN/MAX kod yolu tek kollu ile PAYLAŞILDI (`binding_steps`
+parametrize edildi) — ikinci bir kopya YAZILMADI.
+
+### "Fikir 2" değerlendirildi, SAYISAL olarak GEREKMEDİ — bulgular dürüstçe kaydedildi
+
+Plan metni "Fikir 2"yi (templates'in oda oranı varsayılanının VE
+standards'ın merdiven oranı sınırlarının yeniden kalibre edilmesi)
+Fikir 1 ile BİRLİKTE gerekli varsaymıştı. Uygulamadan önce kontrol
+edildi: `standards::STANDARDS['merdiven']`in `[1.3, 2.4]` aralığı,
+gerçek odanın oranıyla (1.333) ZATEN uyumluydu VE bu aralık dog-leg için
+de anlamlı kaldı (`max_ratio=2.4` aşırı uzun — dog-leg için VERİMSİZ —
+bir oda şeklini hâlâ doğru reddediyor). Sonuç: `templates::
+generate_circulation_core` ve `STANDARDS` sınırları SAYISAL olarak
+DEĞİŞMEDİ; yalnızca artık YANLIŞ olan "tek kollu" etiketi/açıklaması
+düzeltildi. Bu, planın kendi varsayımının UYGULAMADAN ÖNCEKİ doğrulamayla
+GEÇERSİZ kıldığı bir örnektir — sessizce atlanmadı, hem `stairs/CLAUDE.md`
+hem `standards/CLAUDE.md`de gerekçesiyle kayıt altına alındı.
+
+### DEV-047: çıkış GİRİŞE yakındır, odanın "yukarı" köşesi DEĞİL
+
+Kullanıcının öngördüğü tam olgu koda yansıtıldı: `StairResolution`a
+`exit_point`/`exit_direction` eklendi. Tek kollu için eski örtük
+varsayımla (`up_towards` ucu) BİREBİR AYNI; dog-leg için merdiven
+GEOMETRİSİNİN KENDİSİNDEN türer ve `exit_direction = _OPPOSITE_
+DIRECTION[up_towards]`dir (kol 2, kol 1'in TERS yönünde yürür) —
+`exit_point`in travel-ekseni koordinatı GİRİŞ ucuna YAKINDIR (tam
+üzerinde DEĞİL, kol uzunlukları eşit olmayabileceği için), odanın
+"yukarı" köşesi ASLA DEĞİLDİR. Plan metninin "açık karar"ı ("stairs/
+mi architect/ mi hesaplar/denetler") şöyle çözüldü: **`stairs/`
+HESAPLAR** (yeni alanlar, arity-1), **`validate.py::check_stairs`
+DENETLER** (yeni opt-in `stairs[].exit_door_id` → `exit_door_alignment_
+warning`, UYARI — `architect/`in HER ZAMAN UYARI politikasıyla AYNI).
+"90 derece mi 180 derece mi" belirsizliği (plan metninin kendi sözü:
+"tek bir kurala indirgenemeyebilir") mm hassasiyetli bir mesafe eşiği
+İCAT ETMEDEN, TÜRDEN BAĞIMSIZ bir "en yakın oda kenarı" testiyle
+(`_nearest_bbox_side`) çözüldü — gelecekte bir ÜÇÜNCÜ merdiven türü
+eklense bile bu test DEĞİŞMEDEN çalışır. Kapının duvar-merkez-çizgisi
+konumu `walls::Wall.centerline_point` (projenin TEK kaynağı) ile
+hesaplandı; `stairs/` `walls/`e BAĞIMLI KALMADI (tek yönlü bağımlılık —
+`validate.py` hesaplayıp `stairs/`e salt bir NOKTA verir).
+
+### Doğrulama: kasıtlı bozma + GÖRSEL kanıt
+
+`scripts/stairs/selftest.py`ye 8 yeni grup (toplam 19): gerçek oda
+boyutunda elle hesaplanabilir geometri (narrowing'li VE narrowing'siz),
+kol genişliği/sahanlık sığmazlığı/bilinmeyen `kind` için `StairFitError`
+(+ yanlış-pozitifler), tek kollu alanların BİREBİR korunduğu regresyon
+testi, çizilen varlık sayıları. `scripts/validate_selftest.py`ye 4 yeni
+grup: hizalı/hizasız/opt-in/geçersiz-id. Yeni golden referans `golden/
+merdiven_cift_kollu` (gerçek oda boyutuyla AYNI, hizalı `exit_door_id`,
+SIFIR uyarı/hata ile uçtan uca geçer). Kodun DOĞRU çalıştığı yalnızca
+sayılarla değil, üretilen DXF'in `MERDIVEN` katmanı doğrudan matplotlib
+ile RENDER edilip GÖRSEL olarak da doğrulandı (iki kol + sahanlık +
+bölücü + doğru yöne bakan çıkış oku — mimari olarak doğru bir dog-leg
+merdiven şekli).
+
+### Kapsam BİLEREK dar tutuldu (DEV-041/044 ile AYNI disiplin)
+
+Gerçek `context.json`a `stairs[]` verisi EKLENMEDİ — bu görevin kapsamı
+yalnızca MODÜL desteğini kurmaktı. 8 kattaki `Merdiven` odasına gerçek
+`stairs[]` girdilerini (+ `exit_door_id` bağlantılarını) eklemek AYRI,
+sonraki bir proje revizyonu konusudur.
+
+- **Etkilenen dosyalar:** `scripts/stairs/__init__.py` (`kind`,
+  `DOG_LEG`, `landing_depth_mm`, `exit_point`/`exit_direction`,
+  `_dog_leg_exit_and_landing`, `_nearest_bbox_side`,
+  `exit_door_alignment_warning`, `DefaultStairStandard._draw_dog_leg`,
+  `CONTRACT_VERSION` 1.0→1.1), `scripts/stairs/selftest.py` (8 yeni
+  grup), `scripts/validate.py` (`check_stairs` genişletildi),
+  `scripts/validate_selftest.py` (4 yeni grup), `schema/design.schema.json`
+  (`stairs[].kind`/`landing_depth_mm`/`exit_door_id`), `scripts/
+  standards/__init__.py` (`merdiven` etiket/`source` düzeltmesi, SAYISAL
+  DEĞİŞİKLİK YOK), `golden/merdiven_cift_kollu/` (YENİ), `scripts/
+  stairs/CLAUDE.md`, `scripts/standards/CLAUDE.md`, `scripts/CLAUDE.md`,
+  kök `CLAUDE.md`.
+- **Golden etkisi:** mevcut `golden/merdiven_ornek` (tek kollu)
+  DEĞİŞMEDEN geçti; YENİ `golden/merdiven_cift_kollu` eklendi.
+- **Sonraki adım:** "Uygulama sırası"na göre `DEV-045` (kat sirkülasyon
+  bandının ölü alan analizi) — bkz. `docs/development/
+  DEVELOPMENT_TASKS.md`. `DEV-045` artık `DEV-046`/`DEV-047`
+  TAMAMLANDIĞI için güncel bilgiyle ele alınabilir (merdiven alanının
+  gerçek şekli artık bellidir).
+
 ## HD-022 — `architect/`: ıslak hacim erişilebilirliği + kapı yakınlığı kuralları (DEV-042, DEV-043)
 
 - **Durum:** COMPLETED

@@ -21,7 +21,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from validate import check_walls  # noqa: E402
+from validate import check_stairs, check_walls  # noqa: E402
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 REAL_CONTEXT_PATH = PROJECT_ROOT / "context.json"
@@ -114,6 +114,76 @@ def check_real_project_bug_is_caught() -> list[str]:
     return []
 
 
+# --------------------------------------------------------------------------
+# check_stairs::exit_door_id hizalama kontrolu (DEV-047)
+# --------------------------------------------------------------------------
+
+def _exit_alignment_floor(door_wall_start, door_wall_end, door_position: float) -> dict:
+    """GERCEK 'Merdiven' odasiyla (4000x3000) AYNI geometri, dog_leg,
+    up_towards='E' -> exit_direction HER ZAMAN 'W' olur (bkz.
+    scripts/stairs/selftest.py::check_dog_leg_real_room_hand_computable).
+    Kapi, CAGIRAN tarafindan verilen duvara yerlestirilir - hizali/
+    hizasiz senaryolari AYNI fixture'dan tek bir parametreyle uretir."""
+    return {
+        "rooms": [{"id": "stair", "polygon": [[0, 0], [4000, 0], [4000, 3000], [0, 3000]]}],
+        "walls": [{"id": "w_door", "start": door_wall_start, "end": door_wall_end,
+                   "thickness": 200.0, "layer": "DUVARLAR"}],
+        "openings": [{"id": "d_exit", "type": "door", "wall_id": "w_door",
+                      "position_from_start": door_position, "width": 900.0,
+                      "layer": "KAPI-PENCERE"}],
+        "stairs": [{"id": "sA", "room_id": "stair", "floor_to_floor_mm": 3000.0,
+                    "kind": "dog_leg", "up_towards": "E", "exit_door_id": "d_exit"}],
+    }
+
+
+def check_stairs_exit_door_aligned_false_positive() -> list[str]:
+    """Kapi TAM exit_point'in ('W' duvarinda, y=2250) uzerinde - HIZALI,
+    UYARI OLMAMALI."""
+    floor = _exit_alignment_floor([0.0, 0.0], [0.0, 3000.0], 2250.0)
+    errors, warnings = check_stairs(floor)
+    if errors:
+        return [f"HATA OLMAMALIYDI: {errors}"]
+    return [f"hizali kapi UYARI URETMEMELIYDI: {warnings}"] if warnings else []
+
+
+def check_stairs_exit_door_misaligned_flags() -> list[str]:
+    """AYNI merdiven (exit_direction='W') ama kapi 'E' duvarina (karsi
+    tarafa) konmus - HIZASIZ, TAM 1 UYARI (HATA DEGIL - mimari sagduyu
+    sinifi, architect/ ile AYNI politika)."""
+    floor = _exit_alignment_floor([4000.0, 0.0], [4000.0, 3000.0], 1500.0)
+    errors, warnings = check_stairs(floor)
+    if errors:
+        return [f"HATA OLMAMALIYDI (bu bir UYARI sinifidir): {errors}"]
+    if len(warnings) != 1:
+        return [f"TAM 1 UYARI beklenirdi, {len(warnings)} geldi: {warnings}"]
+    if "HIZALI" not in warnings[0].upper():
+        return [f"uyari hizasizligi ADLANDIRMALIYDI: {warnings[0]}"]
+    return []
+
+
+def check_stairs_exit_door_id_is_opt_in() -> list[str]:
+    """AYNI HIZASIZ geometri ama `exit_door_id` HIC VERILMEMIS - kontrol
+    OPT-IN'dir (diger tum architect/standards kurallariyla AYNI desen),
+    SESSIZCE atlanmali."""
+    floor = _exit_alignment_floor([4000.0, 0.0], [4000.0, 3000.0], 1500.0)
+    del floor["stairs"][0]["exit_door_id"]
+    errors, warnings = check_stairs(floor)
+    if errors or warnings:
+        return [f"exit_door_id YOKKEN kontrol SESSIZ KALMALIYDI: errors={errors} warnings={warnings}"]
+    return []
+
+
+def check_stairs_invalid_exit_door_id_is_error() -> list[str]:
+    """Gecersiz bir `exit_door_id` (var olmayan kapi) - bu bir veri
+    HATASIDIR (yazim hatasi korumasi), UYARI DEGIL."""
+    floor = _exit_alignment_floor([0.0, 0.0], [0.0, 3000.0], 2250.0)
+    floor["stairs"][0]["exit_door_id"] = "GECERSIZ"
+    errors, warnings = check_stairs(floor)
+    if len(errors) != 1:
+        return [f"TAM 1 HATA beklenirdi, {len(errors)} geldi: {errors}"]
+    return []
+
+
 def main() -> int:
     groups = (
         ("kapi bosluguna baglanan duvar ucu UYARI/HATA verir", check_wall_ending_in_door_gap_flags()),
@@ -121,6 +191,10 @@ def main() -> int:
         ("bosluk SINIRINDAKI (jamb) bir uc YANLIS-POZITIF uretmez", check_wall_ending_at_door_jamb_edge_is_valid()),
         ("GERCEK sarkan uc hala yakalaniyor (regresyon yok)", check_genuinely_dangling_end_still_flagged()),
         ("GERCEK projedeki rev-22 hatasi (2 duvar) YAKALANIYOR", check_real_project_bug_is_caught()),
+        ("merdiven cikis kapisi HIZALIYSA YANLIS-POZITIF uretmez (DEV-047)", check_stairs_exit_door_aligned_false_positive()),
+        ("merdiven cikis kapisi HIZASIZSA UYARI verir (DEV-047)", check_stairs_exit_door_misaligned_flags()),
+        ("exit_door_id OPT-IN'dir", check_stairs_exit_door_id_is_opt_in()),
+        ("gecersiz exit_door_id HATA verir", check_stairs_invalid_exit_door_id_is_error()),
     )
     failed = False
     for name, errors in groups:

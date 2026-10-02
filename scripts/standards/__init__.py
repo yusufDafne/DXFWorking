@@ -94,11 +94,18 @@ STANDARDS: dict[str, RoomStandard] = {
                "oran'). Gercek TS EN 81 kuyu/kabin asgari ic olculeri "
                "kullanici onayiyla eklenip bu deger DEGISTIRILMELIDIR."),
     "merdiven": RoomStandard(
-        "merdiven", "Merdiven (tek kollu, oda orani)", min_ratio=1.3,
+        "merdiven", "Merdiven (oda orani)", min_ratio=1.3,
         max_ratio=2.4,
         source="v1 pratik varsayilan - kullanicinin ornegi ('alani makul "
                "ama kare, biraz daha dikdortgen olmali'). min_ratio>1.0 "
                "BILEREK: asiri kare bir merdiven odasi da reddedilsin diye. "
+               "DEV-046'da DEGERLENDIRILDI (cift kollu/dog_leg destegi "
+               "eklenirken): bu sinirlar SAYISAL olarak DEGISTIRILMEDI - "
+               "gercek projenin 4000x3000mm odasi (oran 1.333) zaten bu "
+               "aralikta VE hem tek kollu HEM dog_leg icin gecerli bir "
+               "oran (max_ratio=2.4, asiri uzun bir dog_leg'i de dogru "
+               "sekilde reddeder). Etiket eskiden 'tek kollu' diyordu - "
+               "artik iki turu de kapsadigi icin DUZELTILDI. "
                "scripts/stairs/ kendi riser/going varsayilanlarini "
                "(170/270mm) AYRI tasir; bu kayit yalnizca ODANIN oran "
                "sinirlari icindir, basamak geometrisi degil."),

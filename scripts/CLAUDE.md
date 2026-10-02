@@ -68,9 +68,17 @@ kalanını bilmeye ihtiyaç duymadan o modül üzerinde derinlemesine/izole
   `riser_height_mm`/`going_mm` OFİS STANDARDI varsayılanlarıdır (170mm /
   270mm) ve `auto_flex` (varsayılan açık) ile kat yüksekliğine/oda
   uzunluğuna otomatik esnetilir (her esnetme UYARI olarak raporlanır).
-  Yalnızca TEK DÜZ KOLLU merdiven desteklenir; sığmayan bir oda sessizce
-  hatalı geometri üretmek yerine `StairFitError` fırlatır — bkz.
-  `scripts/stairs/CLAUDE.md`.
+  **`DEV-046`/`DEV-047`'de (2026-10-02) genişletildi:** `kind='dog_leg'`
+  (sahanlıklı, 180° dönüşlü çift kol) artık desteklenir — sığmayan bir oda
+  sessizce hatalı geometri üretmek yerine hâlâ `StairFitError` fırlatır.
+  `StairResolution.exit_point`/`exit_direction`, merdivenin GERÇEK çıkış
+  noktasını/yönünü verir (çift kollu için odanın "yukarı" köşesi DEĞİL,
+  180° dönüş nedeniyle GİRİŞE yakın bir noktadır); opsiyonel
+  `stairs[].exit_door_id` ile `validate.py` bu çıkışın bağlı kapıyla
+  hizalı olup olmadığını denetler (UYARI). Gerçek projenin 4000×3000mm
+  `Merdiven` odası artık (narrowing ile/olmadan) SIĞIYOR — `context.json`a
+  `stairs[]` verisi henüz EKLENMEDİ (ayrı bir proje revizyonu), modül
+  desteği bağımsız olarak KURULDU — bkz. `scripts/stairs/CLAUDE.md`.
 - ✅ **`scripts/palette/`** — `DEV-030` (2026-09-25): TÜM kod-sahipli
   katman renklerinin TEK kaydı (`typography::TextStyles`in font için
   yaptığını renk için yapar). Kullanıcı kararı: merkezi olmayan (her modül
@@ -270,7 +278,7 @@ Ortak desen (pafta + walls ile kanitlandi):
 | `collision/`  | `CollisionShape`, `CollisionPolicy`, `CollisionEngine`, `Clash`, `ClashReport`, `Scene`, `check_context` | UYGULANDI (rev-12); validate.py ONCESI bloklayici kapi |
 | `sections/`   | `SectionCutLine`, `SectionSheet`, `SectionFeatureHook`, `DefaultSectionFeatureHook`, `resolve_sections`, `crossing_walls`, `section_vertical_extent`, `draw_cut_marker_on_floor` | UYGULANDI (rev-17); kesit hatti aks ailesine paralel, varsayilan X+Y kesit |
 | `northarrow/` | `NorthArrow`, `NorthArrowStyle`, `DefaultNorthArrowStyle`, `rotate_point` | UYGULANDI (rev-17); Protocol-tabanli, meta.north_angle verilmezse cizilmez |
-| `stairs/`     | `resolve_stair`, `StairResolution`, `StairFitError`, `StairDrawingStandard`, `DefaultStairStandard`, `ensure_stair_layer`, `draw_stairs_on_floor` | UYGULANDI (DEV-022, 2026-09-25); tek duz kollu merdiven, auto_flex ile riser/going esnetme |
+| `stairs/`     | `resolve_stair`, `StairResolution`, `StairFitError`, `StairDrawingStandard`, `DefaultStairStandard`, `ensure_stair_layer`, `draw_stairs_on_floor`, `exit_door_alignment_warning` | UYGULANDI (DEV-022, 2026-09-25; DEV-046/047, 2026-10-02); tek kollu + cift kollu (dog_leg) merdiven, auto_flex ile riser/going esnetme, cikis noktasi/yonu |
 | `palette/`    | `PALETTE`, `LayerColor`, `color_for`, `validate_palette`, `CONTRAST_MIN_DISTANCE` | UYGULANDI (DEV-030, 2026-09-25); tum kod-sahipli katman renklerinin tek kaydi, ayni-renk + yakin-kontrast denetimi |
 | `levels/`     | `LevelMark`, `LevelMarkStyle`, `DefaultLevelMarkStyle`, `format_level`, `level_boundaries_from_placements`, `draw_level_marks`, `draw_plan_level_marks` | UYGULANDI (DEV-029, 2026-09-25); kot/datum standardi, elevations::LevelStack'i TUKETIR, kendi kat yuksekligi hesaplamaz |
 | `ceiling/`    | `CeilingSheet`, `RoomCeilingData`, `resolve_room_ceilings`, `floor_has_ceiling_data`, `draw_ceiling_label`, `ensure_ceiling_layer` | UYGULANDI (DEV-023, 2026-09-28); RCP - ayri pafta, oda-bazli tavan kotu, v1 armatursuz |

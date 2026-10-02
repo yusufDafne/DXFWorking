@@ -46,8 +46,8 @@ Tamamlanan işlerin ayrıntılı gerekçesi, karar süreci ve ölçülen etkisi
 | DEV-043 | `architect/` — banyo/wc kapı yakınlığı (ıslak hacim kümelenmesi) kuralı | COMPLETED (2026-10-02) |
 | DEV-044 | `rooms/` — içbükey (L/T-şekilli) odalarda mahal etiketi konumlandırması | COMPLETED (2026-09-28) |
 | DEV-045 | `templates/`+`architect/` — kat sirkülasyon bandının ölü alan analizi | PLANNED |
-| DEV-046 | `stairs/`+`templates/`+`standards/` — merdiven oda oranı + çok kollu merdiven desteği | PLANNED |
-| DEV-047 | `stairs/`+`architect/` — merdiven sahanlık çıkış noktası ↔ koridor kapısı hizalaması | PLANNED |
+| DEV-046 | `stairs/`+`templates/`+`standards/` — merdiven oda oranı + çok kollu merdiven desteği | COMPLETED (2026-10-02) |
+| DEV-047 | `stairs/`+`architect/` — merdiven sahanlık çıkış noktası ↔ koridor kapısı hizalaması | COMPLETED (2026-10-02) |
 
 ## READY
 
@@ -112,12 +112,9 @@ efektif şekilde sırayla yapacağız, efektif sıralamayı belirle"):**
 3. ~~**`DEV-042`** → **`DEV-043`** (birlikte) — ikisi de `architect/
    rules.py`ye ekleniyor, ikisi de AYNI "ıslak hacim" temasında.~~
    **TAMAMLANDI** (2026-10-02) — bkz. `## COMPLETED`.
-4. **`DEV-046`** → **`DEV-047`** (sırayla, `DEV-047` `DEV-046`ya
-   BAĞIMLI olduğu için başka türlü mümkün değil) — `stairs/`e yeni bir
-   geometri motoru (çok kollu/sahanlıklı merdiven) eklemek bu listenin
-   en büyük/en yeni mühendislik çalışmasıdır; daha küçük/net kapsamlı
-   maddeler (1-3) BİTTİKTEN sonra, tek bir uzun odaklı çalışma bloğu
-   olarak ele alınması tercih edilir.
+4. ~~**`DEV-046`** → **`DEV-047`** (sırayla, `DEV-047` `DEV-046`ya
+   BAĞIMLI olduğu için başka türlü mümkün değil).~~ **TAMAMLANDI**
+   (2026-10-02) — bkz. `## COMPLETED`.
 5. **`DEV-045`** — EN SONA bırakıldı, çünkü (a) GERÇEK bir tasarım
    kararı gerektiriyor (ölü alanın YERİNE ne konacağı UYDURULAMAZ,
    kullanıcı diyaloğu gerekir — mekanik bir modül düzeltmesi DEĞİLDİR),
@@ -516,86 +513,6 @@ ya da servis edilen birim SAYISINA göre PARAMETRİK/oranlı hale getirilir.
 sabitleri), `architect/` (yeni floor-seviyesi kural), `DEV-040` Fikir 2
 (bina tipi profilleri) ile kavramsal KOMŞU.
 
-### DEV-046 — `stairs/`+`templates/`+`standards/` — merdiven oda oranı + çok kollu merdiven desteği
-
-- **Durum:** PLANNED
-
-**Neden boşluk:** kullanıcı: *"sol üstte merdiven var ki o da istediğin
-en boy oranına sahip değil, merdiven için ayrılan alan daha ince uzun
-olmalı ve merdiven modülü oraya merdiven çizmeli."* Ölçüldü: `stair`
-odası 4000mm × 3000mm (oran 1.333) — `standards::STANDARDS['merdiven']`
-sınırının (`[1.3, 2.4]`) alt ucuna YAKIN ama gerçek bir tek-kollu
-merdivenin oranından (eni, boyunun genelde 2-3 katı UZUN olmalı) ÇOK
-uzak. Bugün bu odaya HİÇ merdiven ÇİZİLMİYOR — kök `CLAUDE.md`'nin
-"Bilinen basitleştirmeler" bölümünde ZATEN belgelenmiş: *"~3000mm kat
-yuksekligi icin tek duz kolla SIGMIYOR (resolve_stair bunu
-StairFitError ile dogru sekilde yakaliyor)."*
-
-**Kök neden:** `scripts/stairs/` bugün YALNIZCA tek düz kollu merdiveni
-destekliyor (`scripts/stairs/CLAUDE.md` "Bilinen sınırlamalar") — bu
-kat yüksekliği/basamak sayısı için tek kolla SIĞMIYOR, bu yüzden hiç
-çizilmiyor.
-
-**Fikir 1 (önerilen):** `stairs/`e sahanlıklı/çift kollu (U veya L
-dönüşlü) merdiven desteği eklenir — `resolve_stair`in genişletilmesi,
-`StairResolution`a sahanlık geometrisi eklenmesi.
-
-**Fikir 2 (Fikir 1 ile BİRLİKTE gerekli):** `templates::
-generate_circulation_core`nin `stair_width`/oda oranı varsayılanı
-GÖZDEN GEÇİRİLİR (daha ince-uzun bir oda ayırır), `standards::
-STANDARDS['merdiven']` oran sınırları da BU YENİ gerçek çok-kollu
-geometriye göre KALİBRE edilir.
-
-**Açık kararlar:**
-- Çift kollu merdiven sahanlık genişliği/derinliği varsayılanları
-  (yeni bir "pratik varsayılan" kataloğu mu gerekir, `standards/`
-  gibi).
-- Tek-kollu/çift-kollu SEÇİMİNİN otomatik mi (kat yüksekliğine göre
-  `auto_flex` gibi) yoksa opt-in bir `stairs[].kind` alanı mı olacağı.
-- Bu, `DEV-047`nin ÖN KOŞULUDUR (sıralama önemli).
-
-**İlişkili modüller:** `stairs/` (asıl uygulama), `templates/` (oda
-oranı varsayılanı), `standards/` (merdiven oranı kataloğu).
-
-### DEV-047 — `stairs/`+`architect/` — merdiven sahanlık çıkış noktası ↔ koridor kapısı hizalaması
-
-- **Durum:** PLANNED — **`DEV-046`ya BAĞIMLI**, ondan ÖNCE ele
-  alınamaz.
-
-**Neden boşluk:** kullanıcı: *"merdivenin sahanlıklarına göre çıkış
-noktalarını belirlemeli, örneğin basamaklar bittiği an kat başlar ya da
-her merdivenin kat sahanlığından dönerek koridora çıkılır gibi."`
-DEV-046` çok kollu merdiven desteğini getirdiğinde, merdivenin GERÇEK
-çıkış noktası (kat sahanlığının konumu/yönü) artık odanın GEOMETRİK bir
-köşesi değil, merdiven GEOMETRİSİNİN kendisinden TÜREYEN bir noktadır.
-
-**Kök neden:** kapı yerleşimi (`openings/`) ile merdiven geometrisi
-(`stairs/`) arasında BUGÜN hiçbir bağlantı YOK — `door_stair`nin konumu
-`templates::generate_circulation_core`de SABİT bir formülle
-(`elevator_width + stair_width/2`) hesaplanıyor, merdivenin GERÇEKTEN
-nereden çıktığını hiç SORMUYOR.
-
-**Fikir 1 (önerilen, `DEV-046` TAMAMLANDIKTAN SONRA):** `stairs::
-resolve_stair`in döndürdüğü `StairResolution`a bir "çıkış noktası/yönü"
-alanı eklenir; `door_stair`nin konumu bu değerden TÜRETİLİR (ya
-`templates/` ya da yeni bir entegrasyon noktası aracılığıyla) —
-`openings::swing_geometry`nin çizim VE denetimin AYNI kaynaktan
-beslenmesi ilkesiyle AYNI disiplin (rev-13 dersi TEKRARLANMAZ).
-
-**Açık kararlar:**
-- "Kat sahanlığından dönerek" ifadesinin GEOMETRİK karşılığı (90 derece
-  dönüş mü, 180 derece mi) merdiven TİPİNE (U dönüşlü/L dönüşlü) göre
-  DEĞİŞİR — tek bir kurala indirgenemeyebilir, `DEV-046`nın seçtiği
-  merdiven tipi/tipleriyle BİRLİKTE netleşecek.
-- Bu ilişki `stairs/`in KENDİ arity-1 sorumluluğu mu (kendi çıkış
-  noktasını hesaplar) yoksa `architect/`in arity-2+ bir kontrolü mü
-  (merdiven çıkışı ile kapı arasındaki UYUMU denetler) — muhtemelen
-  İKİSİ: `stairs/` HESAPLAR, `architect/` (ya da `validate.py`) DENETLER.
-
-**İlişkili modüller:** `stairs/` (çıkış noktası kaynağı, `DEV-046`ya
-bağımlı), `templates/` (`door_stair` konumu), `openings/`
-(`swing_geometry` ile AYNI "tek kaynak" deseni emsali).
-
 ## COMPLETED
 
 > Ayrıntılı gerekçe, karar süreci, bulunan gerçek hatalar ve ölçülen etki
@@ -896,6 +813,56 @@ bağımlı), `templates/` (`door_stair` konumu), `openings/`
   eşik testiyle kanıtlandı; gerçek projede (uA/uB) SIFIR uyarı
   (kalibrasyonun doğrudan kanıtı). Ayrıntı: `scripts/architect/
   CLAUDE.md` "DEV-042/DEV-043: ıslak hacim kuralları". (`HD-022`)
+
+### DEV-046 — `stairs/`+`templates/`+`standards/` — merdiven oda oranı + çok kollu merdiven desteği
+
+- **Durum:** COMPLETED (2026-10-02)
+- **Özet:** Plan metninin "Fikir 1"i uygulandı: `stairs/`e `kind='dog_leg'`
+  (sahanlıklı, 180° dönüşlü çift kol) desteği eklendi — oda kısa ekseni
+  ortadan ikiye bölünür, basamaklar `ceil(step_count/2)`/kalan olarak iki
+  kola dağıtılır, kol 1 girişten sahanlığa (`landing_depth_mm`, varsayılan
+  1100mm) çıkar, kol 2 TERS yönde geri döner. `MIN_FLIGHT_WIDTH_MM=900`
+  altında (yeni bir başarısızlık modu, tek kolda hiç yoktu) `StairFitError`.
+  Gerçek `Merdiven` odası (4000×3000mm) bu türle 3000mm kat yüksekliğinde
+  narrowing bile GEREKMEDEN, 4000mm'de hafif bir going-daraltmasıyla
+  SIĞIYOR (elle hesaplandı, `selftest.py`de kanıtlandı) — tek kollu
+  `StairFitError`in tam tersi. **"Fikir 2" (templates/standards
+  kalibrasyonu) DEĞERLENDİRİLDİ, SAYISAL olarak GEREKMEDİ:**
+  `standards::STANDARDS['merdiven']`in `[1.3, 2.4]` aralığı gerçek odanın
+  oranıyla (1.333) ZATEN uyumluydu VE dog_leg için de anlamlı kaldı —
+  yalnızca "tek kollu" diyen ESKİ etiket/açıklama metni düzeltildi,
+  `templates::generate_circulation_core` DEĞİŞMEDİ. Convex/tek-kollu
+  davranış 1e-6 değil TAM (bit-bit) korundu — `kind` verilmeyince eski
+  kod yolu HİÇ DEĞİŞMEDEN çalışır (regresyon testi). Yeni golden referans
+  `golden/merdiven_cift_kollu` eklendi; DXF çıktısı görsel olarak da
+  doğrulandı (iki kol + sahanlık + bölücü + yön oku, mimari olarak
+  doğru). `context.json`a gerçek `stairs[]` verisi BİLEREK EKLENMEDİ
+  (DEV-041/044 ile AYNI disiplin — bu görevin kapsamı yalnızca MODÜL
+  desteğiydi). Ayrıntı: `scripts/stairs/CLAUDE.md` "Çift kollu merdiven
+  geometrisi (DEV-046)". (`HD-023`)
+
+### DEV-047 — `stairs/`+`architect/` — merdiven sahanlık çıkış noktası ↔ koridor kapısı hizalaması
+
+- **Durum:** COMPLETED (2026-10-02)
+- **Özet:** Plan metninin "Açık kararlar"ı ÇÖZÜLEREK uygulandı:
+  `StairResolution`a `exit_point`/`exit_direction` eklendi (HER İKİ
+  `kind` için de dolu) — tek kollu için eski örtük varsayımla (odanın
+  "yukarı" ucu) BİREBİR AYNI; çift kollu için merdiven GEOMETRİSİNDEN
+  TÜRER ve kullanıcının öngördüğü gibi GİRİŞE yakın bir noktadır (odanın
+  "yukarı" köşesi DEĞİL — 180° dönüş nedeniyle), yön `up_towards`in TAM
+  TERSİDİR. "stairs/ mi architect/ mi" kararı: **`stairs/` HESAPLAR**
+  (`exit_point`/`exit_direction`, arity-1), **`validate.py::check_stairs`
+  DENETLER** (yeni opt-in `stairs[].exit_door_id` + `exit_door_
+  alignment_warning` — UYARI, HATA DEĞİL, `architect/`in politikasıyla
+  AYNI). "90 derece mi 180 derece mi" belirsizliği, mm hassasiyetli bir
+  mesafe eşiği yerine TÜRDEN BAĞIMSIZ bir "en yakın oda kenarı" testiyle
+  (`_nearest_bbox_side`) çözüldü — kapının duvar-merkez-çizgisi konumu
+  `walls::Wall.centerline_point` (TEK kaynak) ile hesaplanır, `stairs/`
+  `walls/`e bağımlı KALMAZ. `golden/merdiven_cift_kollu`, hizalı bir
+  `exit_door_id` ile uçtan uca SIFIR uyarı ile geçer; `validate_
+  selftest.py`de hizalı/hizasız/opt-in/geçersiz-id dört senaryo da
+  kasıtlı bozma + yanlış-pozitifle kanıtlandı. Ayrıntı: `scripts/stairs/
+  CLAUDE.md` "Çift kollu merdiven geometrisi (DEV-046)". (`HD-023`)
 
 ## Görev tamamlama kuralı
 

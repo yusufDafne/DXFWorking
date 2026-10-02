@@ -361,11 +361,15 @@ geliştirme görevleri, tamamlanmış geçmiş, fikirler ve geliştirici notlar�
   ile ACIKCA bildirilirse gercek basamak/riht cizgileri + yon oku + kesme
   cizgisi cizilir (opsiyonel, opt-in - bildirilmezse eskisi gibi sadece
   etiketli kapali oda). **Bu ornek projenin `Merdiven` odasi (4000x3000mm)
-  hala `stairs[]` VERISI TASIMIYOR:** modul yalnizca tek duz kollu merdiven
-  destekliyor ve bu oda, ~3000mm kat yuksekligi icin tek duz kolla
-  SIGMIYOR (`resolve_stair` bunu `StairFitError` ile dogru sekilde
-  yakaliyor) - sahanlikli/cift kollu merdiven henuz ayri bir gelistirme
-  konusudur, bkz. `scripts/stairs/CLAUDE.md` "Bilinen sinirlamalar".
+  hala `stairs[]` VERISI TASIMIYOR** - modul artik (DEV-046/047,
+  2026-10-02) sahanlikli/cift kollu (`kind='dog_leg'`) merdiveni de
+  destekliyor ve bu oda bu TURLE (3000mm kat yuksekliginde narrowing bile
+  gerekmeden, 4000mm'de hafif bir going-daraltmasiyla) RAHATCA SIGIYOR -
+  ama `stairs[]` girdilerini (+ cikis kapisi hizalamasini) 8 kata
+  GERCEKTEN eklemek, DEV-041/DEV-044 ile AYNI disiplinde, BILEREK AYRI bir
+  proje revizyonuna birakildi (bu gorevin kapsami yalnizca MODUL destegini
+  kurmakti). Bkz. `scripts/stairs/CLAUDE.md` "Cift kollu merdiven
+  geometrisi (DEV-046)".
 
 ## Çizim standartları (ofis standardı, rev-3'ten itibaren)
 

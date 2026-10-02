@@ -116,6 +116,12 @@ TAM İÇİNDEKİ bir oda yanlış-pozitif ÜRETMEZ), `validate_standards`
 
 ## Bilinen sınırlamalar
 
+- **`STANDARDS['merdiven']` DEV-046'da (çift kollu/`dog_leg` merdiven
+  desteği) DEĞERLENDİRİLDİ, sayısal olarak DEĞİŞMEDİ** — `[1.3, 2.4]`
+  aralığı hem tek kollu HEM dog_leg için anlamlı kaldığı için eşikler
+  SABİT kaldı; yalnızca etiket ("tek kollu" → "oda oranı") ve `source`
+  metni, artık YANLIŞ olan bir varsayımı düzeltmek için güncellendi —
+  bkz. `scripts/stairs/CLAUDE.md` "Çift kollu merdiven geometrisi".
 - **v1 kataloğundaki eşiklerin çoğu resmi bir yönetmelik/TS atfı
   TAŞIMAZ** — "v1 pratik varsayılan" olarak işaretlidir, kullanıcının
   gerçek şartname belgeleriyle güncellemesi BEKLENİR (bkz. yukarı "Gelecek

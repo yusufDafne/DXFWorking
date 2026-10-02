@@ -81,7 +81,7 @@ from version import (  # noqa: E402
     check_compatibility,
     project_schema_version,
 )
-from stairs import StairFitError, resolve_stair  # noqa: E402
+from stairs import StairFitError, exit_door_alignment_warning, resolve_stair  # noqa: E402
 from standards import check_room_proportions, check_room_types  # noqa: E402
 from architect import (  # noqa: E402
     check_bedroom_via_corridor,
@@ -334,10 +334,20 @@ def check_stairs(floor: dict) -> tuple[list[str], list[str]]:
     """Arity-1 (DEV-022): `stairs[].room_id` bu kattaki bir odaya isaret
     ediyor mu, ve `resolve_stair` (cizim koduyla AYNI TEK kaynak, bkz.
     scripts/stairs/CLAUDE.md) HATA/UYARI uretiyor mu. Ayri bir hesap
-    YAZMAZ - `resolve_stair`i CAGIRIR, sonucunu yorumlar."""
+    YAZMAZ - `resolve_stair`i CAGIRIR, sonucunu yorumlar.
+
+    DEV-047 (opt-in): `stairs[].exit_door_id` verilmisse, o kapinin
+    merdivenin GERCEK hesaplanan cikis yonuyle (`resolution.exit_
+    direction`) hizali olup olmadigi da denetlenir (UYARI - bu bir
+    mimari sagduyu kontroludur, `architect/`in HER ZAMAN UYARI
+    politikasiyla AYNI, HATA DEGIL). Kapinin duvar-merkez-cizgisi
+    konumu `walls::Wall.centerline_point` ile (bu modulun TEK
+    kaynagi) hesaplanir - ikinci bir kopya YAZILMAZ."""
     errors: list[str] = []
     warnings: list[str] = []
     rooms_by_id = {r["id"]: r for r in floor.get("rooms", [])}
+    openings_by_id = {o["id"]: o for o in floor.get("openings", [])}
+    walls_by_id = {w["id"]: w for w in floor.get("walls", [])}
     for spec in floor.get("stairs", []):
         room = rooms_by_id.get(spec["room_id"])
         if room is None:
@@ -352,6 +362,26 @@ def check_stairs(floor: dict) -> tuple[list[str], list[str]]:
             errors.append(str(exc))
             continue
         warnings.extend(resolution.warnings)
+
+        exit_door_id = spec.get("exit_door_id")
+        if exit_door_id is None:
+            continue
+        door = openings_by_id.get(exit_door_id)
+        if door is None:
+            errors.append(
+                f"Merdiven '{spec['id']}', gecersiz bir exit_door_id'ye "
+                f"referans veriyor: '{exit_door_id}'."
+            )
+            continue
+        wall = walls_by_id.get(door.get("wall_id"))
+        if wall is None:
+            continue
+        door_point = Wall.from_context(wall, WallCatalog()).centerline_point(
+            door["position_from_start"]
+        )
+        alignment_warning = exit_door_alignment_warning(resolution, door_point)
+        if alignment_warning:
+            warnings.append(alignment_warning)
     return errors, warnings
 
 

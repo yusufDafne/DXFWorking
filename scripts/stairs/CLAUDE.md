@@ -1,4 +1,4 @@
-# stairs modülü (merdiven) — DEV-022
+# stairs modülü (merdiven) — DEV-022 + DEV-046 + DEV-047
 
 Kat paftalarındaki merdiven odasının İÇİNE gerçek basamak/rıht geometrisi,
 (yön biliniyorsa) bir yön oku ve bir kesme çizgisi çizer. Kök `CLAUDE.md`nin
@@ -26,6 +26,9 @@ Bu ayrım kritik ve kasıtlı:
 | `going_mm` | **Ofis çizim standardı** | Verilmezse `DEFAULT_GOING_MM=270` (makul bant 250-300mm) |
 | `step_count` | Türetilebilir | Verilmezse `floor_to_floor_mm / riser` üzerinden hesaplanır |
 | `up_towards` | Opsiyonel yön verisi | Verilmezse yön oku + kesme çizgisi HİÇ çizilmez (kuzey oku ile AYNI "veri yoksa uydurma" deseni) |
+| `kind` | Opsiyonel tür (DEV-046) | Verilmezse `single_flight` (eski/tek davranış, `walls.kind` ile AYNI opt-in desen) |
+| `landing_depth_mm` | **Ofis çizim standardı** (DEV-046) | YALNIZCA `kind='dog_leg'` için anlamlı; verilmezse `DEFAULT_LANDING_DEPTH_MM=1100` |
+| `exit_door_id` | Opsiyonel çapraz-referans (DEV-047) | Verilirse `validate.py`, bu kapının merdivenin GERÇEK çıkış yönüyle hizalı olup olmadığını denetler (UYARI) |
 
 **Kullanıcının 2026-09-25 direktifi:** "default olarak 17 cm [riht] belirle
 ... eğer çok komplike bir nokta olması durumunda bu default değerlerin
@@ -51,11 +54,17 @@ Hesap sırası:
    kat yüksekliğini tam karşılamıyorsa UYARI verilir (HATA değil — kullanıcı
    `auto_flex=False` ile bunu bilerek istemiştir).
 2. **Basamak genişliği (going):** gerekli koşu uzunluğu
-   `(step_count - 1) * going` oda'nın uzun ekseninden fazlaysa: `auto_flex`
+   `(binding_steps - 1) * going` MEVCUT koşu uzunluğundan fazlaysa: `auto_flex`
    açıkken going daraltılır (UYARI); `auto_flex` kapalıyken hiç sığmıyorsa
-   direkt `StairFitError`. **`MIN_GOING_MM=250`/`MAX_GOING_MM=300` kontrolü
-   KOŞULSUZDUR** — daraltılmış OLSUN ya da OLMASIN, nihai `going` değeri
-   her zaman bu bantla karşılaştırılır: altındaysa **`StairFitError`**
+   direkt `StairFitError`. `kind='single_flight'` için `binding_steps =
+   step_count` ve mevcut koşu = oda'nın TÜM uzun ekseni (DEV-022'deki
+   ORİJİNAL davranış, DEĞİŞMEDİ); `kind='dog_leg'` için `binding_steps =
+   flight1_steps` (her zaman `flight2_steps`e eşit veya ondan büyük) ve
+   mevcut koşu = oda'nın uzun ekseni EKSİ sahanlık derinliği (bkz. aşağıda
+   "Çift kollu merdiven geometrisi (DEV-046)") — AYNI narrowing/MIN/MAX
+   kod yolu, yalnızca girdi farklı. **`MIN_GOING_MM=250`/`MAX_GOING_MM=300`
+   kontrolü KOŞULSUZDUR** — daraltılmış OLSUN ya da OLMASIN, nihai `going`
+   değeri her zaman bu bantla karşılaştırılır: altındaysa **`StairFitError`**
    (bağımsız reviewer geçişinde bulunan gerçek bir açık: ilk sürümde bu
    kontrol yalnızca daraltma dalının İÇİNDEYDİ, yani zaten sığan bir odada
    açıkça verilmiş güvensiz bir `going_mm` — örn. 100mm — sessizce
@@ -64,6 +73,79 @@ Hesap sırası:
    (`travel_axis`) TUTARLI olmalı (dx≥dy → yalnızca `E`/`W` geçerli, aksi
    `StairFitError`). Verilmezse geometri yine hesaplanır, sadece ok/kesme
    çizgisi atlanır.
+4. **Tür (`kind`, DEV-046):** `single_flight` (varsayılan) veya `dog_leg`.
+   Bilinmeyen bir `kind` **yazım hatası korumasıdır** — sessizce
+   varsayılana DÜŞMEZ, `StairFitError` fırlatır (`walls.kind`/`check_walls`
+   ile AYNI desen).
+
+## Çift kollu merdiven geometrisi (DEV-046)
+
+**Neden gerekti (kullanıcı, 2026-09-28):** *"merdiven için ayrılan alan
+daha ince uzun olmalı ve merdiven modülü oraya merdiven çizmeli."*
+Gerçek projenin `Merdiven` odası (4000×3000mm) `MIN_GOING_MM`'yi ihlal
+ettiği için tek kollu merdiven `StairFitError` fırlatıyordu — oda
+büyütülmeden/uzatılmadan çözümün tek yolu farklı bir merdiven TÜRÜDÜR.
+
+**Geometri — "dog-leg" (180° dönüşlü, sahanlıklı çift kol):** oda kısa
+ekseni (perpendicular) **ortadan ikiye** bölünür (`MIN_FLIGHT_WIDTH_MM=900`
+altına düşerse `StairFitError`); her yarı bir KOL'dür. Basamak sayısı
+kollara `flight1 = ceil(step_count/2)`, `flight2 = step_count - flight1`
+olarak (deterministik, "min kol 1" kuralı — `_travel_coords`in "min ucu
+keyfi olarak aşağı" kuralıyla AYNI aile) bölünür. Kol 1, giriş ucundan
+`up_towards` yönünde bir **sahanlığa** (`landing_depth_mm`, varsayılan
+`DEFAULT_LANDING_DEPTH_MM=1100`) kadar çıkar; sahanlık oda GENİŞLİĞİNİN
+TAMAMINI kaplar (180° dönüş platformu); kol 2, sahanlıktan **TERS yönde**
+(gerçek bir merdivende olduğu gibi) geri döner ve GİRİŞ ucuna YAKIN bir
+noktada biter.
+
+**DEV-047: çıkış noktası GİRİŞİN YANINDADIR, odanın "yukarı" köşesi
+DEĞİL.** Bu, kullanıcının *"merdivenin sahanlıklarına göre çıkış
+noktalarını belirlemeli ... her merdivenin kat sahanlığından dönerek
+koridora çıkılır"* gözleminin TAM karşılığıdır — tek kollu merdivende
+"çıkış" sezgisel olarak odanın "uzak" köşesiydi (`up_towards` ucu); çift
+kollu merdivende bu YANLIŞ olurdu, çünkü 180° dönüş sonunda insan GİRİŞE
+yakın bir yerden çıkar. `StairResolution.exit_point`/`exit_direction`
+(HER İKİ tür için de dolu) bu gerçek geometriyi KODLAR:
+
+- `single_flight`: `exit_point` = odanın "yukarı" ucu (eski örtük
+  varsayımla BİREBİR AYNI — `_travel_points`in "yukarı" noktası),
+  `exit_direction = up_towards`.
+- `dog_leg`: `exit_point`, kol 2'nin bittiği GERÇEK nokta (giriş ucuna
+  yakın, ama tam ÜZERİNDE DEĞİL — kol uzunlukları eşit olmayabilir, bkz.
+  `_dog_leg_exit_and_landing`), `exit_direction` = `up_towards`in TAM
+  TERSİ (`_OPPOSITE_DIRECTION`) — kol 2, kol 1'in ters yönünde yürür.
+
+**`exit_door_id` (opt-in) → `validate.py::check_stairs`:** bir kapı bu
+alanla işaretlenirse, kapının duvar-merkez-çizgisi konumu
+(`walls::Wall.centerline_point` — bu modülün DIŞINDA, TEK kaynaktan
+hesaplanır, `stairs/` `walls/`e bağımlı KALMAZ) oda sınırının HANGİ
+kenarına EN YAKIN olduğuyla (`_nearest_bbox_side`) karşılaştırılır; bu
+kenar `exit_direction`den FARKLIYSA **UYARI** (HATA DEĞİL — bu bir mimari
+sağduyu kontrolüdür, `architect/`in HER ZAMAN UYARI politikasıyla AYNI).
+Mm hassasiyetinde bir mesafe eşiği yerine "en yakın kenar" testi
+seçildi — plan metninin kendi belirsizliğini ("90 derece dönüş mü, 180
+derece mi, tek bir kurala indirgenemeyebilir") TÜRDEN BAĞIMSIZ, sağlam
+bir geometrik testle çözer.
+
+**Görsel:** `DefaultStairStandard.draw`, `kind='dog_leg'` için her iki
+kolun rıht çizgilerini (kendi şeridinde), sahanlık dikdörtgenini (4
+kenarlı kapalı `LWPOLYLINE`), kollar arası bir BÖLÜCÜ çizgiyi (sahanlık
+bölgesine GİRMEZ) ve (yön biliniyorsa) yön okunu/kesme çizgisini —
+`exit_point`e göre konumlanmış ve kesme çizgisi ARTIK yalnızca kol-2
+ŞERİDİ genişliğinde (tam oda genişliği DEĞİL, aksi var OLMAYAN kol-1
+şeridinin üzerine taşan yanlış bir çizgi üretirdi) — çizer. Yön oku/kesme
+çizgisi kod yolu tek kollu ile PAYLAŞILIR (`down`/`up` capa noktaları tür
+bazında farklı hesaplanır, gerisi tekrar YAZILMAZ).
+
+**`standards::STANDARDS['merdiven']` SAYISAL olarak DEĞİŞMEDİ (plan
+metninin "Fikir 2"si değerlendirildi, gerekmedi):** gerçek projenin
+4000×3000mm odası (oran 1.333) zaten `[1.3, 2.4]` aralığında VE bu aralık
+hem tek kollu HEM dog_leg için anlamlı kalıyor (`max_ratio=2.4` aşırı
+uzun — dog_leg için GEREKSİZ/VERİMSİZ — bir oda şeklini de doğru şekilde
+reddeder). Yalnızca etiket metni ("tek kollu" → "oda oranı") ve `source`
+açıklaması DÜZELTİLDİ — sayısal bir KALİBRASYON DEĞİL, artık YANLIŞ olan
+bir varsayımın metninin düzeltilmesi (bkz. `scripts/standards/
+__init__.py`).
 
 Her esnetme (riht VEYA going) `StairResolution.warnings`e yazılır;
 `generate_dxf.py` bunları "UYARI (merdiven): ..." olarak basar —
@@ -78,7 +160,10 @@ from stairs import (
     resolve_stair, StairResolution, StairFitError,
     StairDrawingStandard, DefaultStairStandard,
     ensure_stair_layer, stairs_for_floor, draw_stairs_on_floor,
+    exit_door_alignment_warning,
     DEFAULT_RISER_MM, DEFAULT_GOING_MM, MIN_GOING_MM, MAX_GOING_MM,
+    SINGLE_FLIGHT, DOG_LEG, STAIR_KINDS, DEFAULT_STAIR_KIND,
+    DEFAULT_LANDING_DEPTH_MM, MIN_FLIGHT_WIDTH_MM,
 )
 
 warnings = draw_stairs_on_floor(msp, floor)   # her kat icin
@@ -110,20 +195,18 @@ değil" gerekçesi.
 
 ## Bilinen sınırlamalar (v1 kapsamı)
 
-- **Yalnızca tek düz kollu (sahanlıksız) merdiven.** Kol, oda poligonunun
-  bounding-box'ının UZUN ekseni boyunca koşar. Sahanlıklı/çift kollu/dönel
-  merdiven desteklenmez — küçük bir sirkülasyon bandı odasında (örn. bu
-  projenin örnek 4000×3000mm `Merdiven` odası, ~3000mm kat yüksekliğiyle)
-  bu FİZİKSEL OLARAK yetersiz kalabilir; `resolve_stair` böyle bir durumda
-  sessizce geçersiz bir basamak üretmek yerine `StairFitError` fırlatır
-  (bkz. `DEVELOPMENT_HISTORY.md` ilgili HD kaydı — örnek projenin gerçek
-  `Merdiven` odası bu sınırı BİREBİR karşılıyor, bu yüzden `context.json`a
-  henüz `stairs[]` verisi EKLENMEDİ). **Kullanıcı bunu (2026-09-28) aktif
-  bir eksiklik olarak işaretledi** ("merdiven modülü oraya merdiven
-  çizmeli") — çok kollu/sahanlıklı destek artık `DEVELOPMENT_TASKS.md`
-  `DEV-046` (PLANNED) olarak kayıtlı; ardından merdiven çıkış noktasının
-  kat koridoru kapısıyla hizalanması `DEV-047` (PLANNED, `DEV-046`ya
-  bağımlı).
+- ~~Yalnızca tek düz kollu (sahanlıksız) merdiven.~~ **`DEV-046`/`DEV-047`'de
+  KAPANDI:** `kind='dog_leg'` (sahanlıklı, 180° dönüşlü çift kol) artık
+  desteklenir — bkz. yukarıdaki "Çift kollu merdiven geometrisi (DEV-046)".
+  Örnek projenin 4000×3000mm `Merdiven` odası bu TÜRLE (narrowing bile
+  gerekmeden, 3000mm kat yüksekliğinde) RAHATÇA sığıyor; 4000mm kat
+  yüksekliğinde (zemin kat) hafif bir going-daraltmasıyla sığıyor — her
+  ikisi de `scripts/stairs/selftest.py`de ELLE doğrulanır. **Gerçek
+  `context.json`a `stairs[]` verisi HENÜZ EKLENMEDİ** — bu görevin
+  kapsamı (DEV-041/DEV-044 ile AYNI disiplin) yalnızca MODÜL desteğini
+  kurmaktı; 8 kattaki `Merdiven` odasına gerçek `stairs[]` girdilerini
+  (+ `exit_door_id` bağlantılarını) eklemek AYRI, sonraki bir proje
+  revizyonu konusudur. Dönel/üç-kollu merdiven HÂLÂ desteklenmiyor.
 - **Kesit entegrasyonu bu revizyonun KAPSAMINDA DEĞİL.** `sections::
   SectionFeatureHook` genişletme noktası merdiven kırılma çizgisi için
   hazır tutuluyor (bkz. `scripts/sections/CLAUDE.md`) ama bu modül henüz
@@ -133,8 +216,16 @@ değil" gerekçesi.
 - **Rıht/going tüm basamaklarda TEK bir sabit değerdir** — gerçek
   merdivenlerde ilk/son basamak farklı olabilir (ör. taşma payı); bu
   modül bunu modellemez.
-- **Merdiven kolu tam oda genişliğinde çizilir** — korkuluk/duvar payı
-  (margin) modellenmez.
+- **Merdiven kolu tam oda genişliğinde (`single_flight`) veya tam yarısında
+  (`dog_leg`, iki kol) çizilir** — korkuluk/duvar payı (margin) veya
+  kollar arası GERÇEK bir boşluk/duvar modellenmez (yalnızca ince bir
+  bölücü ÇİZGİ, bkz. yukarı).
+- **`MIN_FLIGHT_WIDTH_MM=900`/`DEFAULT_LANDING_DEPTH_MM=1100` "v1 pratik
+  varsayılan"dır** — `standards/`in kendi disipliniyle AYNI, resmi bir
+  yönetmelik atfı DEĞİL.
+- **Kol 1/kol 2 ataması ("hangi yarı önce çıkar") DETERMİNİSTİK ama
+  KEYFİDİR** (`_travel_coords`in "min ucu aşağı" kuralıyla AYNI aile) —
+  kullanıcı tercihine göre SEÇİLEBİLİR bir alan DEĞİLDİR.
 
 ## Doğrulama
 
@@ -148,6 +239,26 @@ koordinatlarının HEM X HEM Y seyahat ekseninde elle hesaplanabilir olması
 testi), `up_towards`/`travel_axis` tutarlılığı (+ yanlış-pozitif), çizilen
 varlık sayıları (yönsüz/yönlü), bilinmeyen `room_id`nin çizim tarafında
 sessizce atlanması, katman RGB'si.
+
+**DEV-046 (`dog_leg`):** gerçek `Merdiven` odasında (4000×3000mm, bkz.
+`ROOM_4000x3000`) 3000mm kat yüksekliğinde (narrowing GEREKMEDEN) VE
+4000mm'de (narrowing İLE) elle hesaplanabilir `step_count`/`riser`/
+`going`/`flight_step_counts`/`landing_bbox`/`exit_point`/`exit_direction`;
+kol genişliği `MIN_FLIGHT_WIDTH_MM` altında `StairFitError` (+ yanlış-
+pozitif: geniş oda hata VERMEMELİ); sahanlık oda uzun ekseninden büyükse
+`StairFitError`; bilinmeyen `kind` `StairFitError` (yazım hatası
+koruması); `kind` hiç verilmeyince `StairResolution`'ın YENİ alanlarının
+(`landing_bbox=None`, `flight_step_counts=(step_count,)`, `exit_point`/
+`exit_direction`) eski davranışı BİREBİR yansıttığı (regresyon testi);
+çizilen varlık sayıları (yönlü/yönsüz, elle hesaplanmış: 2×(kol-1)
+riht + 1 sahanlık + 2 bölücü [+ 4 yön/kesme]).
+
+**DEV-047 (`exit_door_id`):** `scripts/validate_selftest.py`de — hizalı
+kapı YANLIŞ-POZİTİF üretmez, hizasız kapı TAM 1 UYARI verir (HATA DEĞİL),
+`exit_door_id` OPT-IN'dir (verilmezse kontrol SESSİZCE atlanır), geçersiz
+`exit_door_id` HATA verir. Ayrıca `golden/merdiven_cift_kollu` — gerçek
+`Merdiven` odasıyla AYNI boyutta, `exit_door_id` HİZALI bir kapıyla,
+uçtan uca (schema+validate+generate+golden) SIFIR uyarı/hata ile geçer.
 
 `validate.py::check_stairs` (arity-1: `room_id` geçerli mi, `resolve_stair`
 hata/uyarı üretiyor mu) `resolve_stair`i ÇAĞIRIR — ayrı bir doğrulama

@@ -35,6 +35,9 @@ ROOM_1300x800 = [[0, 0], [1300, 0], [1300, 800], [0, 800]]
 ROOM_1500x800 = [[0, 0], [1500, 0], [1500, 800], [0, 800]]
 ROOM_900x600 = [[0, 0], [900, 0], [900, 600], [0, 600]]
 ROOM_10000x3000 = [[0, 0], [10000, 0], [10000, 3000], [0, 3000]]
+# GERCEK projenin 'Merdiven' odasiyla BIREBIR AYNI (context.json, DEV-046) -
+# tek kolun StairFitError ile reddettigi, dog_leg'in COZDUGU somut oda.
+ROOM_4000x3000 = [[0, 0], [4000, 0], [4000, 3000], [0, 3000]]
 
 
 def check_explicit_step_count_derives_riser() -> list[str]:
@@ -194,7 +197,7 @@ def check_step_line_coordinates_hand_computable() -> list[str]:
         {"id": "sX", "room_id": "r1", "floor_to_floor_mm": 3000, "step_count": 18, "up_towards": "E"},
         ROOM_5000x3000,
     )
-    start, end = _step_line_endpoints(x_axis, 270.0)
+    start, end = _step_line_endpoints(x_axis.travel_axis, x_axis.up_towards, x_axis.bbox, 270.0)
     expected = ((270.0, 0.0), (270.0, 3000.0))
     if (start, end) != expected:
         errors.append(f"X ekseni: {expected} bekleniyordu, {(start, end)} bulundu")
@@ -206,7 +209,7 @@ def check_step_line_coordinates_hand_computable() -> list[str]:
     )
     if y_axis.travel_axis != "y":
         errors.append(f"travel_axis 'y' bekleniyordu, '{y_axis.travel_axis}' bulundu")
-    start, end = _step_line_endpoints(y_axis, 270.0)
+    start, end = _step_line_endpoints(y_axis.travel_axis, y_axis.up_towards, y_axis.bbox, 270.0)
     expected = ((100.0, 370.0), (1100.0, 370.0))
     if (start, end) != expected:
         errors.append(f"Y ekseni: {expected} bekleniyordu, {(start, end)} bulundu")
@@ -262,6 +265,169 @@ def check_stairs_for_floor_skips_unknown_room_gracefully() -> list[str]:
     return errors
 
 
+# --------------------------------------------------------------------------
+# DEV-046/DEV-047: cift kollu (dog_leg) merdiven
+# --------------------------------------------------------------------------
+
+def check_dog_leg_real_room_hand_computable() -> list[str]:
+    """GERCEK projenin 4000x3000mm 'Merdiven' odasi, 3000mm kat yuksekligi
+    (bodrum/normal katlarin TIPIK degeri) - tek kollun StairFitError ile
+    REDDETTIGI, dog_leg'in TAM TERSINE narrowing bile GEREKMEDEN sigdigi
+    somut senaryo. Tum degerler ELLE hesaplanabilir (bkz. yorum satirlari)."""
+    errors: list[str] = []
+    r = resolve_stair(
+        {"id": "sDL", "room_id": "stair", "floor_to_floor_mm": 3000,
+         "kind": "dog_leg", "up_towards": "E"},
+        ROOM_4000x3000,
+    )
+    # step_count = round(3000/170) = 18; riser = 3000/18 = 166.67 (fark
+    # 3.33 < 5mm tolerans -> UYARI YOK). flight1=ceil(18/2)=9, flight2=9.
+    if r.step_count != 18:
+        errors.append(f"step_count=18 bekleniyordu, {r.step_count} bulundu")
+    if abs(r.riser_mm - 3000 / 18) > TOLERANCE:
+        errors.append(f"riser={3000/18:.4f} bekleniyordu, {r.riser_mm} bulundu")
+    if r.flight_step_counts != (9, 9):
+        errors.append(f"flight_step_counts=(9,9) bekleniyordu, {r.flight_step_counts} bulundu")
+    # run_available = 4000-1100(varsayilan sahanlik) = 2900; gerekli kosu
+    # (9-1)*270 = 2160 <= 2900 -> DARALTMA YOK, going TAM 270.
+    if abs(r.going_mm - 270.0) > TOLERANCE:
+        errors.append(f"going=270.0 (daraltma OLMADAN) bekleniyordu, {r.going_mm} bulundu")
+    if r.warnings:
+        errors.append(f"UYARI OLMAMALIYDI (narrowing gerekmiyor): {r.warnings}")
+    # landing: flight1_run=(9-1)*270=2160 -> landing [2160,3260]x[0,3000].
+    expected_landing = (2160.0, 0.0, 3260.0, 3000.0)
+    if tuple(round(v, 6) for v in r.landing_bbox) != expected_landing:
+        errors.append(f"landing_bbox={expected_landing} bekleniyordu, {r.landing_bbox} bulundu")
+    # exit: landing_end=3260, flight2_run=2160 -> exit_coord=3260-2160=1100;
+    # flight2_perp_mid=(1500+3000)/2=2250. up_towards='E' -> exit 'W'.
+    if (round(r.exit_point[0], 6), round(r.exit_point[1], 6)) != (1100.0, 2250.0):
+        errors.append(f"exit_point=(1100.0,2250.0) bekleniyordu, {r.exit_point} bulundu")
+    if r.exit_direction != "W":
+        errors.append(f"exit_direction='W' bekleniyordu, {r.exit_direction!r} bulundu")
+    return errors
+
+
+def check_dog_leg_4000mm_floor_narrows_going() -> list[str]:
+    """AYNI gercek oda, ZEMIN katin 4000mm kat yuksekligiyle: step_count=24,
+    flight=12+12, gerekli kosu (12-1)*270=2970mm > 2900mm mevcut -> going
+    OTOMATIK daralir (2900/11=263.64mm), UYARI verir - narrowing yolunun
+    dog_leg'de de CALISTIGININ kaniti (tek kollu yolla PAYLASILAN kod)."""
+    errors: list[str] = []
+    r = resolve_stair(
+        {"id": "sDL2", "room_id": "stair", "floor_to_floor_mm": 4000,
+         "kind": "dog_leg", "up_towards": "E"},
+        ROOM_4000x3000,
+    )
+    expected_going = 2900.0 / 11.0
+    if abs(r.going_mm - expected_going) > TOLERANCE:
+        errors.append(f"going={expected_going:.4f} bekleniyordu, {r.going_mm} bulundu")
+    if not any("daraltildi" in w for w in r.warnings):
+        errors.append(f"'daraltildi' UYARISI bekleniyordu: {r.warnings}")
+    return errors
+
+
+def check_dog_leg_flight_width_below_minimum_raises() -> list[str]:
+    """Oda kisa ekseni 1700mm -> kol basina 850mm < MIN_FLIGHT_WIDTH_MM
+    (900mm) -> StairFitError (yanlis-pozitif: AYNI oranin genis hali asagida)."""
+    narrow_room = [[0, 0], [6000, 0], [6000, 1700], [0, 1700]]
+    try:
+        resolve_stair(
+            {"id": "sDL3", "room_id": "r1", "floor_to_floor_mm": 3000, "kind": "dog_leg"},
+            narrow_room,
+        )
+        return ["850mm kol genisligi StairFitError FIRLATMALIYDI"]
+    except StairFitError:
+        pass
+    wide_room = [[0, 0], [6000, 0], [6000, 2000], [0, 2000]]
+    try:
+        resolve_stair(
+            {"id": "sDL3b", "room_id": "r1", "floor_to_floor_mm": 3000, "kind": "dog_leg"},
+            wide_room,
+        )
+    except StairFitError as exc:
+        return [f"1000mm kol genisligi (>MIN) StairFitError URETMEMELIYDI: {exc}"]
+    return []
+
+
+def check_dog_leg_landing_wont_fit_raises() -> list[str]:
+    """Acikca BUYUK bir sahanlik derinligi (5000mm), odanin uzun ekseninden
+    (4000mm) BUYUK - kol icin hic yer kalmaz -> StairFitError."""
+    try:
+        resolve_stair(
+            {"id": "sDL4", "room_id": "stair", "floor_to_floor_mm": 3000,
+             "kind": "dog_leg", "landing_depth_mm": 5000.0},
+            ROOM_4000x3000,
+        )
+        return ["sahanlik > oda uzunlugu StairFitError FIRLATMALIYDI"]
+    except StairFitError:
+        return []
+
+
+def check_unknown_kind_raises_fit_error() -> list[str]:
+    """`walls.kind`/`check_walls` ile AYNI yazim-hatasi korumasi: bilinmeyen
+    bir `kind` sessizce varsayilana DUSMEMELI, acikca HATA vermelidir."""
+    try:
+        resolve_stair(
+            {"id": "sDL5", "room_id": "r1", "floor_to_floor_mm": 3000, "kind": "spiral"},
+            ROOM_5000x3000,
+        )
+        return ["bilinmeyen kind StairFitError FIRLATMALIYDI"]
+    except StairFitError as exc:
+        return [] if "bilinmeyen kind" in str(exc) else [f"mesaj 'bilinmeyen kind' ICERMELIYDI: {exc}"]
+
+
+def check_single_flight_fields_unaffected_by_dog_leg_additions() -> list[str]:
+    """REGRESYON: `kind` hic verilmeyince (eski context'lerin TAMAMI)
+    `StairResolution`in YENI alanlari eski davranisi birebir yansitmali -
+    `landing_bbox=None`, `flight_step_counts=(step_count,)`, `exit_point`
+    eski 'yukari uc' noktasiyla AYNI, `exit_direction=up_towards`."""
+    errors: list[str] = []
+    r = resolve_stair(
+        {"id": "sSF", "room_id": "r1", "floor_to_floor_mm": 3000, "step_count": 18, "up_towards": "E"},
+        ROOM_5000x3000,
+    )
+    if r.kind != "single_flight":
+        errors.append(f"kind='single_flight' bekleniyordu, {r.kind!r} bulundu")
+    if r.landing_bbox is not None:
+        errors.append(f"landing_bbox=None bekleniyordu, {r.landing_bbox} bulundu")
+    if r.flight_step_counts != (18,):
+        errors.append(f"flight_step_counts=(18,) bekleniyordu, {r.flight_step_counts} bulundu")
+    if r.exit_point != (5000.0, 1500.0):
+        errors.append(f"exit_point=(5000.0,1500.0) (oda 'yukari' ucu) bekleniyordu, {r.exit_point} bulundu")
+    if r.exit_direction != "E":
+        errors.append(f"exit_direction='E' bekleniyordu, {r.exit_direction!r} bulundu")
+    return errors
+
+
+def check_dog_leg_draw_entity_counts() -> list[str]:
+    """Yonlu: 8+8 riht (flight1+flight2) + 1 sahanlik LWPOLYLINE + 2 kol
+    bolucusu + (1 ok govdesi + 1 ok basi + 2 kesme cizgisi) = 23. Yonsuz:
+    ayni ama son 4'u YOK = 19 (yanlis-pozitif: yon olmadan ok/kesme cizgisi
+    cizilMEMELI, tek kollu ile AYNI kural)."""
+    errors: list[str] = []
+    standard = DefaultStairStandard()
+
+    r_dir = resolve_stair(
+        {"id": "sDL6", "room_id": "stair", "floor_to_floor_mm": 3000,
+         "kind": "dog_leg", "up_towards": "E"},
+        ROOM_4000x3000,
+    )
+    doc = ezdxf.new(); ensure_stair_layer(doc); msp = doc.modelspace()
+    standard.draw(msp, r_dir, "MERDIVEN")
+    if len(msp) != 23:
+        errors.append(f"yonlu dog_leg cizimde 23 varlik bekleniyordu, {len(msp)} bulundu")
+
+    r_nodir = resolve_stair(
+        {"id": "sDL7", "room_id": "stair", "floor_to_floor_mm": 3000, "kind": "dog_leg"},
+        ROOM_4000x3000,
+    )
+    doc2 = ezdxf.new(); ensure_stair_layer(doc2); msp2 = doc2.modelspace()
+    standard.draw(msp2, r_nodir, "MERDIVEN")
+    if len(msp2) != 19:
+        errors.append(f"yonsuz dog_leg cizimde 19 varlik bekleniyordu, {len(msp2)} bulundu")
+    return errors
+
+
 def check_ensure_stair_layer_sets_rgb() -> list[str]:
     errors: list[str] = []
     doc = ezdxf.new()
@@ -289,6 +455,13 @@ def main() -> int:
         ("cizim varlik sayilari (yonsuz/yonlu)", check_draw_entity_counts()),
         ("bilinmeyen room_id sessizce atlanir", check_stairs_for_floor_skips_unknown_room_gracefully()),
         ("MERDIVEN katmani RGB'si kod-sahipli", check_ensure_stair_layer_sets_rgb()),
+        ("dog_leg GERCEK Merdiven odasinda elle hesaplanabilir (DEV-046)", check_dog_leg_real_room_hand_computable()),
+        ("dog_leg 4000mm katta going OTOMATIK daralir", check_dog_leg_4000mm_floor_narrows_going()),
+        ("dog_leg kol genisligi MIN altinda StairFitError (+ yanlis-pozitif)", check_dog_leg_flight_width_below_minimum_raises()),
+        ("dog_leg sahanlik odaya sigmazsa StairFitError", check_dog_leg_landing_wont_fit_raises()),
+        ("bilinmeyen kind StairFitError (yazim hatasi korumasi)", check_unknown_kind_raises_fit_error()),
+        ("single_flight YENI alanlar eski davranisi birebir yansitir (regresyon)", check_single_flight_fields_unaffected_by_dog_leg_additions()),
+        ("dog_leg cizim varlik sayilari (yonlu/yonsuz, DEV-047 cikis)", check_dog_leg_draw_entity_counts()),
     )
     failed = False
     for name, errors in groups:

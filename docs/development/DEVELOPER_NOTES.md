@@ -203,8 +203,50 @@ sistem mimarı direktifi güncellenir.
   `architect/selftest.py`ye 9 yeni grup eklendi (toplam 27) —
   kasıtlı-bozma + yanlış-pozitif + `unit_id` opt-in + gerçek-proje
   doğrulaması hepsi için. Ayrıntı: `scripts/architect/CLAUDE.md`
-  "DEV-042/DEV-043: ıslak hacim kuralları". Sıradaki adım "Uygulama
-  sırası"na göre `DEV-046`→`DEV-047`dür (stairs/), henüz BAŞLANMADI.
+  "DEV-042/DEV-043: ıslak hacim kuralları".
+- **`DEV-046` + `DEV-047` UYGULANDI (2026-10-02, `HD-023`, kullanıcı:
+  "sıradaki planı uygulamaya başlayabilirsin"):** "Uygulama sırası"nın
+  son (en büyük/en karmaşık) maddesi, TEK blokta uygulandı.
+  - `DEV-046`: `stairs::resolve_stair`e `kind='dog_leg'` (sahanlıklı,
+    180° dönüşlü çift kol) desteği eklendi — oda kısa ekseni ortadan
+    ikiye bölünür, basamaklar iki kola dağıtılır, kol 1 sahanlığa çıkar,
+    kol 2 TERS yönde geri döner (`landing_depth_mm`, varsayılan 1100mm).
+    Yeni `MIN_FLIGHT_WIDTH_MM=900` başarısızlık modu (tek kolda hiç
+    yoktu). Gerçek `Merdiven` odası (4000×3000mm) UYGULAMADAN ÖNCE elle
+    hesaplandı ve dog-leg'in 3000mm kat yüksekliğinde narrowing bile
+    GEREKMEDEN, 4000mm'de hafif bir daraltmayla SIĞDIĞI kanıtlandı —
+    tek kollunun `StairFitError` ile REDDETTİĞİ tam tersi. **"Fikir 2"
+    (templates/standards kalibrasyonu) DEĞERLENDİRİLDİ, SAYISAL olarak
+    GEREKMEDİ:** `standards::STANDARDS['merdiven']`in `[1.3, 2.4]`
+    aralığı gerçek odanın oranıyla (1.333) ZATEN uyumluydu VE dog-leg
+    için de anlamlı kaldı — yalnızca artık YANLIŞ olan "tek kollu"
+    etiketi düzeltildi, sayısal sınırlar/`templates/` DEĞİŞMEDİ (bu
+    bulgu, planın kendi varsayımını geçersiz kıldığı için, SESSİZCE
+    atlanmak yerine her iki modülün CLAUDE.md'sinde kayıt altına alındı).
+  - `DEV-047`: `StairResolution`a `exit_point`/`exit_direction` eklendi
+    (her iki `kind` için dolu). Tek kollu eski örtük varsayımla BİREBİR
+    AYNI; dog-leg'de çıkış GİRİŞE YAKINDIR (odanın "yukarı" köşesi
+    DEĞİL — 180° dönüş nedeniyle), yön `up_towards`in TAM TERSİ. Karar:
+    `stairs/` HESAPLAR (arity-1), `validate.py::check_stairs` DENETLER
+    (yeni opt-in `stairs[].exit_door_id`, UYARI — HATA DEĞİL). "90/180
+    derece" belirsizliği mm eşiği İCAT ETMEDEN "en yakın oda kenarı"
+    testiyle (`_nearest_bbox_side`, TÜRDEN BAĞIMSIZ) çözüldü; kapı
+    konumu `walls::Wall.centerline_point` (TEK kaynak) ile hesaplanır,
+    `stairs/` `walls/`e BAĞIMLI KALMAZ.
+  - `scripts/stairs/selftest.py`ye 8 yeni grup (toplam 19), `validate_
+    selftest.py`ye 4 yeni grup. Yeni golden referans `golden/
+    merdiven_cift_kollu` — SIFIR uyarı/hata ile uçtan uca geçer; DXF
+    çıktısı ayrıca matplotlib ile doğrudan RENDER edilip GÖRSEL olarak
+    da doğrulandı (iki kol + sahanlık + bölücü + doğru yöne bakan ok).
+    `CONTRACT_VERSION` 1.0→1.1 (yeni context alanları, geriye uyumlu).
+  - **Gerçek `context.json`a `stairs[]` verisi BİLEREK EKLENMEDİ**
+    (DEV-041/DEV-044 ile AYNI disiplin — kapsam yalnızca MODÜL desteği).
+    8 kattaki `Merdiven` odasına gerçek `stairs[]` + `exit_door_id`
+    eklemek AYRI, sonraki bir proje revizyonu. Ayrıntı: `scripts/stairs/
+    CLAUDE.md` "Çift kollu merdiven geometrisi (DEV-046)". "Uygulama
+    sırası"nda sıradaki (ve son) madde `DEV-045`dir — artık `DEV-046`/
+    `DEV-047` tamamlandığı için merdiven alanının gerçek şekli bellidir,
+    henüz BAŞLANMADI.
 
 ## Sıradaki iş
 
