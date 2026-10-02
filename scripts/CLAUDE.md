@@ -128,7 +128,10 @@ kalanını bilmeye ihtiyaç duymadan o modül üzerinde derinlemesine/izole
   birim İÇİ oda bölüntüsünü İÇERMEZ (kullanıcının kendisinin bile
   istemediği, ayrıca büyük bir açık-karar seti gerektiren bir genişleme).
   Çıktı `dict`tir, context.json'a OTOMATİK YAZILMAZ — bkz.
-  `scripts/templates/CLAUDE.md`.
+  `scripts/templates/CLAUDE.md`. **`DEV-045`'te (2026-10-02) düzeltildi:**
+  koridor artık L-şekli DEĞİL, basit bir dikdörtgen — eski L-şeklinin
+  çekirdeğin doğusunda bıraktığı ~41.7 m²'lik "ölü alan" (kullanıcı:
+  "sağ üstteki alan tamamıyla ölü bir alan") KALDIRILDI.
 - ✅ **`scripts/architect/`** — `DEV-039` (2026-09-28): mekansal ilişki/
   mimari mantık kural kütüphanesi. `standards/`dan farkı ARİTEDİR:
   `standards/` bir odanın KENDİ oranını denetler (arity-1), bu modül
@@ -144,7 +147,11 @@ kalanını bilmeye ihtiyaç duymadan o modül üzerinde derinlemesine/izole
   kural artık gerçek projede çalışıyor. Kullanıcı bu modülü "programı
   gerçek bir mimar yapan en önemli yapı taşı" olarak çerçeveledi ve bir
   genişleme yol haritası istedi — bkz. `DEV-040` ve `scripts/architect/
-  CLAUDE.md` "Gelecek yönü".
+  CLAUDE.md` "Gelecek yönü". **`DEV-042`/`DEV-043`/`DEV-045`'te (2026-10-02)
+  üç kural daha eklendi:** ıslak hacmin yatak odasından geçmeden
+  erişilebilir olması, ıslak hacim kapılarının yakınlığı, ortak
+  sirkülasyon payının bina/kat seviyesinde ölçülmesi — toplam yedi
+  ilişkisel kural.
 
 ## Modül bağımsızlığı ve çapraz kontrol (kullanıcı ilkesi)
 
@@ -283,8 +290,8 @@ Ortak desen (pafta + walls ile kanitlandi):
 | `levels/`     | `LevelMark`, `LevelMarkStyle`, `DefaultLevelMarkStyle`, `format_level`, `level_boundaries_from_placements`, `draw_level_marks`, `draw_plan_level_marks` | UYGULANDI (DEV-029, 2026-09-25); kot/datum standardi, elevations::LevelStack'i TUKETIR, kendi kat yuksekligi hesaplamaz |
 | `ceiling/`    | `CeilingSheet`, `RoomCeilingData`, `resolve_room_ceilings`, `floor_has_ceiling_data`, `draw_ceiling_label`, `ensure_ceiling_layer` | UYGULANDI (DEV-023, 2026-09-28); RCP - ayri pafta, oda-bazli tavan kotu, v1 armatursuz |
 | `standards/`  | `RoomStandard`, `STANDARDS`, `room_aspect_ratio`, `validate_standards`, `check_room_types`, `check_room_proportions` | UYGULANDI (DEV-036, 2026-09-28); sartname/oransal mahal kutuphanesi, ihlal HER ZAMAN UYARI |
-| `templates/`  | `CirculationCoreTemplate`, `DEFAULT_TEMPLATE`, `generate_circulation_core` | UYGULANDI (DEV-037, 2026-09-28); sirkulasyon cekirdegi sablon ureteci, v1 yalnizca cekirdek (birim ici bolme YOK) |
-| `architect/`  | `check_circulation_area_share`, `check_bedroom_via_corridor`, `check_entry_sightlines`, `check_door_core_balance`, `FeasibilityReport`, `check_fits`, `ZoneAssignment`, `ZoningPlan`, `resolve_unit_zoning`, `PlacementOption`, `options_for_core_placement`, `place_unit_entry_doors` | UYGULANDI (DEV-039, 2026-09-28); iliskisel (arity-2+) mimari mantik kurallari, DEV-038 absorbe edildi, `rooms[].unit_id` opt-in |
+| `templates/`  | `CirculationCoreTemplate`, `DEFAULT_TEMPLATE`, `generate_circulation_core` | UYGULANDI (DEV-037, 2026-09-28; DEV-045 duzeltmesi, 2026-10-02); sirkulasyon cekirdegi sablon ureteci, v1 yalnizca cekirdek (birim ici bolme YOK), koridor artik israf eden L-sekli DEGIL |
+| `architect/`  | `check_circulation_area_share`, `check_common_circulation_share`, `check_bedroom_via_corridor`, `check_entry_sightlines`, `check_door_core_balance`, `check_wet_area_reachable_without_bedroom`, `check_wet_area_door_proximity`, `FeasibilityReport`, `check_fits`, `ZoneAssignment`, `ZoningPlan`, `resolve_unit_zoning`, `PlacementOption`, `options_for_core_placement`, `place_unit_entry_doors` | UYGULANDI (DEV-039, 2026-09-28; DEV-042/043/045, 2026-10-02); iliskisel (arity-2+) mimari mantik kurallari, DEV-038 absorbe edildi, `rooms[].unit_id` opt-in |
 
 > Bu tablo `scripts/doc_check.py` tarafindan DENETLENIR: `UYGULANDI` isaretli bir
 > satirda anilan her sinif adi, o modulde gercekten tanimli olmalidir. Yalnizca

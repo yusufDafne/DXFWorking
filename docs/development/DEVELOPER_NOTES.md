@@ -243,10 +243,37 @@ sistem mimarı direktifi güncellenir.
     (DEV-041/DEV-044 ile AYNI disiplin — kapsam yalnızca MODÜL desteği).
     8 kattaki `Merdiven` odasına gerçek `stairs[]` + `exit_door_id`
     eklemek AYRI, sonraki bir proje revizyonu. Ayrıntı: `scripts/stairs/
-    CLAUDE.md` "Çift kollu merdiven geometrisi (DEV-046)". "Uygulama
-    sırası"nda sıradaki (ve son) madde `DEV-045`dir — artık `DEV-046`/
-    `DEV-047` tamamlandığı için merdiven alanının gerçek şekli bellidir,
-    henüz BAŞLANMADI.
+    CLAUDE.md` "Çift kollu merdiven geometrisi (DEV-046)".
+- **`DEV-045` UYGULANDI (2026-10-02, `HD-024`, kullanıcı: "sıradaki
+  geliştirme planını uygula" — "Uygulama sırası"nın SON maddesi):**
+  kullanıcının "sağ üstteki alan tamamıyla ölü bir alan" gözlemi plan
+  metninin önerdiği GİBİ İKİ fikirle birden çözüldü:
+  - **Fikir 2 (kök neden düzeltmesi):** `templates::generate_
+    circulation_core`nin `band_polygon`ı artık eski L-şekli DEĞİL,
+    SADECE `corridor_leg_depth` derinliğinde bir dikdörtgen — çekirdeğin
+    footprint'i zaten `y >= core_y0`de durduğu için bu TEK BAŞINA
+    çakışmayı önlüyordu, L-şeklinin doğudaki uzantısı hiçbir mimari
+    ihtiyacı karşılamayan bir KALINTIYDI (plan "parametrize et" demişti,
+    gerçekte GEREKSİZ geometriyi KALDIRMAK yeterliydi). `band` alanı
+    71.7 m² → 30.0 m²'ye düştü, `floor_width`e göre ölçekleme
+    GEREKMEDİ.
+  - **Fikir 1 (yeni denetim):** `architect::check_common_circulation_
+    share` — `check_circulation_area_share`in bina/kat seviyesine
+    genellenmesi, ORTAK koridor alanını TÜM birimlerin toplam net
+    alanına göre AYNI %15 sınırla ölçer.
+  - İkisinin TUTARLI olduğu DOĞRUDAN kanıtlandı: gerçek projenin ESKİ
+    `band`ıyla (71.7 m²) %27.6 pay ile UYARI üretiyor, DÜZELTİLMİŞ
+    değerle (30.0 m²) pay %11.5'e düşüp UYARI KALKIYOR.
+  - **Gerçek `context.json`daki `band` verisi BİLEREK DEĞİŞTİRİLMEDİ**
+    (DEV-041/044/046 ile AYNI disiplin) — "ölü alanın YERİNE ne
+    konabileceği" GERÇEK bir tasarım kararıdır, UYDURULMADI, ayrı bir
+    revizyon bekliyor. Ayrıntı: `scripts/templates/CLAUDE.md` "DEV-045
+    düzeltmesi", `scripts/architect/CLAUDE.md` "DEV-045: ortak
+    sirkülasyon payı".
+  - **"Uygulama sırası"ndaki YEDİ maddenin TAMAMI tamamlandı.** Kullanıcı
+    bir sonraki adımda "plan'a yansıtma ve geliştirici yorumlarına
+    istinaden yapılacak güncelleme ve geliştirme planlarının
+    revizyonu"nu konuşacağını belirtti — henüz o konuşma BAŞLAMADI.
 
 ## Sıradaki iş
 

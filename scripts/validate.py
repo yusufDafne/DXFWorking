@@ -31,9 +31,10 @@ Yaptigi kontroller:
       geregi uretimi DURDURMAZ.
   3e) ILISKISEL/MIMARI MANTIK KURALLARI (DEV-039, scripts/architect):
       arity-2+ kontroller - kapi-cekirdek dengesizligi, giris-wc goru
-      hatti, hol/sirkulasyon alan payi, yatak odasi-salon komsulugu,
-      islak hacmin yatak odasindan GECMEDEN erisilebilir olmasi (DEV-042),
-      islak hacim kapilarinin birbirine yakinligi (DEV-043).
+      hatti, hol/sirkulasyon alan payi (birim-ici VE ortak/bina-seviyesi,
+      DEV-045), yatak odasi-salon komsulugu, islak hacmin yatak
+      odasindan GECMEDEN erisilebilir olmasi (DEV-042), islak hacim
+      kapilarinin birbirine yakinligi (DEV-043).
       `rooms[].unit_id` OPT-IN'dir; hic verilmezse bu kontroller SESSIZCE
       atlanir. standards ile AYNI politika: HER ZAMAN UYARI, asla HATA.
   4) SURUM KAPISI (DEV-020): meta.schema_version ile sistemin SCHEMA_VERSION'u
@@ -86,6 +87,7 @@ from standards import check_room_proportions, check_room_types  # noqa: E402
 from architect import (  # noqa: E402
     check_bedroom_via_corridor,
     check_circulation_area_share,
+    check_common_circulation_share,
     check_door_core_balance,
     check_entry_sightlines,
     check_wet_area_door_proximity,
@@ -533,6 +535,7 @@ def run_validation(context_path: Path = DEFAULT_CONTEXT_PATH) -> bool:
             f"[{floor['id']}] " + w
             for w in (
                 check_circulation_area_share(rooms)
+                + check_common_circulation_share(rooms)
                 + check_bedroom_via_corridor(rooms, walls, openings)
                 + check_entry_sightlines(rooms, walls, openings)
                 + check_door_core_balance(rooms, walls, openings)

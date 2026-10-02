@@ -470,6 +470,52 @@ def check_wet_area_door_proximity(
     return warnings
 
 
+def check_common_circulation_share(
+    rooms: list[dict], *, max_share: float = DEFAULT_CIRCULATION_SHARE_MAX,
+) -> list[str]:
+    """[DEV-045] `check_circulation_area_share`in BİNA/KAT SEVİYESİNE
+    genellenmesi: ORTAK sirkülasyon alanı (hiçbir `unit_id` TAŞIMAYAN,
+    `room_type='koridor'` odalar - örn. ortak kat koridoru/`band`),
+    kattaki TÜM birimlerin (`unit_id`li odalar) TOPLAM net alanının
+    `max_share` oranını aşarsa UYARI.
+
+    Kullanıcının somut örneği: *"şu anda örnek planımızda kat planında
+    sağ üstteki alan tamamıyla ölü bir alan."* Bu kural o alanı DOĞRUDAN
+    ÖLÇMEZ (hangi bölgenin "ölü" olduğunu bilmez - yalnızca GEOMETRİ
+    okur) ama AYNI sonucu dolaylı yakalar: gereksiz yere büyütülmüş bir
+    ortak koridor, TOPLAM payını şişirir. `templates::generate_
+    circulation_core`nin DEV-045 düzeltmesi (`scripts/templates/
+    CLAUDE.md` "DEV-045 düzeltmesi") bu payı GERÇEKTEN küçültür - Fikir 1
+    (bu fonksiyon) DENETLER, Fikir 2 (template düzeltmesi) DÜZELTİR,
+    `standards`+`templates` ikilisinin DEV-036/037'deki ilişkisiyle AYNI
+    desen.
+
+    **`check_circulation_area_share`dan FARKI:** o fonksiyon HER birimin
+    KENDİ hol'ünü (`unit_id`li bir koridor odası) birimin KENDİ net
+    alanına göre ölçer (birim-içi); bu fonksiyon `unit_id`SİZ (ortak)
+    koridor odalarını TÜM birimlerin TOPLAM alanına göre ölçer (bina-
+    seviyesi) - ikisi AYNI ANDA, farklı payları test eder, biri diğerinin
+    yerini TUTMAZ."""
+    warnings: list[str] = []
+    total_unit_area = sum(r["area_m2"] for r in rooms if r.get("unit_id"))
+    common_circulation = sum(
+        r["area_m2"] for r in rooms
+        if not r.get("unit_id") and r.get("room_type") == "koridor"
+    )
+    if total_unit_area <= 0 or common_circulation <= 0:
+        return warnings
+    share = common_circulation / total_unit_area
+    if share > max_share:
+        warnings.append(
+            f"Ortak sirkülasyon alanı, kattaki birimlerin toplam net "
+            f"alanının %{share * 100:.1f}'i, izin verilen üst sınır "
+            f"%{max_share * 100:.1f} aşıldı (ortak koridor="
+            f"{common_circulation:.1f} m2, birimler toplamı="
+            f"{total_unit_area:.1f} m2)."
+        )
+    return warnings
+
+
 __all__ = [
     "DEFAULT_CIRCULATION_SHARE_MAX", "DEFAULT_DOOR_CORE_BALANCE_RATIO",
     "DEFAULT_SIGHTLINE_CONE_DEGREES", "DEFAULT_WET_AREA_DOOR_MAX_DISTANCE",
@@ -477,5 +523,5 @@ __all__ = [
     "BEDROOM_ROOM_TYPES", "check_circulation_area_share",
     "check_bedroom_via_corridor", "check_entry_sightlines",
     "check_door_core_balance", "check_wet_area_reachable_without_bedroom",
-    "check_wet_area_door_proximity",
+    "check_wet_area_door_proximity", "check_common_circulation_share",
 ]

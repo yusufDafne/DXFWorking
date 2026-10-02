@@ -4,6 +4,78 @@ Aktif geçmiş kapasitesi: **50 kayıt**. En eski tamamlanmış kayıt, 51. kay�
 alınırken silinir. Ayrıntılı teknik değişiklikler git geçmişi ve ilgili proje
 provenance kayıtlarıyla ilişkilendirilir.
 
+## HD-024 — `templates/`+`architect/`: kat sirkülasyon bandının ölü alan analizi (DEV-045)
+
+- **Durum:** COMPLETED
+- **Tamamlanma:** 2026-10-02
+- **Kökeni:** `HD-020`/`HD-021`/`HD-022`/`HD-023` ile AYNI kritik geri
+  bildirim turunun SON maddesi: *"şu anda örnek planımızda kat planında
+  sağ üstteki alan tamamıyla ölü bir alan."* Kullanıcının "efektif
+  sıralama"sında (`DEVELOPMENT_TASKS.md` "Uygulama sırası") BİLEREK EN
+  SONA bırakılmıştı — hem gerçek bir tasarım kararı gerektirdiği (ölü
+  alanın yerine ne konacağı) hem de `DEV-046`/`DEV-047` tamamlanınca
+  merdiven alanının gerçek şeklinin netleşeceği için. Kullanıcının
+  "sıradaki geliştirmenin çok token harcamayacağını tahmin ediyorum"
+  yorumuyla ve "sıradaki geliştirme planını uygula" komutuyla uygulandı.
+
+### Kök neden: L-şekli bir "parametrize etme" sorunu DEĞİL, bir kalıntıydı
+
+Plan metni sorunu "`band_depth`/`corridor_leg_depth` sabitleri `floor_
+width`e göre ölçeklenmiyor" diye çerçevelemişti (Fikir 2: "parametrik/
+oranlı hale getirilir"). Uygulamaya geçmeden önce geometri dikkatle
+incelendi: çekirdeğin (asansör+merdiven) footprint'i zaten `y >=
+core_y0`de duruyordu, yani koridorun `y: band_y0..core_y0` (yalnızca
+`corridor_leg_depth` derinliğinde) bir dikdörtgen olması TEK BAŞINA
+çakışmayı önlemeye YETERLİYDİ. Eski L-şeklinin çekirdeğin DOĞUSUNDA
+(`x > core_x1`) koridoru GEREKSİZ yere tam `band_depth` derinliğinde
+bırakan kısmı hiçbir mimari ihtiyacı karşılamıyordu — gerçek giriş
+erişimi zaten `band_south` duvarındaki kapılarla, bu bölgenin
+GÜNEYİNDEKİ ince şeritten sağlanıyordu. Bu, planın kendi teşhisinden
+DAHA BASİT bir çözüme işaret ediyordu: "parametrize etmek" değil,
+sadece GEREKSİZ geometriyi KALDIRMAK. Düzeltme sonrası bu projede
+`band` alanı 71.7 m² → 30.0 m²'ye düştü (41.7 m²'lik ölü alan
+KALDIRILDI) — `floor_width`e göre ölçekleme hiç GEREKMEDİ.
+
+### Fikir 1 + Fikir 2 tutarlılığı DOĞRUDAN kanıtlandı
+
+`architect::check_common_circulation_share` (yeni, `check_circulation_
+area_share`in bina/kat seviyesine genellenmesi — ORTAK `unit_id`siz
+koridor alanı, TÜM birimlerin TOPLAM net alanına göre `DEFAULT_
+CIRCULATION_SHARE_MAX` ile AYNI %15 sınırla ölçülür) gerçek projenin
+ESKİ `band` değeriyle (71.7 m²) çalıştırılınca %27.6 pay ile GERÇEKTEN
+UYARI üretti; aynı kontrol DÜZELTİLMİŞ değerle (30.0 m²) çalıştırılınca
+pay %11.5'e düşüp UYARI KALKTI — `DEV-036`/`DEV-037`deki (`standards`+
+`templates`) "Fikir 1 DENETLER, Fikir 2 DÜZELTİR" deseninin GERÇEKTEN
+tutarlı çalıştığının doğrudan kanıtı, `selftest.py`de iki ayrı test
+olarak saklanır.
+
+### Kapsam BİLEREK dar tutuldu (DEV-041/044/046 ile AYNI disiplin)
+
+Gerçek `context.json`daki `band` verisi DEĞİŞTİRİLMEDİ — bu görevin
+kapsamı yalnızca KONTROLÜ kurmak VE `templates/`i düzeltmekti. Plan
+metninin kendi "Açık karar"ı ("bu ölü alanın YERİNE ne konabileceği
+GERÇEK bir tasarım kararıdır, UYDURULMAZ — kullanıcı onayı GEREKİR")
+AYNEN korundu: boşalan alana hiçbir şey İCAT EDİLMEDİ, yalnızca
+GEREKSİZ fazla alan kaldırıldı; context.json'a uygulandığında boşalan
+bölge basitçe bina zarfının İÇİNDE, henüz hiçbir odaya ait OLMAYAN bir
+boşluk olarak kalacaktır.
+
+- **Etkilenen dosyalar:** `scripts/templates/__init__.py` (`band_
+  polygon` düzeltmesi), `scripts/templates/selftest.py` (2 yeni grup +
+  gerçek-proje testi `band` HARİÇ güncellendi), `scripts/architect/
+  rules.py` (`check_common_circulation_share`), `scripts/architect/
+  __init__.py`, `scripts/validate.py` (`check_floor` akışına bağlandı),
+  `scripts/architect/selftest.py` (6 yeni grup), `scripts/templates/
+  CLAUDE.md`, `scripts/architect/CLAUDE.md`, `scripts/CLAUDE.md`.
+- **Golden etkisi:** yok (`templates/`/`architect/` ikisi de golden
+  referanstan MUAF — hiç geometri üretmiyor/`collision/scene.py::
+  COLLISION_EXEMPT`).
+- **Sonraki adım:** "Uygulama sırası"ndaki yedi maddenin TAMAMI
+  tamamlandı. Kullanıcı bir sonraki turda "plan'a yansıtma ve
+  geliştirici yorumlarına istinaden yapılacak güncelleme ve geliştirme
+  planlarının revizyonu"nu konuşacağını belirtti — bkz. `docs/
+  development/DEVELOPER_NOTES.md`.
+
 ## HD-023 — `stairs/`: çift kollu (dog-leg) merdiven + çıkış noktası/yönü hizalaması (DEV-046, DEV-047)
 
 - **Durum:** COMPLETED

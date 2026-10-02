@@ -20,6 +20,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from architect import (  # noqa: E402
     check_bedroom_via_corridor,
     check_circulation_area_share,
+    check_common_circulation_share,
     check_door_core_balance,
     check_entry_sightlines,
     check_fits,
@@ -536,6 +537,98 @@ def check_wet_area_checks_are_opt_in() -> list[str]:
     return errors
 
 
+# --------------------------------------------------------------------------
+# check_common_circulation_share (DEV-045)
+# --------------------------------------------------------------------------
+
+def check_common_circulation_share_flags_oversized_band() -> list[str]:
+    """2 birim (u1=50, u2=50 -> toplam=100) + ORTAK (unit_id YOK) koridor
+    20 m2 -> pay %20 > varsayilan ust sinir %15 -> TAM 1 uyari."""
+    rooms = [
+        {"id": "u1_salon", "unit_id": "u1", "room_type": "salon", "area_m2": 50.0},
+        {"id": "u2_salon", "unit_id": "u2", "room_type": "salon", "area_m2": 50.0},
+        {"id": "band", "room_type": "koridor", "area_m2": 20.0},
+    ]
+    warnings = check_common_circulation_share(rooms)
+    if len(warnings) != 1:
+        return [f"1 uyari beklenirdi, {len(warnings)} geldi: {warnings}"]
+    return []
+
+
+def check_common_circulation_share_false_positive_within_limit() -> list[str]:
+    """AYNI birimler ama ortak koridor 10 m2 -> pay %10 < %15, uyari OLMAMALI."""
+    rooms = [
+        {"id": "u1_salon", "unit_id": "u1", "room_type": "salon", "area_m2": 50.0},
+        {"id": "u2_salon", "unit_id": "u2", "room_type": "salon", "area_m2": 50.0},
+        {"id": "band", "room_type": "koridor", "area_m2": 10.0},
+    ]
+    warnings = check_common_circulation_share(rooms)
+    return [f"esik ICINDEKI bir oran uyari URETMEMELIYDI: {warnings}"] if warnings else []
+
+
+def check_common_circulation_share_ignores_non_corridor_common_rooms() -> list[str]:
+    """YANLIS-POZITIF: `unit_id`siz ama `room_type` 'koridor' OLMAYAN bir
+    oda (orn. ortak depo) ORTAK SIRKULASYON sayilmamali - buyuk bir 'depo'
+    odasi payi SISIRMEMELI."""
+    rooms = [
+        {"id": "u1_salon", "unit_id": "u1", "room_type": "salon", "area_m2": 50.0},
+        {"id": "depo", "room_type": "depo", "area_m2": 30.0},
+    ]
+    warnings = check_common_circulation_share(rooms)
+    return [f"koridor OLMAYAN ortak oda payi SISIRMEMELIYDI: {warnings}"] if warnings else []
+
+
+def check_common_circulation_share_differs_from_per_unit_check() -> list[str]:
+    """`check_circulation_area_share` (birim-ici) ile `check_common_
+    circulation_share` (ortak/bina-seviyesi) BIRBIRININ YERINE GECMEZ -
+    unit_id'Lİ bir hol (birim-ici) ORTAK sirkulasyon sayilmamali."""
+    rooms = [
+        {"id": "u1_hol", "unit_id": "u1", "room_type": "koridor", "area_m2": 20.0},
+        {"id": "u1_salon", "unit_id": "u1", "room_type": "salon", "area_m2": 80.0},
+    ]
+    common_warnings = check_common_circulation_share(rooms)
+    return ([f"unit_id'li bir hol ORTAK sirkulasyon SAYILMAMALIYDI: {common_warnings}"]
+            if common_warnings else [])
+
+
+def check_common_circulation_share_real_project_catches_old_band() -> list[str]:
+    """GERCEK projede (normal1), 'band' (71.7 m2, unit_id YOK, koridor)
+    hala eski ISRAFLI L-sekli ile - ortak sirkulasyon payi kattaki UC
+    birimin TOPLAM net alaninin (260 m2) %27.6'si, varsayilan ust sinir
+    %15'i ACIKCA asiyor -> TAM 1 uyari GERCEKTEN yakalanmali. Bu, DEV-045
+    Fikir 2'nin (templates duzeltmesi) context.json'a HENUZ UYGULANMADIGINI
+    da dogrudan kanitlar. Gercek dosya yoksa test ATLANIR."""
+    if not REAL_CONTEXT_PATH.exists():
+        return []
+    context = json.loads(REAL_CONTEXT_PATH.read_text(encoding="utf-8"))
+    floor = next(f for f in context["floors"] if f["id"] == "normal1")
+    warnings = check_common_circulation_share(floor["rooms"])
+    if len(warnings) != 1:
+        return [f"GERCEK projede 1 uyari (eski israfli 'band') beklenirdi: {warnings}"]
+    if "band" not in warnings[0] and "27.6" not in warnings[0]:
+        return [f"uyari eski 'band' ihlalini YANSITMALIYDI: {warnings[0]}"]
+    return []
+
+
+def check_common_circulation_share_clean_with_templates_fix() -> list[str]:
+    """DEV-045'in İKİ fikri BİRBİRİYLE TUTARLI: `templates::generate_
+    circulation_core`nin duzelttigi 'band' alanini (30.0 m2, eski 71.7
+    m2 yerine) GERCEK projenin unit alanlariyla (260 m2) birlikte
+    kullanınca pay %11.5'e duser (< %15) -> uyari KALMAZ. Fikir 1
+    (bu kural) DENETLER, Fikir 2 (template) DUZELTIR - ikisi birlikte
+    sorunu GERCEKTEN cozer, cakisma YOK."""
+    if not REAL_CONTEXT_PATH.exists():
+        return []
+    context = json.loads(REAL_CONTEXT_PATH.read_text(encoding="utf-8"))
+    floor = next(f for f in context["floors"] if f["id"] == "normal1")
+    rooms = [dict(r) for r in floor["rooms"]]
+    for room in rooms:
+        if room["id"] == "band":
+            room["area_m2"] = 30.0  # templates::generate_circulation_core (DEV-045) degeri
+    warnings = check_common_circulation_share(rooms)
+    return [f"duzeltilmis 'band' ile uyari KALMAMALIYDI: {warnings}"] if warnings else []
+
+
 def check_real_project_is_clean_after_rev22_redesign() -> list[str]:
     """rev-22'de uA/uB/uC'nin BACK BAND'i (hol/mutfak/banyo/wc/oda) yeniden
     tasarlandi. GERCEK projede artik circulation-share/bedroom-via-corridor/
@@ -611,6 +704,12 @@ def main() -> int:
         ("max_distance OVERRIDE parametresi calisir", check_wet_area_door_proximity_custom_threshold()),
         ("GERCEK projede uA/uB banyo-wc mesafesi (4016mm) TEMIZ", check_wet_area_door_proximity_real_project_clean()),
         ("DEV-042/043 ikisi de unit_id OPT-IN'dir", check_wet_area_checks_are_opt_in()),
+        ("ortak sirkulasyon payi esigi asinca UYARI verir (DEV-045)", check_common_circulation_share_flags_oversized_band()),
+        ("esik icindeki ortak sirkulasyon payi YANLIS-POZITIF uretmez", check_common_circulation_share_false_positive_within_limit()),
+        ("koridor OLMAYAN ortak oda payi SISIRMEZ", check_common_circulation_share_ignores_non_corridor_common_rooms()),
+        ("birim-ici hol, ORTAK sirkulasyon ile KARISTIRILMAZ", check_common_circulation_share_differs_from_per_unit_check()),
+        ("GERCEK projede eski israfli 'band' YAKALANIR", check_common_circulation_share_real_project_catches_old_band()),
+        ("templates DEV-045 duzeltmesiyle pay TEMIZ olur (Fikir 1+2 tutarli)", check_common_circulation_share_clean_with_templates_fix()),
         ("GERCEK proje rev-22 sonrasi TEMIZ (hol/yatak-salon/goru-hatti)", check_real_project_is_clean_after_rev22_redesign()),
         ("unit_id SOYULUNCE opt-in HALA GECERLI", check_opt_in_still_holds_when_unit_id_is_stripped()),
     )

@@ -45,7 +45,7 @@ Tamamlanan işlerin ayrıntılı gerekçesi, karar süreci ve ölçülen etkisi
 | DEV-042 | `architect/` — ıslak hacmin mahremiyet odası üzerinden erişilmemesi kuralı | COMPLETED (2026-10-02) |
 | DEV-043 | `architect/` — banyo/wc kapı yakınlığı (ıslak hacim kümelenmesi) kuralı | COMPLETED (2026-10-02) |
 | DEV-044 | `rooms/` — içbükey (L/T-şekilli) odalarda mahal etiketi konumlandırması | COMPLETED (2026-09-28) |
-| DEV-045 | `templates/`+`architect/` — kat sirkülasyon bandının ölü alan analizi | PLANNED |
+| DEV-045 | `templates/`+`architect/` — kat sirkülasyon bandının ölü alan analizi | COMPLETED (2026-10-02) |
 | DEV-046 | `stairs/`+`templates/`+`standards/` — merdiven oda oranı + çok kollu merdiven desteği | COMPLETED (2026-10-02) |
 | DEV-047 | `stairs/`+`architect/` — merdiven sahanlık çıkış noktası ↔ koridor kapısı hizalaması | COMPLETED (2026-10-02) |
 
@@ -115,13 +115,11 @@ efektif şekilde sırayla yapacağız, efektif sıralamayı belirle"):**
 4. ~~**`DEV-046`** → **`DEV-047`** (sırayla, `DEV-047` `DEV-046`ya
    BAĞIMLI olduğu için başka türlü mümkün değil).~~ **TAMAMLANDI**
    (2026-10-02) — bkz. `## COMPLETED`.
-5. **`DEV-045`** — EN SONA bırakıldı, çünkü (a) GERÇEK bir tasarım
-   kararı gerektiriyor (ölü alanın YERİNE ne konacağı UYDURULAMAZ,
-   kullanıcı diyaloğu gerekir — mekanik bir modül düzeltmesi DEĞİLDİR),
-   (b) `DEV-046`/`DEV-047` TAMAMLANDIKTAN sonra merdiven alanının
-   gerçek şekli/oranı değişeceği için "ne kadarı gerçekten ölü alan"
-   sorusunun cevabı da o zaman GÜNCEL kalır — önce sormak yarım bilgiyle
-   karar vermek olurdu.
+5. ~~**`DEV-045`** — EN SONA bırakıldı.~~ **TAMAMLANDI** (2026-10-02) —
+   bkz. `## COMPLETED`. "Ölü alanın YERİNE ne konacağı" kararı (plan
+   metninin kendi "Açık karar"ı) UYDURULMADI — yalnızca KONTROL (Fikir 1)
+   ve gereksiz alanı KALDIRAN geometri düzeltmesi (Fikir 2) uygulandı,
+   boşalan alana ne konacağı AYRI bir kullanıcı kararı bekliyor.
 
 > **`DEV-040`** bir DÖRDÜNCÜ türdür: `DEV-039` TAMAMLANIP gerçek projeye
 > uygulandıktan HEMEN sonra kullanıcının verdiği bir STRATEJİK yönelim
@@ -470,48 +468,6 @@ ayrımının ve "yalnızca aynı kat" sınırlamasının emsali), `columns/`
 (düşey hizalama sınırlamasının emsali), `DEV-027` (kaçış planı —
 "acil çıkış mesafesi" gibi bir gelecek kural ile kavramsal KOMŞU).
 
-
-### DEV-045 — `templates/`+`architect/` — kat sirkülasyon bandının ölü alan analizi
-
-- **Durum:** PLANNED
-
-**Neden boşluk:** kullanıcı: *"şu anda örnek planımızda kat planında sağ
-üstteki alan tamamıyla ölü bir alan."* Ölçüldü: ortak kat koridorunu
-(`band`) temsil eden L-şekilli poligonun `x:6100-20000, y:14500-17500`
-bölgesi (13900mm × 3000mm ≈ **41.7 m²**) TAMAMEN boş sirkülasyon
-alanıdır — hiçbir işlevsel mahal İÇERMEZ, yalnızca geçiş.
-
-**Kök neden:** `templates::generate_circulation_core`nin `band_depth`
-(4500mm) ve `corridor_leg_depth` (1500mm) sabitleri, KAÇ birime/hangi
-genişliğe hizmet ettiğine BAKMAKSIZIN her zaman AYNI büyüklükte bir
-L-şekilli koridor üretiyor (bkz. `scripts/templates/CLAUDE.md`); bu
-projede `floor_width` (20000mm) büyüdükçe L'nin "uzun kolu" ORANTISIZ
-büyüyor, çünkü fonksiyon yalnızca "koridorun doğu ucunun nerede
-biteceğini" bilir, alan VERİMLİLİĞİNİ hiç DEĞERLENDİRMEZ.
-
-**Fikir 1 (önerilen) — `architect/`e yeni bir floor-seviyesi kural:**
-ortak sirkülasyon alanı, hizmet ettiği TOPLAM birim (net) alanına göre
-makul bir oranın üzerindeyse UYARI — uA/uB/uC'nin KENDİ hol'lerine
-uygulanan `check_circulation_area_share` mantığının BİNA/KAT
-SEVİYESİNE genellenmesi (yeni bir fonksiyon, aynı desende).
-
-**Fikir 2 — `templates::generate_circulation_core`nin KENDİSİ optimize
-edilir:** `corridor_leg_depth`/`band_depth` sabit değil, `floor_width`e
-ya da servis edilen birim SAYISINA göre PARAMETRİK/oranlı hale getirilir.
-
-**Açık kararlar:**
-- Fikir 1 mi Fikir 2 mi yoksa İKİSİ DE mi (öneri: ikisi de — Fikir 1
-  DENETLER, Fikir 2 DÜZELTİR, `standards`+`templates` ikilisinin
-  DEV-036/037'deki ilişkisiyle AYNI desen).
-- "Makul oran" eşiği ne olmalı.
-- **Bu ölü alanın YERİNE ne konabileceği GERÇEK bir tasarım kararıdır,
-  UYDURULMAZ** — örn. ortak depo/sığınak/teknik oda gibi `DEV-039`'un
-  "Gelecek yönü" bölümünde ZATEN bahsedilen ortak mahaller (bkz.
-  `scripts/architect/CLAUDE.md`); kullanıcı onayı GEREKİR.
-
-**İlişkili modüller:** `templates/` (`band_depth`/`corridor_leg_depth`
-sabitleri), `architect/` (yeni floor-seviyesi kural), `DEV-040` Fikir 2
-(bina tipi profilleri) ile kavramsal KOMŞU.
 
 ## COMPLETED
 
@@ -863,6 +819,37 @@ sabitleri), `architect/` (yeni floor-seviyesi kural), `DEV-040` Fikir 2
   selftest.py`de hizalı/hizasız/opt-in/geçersiz-id dört senaryo da
   kasıtlı bozma + yanlış-pozitifle kanıtlandı. Ayrıntı: `scripts/stairs/
   CLAUDE.md` "Çift kollu merdiven geometrisi (DEV-046)". (`HD-023`)
+
+### DEV-045 — `templates/`+`architect/` — kat sirkülasyon bandının ölü alan analizi
+
+- **Durum:** COMPLETED (2026-10-02)
+- **Özet:** Plan metninin önerdiği GİBİ ikisi de uygulandı (Fikir 1
+  DENETLER, Fikir 2 DÜZELTİR, `standards`+`templates`in DEV-036/037'deki
+  ilişkisiyle AYNI desen). **Fikir 2 — kök neden düzeltmesi:**
+  `templates::generate_circulation_core`nin `band_polygon`ı eski L-şekli
+  yerine artık SADECE `corridor_leg_depth` derinliğinde bir dikdörtgen —
+  çekirdeğin (asansör+merdiven) footprint'i zaten `y >= core_y0`de
+  durduğu için bu TEK BAŞINA çakışmayı önlüyordu, L-şeklinin "doğuda tam
+  `band_depth`" uzantısı hiçbir mimari ihtiyacı karşılamayan bir kalıntı
+  idi. Bu projede `band` alanı 71.7 m² → 30.0 m²'ye düştü (41.7 m²'lik
+  "ölü alan" KALDIRILDI) — `floor_width`e göre parametrize etmek
+  GEREKMEDİ, basitleştirme TEK BAŞINA yeterliydi. **Fikir 1 — yeni
+  denetim:** `architect::check_common_circulation_share`,
+  `check_circulation_area_share`in (birim-içi) BİNA/KAT SEVİYESİNE
+  genellenmesi — ORTAK (`unit_id`siz, `room_type='koridor'`) alan,
+  kattaki TÜM birimlerin TOPLAM net alanına göre `DEFAULT_CIRCULATION_
+  SHARE_MAX`i (%15, aynı sabit yeniden kullanıldı) aşarsa UYARI. İki
+  fikrin GERÇEKTEN tutarlı olduğu kanıtlandı: gerçek projenin ESKİ
+  `band`ıyla (71.7 m²) çalıştırılınca %27.6 pay ile UYARI üretiyor,
+  DÜZELTİLMİŞ değerle (30.0 m²) çalıştırılınca pay %11.5'e düşüp UYARI
+  KALKIYOR. Bu görevin kapsamı yalnızca KONTROLÜ kurmak VE `templates/`i
+  düzeltmekti (DEV-041/044/046 ile AYNI disiplin) — gerçek `context.
+  json`daki `band` verisi BİLEREK DEĞİŞTİRİLMEDİ; "ölü alanın YERİNE ne
+  konabileceği" (plan metninin kendi "Açık karar"ı) GERÇEK bir tasarım
+  kararıdır ve UYDURULMADI, ayrı bir revizyon bekliyor. Ayrıntı:
+  `scripts/templates/CLAUDE.md` "DEV-045 düzeltmesi",
+  `scripts/architect/CLAUDE.md` "DEV-045: ortak sirkülasyon payı".
+  (`HD-024`)
 
 ## Görev tamamlama kuralı
 

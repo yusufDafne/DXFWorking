@@ -1,8 +1,9 @@
-# templates modülü (sirkülasyon çekirdeği şablon üreteci) — DEV-037
+# templates modülü (sirkülasyon çekirdeği şablon üreteci) — DEV-037 + DEV-045
 
 `floor_width`/`floor_depth`den, bir kat planının **sirkülasyon çekirdeğini**
-(asansör + merdiven + L-şekilli koridor + güney giriş duvarı) parametrik
-olarak üreten TAMAMEN deterministik bir Python fonksiyonu.
+(asansör + merdiven + dikdörtgen koridor + güney giriş duvarı) parametrik
+olarak üreten TAMAMEN deterministik bir Python fonksiyonu. Koridor
+**DEV-045'e kadar L-şekilliydi** — bkz. aşağıdaki "DEV-045 düzeltmesi".
 
 ## Neden bu modül (kullanıcı talebi, 2026-09-28)
 
@@ -90,6 +91,49 @@ tutarlı. Bu fonksiyon hangi X ofsetinde bir binaya yerleştirileceğine karar
 VERMEZ (çağıran taraf, `generate_dxf.py::translate_floor` gibi bir
 mekanizmayla kaydırabilir).
 
+## DEV-045 düzeltmesi: koridor artık israf eden bir L-şekli DEĞİL
+
+**Kullanıcının somut gözlemi:** *"şu anda örnek planımızda kat planında
+sağ üstteki alan tamamıyla ölü bir alan."* Ölçüldü: `band` odasının eski
+L-şekli, `x:core_x1..floor_width, y:core_y0..floor_depth` bölgesini
+(bu projede 13900×3000mm ≈ 41.7 m²) GEREKSİZ yere `band_depth` (4500mm)
+derinliğinde bırakıyordu — hiçbir işlevsel mahal İÇERMEYEN, salt geçiş
+bile OLMAYAN bir alan (çünkü asıl giriş erişimi zaten `band_south`
+duvarındaki `door_entry_*` kapılarıyla, bu bölgenin GÜNEYİNDEKİ ince
+`corridor_leg_depth` şeridinden sağlanıyor).
+
+**Kök neden (geometrik, "parametrize etmek" değil):** çekirdeğin
+(asansör+merdiven) footprint'i `y >= core_y0`de durduğu için, koridorun
+`y: band_y0..core_y0` (yalnızca `corridor_leg_depth` derinliğinde) bir
+dikdörtgen olması TEK BAŞINA çekirdekle çakışmayı önlemeye YETERLİdir —
+L-şeklinin eski "doğuda tam `band_depth`" uzantısı mimari olarak hiçbir
+ihtiyacı KARŞILAMIYORDU, yalnızca polygon inşa mantığının bir kalıntısıydı.
+Düzeltme: `band_polygon` artık basit bir dikdörtgen —
+`[[0,band_y0],[floor_width,band_y0],[floor_width,core_y0],[0,core_y0]]`
+— ve bu TEK BAŞINA (floor_width'e göre "parametrize etme" GEREKMEDEN) dead
+alanı KALDIRIR. Bu projede `band` alanı 71.7 m² → **30.0 m²**'ye düştü.
+
+**Plan metninin "Fikir 1 DENETLER, Fikir 2 DÜZELTİR" deseni GERÇEKTEN
+tutarlı çalışıyor:** `architect::check_common_circulation_share` (Fikir 1,
+bina/kat-seviyesi genelleme), gerçek projenin ESKİ `band` değeriyle (71.7
+m², henüz `context.json`a uygulanmadı) çalıştırılınca %27.6 pay ile
+UYARI üretir; aynı kontrol DÜZELTİLMİŞ `band` değeriyle (30.0 m²)
+çalıştırılınca pay %11.5'e düşer ve UYARI KALMAZ — bkz. `scripts/
+architect/selftest.py::check_common_circulation_share_clean_with_
+templates_fix`. `DEV-036`/`DEV-037`deki (`standards`+`templates`) AYNI
+ilişki deseni.
+
+**Gerçek projeye bugün UYGULANMADI** (DEV-041/044/046 ile AYNI disiplin
+— context.json'daki `band` hâlâ eski 71.7 m²'lik şekli taşıyor, bu yüzden
+`validate.py` gerçek projede `check_common_circulation_share`den YENİ bir
+UYARI üretir, bkz. `docs/development/DEVELOPER_NOTES.md`). Bu bilinçli
+bir karardır — "ölü alanın YERİNE ne konabileceği" (örn. ortak depo/
+sığınak/teknik oda) GERÇEK bir tasarım kararıdır ve UYDURULMAZ; bu görev
+yalnızca GEREKSİZ fazla alanı KALDIRDI, boşalan yere bir şey İCAT
+ETMEDİ — boşalan alan `context.json`a UYGULANDIĞINDA basitçe bina
+zarfının (dış duvarlar zaten var) İÇİNDE, henüz hiçbir odaya ait OLMAYAN
+bir boşluk olarak kalır.
+
 ## `include_band_south`: kat tipini BU MODÜL BİLMEZ
 
 Kök `CLAUDE.md`: `band_south` duvarı zemin/normal katlarda VAR (giriş
@@ -122,13 +166,17 @@ birleştirildikten SONRA, NORMAL pipeline (`rooms.collision`/
 
 ## Doğrulama
 
-`python scripts/templates/selftest.py` — 5 kontrol grubu: varsayılan
+`python scripts/templates/selftest.py` — 7 kontrol grubu: varsayılan
 şablonun GERÇEK proje verisiyle (`normal1` katı) BİREBİR eşleştiği
-(poligon/alan/duvar konumu/kapı konumu), çekirdek konumunun `floor_width`
-değişse de SABİT kaldığı (yalnızca koridorun doğu ucu büyüdüğü), `include_
-band_south` anahtarının YALNIZCA o duvarı etkilediği, `id_prefix`in tüm
-üretilen kimliklere uygulandığı (çoklu çekirdek çakışmasını önler), özel
-bir `CirculationCoreTemplate`in enjekte edilebildiği.
+(poligon/alan/duvar konumu/kapı konumu — `band` HARİÇ, DEV-045),
+`band`in artık verimli bir dikdörtgen olduğu (elle hesaplanmış: 30.0 m²,
+eski L-şekli 71.7 m²'ydi) VE basitleştirmenin çekirdek footprint'iyle
+YENİDEN çakışmaya başlamadığı (yanlış-pozitif), çekirdek konumunun
+`floor_width` değişse de SABİT kaldığı (yalnızca koridorun doğu ucu
+büyüdüğü), `include_band_south` anahtarının YALNIZCA o duvarı etkilediği,
+`id_prefix`in tüm üretilen kimliklere uygulandığı (çoklu çekirdek
+çakışmasını önler), özel bir `CirculationCoreTemplate`in enjekte
+edilebildiği.
 
 `validate.py`de özel bir entegrasyon YOKTUR — bu modülün çıktısı
 context.json'a hiç yazılmadığı için (yukarı bakınız) doğrulanacak bir
@@ -151,14 +199,18 @@ NORMAL `validate.py` akışından geçer.
 - **`units="m"` desteği TEST EDİLMEDİ** (yalnızca `mm` gerçek projeyle
   karşılaştırılarak sınandı) — `to_m2` dönüşümü kod olarak doğru
   görünüyor ama `m` birimli bir golden referansla henüz KANITLANMADI.
-- **`band_depth`/`corridor_leg_depth` sabitleri `floor_width`e/servis
-  edilen birim sayısına göre ÖLÇEKLENMEZ** — bu projede (`floor_width`
-  20000mm) L-şekilli koridorun uzun kolu bu yüzden ORANTISIZ büyüyor ve
-  ~41.7 m² kullanılmayan alan bırakıyor (kullanıcı: "sağ üstteki alan
-  tamamıyla ölü bir alan"); bkz. `DEVELOPMENT_TASKS.md` `DEV-045`
-  (PLANNED).
-- **`stair_width`in oda-oranı varsayılanı gerçek bir merdiven kolunun
-  (uzun-ince) oranını YANSITMAZ** — `standards::STANDARDS['merdiven']`
-  sınırının alt ucuna yakın ama kare'ye YAKIN bir oda ayırır, bu yüzden
-  tek-kollu merdiven SIĞMIYOR (bkz. `scripts/stairs/CLAUDE.md`); bkz.
-  `DEVELOPMENT_TASKS.md` `DEV-046` (PLANNED).
+- ~~`band_depth`/`corridor_leg_depth` sabitleri `floor_width`e/servis
+  edilen birim sayısına göre ÖLÇEKLENMEZ.~~ **`DEV-045`'te KAPANDI:**
+  koridor artık israf eden bir L-şekli DEĞİL — bkz. yukarıdaki "DEV-045
+  düzeltmesi". `band_depth`/`corridor_leg_depth` sabitleri HÂLÂ `floor_
+  width`e göre ölçeklenmiyor (bu DEĞİŞMEDİ) ama artık buna GEREK de yok
+  — basit dikdörtgen biçimi zaten floor_width'ten BAĞIMSIZ olarak dead
+  alan üretmiyor.
+- **`stair_width`in oda-oranı varsayılanı gerçek bir TEK KOLLU merdiven
+  kolunun (uzun-ince) oranını YANSITMAZ** — `standards::STANDARDS
+  ['merdiven']` sınırının alt ucuna yakın ama kare'ye YAKIN bir oda
+  ayırır. **`DEV-046`'da (stairs/) bu ARTIK bir SORUN DEĞİL:**
+  `kind='dog_leg'` (çift kollu) bu oda oranıyla ZATEN rahatça çalışıyor
+  — bkz. `scripts/stairs/CLAUDE.md` "Çift kollu merdiven geometrisi".
+  `stair_width`in KENDİSİ (4000mm) hâlâ `templates/`in bir varsayımıdır,
+  değişmedi.

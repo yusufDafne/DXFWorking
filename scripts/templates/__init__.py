@@ -137,15 +137,18 @@ def generate_circulation_core(
         [core_x1, floor_depth],
         [template.elevator_width, floor_depth],
     ]
-    # L-sekilli koridor: tam kat genisligini kaplar, cekirdegin kendisini
-    # (asansor+merdiven dikdortgeni) DISLAR - gercek projenin 'band'
-    # odasiyla AYNI sekil (bkz. modul dokstring).
+    # DEV-045 duzeltmesi: dikdortgen koridor, SADECE `corridor_leg_depth`
+    # derinliginde - cekirdegin (asansor+merdiven) footprint'i zaten
+    # y >= core_y0'da durdugu icin bu TEK BASINA cakismayi onler, bir
+    # L-sekli GEREKMEZ. Eski L-sekli, cekirdegin DOGUSUNDA (x > core_x1)
+    # koridoru gereksiz yere TAM `band_depth` derinliginde birakiyordu -
+    # bu, kullanicinin "sag ustteki alan tamamiyla olu bir alan" olarak
+    # isaretledigi alandi (floor_width=20000mm projede 41.7 m²). Bkz.
+    # scripts/templates/CLAUDE.md "DEV-045 duzeltmesi".
     band_polygon = [
         [0.0, band_y0],
         [floor_width, band_y0],
-        [floor_width, floor_depth],
-        [core_x1, floor_depth],
-        [core_x1, core_y0],
+        [floor_width, core_y0],
         [0.0, core_y0],
     ]
 

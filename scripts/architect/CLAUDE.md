@@ -125,7 +125,8 @@ v1 sınırı). Kontrol iki adımdır:
 
 ```python
 from architect import (
-    check_circulation_area_share, check_bedroom_via_corridor,
+    check_circulation_area_share, check_common_circulation_share,
+    check_bedroom_via_corridor,
     check_entry_sightlines, check_door_core_balance,
     check_wet_area_reachable_without_bedroom, check_wet_area_door_proximity,
     DEFAULT_CIRCULATION_SHARE_MAX, DEFAULT_DOOR_CORE_BALANCE_RATIO,
@@ -265,21 +266,62 @@ hassasiyetinde bir ölçüm DEĞİL. `uC` bu kuralda hesaba KATILMAZ (yalnızca
 `uC_banyo` var, eşleşecek bir `wc` yok — "ikisi de varsa" ön koşulu
 plan metninde zaten vardı).
 
+## DEV-045: ortak sirkülasyon payı (bina/kat seviyesi)
+
+Kullanıcının somut örneği: *"şu anda örnek planımızda kat planında sağ
+üstteki alan tamamıyla ölü bir alan."* Plan metninin "Fikir 1"i
+uygulandı: `check_common_circulation_share`, `check_circulation_area_
+share`in (birim-içi hol/toplam birim net alanı) BİNA/KAT SEVİYESİNE
+genellenmesidir — ORTAK (hiçbir `unit_id` taşımayan, `room_type=
+'koridor'`) alan, kattaki TÜM birimlerin TOPLAM net alanına göre
+`max_share`i (varsayılan `DEFAULT_CIRCULATION_SHARE_MAX`, AYNI sabit
+yeniden kullanılır) aşarsa UYARI.
+
+**`check_circulation_area_share`dan FARKI (birbirinin YERİNE GEÇMEZ):**
+o fonksiyon bir birimin KENDİ hol'ünü KENDİ net alanına göre ölçer
+(`unit_id`li bir koridor odası ARANIR); bu fonksiyon `unit_id`SİZ
+(ortak) koridor odalarını TÜM birimlerin TOPLAMINA göre ölçer — ikisi
+AYNI ANDA çalışır, farklı payları test eder.
+
+**Bu kural NEREDEN "ölü alanı" bulur:** doğrudan BULMAZ — hangi
+bölgenin işlevsiz olduğunu BİLMEZ, yalnızca GEOMETRİ (alan toplamları)
+okur. Ama aynı sonucu DOLAYLI yakalar: gereksiz yere büyütülmüş bir
+ortak koridor, payını şişirir. Gerçek fiziksel düzeltme `templates::
+generate_circulation_core`nin DEV-045 düzeltmesidir (bkz. `scripts/
+templates/CLAUDE.md` "DEV-045 düzeltmesi") — `DEV-036`/`DEV-037`
+(`standards`+`templates`) ile AYNI "Fikir 1 DENETLER, Fikir 2 DÜZELTİR"
+deseni, ve bu ikisinin GERÇEKTEN tutarlı olduğu (template düzeltmesi
+uygulanınca kural TEMİZ döner) `selftest.py::check_common_circulation_
+share_clean_with_templates_fix`te KANITLANIR.
+
+**Gerçek projede GERÇEK bir sonuç üretir:** `band` (71.7 m², eski
+L-şekli, henüz `context.json`a düzeltme UYGULANMADI) kattaki üç birimin
+toplam net alanının (260 m²) %27.6'sı — `DEFAULT_CIRCULATION_SHARE_MAX`
+(%15) ÇOK aşılıyor, UYARI GERÇEKTEN üretiliyor (`selftest.py::check_
+common_circulation_share_real_project_catches_old_band`). **Bu görevin
+kapsamı yalnızca KONTROLÜ kurmak VE `templates/`i düzeltmekti** —
+gerçek `context.json`daki `band` verisi BİLEREK DEĞİŞTİRİLMEDİ (DEV-041/
+044/046 ile AYNI disiplin); "ölü alanın YERİNE ne konabileceği" GERÇEK
+bir tasarım kararıdır ve UYDURULMAZ, ayrı bir revizyon bekliyor.
+
 ## Doğrulama
 
-`python scripts/architect/selftest.py` — yirmi yedi kontrol grubu: altı
+`python scripts/architect/selftest.py` — otuz üç kontrol grubu: yedi
 `rules.py` fonksiyonunun her biri hem bir İHLAL hem (giriş-WC görüş
 hattı için İKİ farklı: koni-dışı VE duvarla-engellenmiş; ıslak hacim
-yakınlığı için ayrıca bir `max_distance` OVERRIDE testi) bir
-YANLIŞ-POZİTİF senaryosuyla; `check_fits`/`resolve_unit_zoning`in elle
-hesaplanabilir sonuçları (DEV-038'in gerçek keşfettiği 7700mm/8400mm
-senaryosu DAHİL); `options_for_core_placement`in giriş kenarını YÜKSEK
-puanladığı; `place_unit_entry_doors`in zone merkezlerine kapı koyduğu;
-VE gerçek `context.json`'daki (rev-21'den itibaren gerçek `unit_id`
-taşıyan) oda verisiyle hol-oranı ihlalinin VE `uC`'nin yatak-odası
-zincirinin GERÇEKTEN yakalandığı, `uA`/`uB`'nin bu iki YENİ kuralda
-TEMİZ kaldığı (`unit_id` bellek-içi SOYULDUĞUNDA opt-in'in hâlâ geçerli
-kaldığı da ayrıca kanıtlanır).
+yakınlığı için ayrıca bir `max_distance` OVERRIDE testi; ortak
+sirkülasyon payı için ayrıca "koridor OLMAYAN ortak oda" VE "birim-içi
+hol KARIŞTIRILMAZ" yanlış-pozitifleri) bir YANLIŞ-POZİTİF senaryosuyla;
+`check_fits`/`resolve_unit_zoning`in elle hesaplanabilir sonuçları
+(DEV-038'in gerçek keşfettiği 7700mm/8400mm senaryosu DAHİL);
+`options_for_core_placement`in giriş kenarını YÜKSEK puanladığı;
+`place_unit_entry_doors`in zone merkezlerine kapı koyduğu; VE gerçek
+`context.json`'daki (rev-21'den itibaren gerçek `unit_id` taşıyan) oda
+verisiyle hol-oranı ihlalinin, `uC`'nin yatak-odası zincirinin VE eski
+`band`in ortak sirkülasyon ihlalinin GERÇEKTEN yakalandığı, `uA`/`uB`'nin
+ilgili kurallarda TEMİZ kaldığı, düzeltilmiş `band` değeriyle ortak
+sirkülasyon uyarısının KALKTIĞI (`unit_id` bellek-içi SOYULDUĞUNDA
+opt-in'in hâlâ geçerli kaldığı da ayrıca kanıtlanır).
 
 ## Gelecek yönü — 2. nesil mimari mantık motoru (planlama notu, 2026-09-28)
 
@@ -436,6 +478,19 @@ kapılarının birbirinden ÇOK uzak olması (tesisat kümelenmesi ilkesi,
   "oda-kapı komşuluğu" tanımıyla (yukarı bakınız) tutarlıdır ama bir
   odadan diğerine PENCEREDEN/açık plan geçişle (kapısız) geçilen —
   bugünkü şemada zaten desteklenmeyen — bir senaryoyu MODELLEMEZ.
+- **`DEV-045`'in GERÇEK projede yakaladığı eski `band` (71.7 m², %27.6
+  ortak sirkülasyon payı) ihlali henüz GİDERİLMEDİ** (yukarı bakınız,
+  "DEV-045: ortak sirkülasyon payı") — `templates::generate_circulation_
+  core` düzeltildi (30.0 m²'ye) ama bu düzeltme gerçek `context.json`a
+  henüz UYGULANMADI; düzeltme AYRI bir proje revizyonu, "ölü alanın
+  YERİNE ne konacağı" kullanıcı onayı GEREKTİRİR.
+- **`check_common_circulation_share`, "ölü alan"ı DOLAYLI yakalar** —
+  yalnızca alan ORANINA bakar, hangi bölgenin GERÇEKTEN işlevsiz
+  olduğunu (geometrik olarak) BİLMEZ; bir projede ortak alan payı
+  yüksek ama GERÇEKTEN kullanışlı (örn. geniş bir ortak lobi/bekleme
+  alanı) olabilir — bu durumda da UYARI üretir (kullanıcı kararıyla
+  göz ardı edilebilir, `standards`/`architect`in genel "HER ZAMAN
+  UYARI" felsefesiyle tutarlı).
 - **Kural ağırlıkları/eşikleri "v1 pratik varsayılan"dır** —
   `standards/`in kendi "Gelecek güncelleme sözleşmesi" ile AYNI
   disiplin, kullanıcının gerçek şartname/deneyimle güncellemesi

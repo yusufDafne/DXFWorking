@@ -32,7 +32,15 @@ def check_matches_real_project_ground_truth() -> list[str]:
     ZATEN validate.py'den GECMIS sirkulasyon cekirdegiyle (normal1 kati)
     BIREBIR eslesmeli - bu deger ICAT EDILMEDI, oradan CIKARILDI (bkz.
     modul dokstring'i). Gercek proje dosyasi yoksa test ATLANIR (izole
-    ortamda calisabilsin diye), ama bu ortamda HER ZAMAN mevcuttur."""
+    ortamda calisabilsin diye), ama bu ortamda HER ZAMAN mevcuttur.
+
+    **DEV-045 istisnasi:** `elevator`/`stair` odalari VE cekirdek
+    duvarlari/kapisi HALA BIREBIR eslesir (bu DEV-045'te DEGISMEDI) - ama
+    `band` ODASI KASITLI olarak BU KARSILASTIRMANIN DISINDA tutulur,
+    cunku DEV-045 onun SEKLINI duzeltti (eski L-sekli -> dikdortgen,
+    bkz. check_band_is_efficient_rectangle_not_wasteful_l_shape) ve
+    gercek context.json HENUZ bu duzeltmeyi almadi (DEV-041/044/046 ile
+    AYNI disiplin - ayri bir proje revizyonu bekliyor)."""
     if not REAL_CONTEXT_PATH.exists():
         return []
     floor, meta = _real_normal_floor()
@@ -41,6 +49,8 @@ def check_matches_real_project_ground_truth() -> list[str]:
     errors: list[str] = []
     real_rooms = {r["id"]: r for r in floor["rooms"]}
     for room in fragment["rooms"]:
+        if room["id"] == "band":
+            continue  # DEV-045: kasitli olarak farkli, bkz. docstring
         real = real_rooms.get(room["id"])
         if real is None:
             errors.append(f"gercek projede '{room['id']}' id'li oda YOK")
@@ -86,6 +96,42 @@ def check_matches_real_project_ground_truth() -> list[str]:
         errors.append(f"door_stair genisligi farkli: {produced_door['width']} != {real_door['width']}")
 
     return errors
+
+
+def check_band_is_efficient_rectangle_not_wasteful_l_shape() -> list[str]:
+    """DEV-045: `band`, cekirdegin (asansor+merdiven) DOGUSUNDA artik
+    GEREKSIZ yere tam `band_depth` derinliginde degil - SADECE
+    `corridor_leg_depth` derinliginde basit bir DIKDORTGENDIR (eski
+    L-sekli DEGIL). Elle hesap (varsayilan sablon, floor_width=20000,
+    floor_depth=17500): band_y0=17500-4500=13000, core_y0=13000+1500=
+    14500 -> poligon TAM [[0,13000],[20000,13000],[20000,14500],
+    [0,14500]], alan=20000*1500/1e6=30.0 m2 (eski L-sekli 71.7 m2'ydi -
+    41.7 m2'lik 'olu alan' KALDIRILDI)."""
+    errors: list[str] = []
+    fragment = generate_circulation_core(20000.0, 17500.0)
+    band = next(r for r in fragment["rooms"] if r["id"] == "band")
+    expected_polygon = [[0.0, 13000.0], [20000.0, 13000.0],
+                         [20000.0, 14500.0], [0.0, 14500.0]]
+    if band["polygon"] != expected_polygon:
+        errors.append(f"band poligonu {expected_polygon} bekleniyordu, {band['polygon']} bulundu")
+    if abs(band["area_m2"] - 30.0) > 1e-6:
+        errors.append(f"band alani 30.0 m2 bekleniyordu, {band['area_m2']} bulundu")
+    return errors
+
+
+def check_band_still_excludes_core_footprint() -> list[str]:
+    """YANLIS-POZITIF: dikdortgene basitlestirme, cekirdegin (asansor+
+    merdiven, y>=core_y0) footprint'iyle YENIDEN cakismaya baslamamali -
+    band'in y-araligi [band_y0, core_y0]de KALMALI, core_y0'in USTUNE
+    HIC CIKMAMALI (bu, L-sekli hic GEREKMEDEN cakismanin onlendigini
+    kanitlar)."""
+    fragment = generate_circulation_core(20000.0, 17500.0)
+    band = next(r for r in fragment["rooms"] if r["id"] == "band")
+    band_ys = [p[1] for p in band["polygon"]]
+    core_y0 = 17500.0 - 4500.0 + 1500.0  # 14500.0, DEFAULT_TEMPLATE'ten
+    if max(band_ys) > core_y0:
+        return [f"band, cekirdegin y araligina ({core_y0}) TASIYOR: max_y={max(band_ys)}"]
+    return []
 
 
 def check_core_position_fixed_when_floor_width_changes() -> list[str]:
@@ -155,7 +201,9 @@ def check_custom_template_scales_linearly() -> list[str]:
 
 def main() -> int:
     groups = (
-        ("varsayilan sablon GERCEK proje verisiyle BIREBIR eslesiyor", check_matches_real_project_ground_truth()),
+        ("varsayilan sablon GERCEK proje verisiyle BIREBIR eslesiyor (band HARIC, DEV-045)", check_matches_real_project_ground_truth()),
+        ("band artik verimli bir dikdortgen, israf eden L-sekli DEGIL (DEV-045)", check_band_is_efficient_rectangle_not_wasteful_l_shape()),
+        ("band basitlestirilince de cekirdek footprint'iyle CAKISMAZ", check_band_still_excludes_core_footprint()),
         ("cekirdek konumu sabit, yalnizca dogu ucu floor_width'e gore degisir", check_core_position_fixed_when_floor_width_changes()),
         ("include_band_south acik/kapali (bodrum/cati vs zemin/normal)", check_include_band_south_toggle()),
         ("id_prefix tum uretilen id'lere uygulanir", check_id_prefix_avoids_collisions()),
