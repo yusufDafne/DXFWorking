@@ -420,26 +420,27 @@ def check_wet_area_direct_bypass_false_positive() -> list[str]:
             if warnings else [])
 
 
-def check_wet_area_real_project_catches_uC_chain() -> list[str]:
-    """GERCEK projede (`normal1`), rev-22 uC'yi 'salon-banyo-oda-hol'
-    olarak yeniden sıraladi ama `uC_hol`un TEK komsusu HALA `uC_oda`
-    (yatak_odasi) - yani `uC_banyo`'ya `uC_hol`den yatak odasindan
-    GECMEDEN ulasan bir yol YOK (kullanicinin 'koridor->hol->oda->banyo'
-    sikayetinin rev-22'den SONRA da KISMEN hayatta kalan somut bir
-    ornegi). uA/uB'nin T-sekilli hol'u ise banyo/wc'ye DOGRUDAN acildigi
-    icin TEMIZ olmali. Gercek dosya yoksa test ATLANIR."""
+def check_wet_area_real_project_uC_fixed_rev23() -> list[str]:
+    """GERCEK projede (`normal1`), rev-22'de uC_hol'un TEK komsusu HALA
+    uC_oda idi (uC_banyo'ya yatak odasindan GECMEDEN ulasan bir yol
+    YOKTU - kullanicinin 'koridor->hol->oda->banyo' sikayetinin somut bir
+    ornegi, bkz. DEV-042 COMPLETED ozeti). rev-23'te uC TAMAMEN yeniden
+    zonlandi: Hol artik dar bir bacak + iki kisa tam-genislik "strip"ten
+    olusan bir sekille Salon/Banyo/WC/Oda'nin HER BIRINE BAGIMSIZ acilir
+    (bkz. scripts/architect/CLAUDE.md). Bu yuzden ne uC_banyo ne de
+    (rev-23'te eklenen) uC_wc icin bir zincir uyarisi BEKLENMEMELI -
+    ikisi de HER ZAMAN Hol'den, yatak odasindan (uC_oda) GECMEDEN
+    erisilebilir. uA/uB zaten TEMIZDI, oyle kalmali. Gercek dosya yoksa
+    test ATLANIR."""
     if not REAL_CONTEXT_PATH.exists():
         return []
     context = json.loads(REAL_CONTEXT_PATH.read_text(encoding="utf-8"))
     floor = next(f for f in context["floors"] if f["id"] == "normal1")
     rooms, walls, openings = floor["rooms"], floor["walls"], floor["openings"]
     warnings = check_wet_area_reachable_without_bedroom(rooms, walls, openings)
-    errors = []
-    if not any("uC_banyo" in w for w in warnings):
-        errors.append(f"uC_banyo'nun yatak-odasi zinciri YAKALANMALIYDI: {warnings}")
-    if any("uA_" in w or "uB_" in w for w in warnings):
-        errors.append(f"uA/uB TEMIZ olmaliydi (T-sekilli hol dogrudan acilir): {warnings}")
-    return errors
+    if warnings:
+        return [f"rev-23 sonrasi TUM islak hacimler TEMIZ olmaliydi: {warnings}"]
+    return []
 
 
 # --------------------------------------------------------------------------
@@ -591,22 +592,24 @@ def check_common_circulation_share_differs_from_per_unit_check() -> list[str]:
             if common_warnings else [])
 
 
-def check_common_circulation_share_real_project_catches_old_band() -> list[str]:
-    """GERCEK projede (normal1), 'band' (71.7 m2, unit_id YOK, koridor)
-    hala eski ISRAFLI L-sekli ile - ortak sirkulasyon payi kattaki UC
-    birimin TOPLAM net alaninin (260 m2) %27.6'si, varsayilan ust sinir
-    %15'i ACIKCA asiyor -> TAM 1 uyari GERCEKTEN yakalanmali. Bu, DEV-045
-    Fikir 2'nin (templates duzeltmesi) context.json'a HENUZ UYGULANMADIGINI
-    da dogrudan kanitlar. Gercek dosya yoksa test ATLANIR."""
+def check_common_circulation_share_real_project_band_fixed_rev23() -> list[str]:
+    """GERCEK projede (normal1), 'band' (unit_id YOK, koridor) rev-23'e
+    KADAR eski ISRAFLI L-sekliyle (71.7 m2) ortak sirkulasyon payini
+    kattaki TUM birimlerin TOPLAM net alaninin (260 m2) %27.6'sina
+    cikariyordu - varsayilan ust sinir %15'i ACIKCA asiyordu. rev-23'te
+    `templates::generate_circulation_core`nin DEV-045 duzeltmesi (basit
+    dikdortgen, 30.0 m2) GERCEK context.json'a UYGULANDI - pay %11.5'e
+    dustu, UYARI KALMAMALI. Gercek dosya yoksa test ATLANIR."""
     if not REAL_CONTEXT_PATH.exists():
         return []
     context = json.loads(REAL_CONTEXT_PATH.read_text(encoding="utf-8"))
     floor = next(f for f in context["floors"] if f["id"] == "normal1")
+    band = next(r for r in floor["rooms"] if r["id"] == "band")
+    if band["area_m2"] >= 71.0:
+        return [f"'band' HALA eski israfli alanda ({band['area_m2']} m2) - DEV-045 uygulanmamis"]
     warnings = check_common_circulation_share(floor["rooms"])
-    if len(warnings) != 1:
-        return [f"GERCEK projede 1 uyari (eski israfli 'band') beklenirdi: {warnings}"]
-    if "band" not in warnings[0] and "27.6" not in warnings[0]:
-        return [f"uyari eski 'band' ihlalini YANSITMALIYDI: {warnings[0]}"]
+    if warnings:
+        return [f"rev-23 sonrasi 'band' payi TEMIZ olmaliydi: {warnings}"]
     return []
 
 
@@ -629,15 +632,18 @@ def check_common_circulation_share_clean_with_templates_fix() -> list[str]:
     return [f"duzeltilmis 'band' ile uyari KALMAMALIYDI: {warnings}"] if warnings else []
 
 
-def check_real_project_is_clean_after_rev22_redesign() -> list[str]:
-    """rev-22'de uA/uB/uC'nin BACK BAND'i (hol/mutfak/banyo/wc/oda) yeniden
-    tasarlandi. GERCEK projede artik circulation-share/bedroom-via-corridor/
-    entry-sightline UCU DA sifir uyari vermeli (check_door_core_balance
-    HARIC - bu, templates::generate_circulation_core'un cekirdegi HER ZAMAN
-    sol-alt kosede sabitlemesinden kaynaklanan YAPISAL bir sinirlamadir,
-    bkz. context.json rev-22 ozeti - bu revizyonun kapsami DISINDA
-    birakildi, DEV-040 Fikir 4'un isaret ettigi gelecek calisma). Gercek
-    dosya yoksa test ATLANIR."""
+def check_real_project_is_clean_after_rev23_redesign() -> list[str]:
+    """rev-22 uC'yi 'salon-banyo-oda-hol' olarak yeniden sıraladi ama
+    uC_hol'un TEK komsusu HALA uC_oda idi (bu test o zaman BASARISIZDI -
+    gercek duzeltme BILEREK rev-22'nin kapsami DISINDA birakilmisti, bkz.
+    DEV-042 COMPLETED ozeti). rev-23'te uA/uB/uC'nin BACK BAND'i (hol/
+    banyo/wc/oda) GERCEKTEN yeniden tasarlandi. GERCEK projede artik
+    circulation-share/bedroom-via-corridor/entry-sightline UCU DA sifir
+    uyari vermeli (check_door_core_balance HARIC - bu, templates::
+    generate_circulation_core'un cekirdegi HER ZAMAN sol-alt kosede
+    sabitlemesinden kaynaklanan YAPISAL bir sinirlamadir, DEV-040 Fikir
+    4'un isaret ettigi gelecek calisma, bu revizyonun kapsami DISINDA).
+    Gercek dosya yoksa test ATLANIR."""
     if not REAL_CONTEXT_PATH.exists():
         return []
     context = json.loads(REAL_CONTEXT_PATH.read_text(encoding="utf-8"))
@@ -698,7 +704,7 @@ def main() -> int:
         ("place_unit_entry_doors sigmayan planda BOS doner", check_place_unit_entry_doors_empty_when_infeasible()),
         ("hol->oda->banyo zinciri (DEV-042) UYARI verir", check_wet_area_blocked_by_bedroom_flags()),
         ("hol->banyo DOGRUDAN bypass'i YANLIS-POZITIF uretmez", check_wet_area_direct_bypass_false_positive()),
-        ("GERCEK projede uC_hol->uC_oda->uC_banyo zinciri YAKALANIR", check_wet_area_real_project_catches_uC_chain()),
+        ("GERCEK projede uC rev-23'te DUZELTILDI (zincir yok)", check_wet_area_real_project_uC_fixed_rev23()),
         ("uzak islak hacim kapilari (DEV-043) UYARI verir", check_wet_area_door_proximity_flags_far_doors()),
         ("yakin islak hacim kapilari YANLIS-POZITIF uretmez", check_wet_area_door_proximity_false_positive_close()),
         ("max_distance OVERRIDE parametresi calisir", check_wet_area_door_proximity_custom_threshold()),
@@ -708,9 +714,9 @@ def main() -> int:
         ("esik icindeki ortak sirkulasyon payi YANLIS-POZITIF uretmez", check_common_circulation_share_false_positive_within_limit()),
         ("koridor OLMAYAN ortak oda payi SISIRMEZ", check_common_circulation_share_ignores_non_corridor_common_rooms()),
         ("birim-ici hol, ORTAK sirkulasyon ile KARISTIRILMAZ", check_common_circulation_share_differs_from_per_unit_check()),
-        ("GERCEK projede eski israfli 'band' YAKALANIR", check_common_circulation_share_real_project_catches_old_band()),
+        ("GERCEK projede 'band' rev-23'te DUZELTILDI (temiz)", check_common_circulation_share_real_project_band_fixed_rev23()),
         ("templates DEV-045 duzeltmesiyle pay TEMIZ olur (Fikir 1+2 tutarli)", check_common_circulation_share_clean_with_templates_fix()),
-        ("GERCEK proje rev-22 sonrasi TEMIZ (hol/yatak-salon/goru-hatti)", check_real_project_is_clean_after_rev22_redesign()),
+        ("GERCEK proje rev-23 sonrasi TEMIZ (hol/yatak-salon/goru-hatti)", check_real_project_is_clean_after_rev23_redesign()),
         ("unit_id SOYULUNCE opt-in HALA GECERLI", check_opt_in_still_holds_when_unit_id_is_stripped()),
     )
     failed = False

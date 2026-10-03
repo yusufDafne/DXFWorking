@@ -4,6 +4,94 @@ Aktif geçmiş kapasitesi: **50 kayıt**. En eski tamamlanmış kayıt, 51. kay�
 alınırken silinir. Ayrıntılı teknik değişiklikler git geçmişi ve ilgili proje
 provenance kayıtlarıyla ilişkilendirilir.
 
+## HD-025 — rev-23: `uC` yeniden-zonlama + DEV-041/042/045'in gerçek projeye uygulanması
+
+- **Durum:** COMPLETED
+- **Tamamlanma:** 2026-10-02
+- **Kökeni:** Kullanıcının *"Şimdi sen bir mimar olarak düşünüp bu
+  projedeki kat planını efektif olarak planlayacaksın... Örnek olarak
+  banyo ve wc nin yan yana olması ya da mutfağın kapısının önünce wc
+  olmaması gibi... Bu çalışmanın en genel adına etütleme denir"*
+  talebi, ardından *"Zonlama fikri görmek istemiyorum şu anda,
+  çalışmaya başlayabilirsin."* onayı. Bu, DEV-041/DEV-042/DEV-045'in
+  kendi COMPLETED özetlerinde BİLEREK açık bıraktığı "gerçek
+  `context.json`a UYGULANMADI, ayrı bir revizyon bekliyor" cümlesinin
+  karşılığıdır — üç modül/kontrol görevi de KONTROLÜ kurmuştu, bu
+  revizyon onları GERÇEK projeye TAŞIDI.
+
+### Hesaplamayla doğrulanan teşhis (zonlama alternatifi gösterilmeden)
+
+`architect.rules` yardımcıları (`_door_midpoint`, `_rooms_touching_point`,
+`_clear_line_of_sight`) ile gerçek `uA`/`uB`/`uC` geometrisi doğrudan
+sorgulandı. `uA`/`uB` zaten TEMİZ bulundu (hub-tipi hol, banyo/wc ortak
+duvar paylaşıyor, mutfak→wc görüş hattı 5428mm'de BLOKE). `uC`'de ÜÇ
+gerçek kusur bulundu: (1) `uC_hol`ün tek komşusu `uC_oda` idi (DEV-042'nin
+daha önce KONTROLÜNÜ kurduğu zincirin ta kendisi), (2) `uC_banyo`nun
+HEM Salon'a HEM Oda'ya doğrudan kapısı vardı (yeni, adlandırılmamış bir
+mahremiyet kusuru), (3) `uC_oda`nın hiç penceresi yoktu.
+
+### Uygulanan tek tasarım (zonlama alternatifi istenmediği için)
+
+`uC` yeniden zonlandı: Salon derinliği büyütülüp Hol'ün toplam uzunluğu
+kısaltıldı; Hol dar bir bacak + iki kısa tam-genişlik "strip"ten oluşan
+bir şekille Salon/Banyo/(yeni) WC/Oda'nın HER BİRİNE bağımsız açılıyor —
+hiçbiri birbirine doğrudan açılmıyor. Bu şekil kozmetik değil: iki
+"strip", giriş kapısından Banyo/WC'ye olan görüş hattını bacağın kendi
+duvarıyla ENGELLEMEK için kasıtlı eklendi (`uA_d_hol_banyo`nun gerçek
+projede ZATEN aynı mekanizmayla engellendiğinin bu çalışmada fark
+edilmesiyle). `uC_oda` artık `ext_right` üzerinde kendi penceresini
+alıyor. Dört tasarım denemesi yapıldı (ilk üçü hol/birim alan payını
+sırasıyla %16.9/%17.66/%23.27'ye çıkarıp DEV-045'in %15 eşiğini aştı);
+dördüncüsü %14.13'te eşiğin altında kaldı VE tüm `standards/` oran/
+kısa-kenar sınırlarını (salon/yatak_odasi/banyo/wc) sağladı. Ayrıntı:
+`scripts/architect/CLAUDE.md` "uC yeniden-zonlama (rev-23)".
+
+### DEV-041/045'in gerçek projeye uygulanması
+
+`door_entry_1`/`door_entry_2` (band_south giriş kapıları), `w_unit_A_B`/
+`uA_w_hol_mutfak_v`nin ayaklarının düştüğü kapı boşluklarından
+kaçınacak şekilde kaydırıldı — bu, `uA`/`uB`'nin WC kapılarını (sapma
+31°) giriş görüş hattına soktu, bu da WC kapıları güney ucuna çekilerek
+AYRICA düzeltildi (bir kontrolü düzeltirken başkasını BOZMAMA
+disiplini). `band` odası (tüm 9 kat) `templates::generate_circulation_
+core`nin DEV-045 dikdörtgenine (71.7 m² → 30.0 m²) çekildi.
+
+### Golden/doğrulama güncellemesi
+
+`scripts/architect/selftest.py` ve `scripts/validate_selftest.py`deki
+"gerçek projede ESKİ hata YAKALANIR" testleri (üç tane: uC zinciri,
+eski `band`, DEV-041'in iki duvarı) artık GERÇEĞİ yansıtmıyordu —
+TERSİNE çevrilip "rev-23'te DÜZELTİLDİ, artık TEMİZ" testlerine
+dönüştürüldü (`check_wet_area_real_project_uC_fixed_rev23`,
+`check_common_circulation_share_real_project_band_fixed_rev23`,
+`check_real_project_bug_was_fixed_rev23`, `check_real_project_is_clean_
+after_rev23_redesign`). `golden_report.py::rule_room_labels` bir yan
+etki yakaladı: Banyo/WC aynı genişlikte (3800mm) aynı derinlikte (1750mm)
+tasarlanınca alanları (6.65 m²) birebir eşleşip etiket eşleştirmesini
+karıştırdı ("3 bekleniyordu, 4 bulundu") — derinlikler kasıtlı
+farklılaştırıldı (1750/1800mm).
+
+- **Etkilenen dosyalar:** `context.json` (9 kat — `band`; 5 normal kat —
+  `uC_oda`/`uC_banyo`/`uC_hol` yeniden şekillendi, yeni `uC_wc` eklendi,
+  `uC_win_oda1` eklendi, `band_south`teki üç giriş kapısı + `uA`/`uB`nin
+  WC kapıları kaydırıldı), `scripts/architect/selftest.py`, `scripts/
+  validate_selftest.py`, `scripts/templates/selftest.py` (docstring),
+  `scripts/architect/CLAUDE.md`, `scripts/walls/CLAUDE.md`, `scripts/
+  templates/CLAUDE.md`.
+- **Doğrulama:** `python scripts/validate.py` (0 HATA, 2 bilinen/kapsam
+  dışı UYARI — `band` oranı 13.33 ve uC giriş-çekirdek dengesizliği,
+  ikisi de yapısal/kapsam dışı), `generate_dxf.py`, `preview.py`,
+  `golden_report.py --golden-set` ve `--rules`, 15 modülün TAMAMININ
+  `selftest.py`si, `validate_selftest.py` — hepsi BAŞARILI.
+- **Golden etkisi:** yok (gerçek proje revizyonu; `golden/` referansları
+  dokunulmadı).
+- **Sonraki direktif:** Kullanıcının ayrıca talep ettiği `DEV-048`
+  ("Mimari muhakeme yetisinin sistemleştirilmesi") başlangıç planı
+  `DEVELOPMENT_TASKS.md`e PLANNED olarak eklendi — teknoloji kararı
+  (düz dokümantasyon / script-içi modül / başka teknoloji) AYRI bir
+  turda kullanıcıyla netleşecek. Bu revizyonun context.json diff özeti
+  kullanıcıya sunulup commit onayı istenecek.
+
 ## HD-024 — `templates/`+`architect/`: kat sirkülasyon bandının ölü alan analizi (DEV-045)
 
 - **Durum:** COMPLETED

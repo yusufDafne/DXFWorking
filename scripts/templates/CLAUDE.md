@@ -116,23 +116,24 @@ alanı KALDIRIR. Bu projede `band` alanı 71.7 m² → **30.0 m²**'ye düştü.
 **Plan metninin "Fikir 1 DENETLER, Fikir 2 DÜZELTİR" deseni GERÇEKTEN
 tutarlı çalışıyor:** `architect::check_common_circulation_share` (Fikir 1,
 bina/kat-seviyesi genelleme), gerçek projenin ESKİ `band` değeriyle (71.7
-m², henüz `context.json`a uygulanmadı) çalıştırılınca %27.6 pay ile
-UYARI üretir; aynı kontrol DÜZELTİLMİŞ `band` değeriyle (30.0 m²)
-çalıştırılınca pay %11.5'e düşer ve UYARI KALMAZ — bkz. `scripts/
-architect/selftest.py::check_common_circulation_share_clean_with_
-templates_fix`. `DEV-036`/`DEV-037`deki (`standards`+`templates`) AYNI
-ilişki deseni.
+m², rev-23'e kadar `context.json`da duruyordu) çalıştırılınca %27.6 pay
+ile UYARI üretir; aynı kontrol DÜZELTİLMİŞ `band` değeriyle (30.0 m²,
+rev-23'ten İTİBAREN gerçek projenin KENDİ değeri) çalıştırılınca pay
+%11.5'e düşer ve UYARI KALMAZ — bkz. `scripts/architect/selftest.py::
+check_common_circulation_share_real_project_band_fixed_rev23`.
+`DEV-036`/`DEV-037`deki (`standards`+`templates`) AYNI ilişki deseni.
 
-**Gerçek projeye bugün UYGULANMADI** (DEV-041/044/046 ile AYNI disiplin
-— context.json'daki `band` hâlâ eski 71.7 m²'lik şekli taşıyor, bu yüzden
-`validate.py` gerçek projede `check_common_circulation_share`den YENİ bir
-UYARI üretir, bkz. `docs/development/DEVELOPER_NOTES.md`). Bu bilinçli
-bir karardır — "ölü alanın YERİNE ne konabileceği" (örn. ortak depo/
-sığınak/teknik oda) GERÇEK bir tasarım kararıdır ve UYDURULMAZ; bu görev
-yalnızca GEREKSİZ fazla alanı KALDIRDI, boşalan yere bir şey İCAT
-ETMEDİ — boşalan alan `context.json`a UYGULANDIĞINDA basitçe bina
-zarfının (dış duvarlar zaten var) İÇİNDE, henüz hiçbir odaya ait OLMAYAN
-bir boşluk olarak kalır.
+**rev-23'te GERÇEK projeye UYGULANDI** (DEV-041/044/046 ile AYNI disiplin
+ile BAŞLADI — düzeltme ÖNCE yalnızca `templates/`e kuruldu, context.json
+bir süre eski 71.7 m²'lik şekli taşımaya devam etti — ama rev-23'te uC
+yeniden-zonlama çalışmasıyla BİRLİKTE gerçek `context.json`un TÜM 9
+katındaki `band` da bu dikdörtgene çekildi; `validate.py` artık gerçek
+projede bu konuda UYARI üretmiyor, bkz. `scripts/architect/CLAUDE.md`
+"DEV-045"). "Ölü alanın YERİNE ne konabileceği" (örn. ortak depo/
+sığınak/teknik oda) HÂLÂ GERÇEK bir tasarım kararıdır ve UYDURULMADI; bu
+düzeltme yalnızca GEREKSİZ fazla alanı KALDIRDI, boşalan yere bir şey
+İCAT ETMEDİ — boşalan alan bina zarfının (dış duvarlar zaten var)
+İÇİNDE, henüz hiçbir odaya ait OLMAYAN bir boşluk olarak duruyor.
 
 ## `include_band_south`: kat tipini BU MODÜL BİLMEZ
 

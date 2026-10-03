@@ -94,12 +94,18 @@ def check_genuinely_dangling_end_still_flagged() -> list[str]:
     return []
 
 
-def check_real_project_bug_is_caught() -> list[str]:
-    """GERCEK context.json'daki (rev-22) IKI bilinen hata (bkz.
-    `scripts/walls/CLAUDE.md` 'Bilinen sinirlar') bu kontrolle
-    GERCEKTEN yakalaniyor mu - `w_unit_A_B` ve `uA_w_hol_mutfak_v`,
-    ikisi de `band_south` uzerindeki bir kapi bosluguna baglaniyor.
-    Gercek dosya yoksa test ATLANIR."""
+def check_real_project_bug_was_fixed_rev23() -> list[str]:
+    """GERCEK context.json'da rev-22'den rev-23'e KADAR IKI bilinen hata
+    vardi (bkz. `scripts/walls/CLAUDE.md` 'Bilinen sinirlar' - artik
+    DUZELTILDI olarak isaretli): `w_unit_A_B` ve `uA_w_hol_mutfak_v`,
+    ikisi de `band_south` uzerindeki bir kapi bosluguna baglaniyordu. Bu
+    o zaman `check_real_project_bug_is_caught` ile KANITLANMISTI (kontrol
+    gercekten bu iki hatayi yakaliyordu). rev-23'te `door_entry_1`/
+    `door_entry_2`nin merkezleri bu iki duvarin ayaklarindan kacinacak
+    sekilde kaydirildi (bkz. DEV-041 COMPLETED ozeti guncellemesi) - bu
+    test artik TERSINI kanitlar: GERCEK projede `check_walls` ARTIK bu
+    iki duvar icin bir 'BOSLUGUNA baglaniyor' hatasi URETMEMELI. Gercek
+    dosya yoksa test ATLANIR."""
     if not REAL_CONTEXT_PATH.exists():
         return []
     context = json.loads(REAL_CONTEXT_PATH.read_text(encoding="utf-8"))
@@ -107,10 +113,8 @@ def check_real_project_bug_is_caught() -> list[str]:
     errors = check_walls(context["meta"]["units"], floor["walls"], floor["openings"])
     gap_errors = [e for e in errors if "BOSLUGUNA baglaniyor" in e]
     flagged_ids = {wid for wid in ("w_unit_A_B", "uA_w_hol_mutfak_v") if any(wid in e for e in gap_errors)}
-    missing = {"w_unit_A_B", "uA_w_hol_mutfak_v"} - flagged_ids
-    if missing:
-        return [f"GERCEK projede beklenen duvarlar YAKALANMADI: {missing} "
-                f"(context.json degisti/duzeltildi olabilir, bu test guncellenmeli): {gap_errors}"]
+    if flagged_ids:
+        return [f"rev-23 sonrasi bu duvarlar ARTIK yakalanmamaliydi: {flagged_ids} ({gap_errors})"]
     return []
 
 
@@ -190,7 +194,7 @@ def main() -> int:
         ("kapidan UZAK bir T-kesisimi YANLIS-POZITIF uretmez", check_wall_ending_outside_door_gap_false_positive()),
         ("bosluk SINIRINDAKI (jamb) bir uc YANLIS-POZITIF uretmez", check_wall_ending_at_door_jamb_edge_is_valid()),
         ("GERCEK sarkan uc hala yakalaniyor (regresyon yok)", check_genuinely_dangling_end_still_flagged()),
-        ("GERCEK projedeki rev-22 hatasi (2 duvar) YAKALANIYOR", check_real_project_bug_is_caught()),
+        ("GERCEK projedeki rev-22 hatasi (2 duvar) rev-23'te DUZELTILDI", check_real_project_bug_was_fixed_rev23()),
         ("merdiven cikis kapisi HIZALIYSA YANLIS-POZITIF uretmez (DEV-047)", check_stairs_exit_door_aligned_false_positive()),
         ("merdiven cikis kapisi HIZASIZSA UYARI verir (DEV-047)", check_stairs_exit_door_misaligned_flags()),
         ("exit_door_id OPT-IN'dir", check_stairs_exit_door_id_is_opt_in()),

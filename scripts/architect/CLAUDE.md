@@ -235,12 +235,17 @@ HÂLÂ `uC_oda` (yatak odası) olduğu, dolayısıyla `uC_banyo`ya `uC_hol`den
 yatak odasından GEÇMEDEN ulaşan bir yolun OLMADIĞI gerçeğini
 değiştirmedi — kullanıcının orijinal şikâyetinin (`koridor→hol→oda→
 banyo`) KISMEN hayatta kalan somut bir örneği. `uA`/`uB`'nin T-şekilli
-hol'ü ise banyo/wc'ye DOĞRUDAN açıldığı için TEMİZDİR.
-`selftest.py::check_wet_area_real_project_catches_uC_chain` bunu
-kanıtlar. **Bu görevin kapsamı yalnızca KONTROLÜ kurmaktı** (DEV-041 ile
-AYNI disiplin) — `uC`nin GERÇEK düzeltilmesi (hol'ü banyoya da doğrudan
-açmak, veya farklı bir bant sıralaması) AYRI, sonraki bir revizyon
-konusudur.
+hol'ü ise banyo/wc'ye DOĞRUDAN açıldığı için TEMİZDİR. **rev-23'te
+DÜZELTİLDİ:** kullanıcının *"sen bir mimar olarak düşünüp... etüt
+çalışması yap... çalışmaya başlayabilirsin"* talebiyle `uC` TAMAMEN
+yeniden zonlandı — Hol artık dar bir bacak + iki kısa tam-genişlik
+"strip"ten oluşan bir L/T şekliyle Salon/Banyo/WC/Oda'nın HER BİRİNE
+BAĞIMSIZ açılır (hiçbiri birbirine doğrudan açılmaz), ayrıca yeni bir
+`uC_wc` odası eklendi ve `uC_oda`ya (daha önce HİÇ penceresi olmayan,
+ayrı bir kusur) `ext_right` üzerinden bir pencere verildi.
+`selftest.py::check_wet_area_real_project_uC_fixed_rev23` artık TAM
+TERSİNİ kanıtlar: gerçek projede uC_banyo/uC_wc için SIFIR zincir
+uyarısı. Ayrıntı: "uC yeniden-zonlama (rev-23)" bölümü.
 
 ### `check_wet_area_door_proximity` (DEV-043)
 
@@ -262,9 +267,12 @@ v1 basitleştirmeleriyle (AABB oranı, görüş-hattı koni testi) AYNI
 gerçek projenin KENDİ uA/uB banyo-wc kapı mesafesi (4016mm, rev-22'den
 beri değişmedi) bu sınırın ALTINDA kalacak şekilde seçildi — bir
 "pratik varsayılan" (`standards/`in kataloğuyla AYNI disiplin), metre
-hassasiyetinde bir ölçüm DEĞİL. `uC` bu kuralda hesaba KATILMAZ (yalnızca
-`uC_banyo` var, eşleşecek bir `wc` yok — "ikisi de varsa" ön koşulu
-plan metninde zaten vardı).
+hassasiyetinde bir ölçüm DEĞİL. **rev-23'e KADAR** `uC` bu kuralda
+hesaba KATILMIYORDU (yalnızca `uC_banyo` vardı, eşleşecek bir `wc` yoktu
+— "ikisi de varsa" ön koşulu plan metninde zaten vardı). rev-23'te uC
+yeniden zonlanırken eklenen `uC_wc`, Banyo'nun kapısıyla AYNI X
+konumunda (2150mm mesafe, eşiğin ALTINDA) kasıtlı olarak tutuldu — bu
+kuralda da GERÇEK bir yanlış-pozitif üretmedi.
 
 ## DEV-045: ortak sirkülasyon payı (bina/kat seviyesi)
 
@@ -294,15 +302,83 @@ deseni, ve bu ikisinin GERÇEKTEN tutarlı olduğu (template düzeltmesi
 uygulanınca kural TEMİZ döner) `selftest.py::check_common_circulation_
 share_clean_with_templates_fix`te KANITLANIR.
 
-**Gerçek projede GERÇEK bir sonuç üretir:** `band` (71.7 m², eski
-L-şekli, henüz `context.json`a düzeltme UYGULANMADI) kattaki üç birimin
-toplam net alanının (260 m²) %27.6'sı — `DEFAULT_CIRCULATION_SHARE_MAX`
-(%15) ÇOK aşılıyor, UYARI GERÇEKTEN üretiliyor (`selftest.py::check_
-common_circulation_share_real_project_catches_old_band`). **Bu görevin
-kapsamı yalnızca KONTROLÜ kurmak VE `templates/`i düzeltmekti** —
-gerçek `context.json`daki `band` verisi BİLEREK DEĞİŞTİRİLMEDİ (DEV-041/
-044/046 ile AYNI disiplin); "ölü alanın YERİNE ne konabileceği" GERÇEK
-bir tasarım kararıdır ve UYDURULMAZ, ayrı bir revizyon bekliyor.
+**Gerçek projede GERÇEK bir sonuç üretiyordu:** `band` (71.7 m², eski
+L-şekli) kattaki üç birimin toplam net alanının (260 m²) %27.6'sı —
+`DEFAULT_CIRCULATION_SHARE_MAX` (%15) ÇOK aşılıyor, UYARI GERÇEKTEN
+üretiliyordu. **rev-23'te `templates::generate_circulation_core`nin
+DEV-045 düzeltmesi (30.0 m², basit dikdörtgen) GERÇEK `context.json`a da
+UYGULANDI** — pay %11.5'e düştü, uyarı KALMADI
+(`selftest.py::check_common_circulation_share_real_project_band_fixed_rev23`).
+"Ölü alanın YERİNE ne konabileceği" (bir mobilya/depo/vb. İCAT ETMEK)
+HÂLÂ UYDURULMADI — boşalan bölge basitçe bina zarfının içinde, henüz
+hiçbir odaya ait OLMAYAN bir boşluk olarak kaldı; bu AYRI bir tasarım
+kararı olmaya devam ediyor.
+
+## uC yeniden-zonlama (rev-23)
+
+Kullanıcı talebi (2026-10-02): *"Şimdi sen bir mimar olarak düşünüp bu
+projedeki kat planını efektif olarak planlayacaksın... banyo ve wc nin
+yan yana olması ya da mutfağın kapısının önünce wc olmaması gibi...
+Zonlama fikri görmek istemiyorum şu anda, çalışmaya başlayabilirsin."*
+`uA`/`uB` computational olarak incelendi ve zaten bu örneklerden TEMİZ
+bulundu (hub-tipi hol, banyo/wc ortak duvar paylaşıyor, mutfak↔wc görüş
+hattı `_clear_line_of_sight` ile BLOKE — 5428mm). `uC` ise GERÇEK bir
+dizi kusur taşıyordu: (1) `uC_hol`ün tek komşusu `uC_oda` idi (DEV-042'nin
+zaten yakaladığı zincir), (2) `uC_banyo`nun HEM Salon'a HEM Oda'ya
+DOĞRUDAN kapısı vardı (sosyal/özel alan arasına sıkışmış bir ıslak
+hacim — hiçbir mevcut kuralın henüz adlandırmadığı, bu incelemede
+bulunan YENİ bir mahremiyet kusuru), (3) `uC_oda`nın HİÇ penceresi
+yoktu (`ext_right`e değse de hiç kullanılmamıştı — ayrı, hesaba
+katılmamış bir kusur).
+
+**Uygulanan çözüm (tek, zonlama alternatifi GÖSTERİLMEDEN):** Salon
+derinliği (4200→6000mm) büyütülerek Hol'ün toplam span'i kısaltıldı;
+Hol dar bir bacak (800mm) olarak giriş kapısından Oda'ya kadar uzanır,
+yolu üzerinde iki kısa tam-genişlik "strip" (350/400mm derinlik) ile
+Banyo'ya ve (yeni eklenen) WC'ye YATAY duvarlardan bağlanır. Oda
+bacağa DOĞRUDAN (dikey duvardan) açılır. Sonuç: Salon/Oda/Banyo/WC'nin
+HİÇBİRİ birbirine doğrudan açılmıyor, hepsi YALNIZCA Hol üzerinden
+erişiliyor; `uC_oda` artık `ext_right` üzerinde kendi penceresini
+alıyor.
+
+**Geometrik bir keşif, bir araç değil (önemli):** iki kısa "strip"in
+varlığı kozmetik DEĞİLDİR — `check_entry_sightlines`in kullandığı AYNI
+`_clear_line_of_sight` mekanizmasını kasıtlı olarak tetikler. Giriş
+kapısından Banyo/WC kapılarına düz bir çizgi, bacağın KENDİ dikey
+duvarını (bacak dışındaki o kapının bağlı olduğu duvar HARİÇ, kendi
+duvarı DAHİL) keser — tıpkı gerçek projede `uA_d_hol_banyo`nun zaten
+`uA_w_wetcol_hol_v` ile AYNI şekilde (hiç fark edilmeden) BLOKE
+olduğunun bu çalışmada keşfedilmesi gibi. Oda bu korumaya ihtiyaç
+DUYMAZ (yatak_odasi, `WC_ROOM_TYPES` değil) — bu yüzden bacağa dikey
+duvardan DOĞRUDAN bağlandı, en ucuz (alan açısından) seçenek oydu.
+
+**Banyo/WC derinlikleri BİLEREK farklı (1750mm / 1800mm, aynı
+3800mm genişlikte):** aynı olsalardı alanları (6.65 m²) BİREBİR eşleşir
+ve `golden_report.py::rule_room_labels`in "metin + yakın konum"
+eşleştirmesi iki odanın alan etiketini birbirine KARIŞTIRIRDI — bu
+gerçekten yaşandı ("3 etiket bekleniyordu, 4 bulundu") ve düzeltildi.
+
+**Sayısal sonuç (hesabı doğrulanabilir):** `uC_hol` alanı 8.45 m²,
+birim toplamı 59.8 m² değişmedi (yalnızca iç duvarlar yeniden
+dağıtıldı) → pay %14.13 (eşik %15 — AŞILMADI). Bu, Hol'ün bir UCUNU
+(Salon'a) her zaman UZUN bir mesafeden (derin birim, dar cephe)
+bağlamak zorunda kalan 4600mm genişliğindeki bu birim için ulaşılabilen
+pratik minimumdu — doğrudan deneme/hesapla bulundu, tahmin edilmedi
+(ilk üç tasarım denemesi sırasıyla hol payını %16.9/%17.66/%23.27 ile
+aştı, dördüncüsü hedefi tuttu).
+
+**DEV-041 yan etkisi:** `w_unit_A_B`/`uA_w_hol_mutfak_v`nin band_south
+kapı boşluğuna düşen uçlarını düzeltmek için `door_entry_1`/`door_
+entry_2` kaydırıldığında, bu YENİ bir giriş↔WC görüş hattı açtı (sapma
+31°, sınır 45°) — `uA_d_hol_wc`/`uB_d_hol_wc` güney ucuna (`dy` küçültülerek
+45°'lik koninin DIŞINA çıkarıldı) çekilerek giderildi. Bu, bir kontrolü
+düzeltirken başka bir kontrolü BOZMAMA disiplininin somut bir örneğidir.
+
+**Etkilenen gerçek veri:** `context.json` (5 normal kat: `uC_oda`/
+`uC_banyo`/`uC_hol` yeniden şekillendi, yeni `uC_wc` eklendi, `uC_win_oda1`
+penceresi eklendi, `band_south`teki üç giriş kapısı + `uA`/`uB`nin WC
+kapıları kaydırıldı, tüm 9 katta `band` DEV-045 dikdörtgenine çekildi).
+Ayrıntı: `docs/development/DEVELOPMENT_HISTORY.md` `HD-025`.
 
 ## Doğrulama
 

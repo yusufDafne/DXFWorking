@@ -140,8 +140,10 @@ kalınlığa bakar, görsel sunuma değil. Ayrıntı: `scripts/collision/CLAUDE.
   gelmek GEÇERLİDİR) bu artık "sarkan uç" sayılır ve HATA verir. Gerçek
   projede İKİ somut örnek (`w_unit_A_B`, `uA_w_hol_mutfak_v` — ikisi de
   `band_south` üzerindeki bir kapı açıklığının İÇİNDE bitiyordu) bu
-  kontrolle GERÇEKTEN yakalanıyor — `python scripts/validate_selftest.py`
-  bunu kanıtlar. **Bu iki gerçek hata context.json'da henüz
-  DÜZELTİLMEDİ** (bu görevin kapsamı yalnızca kontrolü kurmaktı) — bu
-  yüzden `python scripts/validate.py` gerçek projede şu an BAŞARISIZ
-  dönüyor; düzeltme AYRI bir proje revizyonu bekliyor.
+  kontrolle GERÇEKTEN yakalanmıştı — `python scripts/validate_selftest.py`
+  bunu o zaman kanıtlamıştı. **rev-23'te DÜZELTİLDİ:** `door_entry_1`/
+  `door_entry_2`nin (`band_south`taki giriş kapıları) merkezleri bu iki
+  duvarın ayaklarından kaçınacak şekilde kaydırıldı — `python scripts/
+  validate.py` artık gerçek projede BAŞARILI dönüyor.
+  `validate_selftest.py::check_real_project_bug_was_fixed_rev23` artık
+  TAM TERSİNİ (bu iki duvarın ARTIK yakalanmadığını) kanıtlar.

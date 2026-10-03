@@ -264,16 +264,37 @@ sistem mimarı direktifi güncellenir.
   - İkisinin TUTARLI olduğu DOĞRUDAN kanıtlandı: gerçek projenin ESKİ
     `band`ıyla (71.7 m²) %27.6 pay ile UYARI üretiyor, DÜZELTİLMİŞ
     değerle (30.0 m²) pay %11.5'e düşüp UYARI KALKIYOR.
-  - **Gerçek `context.json`daki `band` verisi BİLEREK DEĞİŞTİRİLMEDİ**
-    (DEV-041/044/046 ile AYNI disiplin) — "ölü alanın YERİNE ne
-    konabileceği" GERÇEK bir tasarım kararıdır, UYDURULMADI, ayrı bir
-    revizyon bekliyor. Ayrıntı: `scripts/templates/CLAUDE.md` "DEV-045
+  - **Gerçek `context.json`daki `band` verisi o zaman BİLEREK
+    DEĞİŞTİRİLMEMİŞTİ** (DEV-041/044/046 ile AYNI disiplin) — rev-23'te
+    GERÇEK projeye de UYGULANDI (bkz. aşağıdaki rev-23 maddesi). "Ölü
+    alanın YERİNE ne konabileceği" HÂLÂ GERÇEK bir tasarım kararıdır,
+    UYDURULMADI. Ayrıntı: `scripts/templates/CLAUDE.md` "DEV-045
     düzeltmesi", `scripts/architect/CLAUDE.md` "DEV-045: ortak
     sirkülasyon payı".
   - **"Uygulama sırası"ndaki YEDİ maddenin TAMAMI tamamlandı.** Kullanıcı
     bir sonraki adımda "plan'a yansıtma ve geliştirici yorumlarına
     istinaden yapılacak güncelleme ve geliştirme planlarının
-    revizyonu"nu konuşacağını belirtti — henüz o konuşma BAŞLAMADI.
+    revizyonu"nu konuşacağını belirtti — bu konuşma rev-23'te, aşağıdaki
+    maddede GERÇEKLEŞTİ.
+
+- **rev-23 (2026-10-02) — `uC` yeniden-zonlama + DEV-041/042/045'in
+  gerçek projeye uygulanması (`HD-025`):** Kullanıcı *"sen bir mimar
+  olarak düşün... etüt çalışması yap"* dedi, zonlama alternatifi
+  GÖRMEK İSTEMEDİĞİNİ belirtip doğrudan uygulamaya onay verdi. `uA`/`uB`
+  hesaplamayla TEMİZ bulundu; `uC`de üç gerçek kusur (DEV-042'nin
+  yakaladığı hol→oda→banyo zinciri, `uC_banyo`nun hem Salon'a hem
+  Oda'ya doğrudan kapısı — adlandırılmamış bir mahremiyet kusuru,
+  `uC_oda`nın hiç penceresi olmaması) tespit edildi ve TEK bir tasarımla
+  (zonlama gösterilmeden) düzeltildi — bkz. `scripts/architect/CLAUDE.md`
+  "uC yeniden-zonlama (rev-23)". AYNI zamanda DEV-041 (`door_entry_1`/
+  `door_entry_2` kaydırıldı — bu, uA/uB'nin WC kapılarında YENİ bir
+  giriş-görüş-hattı sorunu açtı, o da WC kapıları güney ucuna çekilerek
+  AYRICA düzeltildi) ve DEV-045 (tüm 9 katta `band` 30.0 m²'ye çekildi)
+  GERÇEK `context.json`a uygulandı. Üç selftest (`architect/selftest.py`
+  içinde iki, `validate_selftest.py` içinde bir) "eski hata YAKALANIR"
+  yerine "rev-23'te DÜZELTİLDİ, TEMİZ" olarak TERSİNE çevrildi.
+  `check_door_core_balance` DIŞINDA (yapısal, kapsam dışı) hiçbir UYARI
+  kalmadı. Henüz **commit edilmedi** — kullanıcı onayı bekleniyor.
 
 ## Sıradaki iş
 
@@ -614,15 +635,21 @@ uyumlu değilse uygulamayı durdur ve sistem mimarı kararı iste.
   dizi tek satır, nesne dizisi açılmış). Düz `json.dumps(indent=2)` dosyayı
   baştan biçimlendirip ~4000 satırlık sahte diff üretir.
 - Gerçek projeye `rooms[].unit_id` rev-21'de YAZILDI, rev-22'de
-  (kullanıcı: "rev20 şimdi başla") uA/uB/uC'nin arka bandı yeniden
+  (kullanıcı: "rev20 şimdi başla") uA/uB'nin arka bandı yeniden
   tasarlanarak hol-oranı/yatak-odası-salon/giriş-WC-görüş-hattı
-  uyarılarının ÜÇÜ DE giderildi. **`check_door_core_balance` TEK KALAN
-  UYARIDIR** (oran ~4.52, sınır 1.6) — çekirdeğin `templates::
-  generate_circulation_core`de HER ZAMAN sol-alt köşede sabit olmasından
-  kaynaklanan YAPISAL bir sınırlama, çekirdek yer değiştirmeden
-  çözülemez. Bu, `DEV-040` Fikir 4'ün (`options_for_core_placement`in
-  `templates/`e bağlanması) tam karşılığıdır — kullanıcı açıkça talep
-  etmeden ele alınmaz.
+  uyarıları giderildi — **ama `uC` o zaman TAM giderilmemişti**
+  (`uC_hol`ün tek komşusu hâlâ `uC_oda` idi, DEV-042 bunu gerçek bir
+  örnek olarak yakaladı). rev-23'te (kullanıcı: "sen bir mimar olarak
+  düşün... çalışmaya başlayabilirsin") `uC` TAMAMEN yeniden zonlandı ve
+  DEV-041/045'in iki real-project düzeltmesi de uygulandı — bkz.
+  `docs/development/DEVELOPMENT_HISTORY.md` `HD-025`,
+  `scripts/architect/CLAUDE.md` "uC yeniden-zonlama (rev-23)".
+  **`check_door_core_balance` TEK KALAN UYARIDIR** (oran ~4.52, sınır
+  1.6) — çekirdeğin `templates::generate_circulation_core`de HER ZAMAN
+  sol-alt köşede sabit olmasından kaynaklanan YAPISAL bir sınırlama,
+  çekirdek yer değiştirmeden çözülemez. Bu, `DEV-040` Fikir 4'ün
+  (`options_for_core_placement`in `templates/`e bağlanması) tam
+  karşılığıdır — kullanıcı açıkça talep etmeden ele alınmaz.
 - `architect::options_for_core_placement` bugün `templates::
   generate_circulation_core`yi ÇAĞIRMIYOR — o fonksiyon henüz bir
   `position`/`corner` parametresi taşımıyor (DEV-037'nin "Bilinen

@@ -48,6 +48,7 @@ Tamamlanan işlerin ayrıntılı gerekçesi, karar süreci ve ölçülen etkisi
 | DEV-045 | `templates/`+`architect/` — kat sirkülasyon bandının ölü alan analizi | COMPLETED (2026-10-02) |
 | DEV-046 | `stairs/`+`templates/`+`standards/` — merdiven oda oranı + çok kollu merdiven desteği | COMPLETED (2026-10-02) |
 | DEV-047 | `stairs/`+`architect/` — merdiven sahanlık çıkış noktası ↔ koridor kapısı hizalaması | COMPLETED (2026-10-02) |
+| DEV-048 | Mimari muhakeme yetisinin sistemleştirilmesi (başlangıç planı) | PLANNED |
 
 ## READY
 
@@ -468,6 +469,94 @@ ayrımının ve "yalnızca aynı kat" sınırlamasının emsali), `columns/`
 (düşey hizalama sınırlamasının emsali), `DEV-027` (kaçış planı —
 "acil çıkış mesafesi" gibi bir gelecek kural ile kavramsal KOMŞU).
 
+### DEV-048 — Mimari muhakeme yetisinin sistemleştirilmesi (başlangıç planı)
+
+- **Durum:** PLANNED — bu bir "seç ve başlat" maddesi DEĞİLDİR, `DEV-040`
+  ile AYNI kategoride bir STRATEJİK yönelim notudur. Hiçbir teknoloji/
+  modül kararı verilmedi; bu madde yalnızca fikrin TEK bir yerden
+  izlenebilmesi için açıldı.
+
+**Neden bu madde (kullanıcının kendi sözleriyle, 2026-10-02):** *"artık
+altyapımızı oldukça geliştirdiğin için mimar gibi düşünmeye ve
+konuşabilmeye başladın, bu en önemli kısımdır, bu özelliğinin de
+geliştirilebilmesi ve proje bağlamında muhakeme yeteneğini daha best
+practice, efektif ve genişletilebilir ve geliştirilebilir hale getirmek
+için bir başlangıç planı tanımla."* Bu gözlem somut bir olayın HEMEN
+ardından geldi: `uC` biriminin gerçek-dünya etüdü sırasında (kullanıcının
+"banyo/wc yan yana", "mutfak kapısı karşısında wc olmaması" gibi
+örneklerinden yola çıkarak) `architect/rules.py`nin ZATEN var olan
+araçlarını (`_door_midpoint`, `_rooms_touching_point`,
+`_clear_line_of_sight`) YENİDEN BİR ARAYA getirip yeni bir mahremiyet
+sorununu (uC'de banyo, salon ile yatak odası arasına sıkışmış ve
+ikisine de doğrudan kapısı var) tespit ettim — bu çıkarım KOD olarak
+HİÇBİR YERDE yazılı değildi, o oturumun kendi muhakemesiydi.
+
+**DEV-040'tan FARKI (ikisi de "strateji notu" ama konusu farklı):**
+`DEV-040` `architect/`in KOD/KURAL kataloğunun (deterministik, Python,
+arity-2+ WARN fonksiyonları) büyütülmesiyle ilgilidir. Bu madde ise
+AJANIN KENDİ muhakeme/çıkarım SÜRECİYLE ilgilidir — hangi soruları hangi
+sırayla sorduğu, hangi gözlemlerden hangi mimari ilkeye vardığı, ve bu
+sürecin bir sonraki oturumda/bir sonraki ajanda AYNI kalitede tekrar
+ÇAĞRILIP ÇAĞRILAMAYACAĞI. Biri KOD büyütür, diğeri KOD'u NE ZAMAN/NASIL
+yazacağına karar veren SÜRECİ büyütür — ikisi birbirini BESLER (bu
+maddeden çıkan yeni bir ilke genellikle `DEV-040`nın kural kataloğuna bir
+`DEV-0XX` olarak düşer) ama KARIŞTIRILMAMALIDIR.
+
+**Başlangıç planı (beş aşama, HENÜZ UYGULANMADI):**
+
+1. **Envanter — bugüne kadar örtük kalan ilkeleri İSİMLENDİR.** Bu
+   oturumda kullanılan muhakeme örnekleri (hub vs. doğrusal sirkülasyon
+   tercihi, ıslak hacimlerin ortak duvar paylaşması/tesisat ekonomisi,
+   sosyal-özel alan mahremiyet tamponu, giriş-WC görüş hattı, kapı-
+   çekirdek dengesi, "hangi kontrolü hangi sırayla çalıştırıp hangi
+   soruyu sorarım" metodolojisi) bir KONTROL LİSTESİ/metodoloji olarak
+   yazıya dökülür — bugün yalnızca bu konuşmanın bağlamında yaşıyorlar.
+2. **Bilgi tabanının NEREDE yaşayacağına karar — AÇIK, kullanıcıyla AYRI
+   tartışılacak (bkz. "Açık karar").**
+3. **Geri besleme döngüsü.** Her gerçek etüt/inceleme çalışmasından
+   (bugünkü `uC` analizi gibi) çıkan YENİ bir ilke, Aşama 1'in
+   kataloğuna EKLENİR — pratikte keşfedilen bir ilke bir dahaki sefere
+   yeniden keşfedilmek yerine DOĞRUDAN çağrılabilir hale gelir.
+   `standards/`in "kullanıcı gerçek şartname getirdiğinde katalog
+   güncellenir" disipliniyle AYNI kategori.
+4. **Kalibrasyon/doğrulama.** Bu ilkelerin GERÇEKTEN best-practice olup
+   olmadığı nasıl sınanır — `standards/`in "Gelecek güncelleme
+   sözleşmesi"yle AYNI yol: kullanıcı gerçek şartname/referans
+   getirdikçe katalog KALİBRE edilir; resmi bir kaynağa atıf OLMADAN
+   iddialar "v1 pratik varsayılan" diye İŞARETLENİR.
+5. **Genişletilebilirlik/erişilebilirlik testi.** Bu yetenek yalnızca BU
+   konuşmada mı kalıyor, yoksa GELECEKTEKİ bir oturumda (yeni bir agent/
+   yeni bir context penceresi) AYNI seviyede ÇAĞRILABİLİYOR mu — planın
+   "genişletilebilir ve geliştirilebilir" hedefinin ÖLÇÜTÜ budur. Seçilen
+   teknoloji NE OLURSA OLSUN, kök `CLAUDE.md`nin "agentic dokümanlar
+   birbirine bağlı tek bir bağlam sistemidir" ilkesiyle UYUMLU olmalı.
+
+**Açık karar (kullanıcı AYRICA tartışacağını belirtti, BURADA
+ÇÖZÜLMEDİ):** Aşama 2'nin uygulama biçimi/teknolojisi HENÜZ SEÇİLMEDİ —
+somut alternatifler (hiçbiri onaylanmadı):
+- **(a) Düz dokümantasyon** — `docs/development/` altında yeni bir
+  "mimari ilkeler/sağduyu" dosyası; en düşük teknoloji, mevcut CLAUDE.md
+  disipliniyle BİREBİR tutarlı.
+- **(b) `scripts/` içinde veri-odaklı bir modül** — `standards::
+  STANDARDS` ile AYNI desende, ama GEOMETRİ değil MUHAKEME SIRASI/
+  önceliği kodlayan bir "heuristic katalog" (kullanıcının "script
+  dışında ayrı bir düşünme yetisi modülü" ifadesiyle KISMEN örtüşür ama
+  script İÇİNDE kalır).
+- **(c) Proje/script DIŞINDA başka bir teknoloji** — kullanıcının
+  kendi ifadesiyle "script dışında ayrı bir düşünme yetisi modülü ya da
+  başka bir teknoloji" — somut biçimi (bir agent "skill" dosyası, bir
+  bilgi tabanı, başka bir mekanizma) HENÜZ TANIMLANMADI.
+
+Bu üç seçenek de BİRBİRİNİ DIŞLAMAZ (örn. (a) ile başlayıp zamanla (b)
+veya (c)'ye evrilmek mümkündür) — karar kullanıcıyla AYRI bir turda
+netleşecektir.
+
+**İlişkili modüller/belgeler:** `scripts/architect/` (bugünkü pratik
+muhakemenin KOD tarafı, `DEV-040` ile kavramsal KOMŞU ama FARKLI),
+`scripts/standards/` (kalibrasyon/"v1 pratik varsayılan" disiplininin
+emsali), kök `CLAUDE.md` + `scripts/CLAUDE.md` (agentic doküman sistemi
+ilkesi — Aşama 5'in ölçütü).
+
 
 ## COMPLETED
 
@@ -698,12 +787,12 @@ ayrımının ve "yalnızca aynı kat" sınırlamasının emsali), `columns/`
   normal bir T-kesişimi HATA DEĞİL, boşluğun tam sınırındaki (jamb) uç
   HATA DEĞİL (sınır eşitliği geçerli bir bağlantıdır), gerçek sarkan uç
   hâlâ eski mesajıyla yakalanıyor (regresyon yok), gerçek projedeki iki
-  bilinen hata GERÇEKTEN yakalanıyor. **Bu görevin kapsamı yalnızca
-  KONTROLÜ kurmaktı** — gerçek `context.json`daki iki hata henüz
-  DÜZELTİLMEDİ, bu yüzden `python scripts/validate.py` şu an gerçek
-  projede BAŞARISIZ dönüyor (beklenen davranış: kontrol işini yapıyor,
-  düzeltme ayrı bir revizyon bekliyor). Ayrıntı: `scripts/walls/
-  CLAUDE.md` "Bilinen sınırlar". (`HD-020`)
+  bilinen hata GERÇEKTEN yakalanıyor. **Bu görevin kapsamı o zaman
+  yalnızca KONTROLÜ kurmaktı** — gerçek `context.json`daki iki hata
+  **rev-23'te DÜZELTİLDİ** (`door_entry_1`/`door_entry_2`nin merkezleri
+  kaydırıldı, bkz. `HD-025`); `python scripts/validate.py` artık gerçek
+  projede BAŞARILI dönüyor. Ayrıntı: `scripts/walls/CLAUDE.md` "Bilinen
+  sınırlar". (`HD-020`, düzeltme `HD-025`)
 
 ### DEV-044 — `rooms/` — içbükey (L/T-şekilli) odalarda mahal etiketi konumlandırması
 
@@ -749,10 +838,13 @@ ayrımının ve "yalnızca aynı kat" sınırlamasının emsali), `columns/`
   olarak yeniden sıraladı ama `uC_hol`ün TEK komşusu hâlâ `uC_oda`
   (yatak odası) — `uC_banyo`ya yatak odasından geçmeden ulaşan bir yol
   YOK, kullanıcının orijinal `koridor→hol→oda→banyo` şikâyetinin KISMEN
-  hayatta kalan somut bir örneği (`uA`/`uB` TEMİZ). Bu görevin kapsamı
-  yalnızca KONTROLÜ kurmaktı (DEV-041 ile AYNI disiplin) — `uC`nin
-  GERÇEK düzeltilmesi AYRI bir revizyon konusu. Ayrıntı: `scripts/
-  architect/CLAUDE.md` "DEV-042/DEV-043: ıslak hacim kuralları". (`HD-022`)
+  hayatta kalan somut bir örneği (`uA`/`uB` TEMİZ). Bu görevin kapsamı o
+  zaman yalnızca KONTROLÜ kurmaktı (DEV-041 ile AYNI disiplin) — `uC`nin
+  GERÇEK düzeltilmesi **rev-23'te yapıldı** (kullanıcının "sen bir mimar
+  olarak düşün, etüt yap, çalışmaya başlayabilirsin" talebiyle uC
+  tamamen yeniden zonlandı, bkz. `HD-025`). Ayrıntı: `scripts/
+  architect/CLAUDE.md` "DEV-042/DEV-043: ıslak hacim kuralları" ve "uC
+  yeniden-zonlama (rev-23)". (`HD-022`, düzeltme `HD-025`)
 
 ### DEV-043 — `architect/` — banyo/wc kapı yakınlığı (ıslak hacim kümelenmesi) kuralı
 
@@ -842,14 +934,16 @@ ayrımının ve "yalnızca aynı kat" sınırlamasının emsali), `columns/`
   fikrin GERÇEKTEN tutarlı olduğu kanıtlandı: gerçek projenin ESKİ
   `band`ıyla (71.7 m²) çalıştırılınca %27.6 pay ile UYARI üretiyor,
   DÜZELTİLMİŞ değerle (30.0 m²) çalıştırılınca pay %11.5'e düşüp UYARI
-  KALKIYOR. Bu görevin kapsamı yalnızca KONTROLÜ kurmak VE `templates/`i
-  düzeltmekti (DEV-041/044/046 ile AYNI disiplin) — gerçek `context.
-  json`daki `band` verisi BİLEREK DEĞİŞTİRİLMEDİ; "ölü alanın YERİNE ne
-  konabileceği" (plan metninin kendi "Açık karar"ı) GERÇEK bir tasarım
-  kararıdır ve UYDURULMADI, ayrı bir revizyon bekliyor. Ayrıntı:
-  `scripts/templates/CLAUDE.md` "DEV-045 düzeltmesi",
+  KALKIYOR. Bu görevin kapsamı o zaman yalnızca KONTROLÜ kurmak VE
+  `templates/`i düzeltmekti (DEV-041/044/046 ile AYNI disiplin) —
+  gerçek `context.json`daki `band` verisi BİLEREK DEĞİŞTİRİLMEMİŞTİ.
+  **rev-23'te GERÇEK projeye de UYGULANDI** (tüm 9 katta `band` 30.0
+  m²'lik dikdörtgene çekildi, bkz. `HD-025`); "ölü alanın YERİNE ne
+  konabileceği" (plan metninin kendi "Açık karar"ı) HÂLÂ GERÇEK bir
+  tasarım kararıdır ve UYDURULMADI — boşalan alan hâlâ hiçbir odaya ait
+  değil. Ayrıntı: `scripts/templates/CLAUDE.md` "DEV-045 düzeltmesi",
   `scripts/architect/CLAUDE.md` "DEV-045: ortak sirkülasyon payı".
-  (`HD-024`)
+  (`HD-024`, gerçek projeye uygulama `HD-025`)
 
 ## Görev tamamlama kuralı
 

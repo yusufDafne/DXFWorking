@@ -34,13 +34,15 @@ def check_matches_real_project_ground_truth() -> list[str]:
     modul dokstring'i). Gercek proje dosyasi yoksa test ATLANIR (izole
     ortamda calisabilsin diye), ama bu ortamda HER ZAMAN mevcuttur.
 
-    **DEV-045 istisnasi:** `elevator`/`stair` odalari VE cekirdek
-    duvarlari/kapisi HALA BIREBIR eslesir (bu DEV-045'te DEGISMEDI) - ama
-    `band` ODASI KASITLI olarak BU KARSILASTIRMANIN DISINDA tutulur,
-    cunku DEV-045 onun SEKLINI duzeltti (eski L-sekli -> dikdortgen,
-    bkz. check_band_is_efficient_rectangle_not_wasteful_l_shape) ve
-    gercek context.json HENUZ bu duzeltmeyi almadi (DEV-041/044/046 ile
-    AYNI disiplin - ayri bir proje revizyonu bekliyor)."""
+    **DEV-045 (rev-22 -> rev-23):** `elevator`/`stair` odalari VE
+    cekirdek duvarlari/kapisi HER ZAMAN BIREBIR eslesir (bu DEV-045'te
+    DEGISMEDI). `band` ODASI rev-22'de (eski L-sekli, 71.7 m2) BU
+    KARSILASTIRMANIN DISINDA tutuluyordu (DEV-041/044/046 ile AYNI
+    disiplin - duzeltme KONTROLU kurmustu ama gercek context.json'a
+    henuz UYGULANMAMISTI). rev-23'te DEV-045 Fikir 2 (bu dikdortgen)
+    GERCEK projeye de UYGULANDI (bkz. docs/development/
+    DEVELOPMENT_TASKS.md DEV-045 COMPLETED ozeti) - artik `band` DAHIL
+    HER sey BIREBIR eslesmeli, istisna KALMADI."""
     if not REAL_CONTEXT_PATH.exists():
         return []
     floor, meta = _real_normal_floor()
@@ -49,8 +51,6 @@ def check_matches_real_project_ground_truth() -> list[str]:
     errors: list[str] = []
     real_rooms = {r["id"]: r for r in floor["rooms"]}
     for room in fragment["rooms"]:
-        if room["id"] == "band":
-            continue  # DEV-045: kasitli olarak farkli, bkz. docstring
         real = real_rooms.get(room["id"])
         if real is None:
             errors.append(f"gercek projede '{room['id']}' id'li oda YOK")
@@ -201,7 +201,7 @@ def check_custom_template_scales_linearly() -> list[str]:
 
 def main() -> int:
     groups = (
-        ("varsayilan sablon GERCEK proje verisiyle BIREBIR eslesiyor (band HARIC, DEV-045)", check_matches_real_project_ground_truth()),
+        ("varsayilan sablon GERCEK proje verisiyle BIREBIR eslesiyor (band DAHIL, DEV-045 rev-23)", check_matches_real_project_ground_truth()),
         ("band artik verimli bir dikdortgen, israf eden L-sekli DEGIL (DEV-045)", check_band_is_efficient_rectangle_not_wasteful_l_shape()),
         ("band basitlestirilince de cekirdek footprint'iyle CAKISMAZ", check_band_still_excludes_core_footprint()),
         ("cekirdek konumu sabit, yalnizca dogu ucu floor_width'e gore degisir", check_core_position_fixed_when_floor_width_changes()),
