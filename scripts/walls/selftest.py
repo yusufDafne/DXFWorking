@@ -176,8 +176,49 @@ def check_catalog_standard_reused_across_walls() -> list[str]:
     return errors
 
 
+
+def check_thickness_hierarchy() -> list[str]:
+    """DEV-050 madde 16: dis 200 / ic 150 (fark 50). Siniflandirma oda
+    komsulugundan: cephe -> dis; birim<->ortak alan ve birim<->birim -> dis;
+    ayni birim ici -> ic; ortak<->ortak -> None (belirsiz)."""
+    from walls import (CLASS_EXTERIOR, CLASS_INTERIOR, check_wall_thickness,
+                       classify_walls, interior_thickness)
+    errors: list[str] = []
+    if interior_thickness() != 150.0 or interior_thickness(250.0) != 200.0:
+        errors.append("ic = dis - 50 olmali (200->150, 250->200)")
+    def wall(i, s, e, t):
+        return {"id": i, "start": s, "end": e, "thickness": t, "layer": "DUVAR"}
+    walls = [
+        wall("south", [0, 0], [8000, 0], 200), wall("north", [0, 4000], [8000, 4000], 200),
+        wall("west", [0, 0], [0, 4000], 200), wall("east", [8000, 0], [8000, 4000], 200),
+        wall("unit_hol", [4000, 0], [4000, 4000], 200),   # birim A | ortak
+        wall("inner", [4000, 2000], [8000, 2000], 150),   # ortak | ortak
+        wall("bolme", [0, 2000], [4000, 2000], 150),      # A | A
+    ]
+    rooms = [
+        {"id": "a1", "unit_id": "A", "polygon": [[0, 0], [4000, 0], [4000, 2000], [0, 2000]]},
+        {"id": "a2", "unit_id": "A", "polygon": [[0, 2000], [4000, 2000], [4000, 4000], [0, 4000]]},
+        {"id": "c1", "polygon": [[4000, 0], [8000, 0], [8000, 2000], [4000, 2000]]},
+        {"id": "c2", "polygon": [[4000, 2000], [8000, 2000], [8000, 4000], [4000, 4000]]},
+    ]
+    cls = classify_walls(walls, rooms)
+    want = {"south": CLASS_EXTERIOR, "east": CLASS_EXTERIOR, "unit_hol": CLASS_EXTERIOR,
+            "bolme": CLASS_INTERIOR, "inner": None}
+    for k, v in want.items():
+        if cls[k] != v:
+            errors.append(f"{k}: {v} bekleniyordu, {cls[k]}")
+    if check_wall_thickness(walls, rooms, "mm"):
+        errors.append("200/150 hiyerarsisinde UYARI olmamali (yanlis-pozitif)")
+    walls[6]["thickness"] = 200  # ic duvar dis ile ayni kalinlikta -> sapma + hiyerarsi
+    got = check_wall_thickness(walls, rooms, "mm")
+    if not any("ic duvar kalinligi" in w for w in got) or not any("ince degil" in w for w in got):
+        errors.append(f"kasitli bozma (ic=200) yakalanmali: {got}")
+    return errors
+
+
 def main() -> int:
     groups = (
+        ("dis/ic duvar kalinligi hiyerarsisi (DEV-050 #16)", check_thickness_hierarchy()),
         ("dolgu araligi (elle hesaplanabilir)", check_fill_spans_hand_computable()),
         ("aciklik yoksa tek aralik (yanlis-pozitif)", check_no_opening_is_single_span()),
         ("kind yok -> duz LINE (regresyon)", check_default_no_kind_is_plain()),

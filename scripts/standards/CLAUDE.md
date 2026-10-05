@@ -89,6 +89,58 @@ check_room_proportions(rooms, units) # -> UYARI listesi (kullanici karari)
 validate_standards()                 # -> katalogun KENDI ic tutarliligi
 ```
 
+## Yerel en dar nokta ölçümü (DEV-049, `measure.py`)
+
+AABB L/tarak şekilli bir holün dar bacağını göremez (gerçek projede
+`uA_hol` 900 mm, `uC_hol` 350 mm kollar taşırken AABB kısa kenarı 4600–6050
+mm idi). `measure.narrowest_point(polygon)` poligonu x ve y boyunca tarar,
+her kesitin iç parçasının (chord) uzunluğunu bulur; minimum "yerel en dar
+nokta"dır (rektilineer poligonda tam, eğik kenarda yaklaşık).
+`check_room_proportions`, `min_short_edge_mm` taşıyan her tip için AABB
+eşiği geçiliyorsa ama yerel genişlik altındaysa ayrı UYARI verir (AABB zaten
+ihlalse ikinci kez raporlanmaz). Bu ölçüm `standards/`te durur çünkü eşik
+kataloğu (ileride yönetmelikten gelecek) ile aynı yerdedir ve arity-1'dir.
+Koridor/hol asgari kısa kenarı 1500 mm (kullanıcı kararı, v1 varsayılan).
+
+**Net açıklık (kullanıcı kararı, 2026-10-05):** mimari gelenekte oda ve
+koridor açıklıkları duvarların İÇ YÜZLERİ arasında ölçülür; oda
+poligonları ise duvar merkez çizgisindedir. `check_room_proportions(rooms,
+units, walls=None)` kat duvarları verilirse `measure.edge_wall_thicknesses`
+her kenarın duvar kalınlığını bulur ve `narrowest_point` chord'dan iki uç
+duvarın yarım kalınlığını düşer (`CONTRACT_VERSION` 1.1). `walls`
+verilmezse eski davranış. Gerçek vaka: K1-31/K1-33 arası `uC_hol` kolu
+merkezde 350, net 250 mm. Oran ve alan kontrolleri HÂLÂ merkez-çizgisi
+AABB'sine dayanır (bkz. `DEV-057` birikim listesi).
+
+## DEV-050: kapı/koridor nuansları ve net alan
+
+- `nuances.py` (arity-1, UYARI): #7 mahal tipine göre kapı genişliği (+ giriş
+  kapısı 900), #8 koridor NET genişliği ≥ kanat + 100 (kapı önünde), #9
+  çıkmaz koridorda 900×900 dönüş payı (v1: ≤1 kapı), #10 L/T koridorda kol
+  net genişlik farkı ≤100. Toplayıcı `check_door_corridor_nuances`.
+- `measure.py`: `inset_polygon`/`net_area` — mahal NET alanı duvar İÇ YÜZLERİ
+  arasında (kullanıcı kararı); `chord_through`, `arm_widths` (dik açılı
+  poligonun kolları).
+- Eşikler yönetmelik gelince bu dosyalardaki sabitler/`STANDARDS` ile
+  güncellenir; fonksiyon imzaları değişmez.
+
+## DEV-051: koridora açılan kapıda kalan geçiş
+
+`nuances.py::check_open_door_net_passage`: kapı koridora açılıyorsa (host_side
+yüzünde koridor) kanat tam açıkken kalan geçiş = koridor NET genişliği (kapı
+önünde, duvara dik) − kanat genişliği; `OPEN_DOOR_MIN_PASSAGE_MM` (800 mm, v1
+pratik varsayılan) altındaysa UYARI. "Eşik" tam olarak bu asgari geçiştir.
+
+## DEV-057 Grup A: NET semantiği (oran + alan), gerçek çıkmaz uç
+
+Kullanıcı kararı (2026-10-05): `STANDARDS` eşikleri **NET** (duvar iç yüzleri
+arası) yorumlanır; `check_room_proportions(rooms, units, walls)` oranı, asgari
+kısa kenarı/yerel en dar noktayı VE alanı net poligonla ölçer (`walls` yoksa
+poligon net kabul edilir). Eşik DEĞERLERİ değişmedi (yeniden yazılmadı).
+`CONTRACT_VERSION` 1.2. `nuances.py::check_dead_end_turning` artık kapı
+sayısına değil kol uçlarının gerçek geometrisine bakar (bükey uç çıkmaz
+değil; kapılı uç çıkmaz değil; çıkmaz kolun net genişliği ≥ 900 mm).
+
 ## Ölçüm: neden AABB (eksen hizali sınırlayıcı kutu)
 
 `_aabb_edges` bir odanın kısa/uzun kenarını, poligonun x/y min-max'ından
@@ -127,7 +179,8 @@ TAM İÇİNDEKİ bir oda yanlış-pozitif ÜRETMEZ), `validate_standards`
   gerçek şartname belgeleriyle güncellemesi BEKLENİR (bkz. yukarı "Gelecek
   güncelleme sözleşmesi").
 - **AABB yaklaşımı döndürülmüş/L-şekilli odalarda YANLIŞ olabilir**
-  (yukarı bakınız).
+  (yukarı bakınız); DEV-049 bunu `min_short_edge_mm` için yerel ölçümle
+  telafi eder, oran/alan hâlâ AABB tabanlıdır.
 - **Gerçek projeye bugün hiçbir `room_type` verisi EKLENMEDİ** — bu bir
   ayrı, açık karardır (bkz. `docs/development/DEVELOPMENT_TASKS.md`
   `DEV-036`); altyapı `golden/oran_ornek` ile sınanır.

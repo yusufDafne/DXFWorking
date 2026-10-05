@@ -165,6 +165,20 @@ birleştirildikten SONRA, NORMAL pipeline (`rooms.collision`/
 `walls.collision`/`openings.collision`) zaten kapsar. `importer` ile AYNI
 "aday veri üretir, denetimi kendi yapmaz" gerekçesi.
 
+## DEV-055: merkezi çekirdek + kat holü (`central.py`)
+
+`generate_central_core(floor_width, floor_depth, option=None, ...)`: asansör +
+merdiven çekirdek satırı ile dikdörtgen kat holünü (en-boy oranı etüt
+kararı) katın merkezine (veya `offset` ile kaymış) koyar; `rooms` (room_type
+dolu), `walls`, `openings` (merdiven kapısı + asansör kapısı) ve `zone`
+(blok, dört pay, `surrounds`, `hall_frontage`) döndürür. **Bağımlılık yönü:**
+ölçüleri `architect::options_for_central_hall` hesaplar, bu dosya yalnız
+geometriye çevirir (kısıt/karar modülleri çizimi bilmez). `core_side`
+('north'/'south') ve `orientation` ('x'/'y') desteklenir; yansıma/devrik
+`host_side` XOR ile yönetilir. Çıktı context'e YAZILMAZ; daire kapıları
+etüdün işidir. `generate_circulation_core` (köşe çekirdeği) AYNEN kalır;
+`CONTRACT_VERSION` 1.1.
+
 ## Doğrulama
 
 `python scripts/templates/selftest.py` — 7 kontrol grubu: varsayılan

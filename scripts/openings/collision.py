@@ -25,11 +25,13 @@ from __future__ import annotations
 from collision import TAG_DOOR_SWING, CollisionShape, sector_shape
 
 from .geometry import swing_geometry
-from .opening import TYPE_DOOR, VARIANT_SLIDING, Opening
+from .opening import (TYPE_DOOR, TYPE_ELEVATOR_DOOR, VARIANT_SLIDING,
+                      VARIANT_SLIDING_DOUBLE, Opening)
 
 
 def footprints(floor: dict, context: dict) -> list[CollisionShape]:
-    doors = [o for o in floor.get("openings", []) if o.get("type") == TYPE_DOOR]
+    doors = [o for o in floor.get("openings", [])
+             if o.get("type") in (TYPE_DOOR, TYPE_ELEVATOR_DOOR)]
     if not doors:
         return []
 
@@ -48,7 +50,7 @@ def footprints(floor: dict, context: dict) -> list[CollisionShape]:
         # olarak bu hatayi uretir; artik ikisi de tek kaynaktan okur.
         for g_start, g_end, data in gaps_for_wall(wall, doors):
             opening = Opening.from_context(data)
-            if opening.variant == VARIANT_SLIDING:
+            if opening.variant in (VARIANT_SLIDING, VARIANT_SLIDING_DOUBLE):
                 continue
             swing = swing_geometry(wall, opening, g_start, g_end)
             shapes.append(sector_shape(

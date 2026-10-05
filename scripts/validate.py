@@ -83,17 +83,19 @@ from version import (  # noqa: E402
     project_schema_version,
 )
 from stairs import StairFitError, exit_door_alignment_warning, resolve_stair  # noqa: E402
-from standards import check_room_proportions, check_room_types  # noqa: E402
+from standards import check_door_corridor_nuances, check_room_proportions, check_room_types  # noqa: E402
 from architect import (  # noqa: E402
     check_bedroom_via_corridor,
     check_circulation_area_share,
     check_common_circulation_share,
     check_door_core_balance,
+    check_door_window_nuances,
     check_entry_sightlines,
     check_wet_area_door_proximity,
     check_wet_area_reachable_without_bedroom,
 )
-from walls import Wall, WallCatalog, gaps_for_wall  # noqa: E402
+from openings import check_elevator_door_insets, check_opening_nuances  # noqa: E402
+from walls import Wall, WallCatalog, check_wall_thickness, gaps_for_wall  # noqa: E402
 
 AREA_TOLERANCE_RATIO = 0.03  # oda alani vs poligon alani icin tolerans
 
@@ -524,7 +526,7 @@ def run_validation(context_path: Path = DEFAULT_CONTEXT_PATH) -> bool:
         # ZAMAN UYARIdir, uretimi DURDURMAZ.
         standards_warnings += [
             f"[{floor['id']}] " + w
-            for w in check_room_proportions(floor["rooms"], units)
+            for w in check_room_proportions(floor["rooms"], units, floor["walls"])
         ]
         # DEV-039: iliskisel (arity-2+) mimari mantik kurallari - standards
         # ile AYNI politika (HER ZAMAN UYARI, asla HATA). Tumu rooms[].
@@ -541,6 +543,20 @@ def run_validation(context_path: Path = DEFAULT_CONTEXT_PATH) -> bool:
                 + check_door_core_balance(rooms, walls, openings)
                 + check_wet_area_reachable_without_bedroom(rooms, walls, openings)
                 + check_wet_area_door_proximity(rooms, walls, openings)
+                # DEV-050: kapi/pencere iliskisel nuanslar (madde 4,12,13,14)
+                + check_door_window_nuances(rooms, walls, openings)
+            )
+        ]
+        # DEV-050: arity-1 nuanslar - acikligin kendi duvarina gore
+        # (madde 1,2,3,5,6,11), mahal/koridor tipine gore (madde 7-10) ve
+        # dis/ic duvar kalinligi hiyerarsisi (madde 16). HER ZAMAN UYARI.
+        standards_warnings += [
+            f"[{floor['id']}] " + w
+            for w in (
+                check_opening_nuances(walls, openings)
+                + check_elevator_door_insets(rooms, walls, openings)
+                + check_door_corridor_nuances(rooms, walls, openings)
+                + check_wall_thickness(walls, rooms, units)
             )
         ]
 

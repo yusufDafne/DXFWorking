@@ -27,16 +27,26 @@ from .opening import (
     SWING_LEFT,
     SWING_RIGHT,
     SWINGS,
+    ELEVATOR_DEFAULT_VARIANT,
+    ELEVATOR_DOOR_VARIANTS,
     TYPE_DOOR,
+    TYPE_ELEVATOR_DOOR,
     TYPE_WINDOW,
     VARIANT_DOUBLE,
     VARIANT_FOLDING,
     VARIANT_SINGLE,
     VARIANT_SLIDING,
+    VARIANT_SLIDING_DOUBLE,
     Door,
     Opening,
     Window,
 )
+from .elevator import (
+    ELEVATOR_DOOR_INSET_MM,
+    check_elevator_door_insets,
+    elevator_door_width,
+)
+from .rules import check_door_leaf_clearance, check_opening_nuances, check_opening_wall_nuances, check_sliding_door_parking
 from .schedule import OpeningSchedule
 from .style import DefaultPlanOpeningStyle, OpeningSymbolStyle
 from .symbols import ARCS_PER_VARIANT, DOOR_SYMBOLS
@@ -46,9 +56,20 @@ from .symbols import ARCS_PER_VARIANT, DOOR_SYMBOLS
 # refactor artirmaz. rev-13'te `variant` / `swing` / `host_side` okunmaya
 # baslandigi icin 1.0 -> 1.1 (geriye uyumlu: hepsi opsiyonel ve varsayilanlari
 # eski davranisi verir).
-CONTRACT_VERSION = "1.1"
+CONTRACT_VERSION = "1.2"
 
 __all__ = [
+    "ELEVATOR_DEFAULT_VARIANT",
+    "ELEVATOR_DOOR_INSET_MM",
+    "ELEVATOR_DOOR_VARIANTS",
+    "TYPE_ELEVATOR_DOOR",
+    "VARIANT_SLIDING_DOUBLE",
+    "check_elevator_door_insets",
+    "elevator_door_width",
+    "check_door_leaf_clearance",
+    "check_opening_nuances",
+    "check_opening_wall_nuances",
+    "check_sliding_door_parking",
     "ARCS_PER_VARIANT",
     "DOOR_SYMBOLS",
     "DOOR_VARIANTS",

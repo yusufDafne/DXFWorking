@@ -39,12 +39,13 @@ DEFAULT_TEXT_HEIGHT = 180.0
 DEFAULT_ROW_HEIGHT = 400.0
 DEFAULT_TITLE_ROW_HEIGHT = 500.0
 
-_TYPE_LABELS = {"door": "KAPI", "window": "PENCERE"}
-_TYPE_PREFIX = {"door": "K", "window": "P"}
-_VARIANT_MARK_SUFFIX = {"single": "", "double": "-D", "sliding": "-S", "folding": "-F"}
+_TYPE_LABELS = {"door": "KAPI", "window": "PENCERE", "elevator_door": "ASANSOR KAPISI"}
+_TYPE_PREFIX = {"door": "K", "window": "P", "elevator_door": "A"}
+_VARIANT_MARK_SUFFIX = {"single": "", "double": "-D", "sliding": "-S", "folding": "-F",
+                        "sliding_double": "-SD"}
 _VARIANT_LABELS = {
     "single": "TEK KANAT", "double": "CIFT KANAT",
-    "sliding": "SURME", "folding": "KATLANIR",
+    "sliding": "SURME", "folding": "KATLANIR", "sliding_double": "CIFT SURME",
 }
 
 
@@ -82,7 +83,7 @@ class OpeningLegend:
             # pencere HER ZAMAN draw_window ile cizilir, varyanti yok sayar).
             # Pencere satirinda "TEK KANAT" yazmak var olmayan bir kanat
             # ayrimini uydururdu; bu yuzden pencerede varyant sutunu "-"dir.
-            is_door = type_ == "door"
+            is_door = type_ in ("door", "elevator_door")
             mark_suffix = _VARIANT_MARK_SUFFIX.get(variant, "") if is_door else ""
             mark = f"{_TYPE_PREFIX.get(type_, '?')}{width_cm:03d}{mark_suffix}"
             variant_label = _VARIANT_LABELS.get(variant, variant.upper()) if is_door else "-"

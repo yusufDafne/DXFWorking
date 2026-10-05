@@ -34,9 +34,9 @@ from __future__ import annotations
 import math
 
 try:
-    from ..collision.geometry import point_on_boundary
+    from ..collision.geometry import point_in_polygon, point_on_boundary
 except ImportError:
-    from collision.geometry import point_on_boundary
+    from collision.geometry import point_in_polygon, point_on_boundary
 
 # v1 pratik varsayilanlar (standards.STANDARDS ile AYNI disiplin - katalog
 # SABITI, proje verisi DEGIL). Her check_* fonksiyonu bunu bir parametre
@@ -48,6 +48,24 @@ DEFAULT_SIGHTLINE_CONE_DEGREES = 45.0
 # rev-22) bu sinirin ALTINDA kalacak sekilde secildi - "ayni kanat"
 # sayilacak kaba bir ust sinir, metre hassasiyetinde bir olcum DEGIL.
 DEFAULT_WET_AREA_DOOR_MAX_DISTANCE = 5000.0
+
+# DEV-050 (madde 4/12/13/14) varsayilanlari - v1 pratik varsayilan.
+DEFAULT_WET_DOOR_WINDOW_MIN_GAP_MM = 600.0
+DEFAULT_DOOR_AXIS_ALIGN_TOLERANCE_MM = 450.0
+_SWING_PROBE_MM = 400.0
+KITCHEN_ROOM_TYPES = frozenset({"mutfak"})
+# DEV-051 ek karar (2026-10-05): dukkanlar konut KABUL EDILMEZ; kapi yonu kurali
+# ayridir (konutta odaya, ticari birimde kacis yonunde = ortak alana).
+COMMERCIAL_ROOM_TYPES = frozenset({"dukkan"})
+# DEV-053 (kullanici karari 2026-10-05): kapi arasi asgari TEMIZ aralik = 100mm
+# kapi cerceve oturumu + 150mm priz/tesisat payi = 250mm.
+DEFAULT_DOOR_GAP_MIN_MM = 250.0
+# "daire kapisi acilinca hemen onunde / capraziunda WC kapisi olmasin":
+# capraz = giris yonune gore 60 dereceye kadar; mesafe ust siniri agent
+# varsayilani (hol derinligi), esnetilebilir.
+DEFAULT_ENTRY_FRONT_CONE_DEGREES = 60.0
+DEFAULT_ENTRY_FRONT_MAX_DISTANCE_MM = 3000.0
+DEFAULT_COMMERCIAL_SWING_POLICY = "outward"
 
 WC_ROOM_TYPES = frozenset({"wc", "banyo"})
 CORE_ROOM_TYPES = frozenset({"asansor", "merdiven"})
@@ -265,6 +283,76 @@ def check_entry_sightlines(
     return warnings
 
 
+def check_entry_wet_door_proximity(
+    rooms: list[dict], walls: list[dict], openings: list[dict], *,
+    min_gap: float = DEFAULT_DOOR_GAP_MIN_MM,
+    cone_degrees: float = DEFAULT_ENTRY_FRONT_CONE_DEGREES,
+    max_distance: float = DEFAULT_ENTRY_FRONT_MAX_DISTANCE_MM,
+) -> list[str]:
+    """[DEV-053 + DEV-050 #15 birlesti] Giris kapisi (birim <-> ortak alan) ile
+    AYNI birimdeki WC/banyo kapisi icin iki kontrol, mesafe DUZ CIZGI:
+      1) kapi kenarlari arasi TEMIZ aralik `min_gap`ten (250mm = 100 cerceve
+         + 150 priz payi) azsa UYARI;
+      2) giris kapisi acilinca ONUNDE / CAPRAZINDA (giris yonune gore
+         `cone_degrees`e kadar, `max_distance` icinde, arada duvar yok) bir
+         WC/banyo kapisi varsa UYARI. `check_entry_sightlines`in kapsadigi dar
+         koni (<=45 derece) burada TEKRARLANMAZ (capraz bandi: 45-60).
+    Mutfak vb. diger oda kapilari bu kurala girmez (yerlesim plani konusu)."""
+    warnings: list[str] = []
+    walls_by_id = {w["id"]: w for w in walls}
+    cos_cone = math.cos(math.radians(cone_degrees))
+    cos_inner = math.cos(math.radians(DEFAULT_SIGHTLINE_CONE_DEGREES))
+    doors = [o for o in openings if o.get("type") == "door"]
+    for entry in doors:
+        wall = walls_by_id.get(entry.get("wall_id"))
+        entry_point = _door_midpoint(entry, walls_by_id)
+        normal = _wall_unit_normal(wall) if wall else None
+        if entry_point is None or normal is None:
+            continue
+        touching = _rooms_touching_point(entry_point, rooms)
+        unit_side = [r for r in touching if r.get("unit_id")]
+        if not unit_side or not any(not r.get("unit_id") for r in touching):
+            continue
+        unit_id = unit_side[0]["unit_id"]
+        centroid = _centroid(unit_side[0]["polygon"])
+        if normal[0] * (centroid[0] - entry_point[0]) + normal[1] * (centroid[1] - entry_point[1]) < 0:
+            normal = (-normal[0], -normal[1])
+        for other in doors:
+            if other["id"] == entry["id"]:
+                continue
+            other_point = _door_midpoint(other, walls_by_id)
+            if other_point is None:
+                continue
+            if not any(r.get("room_type") in WC_ROOM_TYPES and r.get("unit_id") == unit_id
+                       for r in _rooms_touching_point(other_point, rooms)):
+                continue
+            vx, vy = other_point[0] - entry_point[0], other_point[1] - entry_point[1]
+            dist = (vx * vx + vy * vy) ** 0.5
+            gap = dist - (entry["width"] + other["width"]) / 2.0
+            if gap < min_gap - 1e-6:
+                warnings.append(
+                    f"Giris kapisi '{entry['id']}' ile WC/banyo kapisi '{other['id']}' "
+                    f"arasi temiz aralik {max(gap, 0.0):.0f}mm, asgari {min_gap:.0f}mm "
+                    f"(100 cerceve + 150 priz payi)."
+                )
+            if dist == 0 or dist > max_distance:
+                continue
+            cos_angle = (normal[0] * vx + normal[1] * vy) / dist
+            if cos_angle < cos_cone or cos_angle >= cos_inner:
+                continue  # onde-capraz bandinin disinda ya da dar koni (sightlines)
+            if not _clear_line_of_sight(entry_point, other_point, walls,
+                                        {entry["wall_id"], other["wall_id"]}):
+                continue
+            angle = math.degrees(math.acos(max(-1.0, min(1.0, cos_angle))))
+            warnings.append(
+                f"Giris kapisi '{entry['id']}' acilinca capraz onunde "
+                f"(sapma {angle:.0f} derece, {dist:.0f}mm) WC/banyo kapisi "
+                f"'{other['id']}' var - WC kapisi giris karsisina/capraz "
+                f"onune konmamali."
+            )
+    return warnings
+
+
 def check_door_core_balance(
     rooms: list[dict], walls: list[dict], openings: list[dict], *,
     max_ratio: float = DEFAULT_DOOR_CORE_BALANCE_RATIO,
@@ -415,6 +503,129 @@ def check_wet_area_reachable_without_bedroom(
     return warnings
 
 
+def _shared_wall_length(poly_a: list[list[float]], poly_b: list[list[float]]) -> float:
+    """Iki oda poligonunun ORTAK KENARININ (esdogrusal + ortusen) toplam
+    uzunlugu. Koseden TEGET temas 0 sayilir; asgari ortak uzunluk sarti YOKTUR
+    (kullanici karari) - herhangi bir gercek kenar paylasimi ortak duvardir."""
+    total = 0.0
+    na, nb = len(poly_a), len(poly_b)
+    for i in range(na):
+        a0, a1 = poly_a[i], poly_a[(i + 1) % na]
+        ex, ey = a1[0] - a0[0], a1[1] - a0[1]
+        elen = (ex * ex + ey * ey) ** 0.5
+        if elen < 1e-9:
+            continue
+        for j in range(nb):
+            b0, b1 = poly_b[j], poly_b[(j + 1) % nb]
+            d0 = abs(ex * (b0[1] - a0[1]) - ey * (b0[0] - a0[0])) / elen
+            d1 = abs(ex * (b1[1] - a0[1]) - ey * (b1[0] - a0[0])) / elen
+            if d0 > 1.0 or d1 > 1.0:
+                continue
+            t0 = ((b0[0] - a0[0]) * ex + (b0[1] - a0[1]) * ey) / elen
+            t1 = ((b1[0] - a0[0]) * ex + (b1[1] - a0[1]) * ey) / elen
+            overlap = min(max(t0, t1), elen) - max(min(t0, t1), 0.0)
+            if overlap > 1.0:
+                total += overlap
+    return total
+
+
+def _same_line(wall_a: dict, wall_b: dict, tol: float = 1.0) -> bool:
+    """Iki duvar AYNI dogru uzerinde mi (paralel + aralarinda <= tol)."""
+    (ax, ay), (bx, by) = wall_a["start"], wall_a["end"]
+    dx, dy = bx - ax, by - ay
+    length = (dx * dx + dy * dy) ** 0.5
+    if length == 0:
+        return False
+    return all(
+        abs(dx * (p[1] - ay) - dy * (p[0] - ax)) / length <= tol
+        for p in (wall_b["start"], wall_b["end"])
+    )
+
+
+def check_wet_area_adjacency(
+    rooms: list[dict], walls: list[dict], openings: list[dict], *,
+    require_shared_wall: bool = True,
+) -> list[str]:
+    """[DEV-052] Ayni birimdeki WC ve banyo icin GERCEK komsuluk (DEV-043'un
+    kapi-orta-nokta mesafesi yaklasiminin eksigini kapatir). Kullanici
+    kararlari (2026-10-05, varsayilan ayarlar):
+      a) WC ve banyo ORTAK DUVAR paylasmali (`require_shared_wall=False`
+         kapatir; ortak uzunluk asgarisi YOK, kose temasi sayilmaz).
+      b) Kapilari AYNI HATTA ve yan yana olmali - sirt sirta/karsilikli
+         (farkli hatlarda) OLMAZ: her iki oda kapisinin en yakin cifti ayni
+         dogru uzerindeki duvarlarda degilse UYARI.
+      c) Kapilar, ayni birimdeki DIGER oda kapilarindan (salon, yatak, mutfak;
+         giris ve hol kapilari haric) mumkun oldugunca UZAK olmali: bir islak
+         hacim kapisinin en yakin diger-oda kapisi, kendi islak-cift kapisina
+         olan uzakligindan YAKINSA UYARI (goreli kural - sayi uydurulmaz).
+    Yakinlik ust siniri `check_wet_area_door_proximity`de kalir; sah/baca
+    bosluklari ayri bir modul olarak incelenecek (DEV-057, fikirler)."""
+    warnings: list[str] = []
+    walls_by_id = {w["id"]: w for w in walls}
+    by_unit: dict[str, list[dict]] = {}
+    for room in rooms:
+        if room.get("unit_id") and room.get("room_type") in WC_ROOM_TYPES:
+            by_unit.setdefault(room["unit_id"], []).append(room)
+    doors = [o for o in openings if o.get("type") == "door"]
+
+    def doors_of(room):
+        out = []
+        for door in doors:
+            mid = _door_midpoint(door, walls_by_id)
+            if mid is not None and room["id"] in {r["id"] for r in _rooms_touching_point(mid, [room])}:
+                out.append((door, mid))
+        return out
+
+    for unit_id, wet in sorted(by_unit.items()):
+        for i in range(len(wet)):
+            for j in range(i + 1, len(wet)):
+                ra, rb = wet[i], wet[j]
+                if require_shared_wall and _shared_wall_length(ra["polygon"], rb["polygon"]) <= 0.0:
+                    warnings.append(
+                        f"Birim '{unit_id}': '{ra['id']}' ve '{rb['id']}' ortak duvar "
+                        f"paylasmiyor - WC ve banyo varsayilan olarak bitisik olmali."
+                    )
+                da, db = doors_of(ra), doors_of(rb)
+                if not da or not db:
+                    continue
+                dist = lambda p, q: ((p[0] - q[0]) ** 2 + (p[1] - q[1]) ** 2) ** 0.5
+                (door_a, mid_a), (door_b, mid_b) = min(
+                    ((x, y) for x in da for y in db), key=lambda xy: dist(xy[0][1], xy[1][1]))
+                if not _same_line(walls_by_id[door_a["wall_id"]], walls_by_id[door_b["wall_id"]]):
+                    warnings.append(
+                        f"Birim '{unit_id}': '{door_a['id']}' ve '{door_b['id']}' ayni "
+                        f"hatta degil (sirt sirta/karsilikli) - WC ve banyo kapilari "
+                        f"ayni hatta yan yana olmali."
+                    )
+                pair = dist(mid_a, mid_b)
+                wet_ids = {door_a["id"], door_b["id"]}
+                other = []
+                for door in doors:
+                    if door["id"] in wet_ids:
+                        continue
+                    mid = _door_midpoint(door, walls_by_id)
+                    if mid is None:
+                        continue
+                    touching = _rooms_touching_point(mid, rooms)
+                    if any(r.get("room_type") in WC_ROOM_TYPES for r in touching):
+                        continue
+                    plain = [r for r in touching if r.get("unit_id") == unit_id
+                             and r.get("room_type") not in CIRCULATION_ROOM_TYPES
+                             and r.get("room_type") not in CORE_ROOM_TYPES]
+                    if plain and all(r.get("unit_id") for r in touching if r.get("room_type") not in CIRCULATION_ROOM_TYPES):
+                        other.append((door, mid))
+                for wet_door, wet_mid in ((door_a, mid_a), (door_b, mid_b)):
+                    near = min(((dist(wet_mid, m), d) for d, m in other), default=None, key=lambda t: t[0])
+                    if near is not None and near[0] < pair - 1e-6:
+                        warnings.append(
+                            f"Birim '{unit_id}': islak hacim kapisi '{wet_door['id']}' "
+                            f"diger oda kapisina ('{near[1]['id']}') {near[0]:.0f}mm, "
+                            f"kendi WC/banyo cifti ise {pair:.0f}mm - oda kapilarindan "
+                            f"mumkun oldugunca uzak olmali."
+                        )
+    return warnings
+
+
 def check_wet_area_door_proximity(
     rooms: list[dict], walls: list[dict], openings: list[dict], *,
     max_distance: float = DEFAULT_WET_AREA_DOOR_MAX_DISTANCE,
@@ -525,3 +736,230 @@ __all__ = [
     "check_door_core_balance", "check_wet_area_reachable_without_bedroom",
     "check_wet_area_door_proximity", "check_common_circulation_share",
 ]
+
+
+# --- DEV-050: kapi/pencere iliskisel nuanslar (madde 4, 12, 13, 14) --------
+# HEPSI UYARI; unit_id/room_type OPT-IN (alan yoksa kontrole girmez).
+
+def _wall_unit_normal(wall: dict) -> tuple[float, float] | None:
+    dx, dy = wall["end"][0] - wall["start"][0], wall["end"][1] - wall["start"][1]
+    length = (dx * dx + dy * dy) ** 0.5
+    return None if length == 0 else (-dy / length, dx / length)
+
+
+def _door_swing_target(door: dict, walls_by_id: dict, rooms: list[dict]) -> dict | None:
+    """Kapi kanadinin ACILDIGI oda (host_side: 'pos' = duvar normali +).
+    Surme/katlanir kapi icin `None` (kanat odaya donmez)."""
+    if door.get("variant", "single") in ("sliding", "folding"):
+        return None
+    wall = walls_by_id.get(door.get("wall_id"))
+    mid = _door_midpoint(door, walls_by_id)
+    normal = _wall_unit_normal(wall) if wall else None
+    if mid is None or normal is None:
+        return None
+    sign = 1.0 if door.get("host_side", "pos") == "pos" else -1.0
+    probe = (mid[0] + normal[0] * sign * _SWING_PROBE_MM, mid[1] + normal[1] * sign * _SWING_PROBE_MM)
+    for room in rooms:
+        if point_in_polygon(probe, room["polygon"]):
+            return room
+    return None
+
+
+def check_wet_door_swing_inward(rooms: list[dict], walls: list[dict],
+                                openings: list[dict]) -> list[str]:
+    """[madde 12] WC/Banyo kapisi VARSAYILAN olarak kendi hacmine acilir;
+    hole/baska odaya dogru aciliyorsa UYARI."""
+    warnings: list[str] = []
+    walls_by_id = {w["id"]: w for w in walls}
+    for door in (o for o in openings if o.get("type") == "door"):
+        mid = _door_midpoint(door, walls_by_id)
+        if mid is None:
+            continue
+        wet = [r for r in _rooms_touching_point(mid, rooms) if r.get("room_type") in WC_ROOM_TYPES]
+        if not wet:
+            continue
+        target = _door_swing_target(door, walls_by_id, rooms)
+        if target is not None and target["id"] not in {r["id"] for r in wet}:
+            warnings.append(
+                f"'{wet[0]['id']}' kapisi ('{door['id']}') kendi hacmine degil "
+                f"'{target['id']}' alanina aciliyor - varsayilan olarak WC/Banyo "
+                f"kapisi icine acilir."
+            )
+    return warnings
+
+
+def check_entry_door_swing_inward(rooms: list[dict], walls: list[dict],
+                                  openings: list[dict]) -> list[str]:
+    """[madde 13] Daire giris kapisi kendi birimine ICE acilmali; ortak
+    hole (unit_id'siz oda) aciliyorsa UYARI."""
+    warnings: list[str] = []
+    walls_by_id = {w["id"]: w for w in walls}
+    for door in (o for o in openings if o.get("type") == "door"):
+        mid = _door_midpoint(door, walls_by_id)
+        if mid is None:
+            continue
+        touching = _rooms_touching_point(mid, rooms)
+        if not any(r.get("unit_id") for r in touching) or not any(not r.get("unit_id") for r in touching):
+            continue  # giris kapisi: birim <-> ortak alan
+        target = _door_swing_target(door, walls_by_id, rooms)
+        if target is not None and not target.get("unit_id"):
+            warnings.append(
+                f"Giris kapisi '{door['id']}' ortak alana ('{target['id']}') "
+                f"aciliyor - daire giris kapisi kendi birimine ice acilmali."
+            )
+    return warnings
+
+
+def check_kitchen_wet_door_opposite(
+    rooms: list[dict], walls: list[dict], openings: list[dict], *,
+    tolerance: float = DEFAULT_DOOR_AXIS_ALIGN_TOLERANCE_MM,
+) -> list[str]:
+    """[madde 14] Ayni birimdeki mutfak kapisi ile WC/Banyo kapisi, ayni
+    holde PARALEL duvarlarda ve duvar normali boyunca (tolerans icinde)
+    KARSI KARSIYA ise (arada engel yoksa) UYARI. Kullanicinin ornegi:
+    mutfak kapisinin onunde wc olmamali."""
+    warnings: list[str] = []
+    walls_by_id = {w["id"]: w for w in walls}
+    entries = []  # (door, mid, wall, normal, kind, unit_id, touching_ids)
+    for door in (o for o in openings if o.get("type") == "door"):
+        mid = _door_midpoint(door, walls_by_id)
+        wall = walls_by_id.get(door.get("wall_id"))
+        if mid is None or wall is None:
+            continue
+        touching = _rooms_touching_point(mid, rooms)
+        for room in touching:
+            kind = ("mutfak" if room.get("room_type") in KITCHEN_ROOM_TYPES
+                    else "wet" if room.get("room_type") in WC_ROOM_TYPES else None)
+            if kind and room.get("unit_id"):
+                entries.append((door, mid, wall, kind, room["unit_id"],
+                                {r["id"] for r in touching if r["id"] != room["id"]}))
+    for i, (da, ma, wa, ka, ua, ta) in enumerate(entries):
+        if ka != "mutfak":
+            continue
+        for (db, mb, wb, kb, ub, tb) in entries:
+            if kb != "wet" or ub != ua or da["id"] == db["id"] or not (ta & tb):
+                continue
+            na, nb = _wall_unit_normal(wa), _wall_unit_normal(wb)
+            if na is None or nb is None or abs(na[0] * nb[1] - na[1] * nb[0]) > 1e-3:
+                continue  # paralel duvar degil
+            v = (mb[0] - ma[0], mb[1] - ma[1])
+            across = abs(v[0] * na[0] + v[1] * na[1])
+            along = abs(-v[0] * na[1] + v[1] * na[0])
+            if across < 1.0 or along > tolerance:
+                continue
+            if _clear_line_of_sight(ma, mb, walls, {wa["id"], wb["id"]}):
+                warnings.append(
+                    f"Mutfak kapisi ('{da['id']}') ile WC/Banyo kapisi ('{db['id']}') "
+                    f"ayni eksende karsi karsiya ({along:.0f}mm kayik) - "
+                    f"mutfak kapisindan wc'ye gorus olmamali."
+                )
+    return warnings
+
+
+def check_wet_door_window_gap(
+    rooms: list[dict], walls: list[dict], openings: list[dict], *,
+    min_gap: float = DEFAULT_WET_DOOR_WINDOW_MIN_GAP_MM,
+) -> list[str]:
+    """[madde 4] Islak hacim kapisi ile AYNI duvardaki pencere arasindaki
+    duz duvar boslugu `min_gap`ten azsa UYARI."""
+    warnings: list[str] = []
+    walls_by_id = {w["id"]: w for w in walls}
+    for door in (o for o in openings if o.get("type") == "door"):
+        mid = _door_midpoint(door, walls_by_id)
+        if mid is None or not any(r.get("room_type") in WC_ROOM_TYPES for r in _rooms_touching_point(mid, rooms)):
+            continue
+        for win in (o for o in openings if o.get("type") == "window" and o.get("wall_id") == door["wall_id"]):
+            gap = abs(win["position_from_start"] - door["position_from_start"]) - (win["width"] + door["width"]) / 2.0
+            if gap < min_gap:
+                warnings.append(
+                    f"Islak hacim kapisi '{door['id']}' ile pencere '{win['id']}' arasi "
+                    f"{max(gap, 0.0):.0f}mm, asgari {min_gap:.0f}mm."
+                )
+    return warnings
+
+
+DEFAULT_SWING_POLICY = "into_room"
+
+
+def check_doors_open_into_rooms(
+    rooms: list[dict], walls: list[dict], openings: list[dict], *,
+    swing_policy: str = DEFAULT_SWING_POLICY,
+) -> list[str]:
+    """[DEV-051] Kullanici karari (2026-10-05): KONUT icin varsayilan, kapilarin
+    ODALARA dogru acilmasidir (hole/koridora degil). Hastane/otel gibi kacis
+    planli yapilar ileride `swing_policy` ile ayri incelenecek; `"any"` bu
+    kontrolu kapatir. Kapsam: tam olarak BIR sirkulasyon (koridor) ve BIR
+    normal oda arasindaki kapi. Islak hacim (madde 12) ve giris kapisi
+    (madde 13, birim<->ortak alan) o kurallarda ZATEN denetlendiginden burada
+    TEKRARLANMAZ; cekirdek (asansor/merdiven) kapilari atlanir."""
+    if swing_policy != DEFAULT_SWING_POLICY:
+        return []
+    warnings: list[str] = []
+    walls_by_id = {w["id"]: w for w in walls}
+    for door in (o for o in openings if o.get("type") == "door"):
+        mid = _door_midpoint(door, walls_by_id)
+        if mid is None:
+            continue
+        touching = _rooms_touching_point(mid, rooms)
+        circ = [r for r in touching if r.get("room_type") in CIRCULATION_ROOM_TYPES]
+        plain = [r for r in touching if r.get("room_type") not in CIRCULATION_ROOM_TYPES
+                 and r.get("room_type") not in CORE_ROOM_TYPES and r.get("room_type") not in WC_ROOM_TYPES]
+        if len(circ) != 1 or len(plain) != 1 or len(touching) != 2:
+            continue
+        if plain[0].get("room_type") in COMMERCIAL_ROOM_TYPES:
+            continue  # ticari birim: check_commercial_door_swing
+        if plain[0].get("unit_id") and not circ[0].get("unit_id"):
+            continue  # giris kapisi: madde 13
+        target = _door_swing_target(door, walls_by_id, rooms)
+        if target is not None and target["id"] == circ[0]["id"]:
+            warnings.append(
+                f"Kapi '{door['id']}' odaya ('{plain[0]['id']}') degil "
+                f"'{circ[0]['id']}' sirkulasyon alanina aciliyor - konutta "
+                f"kapilar odalara dogru acilmali."
+            )
+    return warnings
+
+
+def check_commercial_door_swing(
+    rooms: list[dict], walls: list[dict], openings: list[dict], *,
+    shop_swing_policy: str = DEFAULT_COMMERCIAL_SWING_POLICY,
+) -> list[str]:
+    """[DEV-051 ek karar] Dukkan (`room_type='dukkan'`) konut sayilmaz ve AYRI
+    islenir. Varsayilan: dukkan <-> ortak alan kapisi kacis yonunde, yani
+    DISARI (ortak alana) acilir; ice acilirsa UYARI. Hastane/otel gibi diger
+    ticari/kamusal yapilarin kacis planlari ileride ayri incelenecek;
+    `shop_swing_policy="any"` kapatir. `unit_id` aranmaz (dukkan birim
+    degildir); yalnizca `room_type` opt-in'dir."""
+    if shop_swing_policy != DEFAULT_COMMERCIAL_SWING_POLICY:
+        return []
+    warnings: list[str] = []
+    walls_by_id = {w["id"]: w for w in walls}
+    for door in (o for o in openings if o.get("type") == "door"):
+        mid = _door_midpoint(door, walls_by_id)
+        if mid is None:
+            continue
+        touching = _rooms_touching_point(mid, rooms)
+        shops = [r for r in touching if r.get("room_type") in COMMERCIAL_ROOM_TYPES]
+        others = [r for r in touching if r.get("room_type") not in COMMERCIAL_ROOM_TYPES]
+        if len(shops) != 1 or len(others) != 1:
+            continue
+        target = _door_swing_target(door, walls_by_id, rooms)
+        if target is not None and target["id"] == shops[0]["id"]:
+            warnings.append(
+                f"Dukkan kapisi '{door['id']}' dukkana ('{shops[0]['id']}') ice "
+                f"aciliyor - ticari birimde kapi kacis yonunde, ortak alana "
+                f"('{others[0]['id']}') acilmali."
+            )
+    return warnings
+
+
+def check_door_window_nuances(rooms: list[dict], walls: list[dict],
+                              openings: list[dict]) -> list[str]:
+    return (
+        check_doors_open_into_rooms(rooms, walls, openings)
+        + check_commercial_door_swing(rooms, walls, openings)
+        + check_wet_door_window_gap(rooms, walls, openings)
+        + check_wet_door_swing_inward(rooms, walls, openings)
+        + check_entry_door_swing_inward(rooms, walls, openings)
+        + check_kitchen_wet_door_opposite(rooms, walls, openings)
+    )

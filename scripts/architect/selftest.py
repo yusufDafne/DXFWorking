@@ -682,8 +682,464 @@ def check_opt_in_still_holds_when_unit_id_is_stripped() -> list[str]:
             if warnings else [])
 
 
+
+def _w(i, s, e, t=100.0):
+    return {"id": i, "start": s, "end": e, "thickness": t, "layer": "D"}
+
+
+def check_dev050_door_window_nuances() -> list[str]:
+    """DEV-050 madde 4, 12, 13, 14 - elle kurulmus minik plan."""
+    from architect import (check_entry_door_swing_inward, check_kitchen_wet_door_opposite,
+                           check_wet_door_swing_inward, check_wet_door_window_gap)
+    errors: list[str] = []
+    hol = {"id": "hol", "room_type": "koridor", "unit_id": "A",
+           "polygon": [[0, 0], [4000, 0], [4000, 1500], [0, 1500]]}
+    wc = {"id": "wc", "room_type": "wc", "unit_id": "A",
+          "polygon": [[0, -1500], [1500, -1500], [1500, 0], [0, 0]]}
+    kitchen = {"id": "mut", "room_type": "mutfak", "unit_id": "A",
+               "polygon": [[0, 1500], [1500, 1500], [1500, 3000], [0, 3000]]}
+    walls = [_w("w_wc", [0, 0], [4000, 0]), _w("w_k", [0, 1500], [1500, 1500])]
+    wc_door = {"id": "dwc", "type": "door", "wall_id": "w_wc", "position_from_start": 750,
+               "width": 800, "host_side": "neg"}   # normal +y: 'neg' -> WC'ye (ice)
+    rooms = [hol, wc, kitchen]
+    # madde 12
+    if check_wet_door_swing_inward(rooms, walls, [wc_door]):
+        errors.append("WC'ye ice acilan kapi UYARI vermemeli (yanlis-pozitif)")
+    out = {**wc_door, "host_side": "pos"}
+    if not any("kendi hacmine degil" in w for w in check_wet_door_swing_inward(rooms, walls, [out])):
+        errors.append("hole acilan WC kapisi UYARI vermeli")
+    # madde 14: mutfak kapisi wc kapisiyla ayni eksende
+    k_door = {"id": "dk", "type": "door", "wall_id": "w_k", "position_from_start": 750, "width": 800}
+    if not any("karsi karsiya" in w for w in check_kitchen_wet_door_opposite(rooms, walls, [wc_door, k_door])):
+        errors.append("eksenli mutfak/wc kapisi UYARI vermeli")
+    far_k = {"id": "mut2", "room_type": "mutfak", "unit_id": "A",
+             "polygon": [[2500, 1500], [4000, 1500], [4000, 3000], [2500, 3000]]}
+    walls2 = walls + [_w("w_k2", [2500, 1500], [4000, 1500])]
+    k2 = {"id": "dk2", "type": "door", "wall_id": "w_k2", "position_from_start": 750, "width": 800}
+    if check_kitchen_wet_door_opposite([hol, wc, far_k], walls2, [wc_door, k2]):
+        errors.append("2500mm kayik mutfak kapisi UYARI vermemeli (yanlis-pozitif)")
+    # madde 4: ayni duvarda pencere cok yakin / uzak
+    win_near = {"id": "win", "type": "window", "wall_id": "w_wc", "position_from_start": 1400, "width": 600}
+    if not any("Islak hacim kapisi" in w for w in check_wet_door_window_gap(rooms, walls, [wc_door, win_near])):
+        errors.append("yakin pencere UYARI vermeli")
+    win_far = {**win_near, "id": "win2", "position_from_start": 3000}
+    if check_wet_door_window_gap(rooms, walls, [wc_door, win_far]):
+        errors.append("uzak pencere UYARI vermemeli")
+    # madde 13
+    unit_room = {"id": "U", "unit_id": "A", "room_type": "salon",
+                 "polygon": [[0, 0], [3000, 0], [3000, 3000], [0, 3000]]}
+    common = {"id": "C", "polygon": [[0, -2000], [3000, -2000], [3000, 0], [0, 0]]}
+    ew = [_w("e", [0, 0], [3000, 0])]
+    entry = {"id": "ent", "type": "door", "wall_id": "e", "position_from_start": 1500, "width": 1000, "host_side": "pos"}
+    if check_entry_door_swing_inward([unit_room, common], ew, [entry]):
+        errors.append("birime ice acilan giris kapisi UYARI vermemeli")
+    if not any("ortak alana" in w for w in check_entry_door_swing_inward(
+            [unit_room, common], ew, [{**entry, "host_side": "neg"}])):
+        errors.append("ortak alana acilan giris kapisi UYARI vermeli")
+    return errors
+
+
+def check_dev051_doors_open_into_rooms() -> list[str]:
+    from architect import check_doors_open_into_rooms
+    errors: list[str] = []
+    hol = {"id": "hol", "room_type": "koridor", "unit_id": "A",
+           "polygon": [[0, 0], [4000, 0], [4000, 1500], [0, 1500]]}
+    oda = {"id": "oda", "room_type": "yatak_odasi", "unit_id": "A",
+           "polygon": [[0, 1500], [3000, 1500], [3000, 4000], [0, 4000]]}
+    walls = [_w("w", [0, 1500], [3000, 1500])]
+    # duvar +x yonlu: normal +y -> 'pos' ODAYA, 'neg' HOLE acilir
+    door = {"id": "d", "type": "door", "wall_id": "w", "position_from_start": 1500, "width": 800, "host_side": "pos"}
+    if check_doors_open_into_rooms([hol, oda], walls, [door]):
+        errors.append("odaya acilan kapi UYARI vermemeli (yanlis-pozitif)")
+    if not any("sirkulasyon alanina" in w for w in check_doors_open_into_rooms([hol, oda], walls, [{**door, "host_side": "neg"}])):
+        errors.append("hole acilan oda kapisi UYARI vermeli")
+    if check_doors_open_into_rooms([hol, oda], walls, [{**door, "host_side": "neg"}], swing_policy="any"):
+        errors.append("swing_policy='any' kontrolu kapatmali")
+    if check_doors_open_into_rooms([hol, oda], walls, [{**door, "host_side": "neg", "variant": "sliding"}]):
+        errors.append("surme kapi odaya donmez: UYARI olmamali")
+    return errors
+
+
+def check_dev051_shops_not_residential() -> list[str]:
+    from architect import check_commercial_door_swing, check_doors_open_into_rooms
+    errors: list[str] = []
+    band = {"id": "band", "room_type": "koridor",
+            "polygon": [[0, 0], [4000, 0], [4000, 1500], [0, 1500]]}
+    shop = {"id": "dk", "room_type": "dukkan",
+            "polygon": [[0, 1500], [3000, 1500], [3000, 4000], [0, 4000]]}
+    walls = [_w("w", [0, 1500], [3000, 1500])]
+    inward = {"id": "d", "type": "door", "wall_id": "w", "position_from_start": 1500, "width": 1000, "host_side": "pos"}  # dukkana
+    outward = {**inward, "host_side": "neg"}                                                                          # banda
+    if check_doors_open_into_rooms([band, shop], walls, [outward]):
+        errors.append("dukkan konut sayilmaz: konut kurali dukkan kapisina UYGULANMAMALI")
+    if not any("kacis yonunde" in w for w in check_commercial_door_swing([band, shop], walls, [inward])):
+        errors.append("dukkana ice acilan kapi UYARI vermeli")
+    if check_commercial_door_swing([band, shop], walls, [outward]):
+        errors.append("ortak alana acilan dukkan kapisi UYARI vermemeli (yanlis-pozitif)")
+    if check_commercial_door_swing([band, shop], walls, [inward], shop_swing_policy="any"):
+        errors.append("shop_swing_policy='any' kontrolu kapatmali")
+    # kasitli bozma: ayni geometri 'yatak_odasi' ise KONUT kurali devreye girer
+    shop2 = {**shop, "room_type": "yatak_odasi", "unit_id": "A"}
+    band2 = {**band, "unit_id": "A"}
+    if not check_doors_open_into_rooms([band2, shop2], walls, [outward]):
+        errors.append("ayni geometri yatak odasiysa konut kurali UYARI vermeli")
+    return errors
+
+
+def check_dev052_wet_area_adjacency() -> list[str]:
+    """DEV-052: ortak duvar + ayni hat + oda kapilarindan uzaklik. ELLE kurulu
+    plan: hol y 0-1500; banyo x0-1500, WC x1500-2500, salon x2500-4000 (y 1500-3500)."""
+    from architect import check_wet_area_adjacency
+    errors: list[str] = []
+    P = lambda x0, y0, x1, y1: [[x0, y0], [x1, y0], [x1, y1], [x0, y1]]
+    hol = {"id": "hol", "room_type": "koridor", "unit_id": "A", "polygon": P(0, 0, 4000, 1500)}
+    banyo = {"id": "ban", "room_type": "banyo", "unit_id": "A", "polygon": P(0, 1500, 1500, 3500)}
+    wc = {"id": "wc", "room_type": "wc", "unit_id": "A", "polygon": P(1500, 1500, 2500, 3500)}
+    salon = {"id": "sal", "room_type": "salon", "unit_id": "A", "polygon": P(2500, 1500, 4000, 3500)}
+    walls = [_w("w_b", [0, 1500], [1500, 1500]), _w("w_w", [1500, 1500], [2500, 1500]),
+             _w("w_s", [2500, 1500], [4000, 1500])]
+    def door(i, wid, pos): return {"id": i, "type": "door", "wall_id": wid, "position_from_start": pos, "width": 800}
+    base = [door("db", "w_b", 750), door("dw", "w_w", 500), door("ds", "w_s", 1000)]  # banyo x750, wc x2000, salon x3500
+    if check_wet_area_adjacency([hol, banyo, wc, salon], walls, base):
+        errors.append(f"ortak duvar + ayni hat + salon kapisi uzak: UYARI olmamali (yanlis-pozitif): "
+                      f"{check_wet_area_adjacency([hol, banyo, wc, salon], walls, base)}")
+    # salon kapisi yakin (x3100: wc kapisina 1100 < cift 1250)
+    near = [base[0], base[1], door("ds", "w_s", 600)]
+    if not any("mumkun oldugunca uzak" in w for w in check_wet_area_adjacency([hol, banyo, wc, salon], walls, near)):
+        errors.append("yakin salon kapisi UYARI vermeli")
+    # sirt sirta: WC kapisi karsi duvarda (y=3500), banyo y=1500 -> farkli hat
+    walls_b = walls + [_w("w_back", [1500, 3500], [2500, 3500])]
+    back = [base[0], door("dw", "w_back", 500), base[2]]
+    if not any("ayni hatta degil" in w for w in check_wet_area_adjacency([hol, banyo, wc, salon], walls_b, back)):
+        errors.append("sirt sirta kapilar UYARI vermeli")
+    # ortak duvar yok: WC 500mm saga kaydi (banyo x0-1500, wc x2000-3000)
+    wc_far = {**wc, "polygon": P(2000, 1500, 3000, 3500)}
+    got = check_wet_area_adjacency([hol, banyo, wc_far, salon], walls, base)
+    if not any("ortak duvar" in w for w in got):
+        errors.append("ortak duvarsiz WC/banyo UYARI vermeli")
+    if any("ortak duvar" in w for w in check_wet_area_adjacency([hol, banyo, wc_far, salon], walls, base, require_shared_wall=False)):
+        errors.append("require_shared_wall=False ortak duvar uyarisini kapatmali")
+    # kose temasi ortak duvar SAYILMAZ
+    wc_corner = {**wc, "polygon": P(1500, 3500, 2500, 5500)}
+    if not any("ortak duvar" in w for w in check_wet_area_adjacency([hol, banyo, wc_corner, salon], walls, base)):
+        errors.append("yalniz kose temasi ortak duvar sayilmamali")
+    return errors
+
+
+def check_dev053_entry_wet_door_proximity() -> list[str]:
+    """DEV-053 (+DEV-050 #15): giris kapisi ile WC kapisi -> temiz aralik 250 ve
+    capraz onde olmama. Birim: sal (y>=0), ortak band (y<0); giris kapisi y=0
+    duvarinda x=1000 (900 genis), normal birime (+y)."""
+    from architect import check_entry_wet_door_proximity
+    errors: list[str] = []
+    P = lambda x0, y0, x1, y1: [[x0, y0], [x1, y0], [x1, y1], [x0, y1]]
+    band = {"id": "band", "polygon": P(0, -2000, 6000, 0)}
+    hol = {"id": "hol", "unit_id": "A", "room_type": "koridor", "polygon": P(0, 0, 6000, 1500)}
+    wc = {"id": "wc", "unit_id": "A", "room_type": "wc", "polygon": P(0, 1500, 6000, 3000)}
+    rooms = [band, hol, wc]
+    walls = [_w("w_in", [0, 0], [6000, 0]), _w("w_wc", [0, 1500], [6000, 1500])]
+    entry = {"id": "ent", "type": "door", "wall_id": "w_in", "position_from_start": 1000, "width": 900}
+    def wc_door(x): return {"id": "dwc", "type": "door", "wall_id": "w_wc", "position_from_start": x, "width": 800}
+    # capraz onde: WC kapisi x=2300 (y=1500): sapma atan(1300/1500)=41 -> dar koniye girer (sightlines);
+    # x=2900: atan(1900/1500)=51.7 derece, mesafe 2420 -> capraz bandi -> UYARI
+    if not any("capraz onunde" in w for w in check_entry_wet_door_proximity(rooms, walls, [entry, wc_door(2900)])):
+        errors.append("52 derece capraz WC kapisi UYARI vermeli")
+    # 70+ derece (x=5000: atan(4000/1500)=69) -> bant disi, mesafe 4272 > 3000 -> UYARI yok
+    if check_entry_wet_door_proximity(rooms, walls, [entry, wc_door(5000)]):
+        errors.append("uzak/yan WC kapisi UYARI vermemeli (yanlis-pozitif)")
+    # dar koni (x=1100: ~3 derece) sightlines'in alani: burada TEKRARLANMAZ
+    got = check_entry_wet_door_proximity(rooms, walls, [entry, wc_door(1100)])
+    if any("capraz onunde" in w for w in got):
+        errors.append("dar koni (<=45) bu kuralda tekrarlanmamali")
+    # temiz aralik: giris x=1000 (550-1450 degil: 1000+-450), WC kapisi ayni duvarda degil;
+    # merkez mesafe = sqrt((1100-1000)^2+1500^2)=1503 -> aralik 1503-850=653 (>=250, UYARI yok)
+    if any("temiz aralik" in w for w in got):
+        errors.append("653mm aralik UYARI vermemeli")
+    # kasitli bozma: WC kapisi giris kapisina yapisik (ayni duvar, merkezler 900 -> aralik 50)
+    walls2 = [_w("w_in", [0, 0], [6000, 0])]
+    rooms2 = [band, {**hol, "room_type": "wc"}]
+    close = {"id": "dwc2", "type": "door", "wall_id": "w_in", "position_from_start": 1900, "width": 800}
+    got = check_entry_wet_door_proximity(rooms2, walls2, [entry, close])
+    if not any("temiz aralik 50mm" in w for w in got):
+        errors.append(f"50mm aralik UYARI vermeli: {got}")
+    return errors
+
+
+def check_dev054_hall_topology() -> list[str]:
+    """DEV-054: hol topolojisi adaylari. Birim 6000x9000, giris alt, n_rooms=4,
+    kapi 900, duvar 100 -> hol genisligi 1500+100=1600. ELLE hesaplar:
+    duz: 1600x9000=14.4 m2, pay 14.4/54=%26.67; L: 14.4M+4400*1600=21.44 m2."""
+    from architect import (DEFAULT_TOPOLOGIES, options_for_hall_topology, register_topology)
+    from architect.topology import TOPOLOGY_BUILDERS
+    errors: list[str] = []
+    opts = {o.id: o for o in options_for_hall_topology(6000.0, 9000.0)}
+    if set(opts) != set(DEFAULT_TOPOLOGIES) or "tarak" in opts:
+        errors.append(f"varsayilan adaylar tarak HARIC bes topoloji olmali: {sorted(opts)}")
+    if abs(opts["duz"].area_m2 - 14.4) > 1e-6 or abs(opts["duz"].share - 14.4 / 54.0) > 1e-9:
+        errors.append(f"duz hol 14.4 m2 / pay 0.2667 olmali: {opts['duz'].area_m2}, {opts['duz'].share}")
+    if abs(opts["L"].area_m2 - 21.44) > 1e-6:
+        errors.append(f"L hol 21.44 m2 olmali: {opts['L'].area_m2}")
+    # duz puan: 0.4*1 + 0.35*(1-(0.2667-0.15)/0.15) + 0.25*1 - 0.001*4 = 0.72378
+    if abs(opts["duz"].score - 0.7238) > 1e-3:
+        errors.append(f"duz puan ~0.7238 olmali: {opts['duz'].score}")
+    # merkezi hub'lar: kare 1800x1800, dikdortgen 2400x1600 (oran 1.5 KORUNUR)
+    def hub_dims(o):
+        xs = sorted({p[0] for p in o.polygon}); ys = sorted({p[1] for p in o.polygon})
+        return xs[-1] - xs[0], max(y2 - y1 for y1, y2 in zip(ys, ys[1:]))
+    sq = opts["merkezi_kare"].polygon; rc = opts["merkezi_dikdortgen"].polygon
+    wsq = max(p[0] for p in sq) - min(p[0] for p in sq)
+    wrc = max(p[0] for p in rc) - min(p[0] for p in rc)
+    if abs(wsq - 1800.0) > 1e-6 or abs(wrc - 2400.0) > 1e-6:
+        errors.append(f"hub genislikleri 1800 / 2400 olmali: {wsq}, {wrc}")
+    # en iyi aday merkezi hub (en dusuk hol payi + yeterli cephe); sirali dondu mu
+    ordered = options_for_hall_topology(6000.0, 9000.0)
+    if [o.score for o in ordered] != sorted((o.score for o in ordered), reverse=True):
+        errors.append("adaylar puana gore azalan siralanmali")
+    # giris yonu: 'sol' -> hol x boyunca, y merkezde (3700-5300); 'ust' -> y=9000'dan baslar
+    left = options_for_hall_topology(6000.0, 9000.0, entry_side="sol", allowed=("duz",))[0].polygon
+    if (min(p[0] for p in left), max(p[0] for p in left), min(p[1] for p in left), max(p[1] for p in left)) != (0.0, 6000.0, 3700.0, 5300.0):
+        errors.append(f"sol girisli duz hol x:0-6000, y:3700-5300 olmali: {left}")
+    top = options_for_hall_topology(6000.0, 9000.0, entry_side="ust", allowed=("duz",))[0].polygon
+    if max(p[1] for p in top) != 9000.0 or min(p[1] for p in top) != 0.0:
+        errors.append("ust girisli duz hol tum derinligi kaplamali")
+    # kullanici bildirimi: yalniz L + T; bilinmeyen / kayitsiz (tarak) ValueError
+    only = options_for_hall_topology(6000.0, 9000.0, allowed=("L", "T"))
+    if sorted(o.id for o in only) != ["L", "T"]:
+        errors.append("allowed yalniz bildirilen adaylari donmeli")
+    for bad in ("tarak", "yok"):
+        try:
+            options_for_hall_topology(6000.0, 9000.0, allowed=(bad,))
+            errors.append(f"kayitsiz '{bad}' ValueError vermeli")
+        except ValueError:
+            pass
+    # sigmayan birim (1500 < 1600 hol genisligi): feasible=False + gerekce, puan 0
+    narrow = options_for_hall_topology(1500.0, 9000.0)
+    if any(o.feasible or o.score != 0.0 for o in narrow):
+        errors.append("1500mm genislikte hicbir aday uygulanabilir OLMAMALI")
+    # genisletme noktasi: acili (dik acili olmayan) topoloji kaydi
+    register_topology("capraz_test", "Capraz", lambda cw, cd, h, ctx: [[0, 0], [h, 0], [cw, cd], [cw - h, cd]])
+    try:
+        got = options_for_hall_topology(6000.0, 9000.0, allowed=("capraz_test",))[0]
+        if got.metrics.get("rectilinear") is not False:
+            errors.append("dik acili olmayan topoloji metrics.rectilinear=False olmali")
+    finally:
+        del TOPOLOGY_BUILDERS["capraz_test"]
+    return errors
+
+
+def check_dev055_central_hall_options() -> list[str]:
+    """DEV-055: bes merkezi hol alternatifi. Kat 20000x17500, cekirdek 2100+4000
+    = 6100 genis, hol derinligi = 6100/oran (asgari 1500+200=1700). ELLE:
+    kare 6100 -> 37.21 m2 (%10.6); 3:2 4066.7 -> 24.81 m2; 2:1 3050 -> 18.61;
+    3:1 2033.3 -> 12.40; asgari 1700 -> 10.37 m2. Blok ortada: x 6950..13050."""
+    from architect import HALL_ALTERNATIVES, options_for_central_hall
+    errors: list[str] = []
+    opts = {o.id: o for o in options_for_central_hall(20000.0, 17500.0)}
+    if len(opts) != 5 or len(HALL_ALTERNATIVES) != 5:
+        errors.append("bes alternatif bekleniyordu")
+    want = {"kare": 37.21, "dikdortgen_3_2": 24.81, "dikdortgen_2_1": 18.61,
+            "koridor_3_1": 12.40, "koridor_min": 10.37}
+    for k, a in want.items():
+        if abs(opts[k].hall_area_m2 - a) > 0.01:
+            errors.append(f"{k} alani {a} m2 olmali: {opts[k].hall_area_m2:.2f}")
+    if abs(opts["koridor_min"].hall_depth - 1700.0) > 1e-6:
+        errors.append("asgari koridor hol derinligi 1700 (1500 net + 200 duvar) olmali")
+    k = opts["kare"]
+    if (k.block[0], k.block[2]) != (6950.0, 13050.0) or k.margins["west"] != 6950.0 or k.margins["south"] != 4200.0:
+        errors.append(f"kare blok x 6950..13050 ve payi 4200 olmali: {k.block}, {k.margins}")
+    if not all(o.surrounds for o in opts.values()):
+        errors.append("merkezdeki blok bu katta daireler icin dort kenardan cevrilebilir olmali")
+    ordered = options_for_central_hall(20000.0, 17500.0)
+    if [o.score for o in ordered] != sorted((o.score for o in ordered), reverse=True):
+        errors.append("secenekler puana gore azalan siralanmali")
+    if ordered[0].id != "dikdortgen_3_2":
+        errors.append(f"ideal pay %7'ye en yakin 3:2 en yuksek puani almali: {ordered[0].id}")
+    # kayma: 5000mm doguya kayinca dogu payi 1950 < 3000 -> cevrelenemez (daireler sigmaz)
+    shifted = options_for_central_hall(20000.0, 17500.0, offset=(5000.0, 0.0))
+    if any(o.surrounds for o in shifted) or any(not o.feasible for o in shifted):
+        errors.append("5000mm kayma: uygulanabilir ama cevrelenemez olmali")
+    # kata sigmayan blok (kat 6000 genis < 6100 cekirdek)
+    if any(o.feasible for o in options_for_central_hall(6000.0, 17500.0)):
+        errors.append("6000mm katta 6100mm blok uygulanabilir OLMAMALI")
+    # yon: 'y' yonu blogu transpoze eder
+    oy = options_for_central_hall(20000.0, 17500.0, orientation="y", allowed=("kare",))[0]
+    # kanonik cerceve 17500x20000: blok x' (17500-6100)/2=5700..11800 (-> final y),
+    # kare derinligi 6100+3000=9100 -> y' (20000-9100)/2=5450..14550 (-> final x)
+    if oy.block != (5450.0, 5700.0, 14550.0, 11800.0):
+        errors.append(f"y yonunde blok (5450,5700,14550,11800) olmali: {oy.block}")
+    try:
+        options_for_central_hall(20000.0, 17500.0, allowed=("yok",))
+        errors.append("bilinmeyen alternatif ValueError vermeli")
+    except ValueError:
+        pass
+    return errors
+
+
+def check_dev056_study_zoning() -> list[str]:
+    """DEV-056: etut 2D zonlama. Kat 20000x17500 = 350 m2."""
+    from architect import (CURRENT_PROJECT_PROGRAM, StudyWeights, UNIT_TYPES,
+                           options_for_central_hall, study_floor, suggest_unit_mixes)
+    from architect.layout import _patterns, _union_polygon, _arcs, _split_to
+    errors: list[str] = []
+    # halka deseni: kare blok x 6950..13050, y 4200..13300 -> H-x ('1111': koseler dusey kenarlara):
+    # W = 6950 x 17500 = 121.625 m2; S = 6100 x 4200 = 25.62 m2; toplam = 350 - 55.51 (blok) = 294.49
+    blok = (6950.0, 4200.0, 13050.0, 13300.0)
+    pats = _patterns(20000.0, 17500.0, blok)
+    if len(pats) != 16:
+        errors.append("16 halka deseni bekleniyordu")
+    for name, secs in pats.items():
+        total = sum((r[2] - r[0]) * (r[3] - r[1]) for r in secs)
+        if abs(total - (350e6 - 6100 * 9100)) > 1:
+            errors.append(f"desen {name}: bolumler halkayi tam kaplamali (294.49 m2): {total / 1e6:.2f}")
+    hx = pats["1111"]
+    if abs((hx[3][2] - hx[3][0]) * (hx[3][3] - hx[3][1]) / 1e6 - 121.625) > 1e-6:
+        errors.append("H-x bati bolumu 121.625 m2 olmali")
+    # birlesim poligonu: iki komsu dikdortgen -> L (6 kose) ; alani toplam
+    L = _union_polygon([(0, 0, 4000, 2000), (0, 2000, 2000, 5000)])
+    if len(L) != 6:
+        errors.append(f"L birlesimi 6 kose olmali: {L}")
+    # yaylar: 4 bolumden 3 yay -> 4 secenek (hangi komsu cift birlesir)
+    if len(_arcs(4, 3)) != 4:
+        errors.append(f"4 bolumden 3 yay 4 olmali: {len(_arcs(4, 3))}")
+    if len(_split_to([(0, 0, 4000, 2000)], 2)) != 2:
+        errors.append("bolme iki parca vermeli")
+    # esas etut: mevcut proje kurgusu
+    res = study_floor(20000.0, 17500.0, CURRENT_PROJECT_PROGRAM)
+    again = study_floor(20000.0, 17500.0, CURRENT_PROJECT_PROGRAM)
+    if [(o.id, o.score) for o in res] != [(o.id, o.score) for o in again]:
+        errors.append("etut DETERMINISTIK olmali (ayni girdi -> ayni siralama)")
+    if not res or not res[0].feasible:
+        errors.append("mevcut kurgu icin uygulanabilir aday bekleniyordu")
+    else:
+        best = res[0]
+        block = best.block
+        total = sum(z.area_m2 for z in best.zones) + (block[2] - block[0]) * (block[3] - block[1]) / 1e6
+        if abs(total - 350.0) > 0.05:
+            errors.append(f"bolgeler + blok kat alanini (350 m2) tam kaplamali: {total:.2f}")
+        for z in best.zones:
+            if z.access_mm < 900.0 + 500.0 - 1e-6:
+                errors.append(f"{z.unit_id}: hol cephesine temas yetersiz ({z.access_mm})")
+            if z.area_m2 < UNIT_TYPES[z.unit_type].min_area_m2:
+                errors.append(f"{z.unit_id}: alan asgarinin altinda")
+        w = StudyWeights()
+        if abs(w.area_fit + w.facade + w.proportion + w.hall_share + w.hall_option - 1.0) > 1e-9:
+            errors.append("agirliklar toplami 1.0 olmali")
+        # puan = agirlikli toplam (elle)
+        b = best.breakdown
+        want = (w.area_fit * b["area_fit"] + w.facade * b["facade"] + w.proportion * b["proportion"]
+                + w.hall_share * b["hall_share"] + w.hall_option * b["hall_option"])
+        if abs(want - best.score) > 1e-3:
+            errors.append(f"puan agirlikli toplama esit olmali: {want} / {best.score}")
+        # simetrik tekrar elenmeli: ayni (tip, alan) kumesi iki kez gelmemeli
+        keys = [(o.hall_option, o.offset, tuple(sorted((z.unit_type, z.area_m2) for z in o.zones))) for o in res]
+        if len(keys) != len(set(keys)):
+            errors.append("simetrik/yer degistirmis esdegerler elenmeli")
+    # agirlik DEGISIKLIGI siralamayi etkiler (ayarlanabilirlik): alan uyumu 0 -> farkli puan
+    alt = study_floor(20000.0, 17500.0, CURRENT_PROJECT_PROGRAM,
+                      weights=StudyWeights(area_fit=0.0, facade=0.5, proportion=0.2, hall_share=0.15, hall_option=0.15))
+    if alt[0].score == res[0].score:
+        errors.append("agirliklar degisince puan degismeli")
+    # kullanici verisi zorunlu
+    for bad in ((), (("a", "9+9"),), (("a", "2+1"), ("a", "1+1"))):
+        try:
+            study_floor(20000.0, 17500.0, bad)
+            errors.append(f"gecersiz program ValueError vermeli: {bad}")
+        except ValueError:
+            pass
+    # kasitli bozma / yanlis-pozitif: kat cok kucukse uygulanabilir aday YOK
+    if any(o.feasible for o in study_floor(8000.0, 8000.0, CURRENT_PROJECT_PROGRAM)):
+        errors.append("8000x8000 katta 3 daire uygulanabilir OLMAMALI")
+    # N>4: bes birim (alan sirali acgozlu) - cokmeden aday uretir
+    five = study_floor(30000.0, 25000.0, (("a", "1+1"), ("b", "1+1"), ("c", "2+1"), ("d", "2+1"), ("e", "1+1")))
+    if not five:
+        errors.append("bes birimlik program aday uretmeli")
+    # dil modeli geri bildirimi: hesaplanmis karisim onerileri
+    mixes = suggest_unit_mixes(20000.0, 17500.0)
+    if not mixes or any(m["min_total_m2"] > m["available_m2"] for m in mixes):
+        errors.append("onerilen her karisimin asgari toplami kullanilabilir alani asmamali")
+    if suggest_unit_mixes(6000.0, 6000.0):
+        errors.append("6000x6000 katta hicbir karisim onerilmemeli")
+    return errors
+
+
+def check_dev057_group_b_selection_and_refinement() -> list[str]:
+    """DEV-057 Grup B: blok kaydirma iyilestirmesi + tercihe gore secim + merkezi hol geri donusu."""
+    from architect import (CURRENT_PROJECT_PROGRAM, StudyPreference, select_study_option,
+                           study_and_select, study_floor)
+    from architect.layout import preference_closeness
+    errors: list[str] = []
+    W, D = 20000.0, 17500.0
+    base = study_floor(W, D, CURRENT_PROJECT_PROGRAM, refine=False)
+    refined = study_floor(W, D, CURRENT_PROJECT_PROGRAM)
+    if refined[0].score < base[0].score - 1e-9:
+        errors.append("kaydirma iyilestirmesi puani DUSURMEMELI")
+    if not (refined[0].score > base[0].score and refined[0].offset != (0.0, 0.0)):
+        errors.append(f"bu katta kaydirma puani yukseltmeli (0.9283 -> ~0.9295): {refined[0].score} / {base[0].score}")
+    if any(abs(o.offset[0]) > 4000.0 or abs(o.offset[1]) > 4000.0 for o in refined):
+        errors.append("kayma 4000mm sinirini asmamali")
+    for o in refined:
+        bx0, by0, bx1, by1 = o.block
+        total = sum(z.area_m2 for z in o.zones) + (bx1 - bx0) * (by1 - by0) / 1e6
+        if abs(total - 350.0) > 0.05:
+            errors.append(f"{o.id}: bolgeler + blok 350 m2 olmali: {total:.2f}")
+    if not any(abs(o.offset[0]) < 1 and abs(o.offset[1]) < 1 for o in refined):
+        errors.append("merkezi (kaymasiz) surum listede KALMALI (geri donus)")
+    if [(o.id, o.score) for o in refined] != [(o.id, o.score) for o in study_floor(W, D, CURRENT_PROJECT_PROGRAM)]:
+        errors.append("iyilestirme DETERMINISTIK olmali")
+    # tercih yakinligi: ELLE - hedef = gercek alan -> 1.0 ; hedef = 2x alan -> 1 - |a-2a|/2a = 0.5
+    opt = base[0]
+    z = opt.zones[0]
+    c1, _ = preference_closeness(opt, StudyPreference(unit_area_m2={z.unit_id: z.area_m2}), W, D)
+    c2, _ = preference_closeness(opt, StudyPreference(unit_area_m2={z.unit_id: 2 * z.area_m2}), W, D)
+    if abs(c1 - 1.0) > 1e-9 or abs(c2 - 0.5) > 1e-9:
+        errors.append(f"alan yakinligi 1.0 / 0.5 olmali: {c1}, {c2}")
+    pool = study_floor(W, D, CURRENT_PROJECT_PROGRAM, top=60)
+    # tercih yoksa -> geri donus: hol merkezde, en yuksek puanli
+    fb = select_study_option(pool, None, W, D)
+    centered = [o for o in pool if o.feasible and abs(o.offset[0]) < 1 and abs(o.offset[1]) < 1]
+    if not fb.fallback or fb.option.id != max(centered, key=lambda o: (o.score, o.id)).id:
+        errors.append("tercihsiz secim merkezi holun en iyisi (geri donus) olmali")
+    # hol ailesi tercihi: koridor -> secilen aday koridor ailesinden, geri donus DEGIL
+    sel = select_study_option(pool, StudyPreference(hall="koridor"), W, D)
+    if sel.fallback or sel.option.hall_option not in ("koridor_3_1", "koridor_min"):
+        errors.append(f"koridor tercihi koridor tipi hol secmeli: {sel.option.hall_option}, fallback={sel.fallback}")
+    # alan tercihi: yakinlik >= 0.5 -> tercih eslesir
+    sel = select_study_option(pool, StudyPreference(unit_area_m2={"uA": 100.0, "uB": 100.0, "uC": 65.0}), W, D)
+    if sel.fallback or sel.closeness is None or sel.closeness < 0.5:
+        errors.append("makul alan tercihi eslesmeli")
+    # imkansiz tercih: uc birim de 'north' -> yakinlik 1/3 < 0.5 -> merkezi hol geri donusu
+    sel = select_study_option(pool, StudyPreference(unit_side={"uA": "north", "uB": "north", "uC": "north"}), W, D)
+    if not sel.fallback or not (abs(sel.option.offset[0]) < 1 and abs(sel.option.offset[1]) < 1):
+        errors.append("hicbir aday tercihe yetmezse merkezi hol surumu secilmeli")
+    # merkez=False tercihi kayik surumu secer
+    sel = select_study_option(pool, StudyPreference(centered_hall=False), W, D)
+    if sel.fallback or (abs(sel.option.offset[0]) < 1 and abs(sel.option.offset[1]) < 1):
+        errors.append("centered_hall=False kaymis bir aday secmeli")
+    # gecersiz tercih
+    for bad in (StudyPreference(unit_area_m2={"uZ": 50.0}), StudyPreference(unit_side={"uA": "up"}),
+                StudyPreference(hall="yok")):
+        try:
+            select_study_option(pool, bad, W, D)
+            errors.append(f"gecersiz tercih ValueError vermeli: {bad}")
+        except ValueError:
+            pass
+    sel2 = study_and_select(W, D, CURRENT_PROJECT_PROGRAM, StudyPreference(hall="kare"))
+    if sel2.option.hall_option != "kare":
+        errors.append("study_and_select kare tercihini secmeli")
+    return errors
+
+
 def main() -> int:
     groups = (
+        ("etut: blok kaydirma + tercihe gore secim + merkezi hol geri donusu (DEV-057 Grup B)", check_dev057_group_b_selection_and_refinement()),
+        ("etut 2D zonlama (DEV-056)", check_dev056_study_zoning()),
+        ("merkezi kat holu: bes alternatif (DEV-055)", check_dev055_central_hall_options()),
+        ("hol topolojisi adaylari (DEV-054)", check_dev054_hall_topology()),
+        ("giris kapisi <-> WC kapisi: aralik + capraz (DEV-053)", check_dev053_entry_wet_door_proximity()),
+        ("WC/banyo komsulugu: ortak duvar + ayni hat + oda kapilarindan uzak (DEV-052)", check_dev052_wet_area_adjacency()),
+        ("dukkan konut sayilmaz, ayri kural (DEV-051 ek)", check_dev051_shops_not_residential()),
+        ("kapilar odalara acilir (DEV-051)", check_dev051_doors_open_into_rooms()),
+        ("kapi/pencere nuanslari (DEV-050 #4,12,13,14)", check_dev050_door_window_nuances()),
         ("hol payi esigi asinca UYARI verir", check_circulation_share_flags_oversized_hol()),
         ("esik icindeki hol payi YANLIS-POZITIF uretmez", check_circulation_share_false_positive_within_limit()),
         ("unit_id verilmeyen odalar kontrole GIRMEZ", check_circulation_share_ignores_rooms_without_unit_id()),

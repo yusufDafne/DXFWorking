@@ -217,9 +217,16 @@ def generate_circulation_core(
 # rooms/walls/openings alan adlari) degisirse artar - `CirculationCoreTemplate`
 # varsayilan DEGERLERI (icat edilmemis, gercek projeden cikarildi) serbestce
 # ayarlanabilir, surum ARTIRMAZ (standards.STANDARDS ile AYNI disiplin).
-CONTRACT_VERSION = "1.0"
+CONTRACT_VERSION = "1.1"  # DEV-055: generate_central_core eklendi (yeni dict seklini `zone` ile)
 
 __all__ = [
     "CirculationCoreTemplate", "DEFAULT_TEMPLATE",
     "generate_circulation_core", "CONTRACT_VERSION",
 ]
+
+
+# DEV-055: merkezi cekirdek + kat holu ureticisi (sirkulasyon sablonunun
+# ikinci uretici fonksiyonu). Dongusel import olmamasi icin sonda.
+from .central import generate_central_core  # noqa: E402
+
+__all__.append("generate_central_core")

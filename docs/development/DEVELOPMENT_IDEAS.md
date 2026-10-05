@@ -18,6 +18,28 @@ DEV-056` (gerekçe ve her maddenin ayrıntısı `DEVELOPMENT_TASKS.md`de TEK
 kaynak olarak tutulur, burada TEKRARLANMAZ — `DEV-040`'ın `scripts/
 architect/CLAUDE.md`ye yaptığı atıfla AYNI disiplin). Hiçbiri `READY`
 değildir: her madde yalnızca kullanıcının mini-detay talimatıyla açılır.
+Sekiz maddenin seansında çıkan mini düzeltmeler `DEV-057`de (en sonda,
+kümülatif) toplanır.
+
+## Şaft / havalandırma / baca boşlukları modülü (kullanıcı fikri, 2026-10-05)
+
+`DEV-052` sırasında: WC ve banyo arasındaki duvardan kare (karesel) bir şaft
+boşluğu planlanacak; sistemde şaft, havalandırma boşluğu ve belki baca boşluğu
+olacağı için bunlar AYRI bir modülde (kendi `CLAUDE.md`'si, `collision`
+ayak izi veya gerekçeli muafiyet) incelenebilir. Henüz göreve ALINMADI;
+BAĞIMSIZ yeni geliştirme fikridir (kullanıcı kararı 2026-10-05: DEV-057'den
+çıkarıldı); tamamlanınca şaft genişliği, ıslak hacim kapı mesafesi eşiğini
+(`check_wet_area_door_proximity`, 5000 mm) belirler. Veri proje bazlıdır (`context.json`), kütüphane
+(şaft tipleri/asgari ölçüler) modül altında yaşar.
+
+## Etüt: daire içi oda bölüntüsü (kullanıcı fikri, 2026-10-05)
+
+`DEV-056` yalnız ZONLAMA (daire sınırları) yapar. Her dairenin içindeki oda
+bölüntüsü (salon/yatak/mutfak/banyo/WC yerleşimi, hol topolojisi seçimi,
+kapılar) AYRI bir geliştirme fikridir: kullanıcı detaylı bir etüt çalışması
+görmek isterse o çıktı üretilecek. Girdi `DEV-056` bölgeleri +
+`DEV-054` hol topolojisi + `DEV-049…053` kuralları; çıktı yine "hesapla, puanla,
+seç" deseninde aday listesidir. Henüz göreve ALINMADI.
 
 ## Generic altyapı fikirleri
 

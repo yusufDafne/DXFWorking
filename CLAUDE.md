@@ -355,8 +355,13 @@ geliştirme görevleri, tamamlanmış geçmiş, fikirler ve geliştirici notlar�
   "birim bandi"nin tam derinligini paylastigi icin gercekte olmasi
   gerekenden biraz dar-uzun orantili olabilir; otopark cizgileri
   (`markings[]`, `OTOPARK` katmani) salt gorsel/semantik olmayan
-  isaretlemedir, validate.py bunlari kontrol etmez; asansor kapi sembolu
-  cizilmez (sadece etiketli kapali oda olarak gosterilir). **Merdiven
+  isaretlemedir, validate.py bunlari kontrol etmez. **Asansor kapisi artik
+  CIZILIR (DEV-055, kullanici karari 2026-10-05: eski "asansor kapi sembolu
+  cizilmez" kurali KALDIRILDI):** `type='elevator_door'`, uc tur — kapi gibi
+  acilan (`single`), surme (`sliding`, **varsayilan**), buyuk kapilar icin
+  ikili surme (`sliding_double`); kuyu genisliginden her kenardan 200-300mm
+  (varsayilan 250mm) daraltilir. Ayrinti: `scripts/openings/CLAUDE.md`.
+  **Merdiven
   artik istisnadir (DEV-022, `scripts/stairs/`):** `floors[].stairs[]`
   ile ACIKCA bildirilirse gercek basamak/riht cizgileri + yon oku + kesme
   cizgisi cizilir (opsiyonel, opt-in - bildirilmezse eskisi gibi sadece

@@ -94,6 +94,17 @@ açıkça verilir).
 İleride: DXF'ten duvar okuma (bkz. `scripts/import/CLAUDE.md`, `DEV-013`),
 oda-duvar tutarlılık kontrolü.
 
+## Dış/iç duvar kalınlığı hiyerarşisi (DEV-050 #16, `thickness.py`)
+
+Kullanıcı kararı (2026-10-05): dış duvar varsayılan 200 mm, iç duvar HER ZAMAN
+dış − 50 mm (150); daire↔kat holü ve daire↔daire ortak duvarı DIŞ sayılır.
+Sınıf duvara yazılmaz, oda komşuluğundan türetilir: `classify_walls` (cephe
+veya farklı `unit_id`/birim↔ortak → `dis`; aynı birim → `ic`; ortak↔ortak →
+`None`, kontrol edilmez). `check_wall_thickness`: UYARI, kat başına tek özet.
+Kütüphane varsayılanıdır; `walls[].thickness` açıkça ezer. `rooms`i import
+etmez (duck-typed dict). Gerçek proje (250/200/100 mm) varsayılana
+getirilmeyecek ta ki sekiz plan bitip proje güncellemesi yapılana dek.
+
 ## Doğrulama
 
 `python scripts/walls/selftest.py` — dolgu aralığı hesaplaması elle

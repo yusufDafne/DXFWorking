@@ -69,7 +69,7 @@
       "additionalProperties": false,
       "properties": {
         "id": { "type": "string" },
-        "type": { "type": "string", "enum": ["door", "window"] },
+        "type": { "type": "string", "enum": ["door", "window", "elevator_door"], "description": "elevator_door (DEV-055): asansor kapisi; varsayilan varyanti 'sliding'." },
         "wall_id": { "type": "string", "description": "Ait oldugu duvarin id degeri" },
         "position_from_start": {
           "type": "number",
@@ -79,7 +79,7 @@
         "width": { "type": "number", "exclusiveMinimum": 0 },
         "layer": { "type": "string" },
         "variant": {
-          "type": "string", "enum": ["single", "double", "sliding", "folding"],
+          "type": "string", "enum": ["single", "double", "sliding", "folding", "sliding_double"],
           "description": "Kapi varyanti (DEV-016). Varsayilan 'single' = rev-12 davranisi. 'sliding' surme kapidir ve ACILIM ALANI GEREKTIRMEZ - cakisma denetimi de onun icin sektor uretmez."
         },
         "swing": {
