@@ -141,8 +141,8 @@ def check_central_core_dev055() -> list[str]:
     errors: list[str] = []
     r = generate_central_core(20000.0, 17500.0)
     areas = {x["id"]: x["area_m2"] for x in r["rooms"]}
-    if areas != {"elevator": 6.3, "stair": 12.0, "hall": 24.81, "shaft": 6.1}:
-        errors.append(f"alanlar 6.3/12.0/24.81/6.1 (saft L: 2100x1000 + 1000x3000 + 1000x1000 ... elle) olmali: {areas}")
+    if areas != {"elevator": 6.3, "stair": 16.0, "hall": 24.81}:
+        errors.append(f"alanlar 6.3 (2100x3000) / 16.0 (4000x4000) / 24.81 olmali: {areas}")
     if r["zone"]["option_id"] != "dikdortgen_3_2" or not r["zone"]["surrounds"]:
         errors.append(f"varsayilan: dikdortgen_3_2 ve cevrelenebilir olmali: {r['zone']}")
     elev = next(o for o in r["openings"] if o["type"] == "elevator_door")
@@ -178,8 +178,17 @@ def check_central_core_dev055() -> list[str]:
             errors.append("kisa kenarda merdiven icin passage olmali")
         stair = next(x for x in g["rooms"] if x["id"] == "stair")
         xs = [p[0] for p in stair["polygon"]]; ys = [p[1] for p in stair["polygon"]]
-        if sorted(round(v, 3) for v in (max(xs) - min(xs), max(ys) - min(ys))) != [3000.0, 4000.0]:
-            errors.append(f"merdiven 3000x4000 olmali: {stair['polygon']}")
+        if sorted(round(v, 3) for v in (max(xs) - min(xs), max(ys) - min(ys))) != [4000.0, 4000.0]:
+            errors.append(f"merdiven KARE 4000x4000 olmali: {stair['polygon']}")
+        niche = g["zone"]["niche"]
+        nxs = [p[0] for p in niche]; nys = [p[1] for p in niche]
+        if sorted(round(v, 3) for v in (max(nxs) - min(nxs), max(nys) - min(nys))) != [1000.0, 2100.0]:
+            errors.append(f"nis 2100x1000 olmali: {niche}")
+        if any(r["room_type"] == "saft" for r in g["rooms"] if "room_type" in r):
+            errors.append("sablon artik KENDI BASINA saft odasi uretmemeli")
+        passage = next(o for o in g["openings"] if o["type"] == "passage")
+        if passage["width"] != 4000.0:
+            errors.append(f"merdiven acikligi duvar payisiz TAM genislik (4000) olmali: {passage['width']}")
     # kasitli bozma: asansor kapisi kuyu genisligi kadar -> pay uyarisi
     g = generate_central_core(20000.0, 17500.0)
     for o in g["openings"]:

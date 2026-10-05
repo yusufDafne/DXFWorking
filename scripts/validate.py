@@ -88,6 +88,7 @@ from stairs import (  # noqa: E402
 from standards import (  # noqa: E402
     check_door_corridor_nuances,
     check_room_proportions,
+    check_core_and_shafts,
     check_room_types,
     edge_wall_thicknesses,
     net_area,
@@ -463,6 +464,8 @@ def check_floor(units: str, floor: dict) -> list[str]:
     # DEV-036: room_type VERILMIS ama standards.STANDARDS'ta TANIMSIZ bir
     # deger YAZIM HATASIDIR (arity-1, walls.kind ile AYNI desen) - HATA.
     errors += [prefix + e for e in check_room_types(floor["rooms"])]
+    core_errors, _core_warnings = check_core_and_shafts(floor["rooms"])
+    errors += [prefix + e for e in core_errors]
     return errors
 
 
@@ -578,6 +581,9 @@ def run_validation(context_path: Path = DEFAULT_CONTEXT_PATH) -> bool:
                 [r for r in floor["rooms"] if r["id"] not in {
                     st["room_id"] for st in floor.get("stairs", []) if st.get("kind") == "three_flight"}],
                 units, floor["walls"])
+        ]
+        standards_warnings += [
+            f"[{floor['id']}] " + w for w in check_core_and_shafts(floor["rooms"])[1]
         ]
         # DEV-039: iliskisel (arity-2+) mimari mantik kurallari - standards
         # ile AYNI politika (HER ZAMAN UYARI, asla HATA). Tumu rooms[].

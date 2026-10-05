@@ -4,6 +4,14 @@ Aktif geçmiş kapasitesi: **50 kayıt**. En eski tamamlanmış kayıt, 51. kay�
 alınırken silinir. Ayrıntılı teknik değişiklikler git geçmişi ve ilgili proje
 provenance kayıtlarıyla ilişkilendirilir.
 
+## HD-037 — Merdiven geri bildirim duzeltmesi, saft kurallari ve proje rev-26
+
+- **Durum:** COMPLETED
+- **Tamamlanma:** 2026-10-05
+- **Kapsam:** `scripts/stairs/`, `scripts/standards/`, `scripts/openings/`, `scripts/templates/`, `scripts/validate.py`, `context.json`.
+- **Sonuc:** kullanici geri bildirimiyle: kafaya gore cekirdek "saft odasi" kaldirildi; saft kurallari (kare/4:3, net 500 varsayilan, asansor/merdiven dikdortgen ve saft girmez) `standards`a; merdiven sahanligi bosluk ucunda, ok ust kata cikis yolu, kesit icin `treads`+`stair_section_profile`; `passage` duvar payisiz; template 4000x4000 merdiven + `niche`. Proje: kare merdiven (three_flight 6/6/6, ZK 8/8/8), uB Depo, K1-K5'te uA/uB/uC saft 650x650 (net 500).
+- **Sinir:** uC banyo kuyruk daralma uyarisi (875 mm) ve uC hol payi %16.3; saft yalniz konumlandi (saft modulu/baca ayri fikir); `sections/` stairs profiline henuz baglanmadi.
+
 ## HD-036 — Merdiven kisa kenar girisi, `passage` acikligi ve proje rev-25
 
 - **Durum:** COMPLETED (commit/push kullanici onayiyla)

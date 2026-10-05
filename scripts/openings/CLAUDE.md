@@ -5,7 +5,7 @@
 `type='passage'`: duvarda bosluk + iki soye cizgisi; kanat/yay/cam YOK, kapi
 kurallarina (acilim, giris/WC nuansi) girmez, yalniz genel aciklik araligi kurallari
 gecerlidir. Kullanim: merdiven alaninin kat holune acilisi (stairs/CLAUDE.md).
-Cetvelde `DUVAR ACIKLIGI` (G). CONTRACT 1.3, schema 1.2.0 (additif).
+Cetvelde `DUVAR ACIKLIGI` (G). rev-26: `passage` icin duvar basi/sonu 100 mm kasa payi kurali UYGULANMAZ (merdiven acikligi duvar boyunca tam genislikte olabilir; kullanici: "10 cm kapi cikintisi mantigi olmamali"). CONTRACT 1.3, schema 1.2.0 (additif).
 
 ## Sorumluluk
 

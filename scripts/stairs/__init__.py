@@ -130,6 +130,10 @@ class StairResolution:
     # rev-26: yalniz kind='three_flight' icin cizim geometrisi (gercek koordinatlar):
     # {"flight_width", "step_lines", "landings", "well", "well_kind", "arrow"}
     three_flight: dict | None = None
+    # rev-26: kesit icin basamak listesi [{"kind": tread|landing|floor, "bbox": (xmin,ymin,xmax,ymax),
+    # "z_mm": ust yuzey kotu (alt kattan)}] ve cok kollu turlerde yon oku yolu (nokta listesi).
+    treads: tuple = ()
+    arrow_path: tuple | None = None
 
 
 def _bbox(polygon: list[list[float]]) -> tuple[float, float, float, float]:
@@ -228,14 +232,21 @@ def resolve_stair(spec: dict, room_polygon: list[list[float]]) -> StairResolutio
             )
         binding_steps = flight1_steps   # her zaman >= flight2_steps
     elif kind == THREE_FLIGHT:
-        plan3 = _three_flight_plan(stair_id, spec, bbox_dims=(dx, dy), up_towards=up_towards,
-                                   step_count=step_count)
+        plan3 = _three_flight_plan(stair_id, spec, (dx, dy), up_towards, step_count,
+                                   float(spec.get("going_mm", DEFAULT_GOING_MM)), auto_flex)
         flight_step_counts = plan3["counts"]
-        run_available, binding_steps = plan3["going_limit"], 2   # (n-1)*going <= limit
+        run_available, binding_steps = 1e18, 2
+        if plan3["narrowed"]:
+            warnings.append(
+                f"Merdiven '{stair_id}': basamak genisligi OTOMATIK daraltildi "
+                f"({float(spec.get('going_mm', DEFAULT_GOING_MM)):.1f}mm -> {plan3['g']:.1f}mm) - "
+                f"uc kollu merdiven odaya sigdirmak icin.")
     else:
         binding_steps = step_count
 
     nominal_going = float(spec.get("going_mm", DEFAULT_GOING_MM))
+    if kind == THREE_FLIGHT:
+        nominal_going = plan3["g"]   # plan zaten sigdi (daralma yukarida raporlandi)
     required_run = (binding_steps - 1) * nominal_going
     going = nominal_going
     if required_run > run_available + 1e-6:
@@ -273,21 +284,27 @@ def resolve_stair(spec: dict, room_polygon: list[list[float]]) -> StairResolutio
 
     bbox = (xmin, ymin, xmax, ymax)
     three_flight = None
+    treads: tuple = ()
+    arrow_path = None
     if kind == THREE_FLIGHT:
-        three_flight, exit_point = _three_flight_geometry(plan3, bbox, up_towards, going)
+        three_flight, exit_point = _three_flight_geometry(plan3, bbox, up_towards, riser)
+        treads = tuple(three_flight["treads"])
+        arrow_path = three_flight["arrow_path"]
         exit_direction = _OPPOSITE_DIRECTION.get(up_towards) if up_towards else None
         travel_axis = "y" if (up_towards or "N") in ("N", "S") else "x"
-        landing_depth_mm = plan3["w"]
+        landing_depth_mm = plan3["d"]
     elif kind == DOG_LEG:
         flight1_steps, flight2_steps = flight_step_counts
-        exit_point, exit_direction, landing_bbox = _dog_leg_exit_and_landing(
-            travel_axis, up_towards, bbox, landing_depth_mm, going,
-            flight1_steps, flight2_steps,
+        exit_point, exit_direction, landing_bbox, arrow_path, treads = _dog_leg_exit_and_landing(
+            travel_axis, up_towards, bbox, going, flight1_steps, flight2_steps, riser,
         )
+        lx0, ly0, lx1, ly1 = landing_bbox
+        landing_depth_mm = (lx1 - lx0) if travel_axis == "x" else (ly1 - ly0)
     else:
         down_point, up_point = _travel_points(travel_axis, up_towards, bbox)
         exit_point = up_point
         exit_direction = up_towards
+        treads = _single_flight_treads(travel_axis, up_towards, bbox, step_count, going, riser)
 
     return StairResolution(
         stair_id=stair_id, room_id=room_id, step_count=step_count,
@@ -296,53 +313,75 @@ def resolve_stair(spec: dict, room_polygon: list[list[float]]) -> StairResolutio
         exit_direction=exit_direction, kind=kind,
         landing_depth_mm=landing_depth_mm, landing_bbox=landing_bbox,
         flight_step_counts=flight_step_counts, warnings=warnings,
-        three_flight=three_flight,
+        three_flight=three_flight, treads=treads, arrow_path=arrow_path,
     )
 
 
+def _cp_bbox(axis: str, c0: float, c1: float, p0: float, p1: float) -> tuple[float, float, float, float]:
+    """(travel skaleri c, dik skaler p) araligindan eksen-hizali kutu (xmin,ymin,xmax,ymax)."""
+    lo_c, hi_c, lo_p, hi_p = min(c0, c1), max(c0, c1), min(p0, p1), max(p0, p1)
+    return (lo_c, lo_p, hi_c, hi_p) if axis == "x" else (lo_p, lo_c, hi_p, hi_c)
+
+
 def _three_flight_plan(stair_id: str, spec: dict, bbox_dims: tuple[float, float],
-                       up_towards: str | None, step_count: int) -> dict:
-    """UC kollu (U, iki sahanlikli) merdivenin yerlesimini hesaplar. Kanonik
-    cerceve: a = 'yukari' eksenine DIK mesafe (en `A`), b = giris kenarindan
-    'yukari' yonde mesafe (boy `H`). Kol genisligi `w` (varsayilan A/3,
-    `flight_width_mm` ile verilebilir); sahanliklar w x w karedir. Kol 1 ve kol 3
-    boyu H-w, kol 2 boyu A-2w. Basamaklar bu boylarla ORANTILI dagitilir
-    (en buyuk kalan yontemi, deterministik)."""
+                       up_towards: str | None, step_count: int, nominal_going: float,
+                       auto_flex: bool) -> dict:
+    """UC kollu (U, iki sahanlikli) merdivenin yerlesimi. Kanonik cerceve:
+    a = 'yukari' eksenine DIK mesafe (en `A`), b = giris kenarindan 'yukari'
+    mesafe (boy `H`). Ust bantta (derinlik `d`) sahanlik 1 - kol 2 - sahanlik 2
+    yan yana; asagida kol 1 ve kol 3 (genislik `w`) ve ortada dikdortgen BOSLUK.
+    Sahanliklar HER ZAMAN kutunun ucundadir (bos kalan boy/en sahanliga katilir,
+    kolun ucunda bosluk kalmaz): d = H-(m-1)g, e = (A-(n2-1)g)/2. n1=n3=m,
+    n2 = N-2m; aday n2'ler (N ile ayni parite) icinde bosluk en KARE olan secilir
+    (deterministik). Hicbiri sigmazsa (auto_flex aciksa) going 260 ve 250'ye
+    daraltilip denenir; yine sigmazsa StairFitError."""
     dx, dy = bbox_dims
     A, H = (dx, dy) if (up_towards or "N") in ("N", "S") else (dy, dx)
-    w = float(spec.get("flight_width_mm", A / 3.0))
-    if w < MIN_FLIGHT_WIDTH_MM:
-        raise StairFitError(
-            f"Merdiven '{stair_id}': uc kollu icin kol genisligi ({w:.1f}mm) minimum "
-            f"konfor sinirinin ({MIN_FLIGHT_WIDTH_MM:.0f}mm) altinda kalir - oda buyutulmeli.")
-    if A - 2.0 * w < -1e-6 or H - w <= 0:
-        raise StairFitError(
-            f"Merdiven '{stair_id}': uc kollu icin oda ({A:.0f} x {H:.0f}mm) iki kol "
-            f"({w:.0f}mm) + sahanliklari barindirmiyor (oda en az 2*kol genisligi x kol "
-            f"genisligi + 1 kosu olmali).")
+    w_pref = float(spec.get("flight_width_mm", A / 3.0))
     well = spec.get("well", WELL_OPEN)
     if well not in WELLS:
         raise StairFitError(f"Merdiven '{stair_id}': well {WELLS} olmali, '{well}' verildi.")
-    lengths = [H - w, max(A - 2.0 * w, 0.0), H - w]
-    total = sum(lengths)
-    raw = [step_count * length / total for length in lengths]
-    counts = [int(math.floor(r)) for r in raw]
-    order = sorted(range(3), key=lambda i: (-(raw[i] - counts[i]), i))
-    for i in order[: step_count - sum(counts)]:
-        counts[i] += 1
-    limits = [lengths[i] / (counts[i] - 1) for i in range(3) if counts[i] > 1 and lengths[i] > 0]
-    going_limit = min(limits) if limits else 1e18
-    return {"A": A, "H": H, "w": w, "well": well, "counts": tuple(counts), "going_limit": going_limit}
+    if w_pref < MIN_FLIGHT_WIDTH_MM:
+        raise StairFitError(
+            f"Merdiven '{stair_id}': uc kollu icin kol genisligi ({w_pref:.1f}mm) minimum "
+            f"konfor sinirinin ({MIN_FLIGHT_WIDTH_MM:.0f}mm) altinda kalir - oda buyutulmeli.")
+    goings = [nominal_going]
+    if auto_flex:
+        goings += [g for g in (260.0, MIN_GOING_MM) if g < nominal_going]
+    for g in goings:
+        best = None
+        for n2 in range(1 if step_count % 2 else 2, step_count - 1, 2):
+            m = (step_count - n2) // 2
+            if m < 2:
+                continue
+            e = (A - (n2 - 1) * g) / 2.0
+            d = H - (m - 1) * g
+            w = min(w_pref, e)
+            if w < MIN_FLIGHT_WIDTH_MM or d < MIN_FLIGHT_WIDTH_MM or A - 2.0 * w < 0:
+                continue
+            score = abs((A - 2.0 * w) - (m - 1) * g)
+            if best is None or score < best["score"]:
+                best = {"A": A, "H": H, "w": w, "e": e, "d": d, "g": g, "m": m, "n2": n2,
+                        "counts": (m, n2, m), "well": well, "score": score}
+        if best is not None:
+            best["narrowed"] = g < nominal_going
+            return best
+    raise StairFitError(
+        f"Merdiven '{stair_id}': uc kollu merdiven ({step_count} basamak) bu odaya "
+        f"({A:.0f} x {H:.0f}mm) sigmiyor (kol >= {MIN_FLIGHT_WIDTH_MM:.0f}mm, sahanlik >= "
+        f"{MIN_FLIGHT_WIDTH_MM:.0f}mm, going >= {MIN_GOING_MM:.0f}mm) - oda buyutulmeli.")
 
 
 def _three_flight_geometry(plan: dict, bbox: tuple[float, float, float, float],
-                           up_towards: str | None, going: float) -> tuple[dict, tuple[float, float]]:
+                           up_towards: str | None, riser: float) -> tuple[dict, tuple[float, float]]:
     """Kanonik (a, b) geometriyi gercek koordinatlara cevirir (N: identite;
-    S: 180; E: saat yonunde 90; W: saat yonunun tersi 90)."""
+    S: 180; E: saat yonunde 90; W: saat yonunun tersi 90) ve basamak listesini
+    (kesit icin) uretir."""
     xmin, ymin, xmax, ymax = bbox
     up = up_towards or "N"
-    A, H, w = plan["A"], plan["H"], plan["w"]
-    n1, n2, n3 = plan["counts"]
+    A, H, w, e, d, g = plan["A"], plan["H"], plan["w"], plan["e"], plan["d"], plan["g"]
+    m, n2, _ = plan["counts"]
+    N = 2 * m + n2
 
     def pt(a: float, b: float) -> tuple[float, float]:
         if up == "N":
@@ -358,20 +397,32 @@ def _three_flight_geometry(plan: dict, bbox: tuple[float, float, float, float],
         xs = [p[0] for p in pts]; ys = [p[1] for p in pts]
         return (min(xs), min(ys), max(xs), max(ys))
 
+    top = H - d   # ust bandin alt kenari = (m-1)*g
     lines = []
-    for k in range(1, n1):
-        lines.append((pt(0.0, k * going), pt(w, k * going)))
+    for k in range(1, m):
+        lines.append((pt(0.0, k * g), pt(w, k * g)))
+        lines.append((pt(A - w, k * g), pt(A, k * g)))
     for k in range(1, n2):
-        lines.append((pt(w + k * going, H - w), pt(w + k * going, H)))
-    for k in range(1, n3):
-        lines.append((pt(A - w, H - w - k * going), pt(A, H - w - k * going)))
+        lines.append((pt(e + k * g, top), pt(e + k * g, H)))
+    treads = []
+    for i in range(1, m):
+        treads.append({"kind": "tread", "bbox": rect(0.0, (i - 1) * g, w, i * g), "z_mm": i * riser})
+    treads.append({"kind": "landing", "bbox": rect(0.0, top, e, H), "z_mm": m * riser})
+    for j in range(1, n2):
+        treads.append({"kind": "tread", "bbox": rect(e + (j - 1) * g, top, e + j * g, H), "z_mm": (m + j) * riser})
+    treads.append({"kind": "landing", "bbox": rect(A - e, top, A, H), "z_mm": (m + n2) * riser})
+    for k in range(1, m):
+        treads.append({"kind": "tread", "bbox": rect(A - w, (k - 1) * g, A, k * g),
+                       "z_mm": (m + n2 + (m - k)) * riser})
     geometry = {
         "flight_width": w,
         "step_lines": lines,
-        "landings": [rect(0.0, H - w, w, H), rect(A - w, H - w, A, H)],
-        "well": rect(w, 0.0, A - w, H - w),
+        "landings": [rect(0.0, top, e, H), rect(A - e, top, A, H)],
+        "well": rect(w, 0.0, A - w, top),
         "well_kind": plan["well"],
-        "arrow": (pt(w / 2.0, 0.0), pt(w / 2.0, H - w)),
+        "arrow_path": (pt(w / 2.0, 0.0), pt(w / 2.0, top + d / 2.0),
+                       pt(A - w / 2.0, top + d / 2.0), pt(A - w / 2.0, 0.0)),
+        "treads": treads,
     }
     return geometry, pt(A - w / 2.0, 0.0)
 
@@ -434,40 +485,64 @@ def _step_line_endpoints(travel_axis: str, up_towards: str | None,
     return _perp_line_endpoints(travel_axis, perp_range, coord)
 
 
+def _single_flight_treads(travel_axis, up_towards, bbox, step_count, going, riser) -> tuple:
+    xmin, ymin, xmax, ymax = bbox
+    down_c, up_c = _travel_coords(travel_axis, up_towards, bbox)
+    direction = 1.0 if up_c >= down_c else -1.0
+    p0, p1 = (ymin, ymax) if travel_axis == "x" else (xmin, xmax)
+    out = []
+    for i in range(1, step_count):
+        out.append({"kind": "tread", "bbox": _cp_bbox(travel_axis, down_c + direction * (i - 1) * going,
+                                                       down_c + direction * i * going, p0, p1),
+                    "z_mm": i * riser})
+    out.append({"kind": "floor", "bbox": _cp_bbox(travel_axis, down_c + direction * (step_count - 1) * going,
+                                                  up_c, p0, p1), "z_mm": step_count * riser})
+    return tuple(out)
+
+
 def _dog_leg_exit_and_landing(
     travel_axis: str, up_towards: str | None, bbox: tuple[float, float, float, float],
-    landing_depth_mm: float, going_mm: float, flight1_steps: int, flight2_steps: int,
-) -> tuple[tuple[float, float], str | None, tuple[float, float, float, float]]:
-    """DEV-047: cift kollu merdivenin GERCEK cikis noktasi/yonu + sahanlik
-    kutusu. Kol 1, giris ucundan sahanliga (`up_towards` yonunde) cikar;
-    sahanlik 180 derece donusu temsil eder; kol 2 sahanliktan giris ucuna
-    DOGRU (TERS yonde) geri doner - cikis bu yuzden ODANIN GEOMETRIK
-    'yukari' kosesi DEGIL, GIRIS ucuna YAKIN bir noktadir (bkz. modul
-    CLAUDE.md "cift kollu merdiven geometrisi")."""
+    going_mm: float, flight1_steps: int, flight2_steps: int, riser: float,
+):
+    """Cift kollu (U) merdiven: kol 1 giris ucundan (n1-1)*going kadar yukselir,
+    SAHANLIK odanin UZAK UCUNDA ve tum genisliktedir (artan boy sahanliga
+    katilir - kolun ucunda bosluk kalmaz); kol 2 sahanligin yakin kenarindan
+    giris ucuna DONER ve (n2-1)*going sonra cikar. Doner (exit_point, exit_direction,
+    landing_bbox, arrow_path, treads)."""
     xmin, ymin, xmax, ymax = bbox
     down_c, up_c = _travel_coords(travel_axis, up_towards, bbox)
     direction = 1.0 if up_c >= down_c else -1.0
     perp_min, perp_max = (ymin, ymax) if travel_axis == "x" else (xmin, xmax)
     mid_perp = (perp_min + perp_max) / 2.0
-    flight2_perp_mid = (mid_perp + perp_max) / 2.0
+    s1 = (perp_min + mid_perp) / 2.0
+    s2 = (mid_perp + perp_max) / 2.0
 
-    flight1_run = (flight1_steps - 1) * going_mm
-    flight2_run = (flight2_steps - 1) * going_mm
-    landing_start = down_c + direction * flight1_run
-    landing_end = landing_start + direction * landing_depth_mm
-    exit_coord = landing_end - direction * flight2_run
+    landing_start = down_c + direction * (flight1_steps - 1) * going_mm
+    landing_end = up_c
+    exit_coord = landing_start - direction * (flight2_steps - 1) * going_mm
+    landing_mid = (landing_start + landing_end) / 2.0
 
-    if travel_axis == "x":
-        exit_point = (exit_coord, flight2_perp_mid)
-        landing_bbox = (min(landing_start, landing_end), perp_min,
-                         max(landing_start, landing_end), perp_max)
-    else:
-        exit_point = (flight2_perp_mid, exit_coord)
-        landing_bbox = (perp_min, min(landing_start, landing_end),
-                         perp_max, max(landing_start, landing_end))
+    def xy(c: float, p: float) -> tuple[float, float]:
+        return (c, p) if travel_axis == "x" else (p, c)
 
+    exit_point = xy(exit_coord, s2)
+    landing_bbox = _cp_bbox(travel_axis, landing_start, landing_end, perp_min, perp_max)
+    arrow_path = (xy(down_c, s1), xy(landing_mid, s1), xy(landing_mid, s2), xy(exit_coord, s2))
+    treads = []
+    for i in range(1, flight1_steps):
+        treads.append({"kind": "tread", "bbox": _cp_bbox(travel_axis, down_c + direction * (i - 1) * going_mm,
+                                                         down_c + direction * i * going_mm, perp_min, mid_perp),
+                       "z_mm": i * riser})
+    treads.append({"kind": "landing", "bbox": landing_bbox, "z_mm": flight1_steps * riser})
+    for j in range(1, flight2_steps):
+        treads.append({"kind": "tread", "bbox": _cp_bbox(travel_axis, landing_start - direction * j * going_mm,
+                                                         landing_start - direction * (j - 1) * going_mm,
+                                                         mid_perp, perp_max),
+                       "z_mm": (flight1_steps + j) * riser})
+    treads.append({"kind": "floor", "bbox": _cp_bbox(travel_axis, down_c, exit_coord, mid_perp, perp_max),
+                   "z_mm": (flight1_steps + flight2_steps) * riser})
     exit_direction = _OPPOSITE_DIRECTION.get(up_towards) if up_towards else None
-    return exit_point, exit_direction, landing_bbox
+    return exit_point, exit_direction, landing_bbox, arrow_path, tuple(treads)
 
 
 class StairDrawingStandard(Protocol):
@@ -486,18 +561,27 @@ class DefaultStairStandard:
     farkli hesaplanir, gerisi PAYLASILIR - tekrar YAZILMAZ)."""
 
     def draw(self, msp, resolution: StairResolution, layer: str) -> None:
-        if resolution.kind == THREE_FLIGHT:
-            down, up = self._draw_three_flight(msp, resolution, layer)
-        elif resolution.kind == DOG_LEG:
-            down, up = self._draw_dog_leg(msp, resolution, layer)
-        else:
-            for i in range(1, resolution.step_count):
-                distance = i * resolution.going_mm
-                start, end = _step_line_endpoints(
-                    resolution.travel_axis, resolution.up_towards, resolution.bbox, distance,
-                )
-                msp.add_line(start, end, dxfattribs={"layer": layer})
-            down, up = _travel_points(resolution.travel_axis, resolution.up_towards, resolution.bbox)
+        if resolution.kind in (THREE_FLIGHT, DOG_LEG):
+            if resolution.kind == THREE_FLIGHT:
+                self._draw_three_flight(msp, resolution, layer)
+            else:
+                self._draw_dog_leg(msp, resolution, layer)
+            # rev-26: yon oku "ust kata cikis" yolunu gosterir: kol 1 boyunca cik,
+            # SAHANLIKTA don, kol 2 (3. kol) ile kata eris; ok basi cikis ucunda.
+            if resolution.up_towards is not None and resolution.arrow_path:
+                path = resolution.arrow_path
+                for k in range(len(path) - 1):
+                    msp.add_line(path[k], path[k + 1], dxfattribs={"layer": layer})
+                self._draw_arrowhead(msp, path[-2], path[-1], layer)
+            return
+
+        for i in range(1, resolution.step_count):
+            distance = i * resolution.going_mm
+            start, end = _step_line_endpoints(
+                resolution.travel_axis, resolution.up_towards, resolution.bbox, distance,
+            )
+            msp.add_line(start, end, dxfattribs={"layer": layer})
+        down, up = _travel_points(resolution.travel_axis, resolution.up_towards, resolution.bbox)
 
         if resolution.up_towards is None:
             return
@@ -513,10 +597,10 @@ class DefaultStairStandard:
         self._draw_break_line(msp, resolution.travel_axis, perp_span, arrow_end, layer)
 
     @staticmethod
-    def _draw_three_flight(msp, resolution: StairResolution, layer: str):
+    def _draw_three_flight(msp, resolution: StairResolution, layer: str) -> None:
         """Uc kol riht cizgileri + iki sahanlik (kapali polyline) + merdiven
-        boslugu (`well='open'`: 3 kenar; `'filled'`: kapali + capraz cizgiler).
-        Yon oku icin kol 1 ekseni (giris, kol ucu) capa cifti doner."""
+        boslugu (`well='open'`: giris tarafi ACIK 3 kenar; `'filled'`: kapali +
+        capraz cizgiler)."""
         geo = resolution.three_flight
         for start, end in geo["step_lines"]:
             msp.add_line(start, end, dxfattribs={"layer": layer})
@@ -531,70 +615,43 @@ class DefaultStairStandard:
                 msp.add_line(corners[0], corners[2], dxfattribs={"layer": layer})
                 msp.add_line(corners[1], corners[3], dxfattribs={"layer": layer})
             else:
-                # bos kuyu: giris kenarina bakan taraf ACIK; diger uc kenar cizilir
                 up = resolution.up_towards or "N"
-                open_side = {"N": 0, "S": 2, "E": 3, "W": 1}[up]   # corners[k]-corners[k+1] kenari
+                open_side = {"N": 0, "S": 2, "E": 3, "W": 1}[up]
                 for k in range(4):
                     if k != open_side:
                         msp.add_line(corners[k], corners[(k + 1) % 4], dxfattribs={"layer": layer})
-        return geo["arrow"]
 
     @staticmethod
-    def _draw_dog_leg(msp, resolution: StairResolution, layer: str) -> tuple[tuple[float, float], tuple[float, float]]:
-        """Iki kol + sahanlik + kol bolucusunu cizer; yon oku icin
-        (kol-2-baslangici, cikis) capa ciftini dondurur - tek kollu
-        `(down, up)`in dog-leg karsiligi."""
+    def _draw_dog_leg(msp, resolution: StairResolution, layer: str) -> None:
+        """Iki kol riht cizgileri + sahanlik (uzak uc, tum genislik) + kol bolucusu."""
         xmin, ymin, xmax, ymax = resolution.bbox
         travel_axis = resolution.travel_axis
         perp_min, perp_max = (ymin, ymax) if travel_axis == "x" else (xmin, xmax)
         mid_perp = (perp_min + perp_max) / 2.0
-        flight1_range = (perp_min, mid_perp)
-        flight2_range = (mid_perp, perp_max)
-
         down_c, up_c = _travel_coords(travel_axis, resolution.up_towards, resolution.bbox)
         direction = 1.0 if up_c >= down_c else -1.0
         flight1_steps, flight2_steps = resolution.flight_step_counts
+        g = resolution.going_mm
 
         for i in range(1, flight1_steps):
-            coord = down_c + direction * i * resolution.going_mm
-            start, end = _perp_line_endpoints(travel_axis, flight1_range, coord)
+            start, end = _perp_line_endpoints(travel_axis, (perp_min, mid_perp), down_c + direction * i * g)
             msp.add_line(start, end, dxfattribs={"layer": layer})
-
-        landing_start = down_c + direction * (flight1_steps - 1) * resolution.going_mm
-        landing_end = landing_start + direction * resolution.landing_depth_mm
-        for i in range(1, flight2_steps):
-            coord = landing_end - direction * i * resolution.going_mm
-            start, end = _perp_line_endpoints(travel_axis, flight2_range, coord)
+        landing_start = down_c + direction * (flight1_steps - 1) * g
+        for j in range(1, flight2_steps):
+            start, end = _perp_line_endpoints(travel_axis, (mid_perp, perp_max), landing_start - direction * j * g)
             msp.add_line(start, end, dxfattribs={"layer": layer})
 
         lx0, ly0, lx1, ly1 = resolution.landing_bbox
-        landing = msp.add_lwpolyline(
-            [(lx0, ly0), (lx1, ly0), (lx1, ly1), (lx0, ly1)], dxfattribs={"layer": layer},
-        )
-        landing.closed = True
-
-        exit_coord = resolution.exit_point[0] if travel_axis == "x" else resolution.exit_point[1]
-        div1_start, div1_end = _travel_line(travel_axis, mid_perp, down_c, landing_start)
-        div2_start, div2_end = _travel_line(travel_axis, mid_perp, landing_end, exit_coord)
-        msp.add_line(div1_start, div1_end, dxfattribs={"layer": layer})
-        msp.add_line(div2_start, div2_end, dxfattribs={"layer": layer})
-
-        flight2_perp_mid = (mid_perp + perp_max) / 2.0
-        flight2_start = ((landing_end, flight2_perp_mid) if travel_axis == "x"
-                          else (flight2_perp_mid, landing_end))
-        return flight2_start, resolution.exit_point
+        msp.add_lwpolyline([(lx0, ly0), (lx1, ly0), (lx1, ly1), (lx0, ly1)],
+                           dxfattribs={"layer": layer}).closed = True
+        div_start, div_end = _travel_line(travel_axis, mid_perp, down_c, landing_start)
+        msp.add_line(div_start, div_end, dxfattribs={"layer": layer})
 
     @staticmethod
     def _break_line_perp_span(resolution: StairResolution) -> float:
-        """Kesme cizgisi zigzaginin ENINI verir - tek kollu TAM oda
-        genisligi (eski davranis), cift kollu yalnizca kol-2 SERIDININ
-        genisligi (TAM oda genisligi kullanmak, var OLMAYAN kol-1
-        serisinin uzerine tasan yanlis bir cizgi uretirdi)."""
+        """Kesme cizgisi zigzaginin ENINI verir (yalniz tek kollu - TAM oda genisligi)."""
         xmin, ymin, xmax, ymax = resolution.bbox
-        if resolution.kind == THREE_FLIGHT:
-            return resolution.three_flight["flight_width"]
-        full = (ymax - ymin) if resolution.travel_axis == "x" else (xmax - xmin)
-        return full / 2.0 if resolution.kind == DOG_LEG else full
+        return (ymax - ymin) if resolution.travel_axis == "x" else (xmax - xmin)
 
     @staticmethod
     def _draw_arrowhead(msp, start, end, layer: str) -> None:
@@ -731,6 +788,27 @@ def stair_access_warnings(resolution: StairResolution,
     return warnings
 
 
+def stair_section_profile(resolution: StairResolution, axis: str, coord: float) -> list[dict]:
+    """Merdivenin `axis` ('x': x=coord duz kesit hatti, 'y': y=coord) boyunca
+    KESIT profili: kesit hattini kesen her basamak/sahanlik/kat yuzeyi icin
+    `{"kind", "s_lo", "s_hi", "z_mm"}` (s = kesit hatti boyunca konum, z = ust yuzey
+    kotu, alt kattan mm). s'ye gore sirali. `sections/` bu veriyle basamak profilini
+    cizer (kesit merdivenin ICINDEN gecebilir); bu modul sections'i import ETMEZ."""
+    if axis not in ("x", "y"):
+        raise ValueError("axis 'x' veya 'y' olmali")
+    out = []
+    for t in resolution.treads:
+        x0, y0, x1, y1 = t["bbox"]
+        lo, hi = (x0, x1) if axis == "x" else (y0, y1)
+        if not (lo - 1e-9 <= coord < hi - 1e-9):
+            continue
+        s_lo, s_hi = (y0, y1) if axis == "x" else (x0, x1)
+        if s_hi - s_lo <= 1e-9:
+            continue
+        out.append({"kind": t["kind"], "s_lo": s_lo, "s_hi": s_hi, "z_mm": t["z_mm"]})
+    return sorted(out, key=lambda r: (r["s_lo"], r["z_mm"]))
+
+
 def stairs_for_floor(floor: dict) -> list[StairResolution]:
     """`floor['stairs']`teki HER girdiyi `resolve_stair` ile cozer. `room_id`
     gecersizse (validate.py zaten bunu HATA olarak yakalamis olmali) o
@@ -787,5 +865,5 @@ __all__ = [
     "ensure_stair_layer",
     "stairs_for_floor",
     "draw_stairs_on_floor",
-    "THREE_FLIGHT", "WELL_OPEN", "WELL_FILLED", "CONTRACT_VERSION", "stair_entry_side", "stair_access_warnings",
+    "THREE_FLIGHT", "WELL_OPEN", "WELL_FILLED", "CONTRACT_VERSION", "stair_entry_side", "stair_access_warnings", "stair_section_profile",
 ]

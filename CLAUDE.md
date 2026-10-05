@@ -372,7 +372,12 @@ geliştirme görevleri, tamamlanmış geçmiş, fikirler ve geliştirici notlar�
   (`type='passage'`) vardir. Bu projenin 8 katinda (B2..K5) `stairs[]`
   verisi vardir (riht 170 / going 270, auto_flex). Turler (rev-26): varsayilan
   `dog_leg` (U, tek ara sahanlik), `single_flight` (sahanliksiz ince uzun),
-  `three_flight` (kare bosluklu, iki sahanlikli U; ortasi bos/dolu `well`). Ayrinti:
+  `three_flight` (kare bosluklu, iki sahanlikli U; ortasi bos/dolu `well`). Sahanlik
+  HER ZAMAN bosluk ucundadir, yon oku ust kata cikis yolunu gosterir, kesit icin
+  `stair_section_profile` vardir (rev-26). **Saft (rev-26, kullanici karari):** daima
+  kare veya 4:3, varsayilan NET kenar 500 mm, kat planinda minimum; WC/banyo cifti
+  arasina saft (komsu odadan oyularak); asansor/merdiven daima dikdortgen ve saft
+  onlara girmez (`standards::check_core_and_shafts`). Ayrinti:
   `scripts/stairs/CLAUDE.md` "Kisa kenar girisi (rev-25)".
 
 ## Çizim standartları (ofis standardı, rev-3'ten itibaren)

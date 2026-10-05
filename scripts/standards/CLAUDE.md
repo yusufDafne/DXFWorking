@@ -4,6 +4,16 @@ Bir mahalin geometrik olarak GEÇERLİ (kapalı poligon, `validate.py::
 check_rooms`) ama mimari olarak SAÇMA (asansör kuyusu 1×3m gibi bir en-boy
 oranında, banyo "çubuk gibi ince uzun") olabileceği boşluğu kapatır.
 
+## Saft ve cekirdek kurallari (rev-26)
+
+`STANDARDS['saft']`: oran 1.0-4/3 (DAIMA kare veya 4:3). `SHAFT_DEFAULT_SIDE_MM=500` NET kenar
+(ic yuzler arasi; poligon kenari `shaft_centerline_side()` = 650 = net + 150 duvar), ek talebe gore
+degisir. `check_core_and_shafts(rooms)` -> (errors, warnings): asansor/merdiven odasi eksen-hizali
+DIKDORTGEN olmali (ERROR); saft asansor/merdiven kutusuna giremez (ERROR); saft dikdortgen degilse
+UYARI. Saft yerlesim ilkesi: kat planinda MINIMUM; WC/banyo diger dairelerle sirt sirta,
+olmuyorsa her banyo/WC cifti icin ikisinin arasina TEK saft; saft komsu odalardan oyularak
+acilir (bkz. proje rev-26).
+
 ## Neden bu modül (kullanıcı talebi, 2026-09-28)
 
 > "türkiye mimari çizimlerde kullanılan şartnameleri analiz edip hardcoded

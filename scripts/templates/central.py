@@ -39,14 +39,14 @@ except ImportError:
 
 from . import CirculationCoreTemplate, DEFAULT_TEMPLATE
 
-# rev-25 (kullanici karari): merdivenin KISA kenari kat holune bakar; giris/cikis
-# kisa kenardan, KAPISIZ duvar acikligiyla. Merdiven 3000 x 4000, asansor 2100 x
-# 3000, aralarinda ve asansorun ustunde L-seklinde 1000 mm saft; cekirdek satiri 4000.
-STAIR_SHORT_MM = 3000.0
-STAIR_LONG_MM = 4000.0
-SHAFT_WIDTH_MM = 1000.0
+# rev-25/26 (kullanici karari): merdivenin KISA kenari kat holune bakar; giris/cikis
+# kisa kenardan, KAPISIZ ve duvar-payisiz (tam genislikte) duvar acikligiyla.
+# Merdiven kare 4000 x 4000 (uc kollu U, iki sahanlik), asansor 2100 x 3000;
+# asansorun ustunde kalan 2100 x 1000'lik NIS bir oda DEGILDIR - `zone['niche']`
+# olarak bildirilir, komsu birim/oda ustlenir (kullanici: saft bosluguna kafana
+# gore oda ayirma; saft ayri ve minimum olur).
+STAIR_SIDE_MM = 4000.0
 ELEVATOR_DEPTH_MM = 3000.0
-PASSAGE_JAMB_MM = 300.0   # acikligin iki yaninda birakilan kati duvar payi
 
 
 def generate_central_core(
@@ -72,8 +72,8 @@ def generate_central_core(
         candidates = [o for o in options_for_central_hall(
             floor_width, floor_depth, n_units=n_units, door_width=template.door_width,
             wall_thickness=template.wall_thickness, elevator_width=template.elevator_width,
-            stair_width=(SHAFT_WIDTH_MM + STAIR_SHORT_MM) if short else template.stair_width,
-            core_depth=STAIR_LONG_MM if short else _core_depth(template), offset=offset,
+            stair_width=STAIR_SIDE_MM if short else template.stair_width,
+            core_depth=STAIR_SIDE_MM if short else _core_depth(template), offset=offset,
             core_side=core_side, orientation=orientation) if o.feasible]
         if not candidates:
             raise ValueError("Merkezi cekirdek bloku kata SIGMIYOR (hicbir alternatif uygulanabilir degil).")
@@ -85,7 +85,7 @@ def generate_central_core(
     if orient == "y":
         bx0, by0, bx1, by1 = by0, bx0, by1, bx1
     ew = template.elevator_width
-    sw = (SHAFT_WIDTH_MM + STAIR_SHORT_MM) if short else template.stair_width
+    sw = STAIR_SIDE_MM if short else template.stair_width
     yc = by0 + option.hall_depth
 
     def xf(point):
@@ -106,22 +106,20 @@ def generate_central_core(
 
     hall = poly((bx0, by0), (bx1, by0), (bx1, yc), (bx0, yc))
     if short:
-        sx = bx0 + ew + SHAFT_WIDTH_MM          # merdiven bati kenari
+        sx = bx0 + ew                            # merdiven bati kenari
         ey = yc + ELEVATOR_DEPTH_MM
         elev = poly((bx0, yc), (bx0 + ew, yc), (bx0 + ew, ey), (bx0, ey))
         stair = poly((sx, yc), (bx1, yc), (bx1, by1), (sx, by1))
-        shaft = poly((bx0, ey), (bx0 + ew, ey), (bx0 + ew, yc), (sx, yc), (sx, by1), (bx0, by1))
+        niche = poly((bx0, ey), (bx0 + ew, ey), (bx0 + ew, by1), (bx0, by1))
     else:
         elev = poly((bx0, yc), (bx0 + ew, yc), (bx0 + ew, by1), (bx0, by1))
         stair = poly((bx0 + ew, yc), (bx1, yc), (bx1, by1), (bx0 + ew, by1))
-        shaft = None
+        niche = None
     rooms = [
         {"id": pid("elevator"), "name": "Asansor", "room_type": "asansor", "polygon": elev, "area_m2": area(elev)},
         {"id": pid("stair"), "name": "Merdiven", "room_type": "merdiven", "polygon": stair, "area_m2": area(stair)},
         {"id": pid("hall"), "name": "Kat Holu", "room_type": "koridor", "polygon": hall, "area_m2": area(hall)},
     ]
-    if shaft is not None:
-        rooms.append({"id": pid("shaft"), "name": "Saft", "polygon": shaft, "area_m2": area(shaft)})
     t = template.wall_thickness
 
     def wall(name, a, b):
@@ -138,9 +136,8 @@ def generate_central_core(
     ]
     if short:
         walls += [
-            wall("core_div", (sx, yc), (sx, by1)),               # saft | merdiven
-            wall("core_elev_side", (bx0 + ew, yc), (bx0 + ew, ey)),  # asansor | saft
-            wall("core_elev_top", (bx0, ey), (bx0 + ew, ey)),        # asansor ustu | saft
+            wall("core_div", (sx, yc), (sx, by1)),               # asansor+nis | merdiven
+            wall("core_elev_top", (bx0, ey), (bx0 + ew, ey)),        # asansor | nis
         ]
     else:
         walls.append(wall("core_div", (bx0 + ew, yc), (bx0 + ew, by1)))
@@ -151,8 +148,8 @@ def generate_central_core(
     flip = (side == "south") != (orient == "y")
     if short:
         stair_opening = {"id": pid("passage_stair"), "type": "passage", "wall_id": pid("core_bottom"),
-                         "position_from_start": ew + SHAFT_WIDTH_MM + STAIR_SHORT_MM / 2.0,
-                         "width": STAIR_SHORT_MM - 2.0 * PASSAGE_JAMB_MM, "layer": "KAPI-PENCERE"}
+                         "position_from_start": ew + STAIR_SIDE_MM / 2.0,
+                         "width": STAIR_SIDE_MM, "layer": "KAPI-PENCERE"}
     else:
         stair_opening = {"id": pid("door_stair"), "type": "door", "wall_id": pid("core_bottom"),
                          "position_from_start": ew + sw / 2.0, "width": template.door_width,
@@ -172,6 +169,7 @@ def generate_central_core(
         "hall_frontage": [pid("hall_south"), pid("hall_west"), pid("hall_east")],
         "option_id": option.id,
         "hall_aspect_ratio": option.aspect_ratio,
+        "niche": niche,
     }
     return {"rooms": rooms, "walls": walls, "openings": openings, "zone": zone}
 

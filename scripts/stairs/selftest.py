@@ -20,6 +20,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import ezdxf  # noqa: E402
 
 from stairs import (
+    stair_section_profile,
     stair_access_warnings, stair_entry_side,  # noqa: E402
     DefaultStairStandard,
     StairFitError,
@@ -295,14 +296,19 @@ def check_dog_leg_real_room_hand_computable() -> list[str]:
         errors.append(f"going=270.0 (daraltma OLMADAN) bekleniyordu, {r.going_mm} bulundu")
     if r.warnings:
         errors.append(f"UYARI OLMAMALIYDI (narrowing gerekmiyor): {r.warnings}")
-    # landing: flight1_run=(9-1)*270=2160 -> landing [2160,3260]x[0,3000].
-    expected_landing = (2160.0, 0.0, 3260.0, 3000.0)
+    # rev-26: sahanlik odanin UZAK UCUNDA: flight1_run=(9-1)*270=2160 -> landing
+    # [2160,4000]x[0,3000] (artan boy sahanliga katilir).
+    expected_landing = (2160.0, 0.0, 4000.0, 3000.0)
     if tuple(round(v, 6) for v in r.landing_bbox) != expected_landing:
         errors.append(f"landing_bbox={expected_landing} bekleniyordu, {r.landing_bbox} bulundu")
-    # exit: landing_end=3260, flight2_run=2160 -> exit_coord=3260-2160=1100;
+    # exit: kol 2 sahanligin yakin kenarindan (2160) geri doner: 2160-8*270=0;
     # flight2_perp_mid=(1500+3000)/2=2250. up_towards='E' -> exit 'W'.
-    if (round(r.exit_point[0], 6), round(r.exit_point[1], 6)) != (1100.0, 2250.0):
-        errors.append(f"exit_point=(1100.0,2250.0) bekleniyordu, {r.exit_point} bulundu")
+    if (round(r.exit_point[0], 6), round(r.exit_point[1], 6)) != (0.0, 2250.0):
+        errors.append(f"exit_point=(0.0,2250.0) bekleniyordu, {r.exit_point} bulundu")
+    prof = stair_section_profile(r, "y", 750.0)
+    if len(prof) != 9 or abs(prof[0]["z_mm"] - 3000 / 18) > 1e-6 or prof[-1]["kind"] != "landing" \
+            or abs(prof[-1]["z_mm"] - 1500.0) > 1e-6 or (prof[-1]["s_lo"], prof[-1]["s_hi"]) != (2160.0, 4000.0):
+        errors.append(f"y=750 kesiti 8 basamak + sahanlik(z=1500, s 2160-4000) olmali: {prof}")
     if r.exit_direction != "W":
         errors.append(f"exit_direction='W' bekleniyordu, {r.exit_direction!r} bulundu")
     return errors
@@ -415,8 +421,8 @@ def check_dog_leg_draw_entity_counts() -> list[str]:
     )
     doc = ezdxf.new(); ensure_stair_layer(doc); msp = doc.modelspace()
     standard.draw(msp, r_dir, "MERDIVEN")
-    if len(msp) != 23:
-        errors.append(f"yonlu dog_leg cizimde 23 varlik bekleniyordu, {len(msp)} bulundu")
+    if len(msp) != 22:
+        errors.append(f"yonlu dog_leg cizimde 22 varlik bekleniyordu, {len(msp)} bulundu")
 
     r_nodir = resolve_stair(
         {"id": "sDL7", "room_id": "stair", "floor_to_floor_mm": 3000, "kind": "dog_leg"},
@@ -424,8 +430,8 @@ def check_dog_leg_draw_entity_counts() -> list[str]:
     )
     doc2 = ezdxf.new(); ensure_stair_layer(doc2); msp2 = doc2.modelspace()
     standard.draw(msp2, r_nodir, "MERDIVEN")
-    if len(msp2) != 19:
-        errors.append(f"yonsuz dog_leg cizimde 19 varlik bekleniyordu, {len(msp2)} bulundu")
+    if len(msp2) != 18:
+        errors.append(f"yonsuz dog_leg cizimde 18 varlik bekleniyordu, {len(msp2)} bulundu")
     return errors
 
 
@@ -497,9 +503,9 @@ def check_three_flight_rev26() -> list[str]:
     g = res.three_flight
     if len(g["step_lines"]) != 15:
         errors.append(f"15 riht cizgisi olmali: {len(g['step_lines'])}")
-    if g["landings"] != [(0.0, 2000.0, 1000.0, 3000.0), (2000.0, 2000.0, 3000.0, 3000.0)]:
+    if g["landings"] != [(0.0, 1620.0, 1095.0, 3000.0), (1905.0, 1620.0, 3000.0, 3000.0)]:
         errors.append(f"sahanliklar yanlis: {g['landings']}")
-    if g["well"] != (1000.0, 0.0, 2000.0, 2000.0):
+    if g["well"] != (1000.0, 0.0, 2000.0, 1620.0):
         errors.append(f"kuyu yanlis: {g['well']}")
     if res.exit_point != (2500.0, 0.0) or res.exit_direction != "S" or stair_entry_side(res) != "S":
         errors.append(f"cikis (2500,0) 'S' olmali: {res.exit_point} {res.exit_direction}")
@@ -528,6 +534,33 @@ def check_three_flight_rev26() -> list[str]:
     return errors
 
 
+def check_square_three_flight_project_rev26() -> list[str]:
+    """Proje merdiveni: 4000x4000 kare oda, three_flight, up 'N'. ELLE: kat 3000
+    -> N=18, g=270; n2 adaylari 2/4/6 (parite): n2=6 -> m=6, e=(4000-5*270)/2=1325,
+    w=min(4000/3,1325)=1325, d=4000-5*270=2650, kuyu (4000-2650=1350) x (m-1)*g=1350
+    = KARE; kuyu (1325,0,2675,1350); sahanlik 1 (0,1350,1325,4000). ZK 4000mm ->
+    N=24 -> n2=8, m=8 -> kuyu 1890x1890 KARE, going 270 (daralma YOK)."""
+    errors: list[str] = []
+    room = [[0, 0], [4000, 0], [4000, 4000], [0, 4000]]
+    base = {"id": "p", "room_id": "r", "kind": "three_flight", "up_towards": "N"}
+    r = resolve_stair({**base, "floor_to_floor_mm": 3000.0}, room)
+    if tuple(r.flight_step_counts) != (6, 6, 6) or r.three_flight["well"] != (1325.0, 0.0, 2675.0, 1350.0):
+        errors.append(f"3000: 6/6/6 ve kuyu (1325,0,2675,1350): {r.flight_step_counts} {r.three_flight['well']}")
+    if r.three_flight["landings"][0] != (0.0, 1350.0, 1325.0, 4000):
+        errors.append(f"sahanlik 1 (0,1350,1325,4000): {r.three_flight['landings'][0]}")
+    z = stair_section_profile(r, "x", 500.0)
+    if len(z) != 5 + 1 or abs(z[-1]["z_mm"] - 6 * 3000 / 18) > 1e-6 or z[-1]["kind"] != "landing":
+        errors.append(f"x=500 kesiti 5 basamak + sahanlik: {z}")
+    zk = resolve_stair({**base, "floor_to_floor_mm": 4000.0}, room)
+    wx0, wy0, wx1, wy1 = zk.three_flight["well"]
+    if tuple(zk.flight_step_counts) != (8, 8, 8) or round(wx1 - wx0, 6) != 1890.0 or round(wy1 - wy0, 6) != 1890.0 or zk.warnings:
+        errors.append(f"ZK: 8/8/8, kuyu 1890x1890, uyari yok: {zk.flight_step_counts} {zk.three_flight['well']} {zk.warnings}")
+    # sahanliklar kutunun UCUNDA: ust kenar = oda ust kenari
+    if zk.three_flight["landings"][0][3] != 4000 or zk.three_flight["landings"][1][2] != 4000:
+        errors.append("sahanliklar oda ucuna (y=4000, x=4000) oturmali")
+    return errors
+
+
 def main() -> int:
     groups = (
         ("acik step_count'tan riht turetme (elle hesap)", check_explicit_step_count_derives_riser()),
@@ -551,6 +584,7 @@ def main() -> int:
         ("dog_leg cizim varlik sayilari (yonlu/yonsuz, DEV-047 cikis)", check_dog_leg_draw_entity_counts()),
         ("kisa kenar giris + kapisiz acikli (rev-25)", check_short_edge_entry_rev25()),
         ("uc kollu U merdiven + kuyu + varsayilan dog_leg (rev-26)", check_three_flight_rev26()),
+        ("kare 4000x4000 uc kollu merdiven (proje) + kesit profili (rev-26)", check_square_three_flight_project_rev26()),
     )
     failed = False
     for name, errors in groups:

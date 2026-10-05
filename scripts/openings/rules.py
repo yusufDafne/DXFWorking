@@ -98,6 +98,11 @@ def check_opening_wall_nuances(walls: list[dict], openings: list[dict]) -> list[
             double = op.get("variant") == VARIANT_DOUBLE
             need = DOUBLE_EDGE_MARGIN_MM if double else EDGE_MARGIN_MM
             for label, margin in (("basina", g0 - solid_start), ("sonuna", length - g1 - solid_end)):
+                # rev-26 (kullanici karari): merdiven duvar acikligi (passage) icin 10cm
+                # kapi cikintisi/kasa payi YOKTUR; acikligin duvar boyunca tam
+                # genislikte (kati duvar payi 0) olmasi serbesttir.
+                if op.get("type") == "passage":
+                    continue
                 if margin < need - 1e-6:
                     warnings.append(
                         f"Aciklik '{op['id']}' duvarin ('{wall_id}') {label} "

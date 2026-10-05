@@ -301,6 +301,11 @@ def check_wall_nuances() -> list[str]:
         errors.append("550/900 kapi: 100-100=0mm kati duvar -> UYARI bekleniyordu")
     if any("basina" in w for w in check_opening_wall_nuances(walls_rect(), [door("d1", 700, 900)])):
         errors.append("700/900 kapi: 250-100=150mm -> UYARI OLMAMALI (yanlis-pozitif)")
+    # rev-26: passage (merdiven acikligi) icin kasa payi YOK: pos=550,w=900 ayni
+    # geometride kapi UYARI verir (yukarida), passage SESSIZ kalir
+    if any("basina" in w for w in check_opening_wall_nuances(
+            walls_rect(), [door("p0", 550, 900, type="passage")])):
+        errors.append("passage icin duvar basi kasa payi UYARISI OLMAMALI (rev-26)")
     # madde 2: 1000-1450 ve 1600-... aralik 150 < 200
     two = [door("a", 1900, 900), door("b", 3050, 900)]  # a: 1450-2350, b: 2600-3500 -> 250 TAM esik (DEV-053: iki kapi)
     if any("arasi" in w for w in check_opening_wall_nuances(walls_rect(), two)):

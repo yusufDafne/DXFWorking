@@ -153,6 +153,27 @@ Her esnetme (riht VEYA going) `StairResolution.warnings`e yazılır;
 (sessiz varsayım yapılmaz, bkz. kök CLAUDE.md "Deterministik üretim
 ilkesi").
 
+## rev-26 geri bildirim duzeltmeleri (kullanici, 2026-10-05)
+
+- **Sahanlik HER ZAMAN merdiven boslugunun UCUNDA** (dog_leg: odanin uzak ucu, tum
+  genislik; three_flight: ust bant). Eski surum kolun bittigi yerde sahanlik koyuyor
+  ve kalan boyu bos birakiyordu (donulemeyen merdiven). Artik artan boy sahanliga katilir;
+  sahanlik derinligi = oda boyu - (n1-1)*going (>= 1100 varsayilan asgari korunur).
+  Kol 2 sahanligin YAKIN kenarindan baslar ve giris ucuna doner.
+- **Yon oku "ust kata cikis" yoludur** (`StairResolution.arrow_path`): giris -> kol 1 ->
+  sahanlikta don -> son kol -> cikis; ok basi cikista. Cok kollu turlerde kesme cizgisi
+  cizilmez; yalniz tek kollu eski ok + kesme cizgisi davranisini korur.
+- **Kesit:** `StairResolution.treads` ([{kind: tread|landing|floor, bbox, z_mm}]) ve
+  `stair_section_profile(res, axis, coord)` merdivenin ICINDEN gecen bir kesit hatti icin
+  basamak profilini verir (s araligi + ust yuzey kotu). `sections/` bununla cizer
+  (baglanti AYRI is: `SectionFeatureHook`); stairs sections'i import ETMEZ.
+- **three_flight algoritmasi:** kuyu en KARE olacak sekilde `n2` (orta kol basamagi) secilir;
+  n1=n3=m; e=(A-(n2-1)g)/2, d=H-(m-1)g; w=min(A/3, e). Proje: 4000x4000, 3000 mm kat
+  6/6/6 (kuyu 1350x1350), ZK 4000 mm 8/8/8 (kuyu 1890x1890), going 270.
+- **Proje cekirdegi (rev-26):** asansor 2100x3000 + kare 4000x4000 merdiven; merdiven acikligi
+  `passage` merdiven genisligi (4000) kadar ve duvar payisiz; saft odasi cekirdekte YOKTUR
+  (asansor ustundeki 2100x1000 nis K katlarda uB `Depo`, diger katlarda komsu odaya katilir).
+
 ## Merdiven turleri (`kind`, rev-26)
 
 | `kind` | Sekil | Notlar |
