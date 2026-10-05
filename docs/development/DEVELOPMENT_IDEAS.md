@@ -4,6 +4,21 @@ Bu dosya henüz görev kuyruğuna alınmamış fikirleri tutar. Fikirler tasarı
 verisi veya uygulama direktifi değildir. Sistem mimarı bir fikri `PLANNED`
 veya `READY` göreve dönüştürmeden agent uygulamaya başlayamaz.
 
+## Kat planı efektifliği ve endüstri standardı nüans fikirleri (kullanıcı talebi, 2026-10-05)
+
+~~Kat planı efektifliği + 15 maddelik kapı/duvar/koridor endüstri
+standardı nüans kataloğu (standart gözden geçirme, net geçiş genişliği,
+ıslak hacim kapı kuralları, hol topolojisi kütüphanesi, sirkülasyon
+çekirdeğinin merkeze taşınması + asansör kapısı, etüt modülünün 2D
+yerleşim optimizasyonuna genişletilmesi)~~ — kullanıcı kararıyla
+(2026-10-05) sekiz maddeye bölünüp göreve alındı: `DEV-049`…`DEV-056`
+(`DEVELOPMENT_TASKS.md`). Uygulama sırası kullanıcı tarafından belirlendi:
+`DEV-049 → DEV-050 → DEV-051 → DEV-052 → DEV-053 → DEV-054 → DEV-055 →
+DEV-056` (gerekçe ve her maddenin ayrıntısı `DEVELOPMENT_TASKS.md`de TEK
+kaynak olarak tutulur, burada TEKRARLANMAZ — `DEV-040`'ın `scripts/
+architect/CLAUDE.md`ye yaptığı atıfla AYNI disiplin). Hiçbiri `READY`
+değildir: her madde yalnızca kullanıcının mini-detay talimatıyla açılır.
+
 ## Generic altyapı fikirleri
 
 - ~~**Golden output semantik diff**~~ — göreve alındı ve tamamlandı

@@ -49,6 +49,14 @@ Tamamlanan işlerin ayrıntılı gerekçesi, karar süreci ve ölçülen etkisi
 | DEV-046 | `stairs/`+`templates/`+`standards/` — merdiven oda oranı + çok kollu merdiven desteği | COMPLETED (2026-10-02) |
 | DEV-047 | `stairs/`+`architect/` — merdiven sahanlık çıkış noktası ↔ koridor kapısı hizalaması | COMPLETED (2026-10-02) |
 | DEV-048 | Mimari muhakeme yetisinin sistemleştirilmesi (başlangıç planı) | PLANNED |
+| DEV-049 | `standards/`+`architect/` — mahal/koridor standartları + yerel en dar nokta ölçümü | PLANNED |
+| DEV-050 | `walls/`+`openings/`+`architect/` — kapı/duvar/koridor endüstri standardı nüans kataloğu (15 madde) | PLANNED |
+| DEV-051 | `openings/`+`collision/` — kapı açılımı ↔ kalan net geçiş genişliği dinamik kontrolü | PLANNED |
+| DEV-052 | `architect/` — DEV-043'ün (banyo/wc kapı yakınlığı) gerçek adjacency ile gözden geçirilmesi | PLANNED |
+| DEV-053 | `architect/` — giriş kapısı ↔ WC/banyo kapısı mesafe-tabanlı asgari eşik | PLANNED |
+| DEV-054 | `architect/`+`templates/` — hol topolojisi kütüphanesi (L şekli zorunluluğunun kaldırılması) | PLANNED |
+| DEV-055 | `templates/`+`architect/`+`openings/` — sirkülasyon çekirdeğinin merkeze taşınması + asansör kapısı | PLANNED |
+| DEV-056 | `architect/study.py` — etüt modülünün 2D yerleşim optimizasyonuna genişletilmesi | PLANNED |
 
 ## READY
 
@@ -557,6 +565,331 @@ muhakemenin KOD tarafı, `DEV-040` ile kavramsal KOMŞU ama FARKLI),
 emsali), kök `CLAUDE.md` + `scripts/CLAUDE.md` (agentic doküman sistemi
 ilkesi — Aşama 5'in ölçütü).
 
+> **`DEV-049`…`DEV-056`** ALTINCI bir türdür: kullanıcının kendi plan
+> incelemesinden ("mimar modülün berbat bir iş çıkarmış ... 250mm
+> genişliğinde hol olur mu hiç ... kat planında sol üst köşede merdiven/
+> asansör var fakat sağ üst tarafta kocaman bir ölü bölge var") doğrudan
+> çıkan, `DEVELOPMENT_IDEAS.md`de fikir olarak kaydedilip kullanıcının
+> AÇIKÇA göreve aldığı sekiz maddedir. `DEV-041`…`DEV-047`den farkı:
+> onlar rev-21/22'nin SOMUT üretim hatalarından çıktı, bunlar kullanıcının
+> "efektif kat planı" + "15 endüstri standardı nüansı" talebinin
+> SİSTEMATİK dökümüdür (bkz. `DEVELOPMENT_IDEAS.md` "Kat planı
+> efektifliği ve endüstri standardı nüans fikirleri", 2026-10-05).
+> **Hiçbiri henüz `READY` değildir** — kullanıcının kendi kararı:
+> *"plan uygulandığı zaman bana bir sonraki geliştirme fikirleri için ana
+> konuları bilgilendirme olarak sunacaksın ... ben de o açıklamalara
+> istinaden ... geliştirme fikrini detaylı şekilde uygulayabilmen için
+> açıklamalar yapacağım."* Yani agent her maddeyi kendi başına
+> "başlatılmış" SAYMAZ; her madde yalnızca kullanıcının mini-detay
+> talimatıyla açılır (`DEV-007`nin "agent bu madde için veri İSTEMEZ"
+> disipliniyle AYNI aile, ters yönde: burada veri değil onay bekleniyor).
+
+**Uygulama sırası (kullanıcı talebi, 2026-10-05: "sıralamayı sen
+belirleyeceksin ... her birini sıralama olarak birbirine bağla"):**
+
+**`DEV-049` → `DEV-050` → `DEV-051` → `DEV-052` → `DEV-053` → `DEV-054`
+→ `DEV-055` → `DEV-056`**
+
+1. `DEV-049` ölçüm altyapısını (yerel en dar nokta) kurar — ölçüm
+   olmadan `DEV-050`nin eşik/kural yazması anlamsız kalırdı.
+2. `DEV-050`nin kapı-geçiş ailesindeki statik maddeleri (#3/#8/#11)
+   kodlanınca, `DEV-051` bunun DİNAMİK devamı olarak AYNI altyapıyı
+   (`openings::swing_geometry`) derinleştirir.
+3. `DEV-051` biterse, `DEV-052` (DEV-043 gözden geçirmesi) kapı-mesafe
+   ailesinin üçüncü halkasıdır — net-geçiş ve nüans kuralları netleşmiş
+   olur.
+4. `DEV-052` ile `DEV-053` AYNI ıslak-hacim-mesafe temasında ama TERS
+   yönlü eşikler taşır (biri "yakın OLSUN", öbürü "çok yakın OLMASIN");
+   ardışık ele alınınca kalibrasyon çatışması baştan görülür.
+5. `DEV-053` sabitlenince `DEV-054` (hol topolojisi kütüphanesi) bu
+   kuralları aday topolojileri puanlarken girdi olarak kullanabilir.
+6. `DEV-054` biterse `DEV-055` (merkezi çekirdek + dikdörtgen kat holü)
+   kütüphaneden bir "merkezi-hub" adayı SEÇEREK yapılır — kütüphane
+   yoksa rev-23'teki gibi yine EL İLE yapılırdı.
+7. `DEV-056` (etüt 2D optimizasyonu) `DEV-055`in EL ile yapılan TEK-
+   ÖRNEKLİ çözümünü GENELLEŞTİREN kapanış maddesidir.
+
+### DEV-049 — `standards/`+`architect/` — mahal/koridor standartları + yerel en dar nokta ölçümü
+
+- **Durum:** PLANNED — sıradaki madde (bkz. "Uygulama sırası"); kullanıcı
+  mini-detay verdiğinde `READY`e çekilir.
+
+**Neden bu madde (kullanıcının kendi sözleriyle, 2026-10-05):** *"örneğin
+250mm genişliğinde hol olur mu hiç ... mimar modülü için proje
+standartlarını şimdilik default ayarlar ile belirle. örneğin hol genişliği
+minimum 1,5 metre olmalı gibi kurallar belirle."*
+
+**Mevcut durum:** `standards::STANDARDS['koridor']` bugün
+`min_short_edge_mm=1100.0` taşıyor (kullanıcının istediği 1500mm'den düşük)
+ve `_aabb_edges` yalnızca odanın DIŞ sınırlayıcı kutusuna bakıyor — rev-23
+sonrası tarak/L-şekilli bir hol poligonu dış kutusu geniş görünse bile
+ARADA çok dar bir "bacak"/geçiş noktası taşıyabilir ve bugünkü AABB bunu
+HİÇ yakalayamaz (kullanıcının bildirdiği daralmanın muhtemel kök nedeni —
+hangi odanın ürettiği henüz doğrulanmadı, bu maddenin ilk adımı budur).
+
+**Önerilen kapsam:**
+- `STANDARDS['koridor'].min_short_edge_mm`: 1100 → 1500 güncellemesi
+  (katalog DEĞERİ, `CONTRACT_VERSION` artmaz).
+- Yeni bir arity-1 ölçüm fonksiyonu: poligonu bir eksen boyunca tarayıp
+  HER kesitte gerçek serbest genişliği bulan "yerel en dar nokta" testi.
+- Mevcut `context.json`'daki TÜM koridor/hol odalarının bu ölçümle
+  taranıp "250mm" gözleminin gerçek kaynağının doğrulanması.
+
+**Gelişmiş LLM fikirleri:** Kullanıcı gerçek bir TS/şartname belgesi
+yüklediğinde LLM'in `STANDARDS` için yapılandırılmış bir güncelleme
+önerisi (diff formatında, context'e otomatik YAZILMADAN) çıkarması; LLM'in
+mevcut kataloğu tarayıp yeni bir mahal alt-tipi gerekip gerekmediğine dair
+öneri üretmesi — nihai sayısal değer HER ZAMAN insan onayıyla girer.
+
+**Açık kararlar:** yeni ölçüm fonksiyonu `standards/`e mi `architect/`e mi
+eklenir (arity-1 olduğu için `standards/`e daha yakın durur, ama tarak/L
+hol GEOMETRİSİ `architect/`in bugünkü konusu — kullanıcı kararı gerekir).
+
+**İlişkili modüller:** `scripts/standards/`, `scripts/architect/`.
+
+### DEV-050 — `walls/`+`openings/`+`architect/` — kapı/duvar/koridor endüstri standardı nüans kataloğu (15 madde)
+
+- **Durum:** PLANNED
+
+**Neden bu madde:** kullanıcının kendi talebi: *"bir kapı değer duvarın en
+sonuna ya da başına gelecekse duvarın sonundan en az 10 cm duvar olmalı ki
+kapı çerçevesini oturtacak mesafe kalsın. bunlar uygulama detaylarıdır ve
+bunun gibi 15 tane endüstri standardı nüans belirlemeni istiyorum."*
+
+**Önerilen kapsam (15 madde, HER BİRİ `standards`/`architect`in HER ZAMAN
+UYARI politikasıyla):**
+
+*`walls/`+`openings/` (arity-1, açıklığın KENDİ duvarına göre geçerliliği):*
+1. Açıklık, duvarın başına/sonuna en az 100mm (10cm) kalmadan OLMAMALI
+   (kasa/pervaz payı — kullanıcının kendi örneği).
+2. Aynı duvardaki iki açıklık arasında en az 200mm düz duvar payı.
+3. Pencere açıklığı bir dış köşeye çok yakınsa (<300-400mm) asgari köşe
+   mesafesi.
+4. Islak hacim kapısı ile yakınındaki pencere arasında asgari mesafe.
+5. Çift kanatlı kapılarda asgari payanda/kasa derinliği.
+6. Sürme kapılarda, kanadın kayacağı duvar yüzeyinde açıklık genişliği
+   kadar boş yüzey gerekliliği.
+
+*`openings/`+`standards/` (arity-1, mahal tipine göre asgari ölçü):*
+7. Mahal tipine göre asgari kapı genişliği (WC/Banyo ≥700mm, yatak
+   odası/salon ≥800-900mm, giriş ≥900-1000mm).
+8. Koridor NET genişliği, üzerindeki kapı kanat genişliğinden en az
+   100-150mm fazla olmalı.
+9. Koridorun çıkmaz sonunda asgari dönüş payı (örn. 900×900mm).
+10. Koridor T/L dönüşünde net genişliğin hiçbir kolda daralmaması.
+
+*`architect/rules.py` (arity-2+, iki elemanın BİRBİRİNE göre ilişkisi):*
+11. Kapı açıldığında kanat ile karşı yüzey arasında asgari boşluk
+    ("kapılar açılırken karşı duvara çarpmamalı").
+12. WC/Banyo kapısı varsayılan olarak KENDİ hacmine açılmalı, hole doğru
+    AÇILMAMALI.
+13. Daire giriş kapısı kendi birimine İÇE açılmalı, ortak hole doğru
+    AÇILMAMALI.
+14. Mutfak kapısı ile WC/Banyo kapısı aynı eksende karşı karşıya
+    OLMAMALI (kullanıcının kendi örneği).
+15. Giriş kapısı ile aynı birimdeki WC/banyo kapısı arasında asgari DÜZ
+    MESAFE eşiği (bkz. `DEV-053`, ayrı bir madde olarak açılan AYNI
+    nüans).
+
+**Gelişmiş LLM fikirleri:** LLM'e `context.json` + üretilen preview/golden
+rapor metni verilip "henüz kurala dönüşmemiş ama şüpheli duran noktaları
+işaretle" diye serbest metin inceleme istenebilir (KOD DEĞİLDİR, yalnızca
+önceliklendirme girdisi, `DEV-048` ailesiyle AYNI); LLM'den her nüans için
+`rules.py` deseninde bir fonksiyon İSKELETİ (docstring+pseudocode)
+üretmesi istenip insan geliştirici koda çevirebilir — eşik/ölçü asla
+model tarafından UYDURULMAZ.
+
+**Açık kararlar:** 15 madde TEK bir revizyonda mı, yoksa alt-gruplar
+halinde (walls/openings arity-1 önce, architect arity-2 sonra) mı
+uygulanacak — kullanıcı kararı gerekir.
+
+**İlişkili modüller:** `scripts/walls/`, `scripts/openings/`,
+`scripts/architect/`, `scripts/standards/`, `scripts/collision/`.
+
+### DEV-051 — `openings/`+`collision/` — kapı açılımı ↔ kalan net geçiş genişliği dinamik kontrolü
+
+- **Durum:** PLANNED
+
+**Neden bu madde:** kullanıcının kendi örneği: *"daire içi kapıları
+açılırken karşı duvara çarpmamalı, şu anda böyle sorunlar var (çoğu
+koridor genişliğinin yetersiz olmasından kaynaklı)."*
+
+**Mevcut durum:** `collision/` kapı açılım yayını (sector) bir ayak izi
+olarak taşır ve SABİT bir elemanla (duvar/kolon/mobilya/başka kapı
+sektörü) ÇAKIŞMAYI FORBID sınıfında yakalar — ama sektör hiçbir elemanla
+çakışmasa bile, sektörün DIŞINDA kalan net geçiş genişliği insan geçişine
+YETMEYEBİLİR (örn. 900mm'lik bir koridorda 800mm'lik bir kapı tam
+açıldığında kalan boşluk pratikte kullanılamaz). `DEV-050`nin #3/#8/#11
+maddeleriyle AYNI kapsamda, ama AYRI bir DİNAMİK ölçüm.
+
+**Önerilen kapsam:** `openings::swing_geometry`nin ürettiği sektör ile
+duvarın karşı yüzü arasındaki en dar mesafeyi hesaplayan, bir eşikle
+(örn. 600-700mm) karşılaştıran yeni bir fonksiyon.
+
+**Gelişmiş LLM fikirleri:** Ölçüm HER ZAMAN Python'da kalır; LLM'in rolü
+`DEV-040` Fikir 1'in (severity-skoru) bu kurala da uygulanmasıyla "bu
+ihlal ne kadar ciddi" açıklamasını üretmekle sınırlı — ham ölçüye
+karışmaz.
+
+**İlişkili modüller:** `scripts/openings/`, `scripts/collision/`,
+`scripts/architect/`.
+
+### DEV-052 — `architect/` — DEV-043'ün (banyo/wc kapı yakınlığı) gerçek adjacency ile gözden geçirilmesi
+
+- **Durum:** PLANNED
+
+**Neden bu madde:** kullanıcının kendi talebi: *"belirlenecek
+standartlardan biri de banyo ve wc kapılarının mümkün olduğunda yan yana
+olmasıydı bunu da gözden geçir."*
+
+**Mevcut durum:** `DEV-043`/`check_wet_area_door_proximity` zaten VAR
+(COMPLETED) ama kendi belgelenmiş bilinen sınırlaması gerçek ADJACENCY'yi
+(ortak duvar paylaşımı) kontrol ETMİYOR, yalnızca kapı-orta-nokta mesafesi
+ölçüyor; eşik (5000mm) gerçek projenin KENDİ verisinden türetilmiş bir
+kalibrasyon, resmi bir atıf DEĞİL.
+
+**Önerilen kapsam:**
+- Gerçek ortak duvar/adjacency kontrolünün eklenmesi (mesafe yerine/ek
+  olarak "ortak bir duvar paylaşıyorlar mı" testi).
+- Eşiğin daha prensipli bir değere (tesisat şaftı genişliği + duvar
+  kalınlığı) bağlanması.
+
+**Gelişmiş LLM fikirleri:** Kullanıcı bir sıhhi tesisat şartnamesi
+yüklediğinde LLM'in bu belgeden yapılandırılmış bir mesafe/adjacency kuralı
+ÖNERİSİ çıkarması — nihai eşik HER ZAMAN `rules.py` sabiti olarak insan
+onayıyla girer.
+
+**İlişkili modüller:** `scripts/architect/` (`rules.py`, `DEV-043`).
+
+### DEV-053 — `architect/` — giriş kapısı ↔ WC/banyo kapısı mesafe-tabanlı asgari eşik
+
+- **Durum:** PLANNED
+
+**Neden bu madde:** kullanıcının kendi talebi: *"daire giriş kapısının
+çok yakınında wc kapısı olmaması gerektiği standardından bahsetmiştim bunu
+da tekrar standartlar konusunda kontrol et."*
+
+**Mevcut durum:** `architect/rules.py::check_entry_sightlines` yalnızca
+AÇI (45° koni) + GÖRÜŞ HATTI (engelleyen duvar var mı) bakıyor — çok YAKIN
+ama koninin dışında kalan bir WC kapısı bugün HİÇ yakalanmıyor, çünkü
+mesafeye hiç bakılmıyor.
+
+**Önerilen kapsam:** `architect/rules.py`ye yeni bir arity-2 fonksiyon,
+`check_wet_area_door_proximity`in (DEV-043/DEV-052) AYNI "kapı orta nokta
+mesafesi" ölçüm tekniğini yeniden kullanan, ama TERS yönlü bir eşik
+(DEV-052/053 bilerek ARDIŞIK sıralandı — bkz. "Uygulama sırası" madde 4,
+kalibrasyon çatışması riski baştan görülsün diye).
+
+**Gelişmiş LLM fikirleri:** `DEV-040` Fikir 2 (bina tipi profilleri) ile
+birleştirilip, konut DIŞI bina tiplerinde bu kuralın hiç anlamlı
+olmayabileceğinin LLM'in profil-önerisi aşamasında işaretlenmesi.
+
+**İlişkili modüller:** `scripts/architect/` (`rules.py`, `DEV-043`/
+`DEV-052` ile AYNI aile).
+
+### DEV-054 — `architect/`+`templates/` — hol topolojisi kütüphanesi (L şekli zorunluluğunun kaldırılması)
+
+- **Durum:** PLANNED
+
+**Neden bu madde:** kullanıcının kendi talebi: *"daire holleri L şeklinde
+olmak zorunda değil, yerleşim planına göre değişiklik gösterebilir."*
+
+**Mevcut durum:** rev-23'teki `uC_hol`un tarak (comb) şekli TAMAMEN EL
+İLE `context.json`'a yazıldı — `templates/`/`architect/` bunu ÜRETMEDİ;
+hol şekli seçimi bugün tamamen proje-operatör elinde, sistemsel bir "hol
+topolojisi" kütüphanesi YOK.
+
+**Önerilen kapsam:** `architect/` içinde (veya yeni bir alt modülde),
+birim geometrisine göre uygun hol TOPOLOJİLERİNİ (düz/I, L, T, tarak/comb,
+merkezi-hub) ÖNEREN (üretmeyen, yalnızca puanlanmış aday LİSTESİ
+döndüren) bir fonksiyon — `options_for_core_placement` ile AYNI "hesapla,
+puanla, model seçsin" deseni. rev-23'teki "comb" tasarımı bu kütüphanenin
+bir aday topolojisi olarak GERİYE-kodlanabilir.
+
+**Gelişmiş LLM fikirleri:** LLM yalnızca önceden hesaplanmış (alan/
+sirkülasyon payı/sightline-uygunluk skoruyla etiketlenmiş) aday
+topolojiler arasından SEÇER, yeni bir topoloji/koordinat İCAT ETMEZ.
+
+**İlişkili modüller:** `scripts/architect/`, `scripts/templates/`.
+
+### DEV-055 — `templates/`+`architect/`+`openings/` — sirkülasyon çekirdeğinin merkeze taşınması + asansör kapısı
+
+- **Durum:** PLANNED
+
+**Neden bu madde:** kullanıcının kendi talebi: *"kat planında sol üst
+köşede merdiven ve asansör var fakat sağ üst tarafta kocaman bir ölü
+bölge var, böyle olmamalı, istersen merdiven ve asansörü kat planının
+ortasına yerleştirip, ortada dikdörtgen bir kat holü belirleyip 3 daireyi
+ona uygun kata yayabilirsin ... asansör kapısını da çizmelisin."*
+
+**Mevcut durum:** `templates::generate_circulation_core` çekirdeği HER
+katta sabit güneybatı köşesine oturtur (`check_door_core_balance` bu
+sabitliğin yarattığı dengesizliği ZATEN uyarı olarak yakalıyor — `DEV-040`
+Fikir 4'ün bilinen sınırlaması). Kök `CLAUDE.md` bugün AÇIKÇA *"asansör
+kapı sembolü çizilmez"* diyor — bu madde bu basitleştirmenin
+KALDIRILMASINI gerektirir, dolayısıyla AYRICA bir kök-doküman kuralı
+değişikliği + açık kullanıcı onayı gerektirir.
+
+**Önerilen kapsam:**
+- `templates::generate_circulation_core`'a bir yerleşim parametresi
+  (`position: 'corner_sw' | 'center'`) eklenmesi.
+- `architect/options.py::options_for_core_placement`'in GERÇEKTEN bu
+  şablon fonksiyonunu çağırıp köşe/merkez adaylarını puanlaması (bugün
+  çağırmıyor).
+- `architect/study.py::resolve_unit_zoning`'in 1D sınırının, merkezi bir
+  hol'ün ÇEVRESİNE 3 birimin dağıtılabileceği bir perimeter-tabanlı
+  zonlamaya genişletilmesi (`DEV-054`'ün hol topolojisi kütüphanesinden
+  bir "merkezi-hub" adayı SEÇİLEREK).
+- Asansör kapısı: `openings/` şemasına gerçek bir açıklık girişi + basit
+  bir sembol eklenmesi.
+
+**Kabul ölçütü taslağı:** merkezi konumda `check_door_core_balance`
+oranının düşmesi; yeni kat holünün `check_common_circulation_share`in
+%15 sınırını AŞMAMASI.
+
+**Gelişmiş LLM fikirleri:** Aday zon stratejileri (perimeter'i eşit açı/
+eşit alan/cephe-önceliğine göre bölme) `options_for_core_placement` ile
+AYNI "hesapla, puanla, model seçsin" deseninde üretilip LLM'e SEÇİM
+yaptırılır; birim karışımı doğal dilden yapılandırılmış bir `UnitProgram`
+listesine çevrilebilir; karmaşık 2D yerleşim için bir kısıt çözücü (örn.
+OR-Tools CP-SAT) entegre edilip LLM yalnızca çözücünün ürettiği Pareto-
+seçenekleri yorumlayan bir katman olabilir.
+
+**Açık kararlar:** kök `CLAUDE.md`'nin "asansör kapı sembolü çizilmez"
+kuralının kaldırılması AYRI bir kullanıcı onayı gerektirir.
+
+**İlişkili modüller:** `scripts/templates/`, `scripts/architect/`,
+`scripts/openings/`, `DEV-054` (ön koşul).
+
+### DEV-056 — `architect/study.py` — etüt modülünün 2D yerleşim optimizasyonuna genişletilmesi
+
+- **Durum:** PLANNED
+
+**Neden bu madde:** kullanıcının kendi talebi: *"bina oturum alanını
+efektif kullanmak en önemli konularımızdan biridir ve bundan sorumlu olan
+temel birim etütleme işlemini yapan birimdir, o birim için özel tasarım
+yaklaşımları planlayabilirsin."*
+
+**Mevcut durum:** `resolve_unit_zoning` bugün yalnızca 1D (tek satırlık)
+zonlama yapıyor (`architect/CLAUDE.md`'nin kendi bilinen sınırlaması). Bu
+madde `DEV-040`'ı TEKRARLAMAZ, onun somut TETİKLEYİCİSİNİ ekler: `DEV-055`
+(merkezi çekirdek) ve `DEV-054` (hol topolojisi) burada birleşir.
+
+**Önerilen kapsam:** amaç fonksiyonu olarak "ölü alan minimizasyonu"
+(`DEV-045`'in `check_common_circulation_share`i ile ölçülür) + "standart
+uyumu maksimizasyonu" (`standards::check_room_proportions` + `architect/
+rules.py`nin tüm arity-2+ kuralları) birleşik bir skor önerisi.
+
+**Gelişmiş LLM fikirleri:** Çok-amaçlı optimizasyon için bir arama/ILP
+çözücü (örn. OR-Tools CP-SAT) entegre edilip LLM'in yalnızca çözücüye
+kısıt/ağırlık ÖNERİSİ (doğal dilden yapılandırılmış ağırlık vektörüne
+çeviri) sunması; LLM'in geçmiş revizyonların (`context.json::rev_history`,
+`requests.jsonl`) metnini okuyup kullanıcının tercih ettiği ödünleşim
+türlerine dair bir profil çıkarması — yapılandırılmış veri olarak yalnızca
+ÖNERİ aşamasında kullanılır, `context.json`'a otomatik YAZILMAZ.
+
+**İlişkili modüller:** `scripts/architect/` (`study.py`), `DEV-054`,
+`DEV-055` (ön koşullar), `DEV-040` (stratejik çerçeve).
 
 ## COMPLETED
 
