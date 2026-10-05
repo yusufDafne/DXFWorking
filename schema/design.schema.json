@@ -144,6 +144,18 @@
         "value_mm": { "type": "number", "description": "Zemin kotuna (±0.00) gore dusey mesafe, mm. Pozitif=yukari, negatif=asagi. Cizimde '+3.00'/'-0.20'/'±0.00' formatinda (isaret + 2 ondalikli metre) gosterilir." }
       }
     },
+    "shaft": {
+      "type": "object",
+      "description": "Saft/havalandirma/baca boslugu (rev-27, scripts/shafts). Oda DEGILDIR; komsu odalar poligonlarini saftin etrafindan oyar. Daima kare veya 4:3 dikdortgen; varsayilan NET kenar 500mm (poligon kenari 650 = net + 150 duvar).",
+      "required": ["id", "kind", "polygon"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string" },
+        "kind": { "type": "string", "enum": ["tesisat", "havalandirma", "baca"] },
+        "polygon": { "type": "array", "minItems": 4, "items": { "$ref": "#/definitions/point" } },
+        "unit_id": { "type": "string" }
+      }
+    },
     "stairs": {
       "type": "object",
       "description": "Merdiven basamak geometrisi (scripts/stairs, DEV-022). 'room_id', ayni kattaki bir Merdiven odasina (rooms[]) referans verir; basamaklar o odanin poligonu ICINDE cizilir. 'floor_to_floor_mm' GERCEK proje verisidir (uydurulamaz); riser/going degerleri VERILMEZSE ofis standardi varsayilanlarina (DEFAULT_RISER_MM=170, DEFAULT_GOING_MM=270) duser ve gerekirse 'auto_flex' ile kat yuksekligine tam oturacak sekilde esnetilir (bkz. scripts/stairs/CLAUDE.md).",
@@ -228,6 +240,7 @@
         "columns": { "type": "array", "items": { "$ref": "#/definitions/column" } },
         "markings": { "type": "array", "items": { "$ref": "#/definitions/marking" } },
         "stairs": { "type": "array", "items": { "$ref": "#/definitions/stairs" } },
+        "shafts": { "type": "array", "items": { "$ref": "#/definitions/shaft" } },
         "level_marks": { "type": "array", "items": { "$ref": "#/definitions/level_mark" } }
       }
     },

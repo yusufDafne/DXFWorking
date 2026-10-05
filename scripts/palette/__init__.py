@@ -102,6 +102,10 @@ PALETTE: dict[str, LayerColor] = {
         "MERDIVEN", (60, 120, 150), "primary",
         "mavi-gri - DEV-022; diger \"primary\" tonlarindan bilerek farkli "
         "bir aile (mavi) secildi."),
+    "SAFT": LayerColor(
+        "SAFT", (200, 120, 30), "primary",
+        "turuncu - rev-27; saft/baca bosluklari, diger \"primary\" tonlarindan "
+        "(gri/kirmizi/mavi/yesil/mor) bilerek farkli bir aile."),
     "KOT": LayerColor(
         "KOT", (50, 140, 70), "primary",
         "yesil - DEV-029; kot/datum isareti, diger \"primary\" "

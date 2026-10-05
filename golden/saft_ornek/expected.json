@@ -1,0 +1,37 @@
+{
+  "source": "golden/saft_ornek",
+  "entity_count": 159,
+  "entity_types": {
+    "ATTRIB": 6,
+    "CIRCLE": 20,
+    "DIMENSION": 5,
+    "HATCH": 4,
+    "INSERT": 2,
+    "LINE": 38,
+    "LWPOLYLINE": 28,
+    "TEXT": 56
+  },
+  "layers": {
+    "AKS": 55,
+    "CERCEVE": 25,
+    "DUVARLAR": 13,
+    "KESIT": 10,
+    "KOT": 12,
+    "METIN": 31,
+    "OLCU": 10,
+    "SAFT": 3
+  },
+  "modelspace_bbox": [
+    -500.0,
+    -4150.0,
+    64000.0,
+    12350.0
+  ],
+  "blocks": [
+    "MAHAL_ETIKET",
+    "_CLOSEDFILLED"
+  ],
+  "block_inserts": {
+    "MAHAL_ETIKET": 2
+  }
+}

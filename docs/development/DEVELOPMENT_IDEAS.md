@@ -21,7 +21,7 @@ değildir: her madde yalnızca kullanıcının mini-detay talimatıyla açılır
 Sekiz maddenin seansında çıkan mini düzeltmeler `DEV-057`de (en sonda,
 kümülatif) toplanır.
 
-## Şaft / havalandırma / baca boşlukları modülü (kullanıcı fikri, 2026-10-05)
+## Şaft / havalandırma / baca boşlukları modülü (kullanıcı fikri, 2026-10-05) — UYGULANDI: `DEV-058`/`HD-038` (otomatik yerleştirme hâlâ fikir)
 
 `DEV-052` sırasında: WC ve banyo arasındaki duvardan kare (karesel) bir şaft
 boşluğu planlanacak; sistemde şaft, havalandırma boşluğu ve belki baca boşluğu

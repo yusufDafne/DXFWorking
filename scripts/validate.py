@@ -82,13 +82,14 @@ from version import (  # noqa: E402
     check_compatibility,
     project_schema_version,
 )
+from shafts import check_shafts, check_shafts_across_floors  # noqa: E402
 from stairs import (  # noqa: E402
     StairFitError, exit_door_alignment_warning, resolve_stair, stair_access_warnings,
 )
 from standards import (  # noqa: E402
     check_door_corridor_nuances,
     check_room_proportions,
-    check_core_and_shafts,
+    check_core_rectangular,
     check_room_types,
     edge_wall_thicknesses,
     net_area,
@@ -464,8 +465,9 @@ def check_floor(units: str, floor: dict) -> list[str]:
     # DEV-036: room_type VERILMIS ama standards.STANDARDS'ta TANIMSIZ bir
     # deger YAZIM HATASIDIR (arity-1, walls.kind ile AYNI desen) - HATA.
     errors += [prefix + e for e in check_room_types(floor["rooms"])]
-    core_errors, _core_warnings = check_core_and_shafts(floor["rooms"])
-    errors += [prefix + e for e in core_errors]
+    errors += [prefix + e for e in check_core_rectangular(floor["rooms"])]
+    shaft_errors, _shaft_warnings = check_shafts(floor, units)
+    errors += [prefix + e for e in shaft_errors]
     return errors
 
 
@@ -564,7 +566,8 @@ def run_validation(context_path: Path = DEFAULT_CONTEXT_PATH) -> bool:
                                     context["grid"]["horizontal_axes"])
 
     stair_warnings: list[str] = []
-    standards_warnings: list[str] = []
+    standards_warnings: list[str] = list(check_shafts_across_floors(context["floors"]))
+    standards_warnings = [f"{w}" for w in standards_warnings]
     architect_warnings: list[str] = []
     for floor in context["floors"]:
         all_errors += check_floor(units, floor)
@@ -583,7 +586,7 @@ def run_validation(context_path: Path = DEFAULT_CONTEXT_PATH) -> bool:
                 units, floor["walls"])
         ]
         standards_warnings += [
-            f"[{floor['id']}] " + w for w in check_core_and_shafts(floor["rooms"])[1]
+            f"[{floor['id']}] " + w for w in check_shafts(floor, units)[1]
         ]
         # DEV-039: iliskisel (arity-2+) mimari mantik kurallari - standards
         # ile AYNI politika (HER ZAMAN UYARI, asla HATA). Tumu rooms[].

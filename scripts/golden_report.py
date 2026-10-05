@@ -281,9 +281,10 @@ def _code_owned_layers() -> set[str]:
     from levels import LEVEL_LAYER
     from sections import CUT_LAYER
     from stairs import STAIR_LAYER
+    from shafts import SHAFT_LAYER
 
     layers = {"AKS", "0", COLUMN_LAYER, COLUMN_HATCH_LAYER, COLUMN_TEXT_LAYER, CUT_LAYER,
-              STAIR_LAYER, LEVEL_LAYER, CEILING_LAYER}
+              STAIR_LAYER, SHAFT_LAYER, LEVEL_LAYER, CEILING_LAYER}
     layers |= {group.layer for group in FURNITURE_GROUPS.values()}
     return layers
 

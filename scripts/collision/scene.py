@@ -80,6 +80,11 @@ COLLISION_EXEMPT: dict[str, str] = {
               "poligonunun ICINE basamak/yon-oku anotasyonu cizer (AYNI oda, "
               "AYNI koordinat uzayi). dimensions/axis ile AYNI 'anotasyon, "
               "madde degil' gerekcesi.",
+    "shafts": "Saft/baca (rev-27) odalardan OYULAN bosluktur: komsu oda poligonlari "
+              "saftin etrafindan zaten disarida kalir, bu yuzden tefris/duvar "
+              "cakismasi rooms.collision'dan dogal olarak cikar; saft<->oda "
+              "kesisimi (HATA) ve asansor/merdiven kosesine girme `shafts."
+              "check_shafts` icinde arity-1 denetlenir.",
     "standards": "Sartname/oransal mahal kural kutuphanesi (DEV-036) HIC "
                  "GEOMETRI URETMEZ ve ezdxf kullanmaz - yalnizca "
                  "zaten rooms.collision'in kapsadigi AYNI oda poligonunu "

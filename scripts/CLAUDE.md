@@ -61,6 +61,12 @@ kalanını bilmeye ihtiyaç duymadan o modül üzerinde derinlemesine/izole
   (bkz. `HD-011`). rev-17'de AYNI talebin parçası olarak `pafta/`e eklenen
   grafik ölçek çubuğu (`ScaleBar`), kullanıcı geri bildirimiyle rev-18'de
   KALDIRILDI (bkz. `HD-012`) — bu modül etkilenmedi.
+- ✅ **`scripts/shafts/`** — `DEV-058` (2026-10-05): şaft/havalandırma/baca
+  boşlukları. `Shaft` (`floors[].shafts[]`, oda DEĞİL), türler `tesisat`/
+  `havalandirma`/`baca` (hepsi varsayılan net 500 mm kare, daima kare veya 4:3),
+  `check_shafts` (şaft↔oda kesişimi HATA, ıslak hacim sırt sırta/şafta değmeli,
+  WC+banyo çifti arası şaft), kat arası aynı konum kontrolü, `SAFT` katmanı
+  çizimi. Yerleşimi üretmez, doğrular — bkz. `scripts/shafts/CLAUDE.md`, `HD-038`.
 - ✅ **`scripts/stairs/`** — `DEV-022` (2026-09-25): merdiven odasının
   İÇİNE gerçek basamak/rıht geometrisi çizer. `resolve_stair` tek kaynaktır
   (`openings::swing_geometry` ile AYNI desen — validate.py VE çizim kodu

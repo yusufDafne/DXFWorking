@@ -104,6 +104,7 @@ from sections import (  # noqa: E402
     resolve_sections,
     section_vertical_extent,
 )
+from shafts import draw_shafts_on_floor, ensure_shaft_layer  # noqa: E402
 from stairs import draw_stairs_on_floor, ensure_stair_layer  # noqa: E402
 from ceiling import CeilingSheet, ensure_ceiling_layer, floor_has_ceiling_data  # noqa: E402
 from version import (  # noqa: E402
@@ -313,6 +314,9 @@ def translate_floor(floor: dict, dx: float) -> dict:
     new_floor["level_marks"] = [
         {**m, "position": shift_point(m["position"], dx)} for m in floor.get("level_marks", [])
     ]
+    new_floor["shafts"] = [
+        {**sh, "polygon": [shift_point(p, dx) for p in sh["polygon"]]} for sh in floor.get("shafts", [])
+    ]
     return new_floor
 
 
@@ -376,6 +380,9 @@ def draw_floor_sheet(msp, floor: dict, dx: float, units: str, floor_width: float
     # ile ayni kaynaktan gectigi icin burada uyari DISINDA bir sey beklenmez.
     for warning in draw_stairs_on_floor(msp, tfloor):
         print(f"UYARI (merdiven): [{floor['id']}] {warning}")
+
+    # Saft/baca bosluklari (rev-27): odalardan oyulmus bosluk, kapali kare + capraz
+    draw_shafts_on_floor(msp, tfloor)
 
     # Kot (spot elevation) isaretleri (DEV-029): GERCEK proje verisidir
     # (orn. rampa/teras kademe farki), verilmezse hicbir sey cizilmez.
@@ -476,6 +483,8 @@ def generate(context_path: Path = DEFAULT_CONTEXT_PATH, output_path: Path = DEFA
         ensure_column_layers(doc, column_hatch_style, column_label_style)
     if any(floor.get("stairs") for floor in floors):
         ensure_stair_layer(doc)
+    if any(floor.get("shafts") for floor in floors):
+        ensure_shaft_layer(doc)
     # RCP (DEV-023): veri TASIMAYAN bir katin tavan paftasi HIC ACILMAZ -
     # ceiling.floor_has_ceiling_data TEK kaynaktir (uydurulmus varsayilan
     # pafta YOK).

@@ -58,6 +58,7 @@ Tamamlanan işlerin ayrıntılı gerekçesi, karar süreci ve ölçülen etkisi
 | DEV-055 | `templates/`+`architect/`+`openings/` — sirkülasyon çekirdeğinin merkeze taşınması + asansör kapısı | COMPLETED (2026-10-05) |
 | DEV-056 | `architect/study.py` — etüt modülünün 2D yerleşim optimizasyonuna genişletilmesi | COMPLETED (2026-10-05) |
 | DEV-057 | Kümülatif mini düzeltmeler (DEV-049…056 sırasında çıkanlar; seansın KAPANIŞ maddesi) | COMPLETED (2026-10-05) |
+| DEV-058 | `shafts/` — şaft / havalandırma / baca boşlukları modülü | COMPLETED (2026-10-05) |
 
 ## READY
 
@@ -1675,6 +1676,15 @@ maddeden çıktı). (5) DXF üretimi/preview henüz YOK.
 kullanıcı "planı uygula" diyene kadar KOD YAZILMAZ.
 
 **İlişkili modüller:** DEV-049…056'nın dokunduğu modüller.
+
+### DEV-058 — `shafts/` — şaft / havalandırma / baca boşlukları modülü
+
+- **Durum:** COMPLETED (2026-10-05) — kullanıcı talebiyle başlatıldı (fikir kaydı
+  `DEVELOPMENT_IDEAS.md`, "Şaft / havalandırma / baca boşlukları modülü"). Ayrıntılı kayıt: `HD-038`.
+- **Kullanıcı kararları (2026-10-05):** kapsam = türler + yerleşim KURALI (otomatik yerleştirme yok);
+  üç tür, hepsi varsayılan net 500 mm; şaft oda DEĞİL, ayrı `floors[].shafts[]` verisi.
+- **Özet:** Yeni `scripts/shafts/`; şema 1.3.0 (additif); `SAFT` katmanı; `validate.py`/`generate_dxf.py`
+  entegrasyonu; projede K1–K5 şaftları `rooms[]`den `shafts[]`e taşındı. Kurallar `scripts/shafts/CLAUDE.md`.
 
 ## Görev tamamlama kuralı
 

@@ -376,36 +376,24 @@ def check_net_area_and_nuances() -> list[str]:
     return errors
 
 
-def check_core_and_shafts_rev26() -> list[str]:
-    """rev-26: asansor/merdiven DAIMA dikdortgen (L-seklinde asansor ERROR);
-    saft asansor/merdivenin icine giremez (ERROR); kare 500x500 saft TEMIZ;
-    4:3 (600x450) temiz, 2:1 (1000x500) saft oran UYARISI verir; saft poligonu
-    dikdortgen degilse UYARI."""
-    from standards import check_core_and_shafts, check_room_proportions
+def check_core_rectangular_rev26() -> list[str]:
+    """rev-26/27: asansor/merdiven DAIMA dikdortgen (L-seklinde asansor ERROR); kare ve
+    dikdortgen temiz; room_type'siz oda denetlenmez. (Saft kurallari `shafts/selftest.py`de.)"""
+    from standards import check_core_rectangular
     errors: list[str] = []
     def rect(i, t, x0, y0, x1, y1):
         return {"id": i, "room_type": t, "polygon": [[x0, y0], [x1, y0], [x1, y1], [x0, y1]]}
-    clean = [rect("e", "asansor", 0, 0, 2100, 3000), rect("s", "saft", 3000, 0, 3500, 500)]
-    if check_core_and_shafts(clean) != ([], []):
-        errors.append(f"temiz durum: {check_core_and_shafts(clean)}")
+    if check_core_rectangular([rect("e", "asansor", 0, 0, 2100, 3000), rect("m", "merdiven", 0, 0, 4000, 4000)]):
+        errors.append("dikdortgen/kare asansor+merdiven temiz olmali")
     l_lift = {"id": "e", "room_type": "asansor",
               "polygon": [[0, 0], [2100, 0], [2100, 1000], [1000, 1000], [1000, 3000], [0, 3000]]}
-    if len(check_core_and_shafts([l_lift])[0]) != 1:
+    if len(check_core_rectangular([l_lift])) != 1:
         errors.append("L-seklinde asansor tam 1 ERROR vermeli")
-    inside = [rect("m", "merdiven", 0, 0, 4000, 4000), rect("s", "saft", 3700, 3700, 4200, 4200)]
-    if len(check_core_and_shafts(inside)[0]) != 1:
-        errors.append("merdiven kosesine giren saft tam 1 ERROR vermeli")
-    touching = [rect("m", "merdiven", 0, 0, 4000, 4000), rect("s", "saft", 4000, 0, 4500, 500)]
-    if check_core_and_shafts(touching)[0]:
-        errors.append("merdivene SADECE BITISEN saft ERROR vermemeli (yanlis-pozitif)")
-    ratios = {"k": (500, 500, 0), "d": (600, 450, 0), "x": (1000, 500, 1)}
-    for key, (w, h, bad) in ratios.items():
-        warns = check_room_proportions([rect(key, "saft", 0, 0, w, h)], "mm")
-        if bool(warns) != bool(bad):
-            errors.append(f"saft {w}x{h}: oran uyarisi beklenen={bool(bad)} gelen={warns}")
-    if not check_core_and_shafts([{"id": "s", "room_type": "saft",
-                                   "polygon": [[0, 0], [500, 0], [500, 250], [250, 250], [250, 500], [0, 500]]}])[1]:
-        errors.append("L-seklinde saft UYARI vermeli")
+    l_stair = dict(l_lift, id="m", room_type="merdiven")
+    if len(check_core_rectangular([l_stair])) != 1:
+        errors.append("L-seklinde merdiven tam 1 ERROR vermeli")
+    if check_core_rectangular([dict(l_lift, room_type="salon")]):
+        errors.append("salon L-seklinde olabilir (yanlis-pozitif)")
     return errors
 
 
@@ -425,7 +413,7 @@ def main() -> int:
         ("net aciklik: duvar ic yuzleri arasi (K1-31/33 vakasi, 250mm)", check_net_clear_width_between_wall_faces()),
         ("net oran + net alan + gercek cikmaz uc (DEV-057 Grup A)", check_net_ratio_area_and_dead_end_dev057()),
         ("validate_standards: temiz katalog + kasitli bozma yakalanir", check_validate_standards_catches_broken_catalog()),
-        ("asansor/merdiven dikdortgen + saft kare/4:3 + saft cekirdege girmez (rev-26)", check_core_and_shafts_rev26()),
+        ("asansor/merdiven daima dikdortgen (rev-26)", check_core_rectangular_rev26()),
     )
     failed = False
     for name, errors in groups:

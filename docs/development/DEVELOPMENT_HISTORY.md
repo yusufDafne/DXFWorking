@@ -4,6 +4,14 @@ Aktif geçmiş kapasitesi: **50 kayıt**. En eski tamamlanmış kayıt, 51. kay�
 alınırken silinir. Ayrıntılı teknik değişiklikler git geçmişi ve ilgili proje
 provenance kayıtlarıyla ilişkilendirilir.
 
+## HD-038 — `shafts/`: şaft / havalandırma / baca modülü (DEV-058)
+
+- **Durum:** COMPLETED
+- **Tamamlanma:** 2026-10-05
+- **Kapsam:** `scripts/shafts/`, `scripts/standards/`, `scripts/validate.py`, `scripts/generate_dxf.py`, schema 1.3.0, `context.json` (rev-27).
+- **Sonuç:** şaft oda değil `floors[].shafts[]`; türler tesisat/havalandırma/baca (varsayılan net 500, poligon 650); kare/4:3, oda kesişimi HATA, ıslak hacim sırt sırta/şafta değmeli, WC+banyo arası şaft, kat arası aynı konum; `SAFT` katmanı; `standards`ten `STANDARDS['saft']` kaldırıldı (`check_core_rectangular` kaldı). Proje: uA/uB/uC şaftları `shafts[]`e taşındı, plan/duvar değişmedi.
+- **Sınır:** otomatik yerleştirme yok; baca/havalandırma için tür başına özel kural yok.
+
 ## HD-037 — Merdiven geri bildirim duzeltmesi, saft kurallari ve proje rev-26
 
 - **Durum:** COMPLETED

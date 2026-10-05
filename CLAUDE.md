@@ -160,6 +160,7 @@ geliştirme görevleri, tamamlanmış geçmiş, fikirler ve geliştirici notlar�
    python scripts/importer/selftest.py
    python scripts/sections/selftest.py
    python scripts/northarrow/selftest.py
+   python scripts/shafts/selftest.py   # rev-27 (stairs/standards/templates/architect de kendi selftest'leriyle)
    ```
 
    Ortak disiplin: beklenen değerler ELLE hesaplanabilir tutulur ve kurallar
@@ -376,8 +377,8 @@ geliştirme görevleri, tamamlanmış geçmiş, fikirler ve geliştirici notlar�
   HER ZAMAN bosluk ucundadir, yon oku ust kata cikis yolunu gosterir, kesit icin
   `stair_section_profile` vardir (rev-26). **Saft (rev-26, kullanici karari):** daima
   kare veya 4:3, varsayilan NET kenar 500 mm, kat planinda minimum; WC/banyo cifti
-  arasina saft (komsu odadan oyularak); asansor/merdiven daima dikdortgen ve saft
-  onlara girmez (`standards::check_core_and_shafts`). Ayrinti:
+  arasina saft; saft ODA DEGILDIR, `floors[].shafts[]` verisidir (rev-27, `scripts/shafts/`);
+  asansor/merdiven daima dikdortgen (`standards::check_core_rectangular`) ve saft onlara girmez. Ayrinti:
   `scripts/stairs/CLAUDE.md` "Kisa kenar girisi (rev-25)".
 
 ## Çizim standartları (ofis standardı, rev-3'ten itibaren)

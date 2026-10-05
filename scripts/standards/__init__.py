@@ -140,12 +140,6 @@ STANDARDS: dict[str, RoomStandard] = {
                "konut sayilmaz, ayri islenir). Yalnizca en-boy orani siniri; "
                "kisa kenar/alan esigi UYDURULMADI - yonetmelik gelince "
                "eklenecek."),
-    "saft": RoomStandard(
-        "saft", "Tesisat saftı", min_ratio=1.0, max_ratio=4.0 / 3.0,
-        source="rev-26 kullanici karari: saft bosluklari DAIMA kare veya 4:3 "
-               "dikdortgendir; varsayilan kare saft NET kenari 500mm "
-               "(SHAFT_DEFAULT_SIDE_MM; poligon kenari 650 = net + 150), ek talebe gore degistirilebilir. "
-               "Alan/kisa kenar siniri UYDURULMADI."),
     "koridor": RoomStandard(
         "koridor", "Koridor / hol", min_ratio=1.0, max_ratio=8.0,
         min_short_edge_mm=1500.0,
@@ -231,20 +225,6 @@ def check_room_types(rooms: list[dict]) -> list[str]:
     return errors
 
 
-# rev-26 (kullanici karari): tesisat saftlari DAIMA kare veya 4:3 dikdortgen;
-# varsayilan kare saft kenari 500mm (ortalama), ek talebe gore degisir; kat
-# planinda saft bosluklari MINIMUM tutulur (varsayilan boyuttan buyuk saft
-# icin UYARI verilmez - boyut kullanici talebiyle verilir, uydurulmaz).
-SHAFT_DEFAULT_SIDE_MM = 500.0
-SHAFT_MAX_RATIO = 4.0 / 3.0
-
-
-def shaft_centerline_side(net_mm: float = SHAFT_DEFAULT_SIDE_MM, wall_mm: float = 150.0) -> float:
-    """Saft NET (ic yuzler arasi) kenari -> oda poligonu (duvar MERKEZ cizgisi)
-    kenari: net + duvar kalinligi (iki yan yarim kalinlik). Varsayilan: 500 + 150 = 650."""
-    return net_mm + wall_mm
-
-
 def _rect_or_none(polygon):
     """Eksen-hizali dikdortgen ise (xmin,ymin,xmax,ymax), degilse None."""
     if len(polygon) != 4:
@@ -256,35 +236,17 @@ def _rect_or_none(polygon):
     return xs[0], ys[0], xs[1], ys[1]
 
 
-def check_core_and_shafts(rooms: list[dict]) -> tuple[list[str], list[str]]:
-    """(errors, warnings). ERROR: asansor ve merdiven odalari DAIMA eksen-hizali
-    dikdortgendir (kullanici karari rev-26); saft odasi asansor/merdiven odasinin
-    icine veya koseye GIREMEZ (kutular kesisemez). WARN: saft kare veya 4:3 olmali
-    (`STANDARDS['saft']` oran siniri `check_room_proportions`ta zaten uyarir; burada
-    saftin dikdortgen olmasi denetlenir)."""
+def check_core_rectangular(rooms: list[dict]) -> list[str]:
+    """ERROR (rev-26 kullanici karari): asansor ve merdiven odalari DAIMA
+    eksen-hizali kare/dikdortgendir. (Saft kurallari rev-27'de `scripts/shafts/`a tasindi;
+    saft artik oda degildir.)"""
     errors: list[str] = []
-    warnings: list[str] = []
-    cores = []
     for room in rooms:
-        if room.get("room_type") in ("asansor", "merdiven"):
-            rect = _rect_or_none(room["polygon"])
-            if rect is None:
-                errors.append(
-                    f"Oda '{room['id']}' ({room['room_type']}) eksen-hizali DIKDORTGEN olmali "
-                    f"(asansor ve merdiven daima kare/dikdortgendir).")
-            else:
-                cores.append((room["id"], rect))
-    for room in rooms:
-        if room.get("room_type") != "saft":
-            continue
-        rect = _rect_or_none(room["polygon"])
-        if rect is None:
-            warnings.append(f"Saft '{room['id']}' kare veya 4:3 DIKDORTGEN olmali (poligon dikdortgen degil).")
-            continue
-        for core_id, (cx0, cy0, cx1, cy1) in cores:
-            if rect[0] < cx1 - 1e-6 and rect[2] > cx0 + 1e-6 and rect[1] < cy1 - 1e-6 and rect[3] > cy0 + 1e-6:
-                errors.append(f"Saft '{room['id']}', '{core_id}' (asansor/merdiven) odasinin icine/kosesine giriyor.")
-    return errors, warnings
+        if room.get("room_type") in ("asansor", "merdiven") and _rect_or_none(room["polygon"]) is None:
+            errors.append(
+                f"Oda '{room['id']}' ({room['room_type']}) eksen-hizali DIKDORTGEN olmali "
+                f"(asansor ve merdiven daima kare/dikdortgendir).")
+    return errors
 
 
 def check_room_proportions(
@@ -362,10 +324,10 @@ def check_room_proportions(
 # DEGILDIR - yalnizca RoomStandard'in ALAN SEKLI veya check_* fonksiyonlarinin
 # imzasi/donus formati degisirse artar (bkz. modul dokstring "Gelecek
 # guncelleme sozlesmesi"). Bkz. scripts/version.py
-CONTRACT_VERSION = "1.3"  # rev-26: STANDARDS['saft'], check_core_and_shafts
+CONTRACT_VERSION = "1.4"  # rev-27: check_core_rectangular (saft shafts/ modulune tasindi)
 
 __all__ = [
     "RoomStandard", "STANDARDS", "room_aspect_ratio", "validate_standards",
     "check_room_types", "check_room_proportions", "narrowest_point",
-    "edge_wall_thicknesses", "net_area", "check_core_and_shafts", "SHAFT_DEFAULT_SIDE_MM", "SHAFT_MAX_RATIO", "shaft_centerline_side", "check_door_corridor_nuances", "NarrowPoint", "CONTRACT_VERSION",
+    "edge_wall_thicknesses", "net_area", "check_core_rectangular", "check_door_corridor_nuances", "NarrowPoint", "CONTRACT_VERSION",
 ]

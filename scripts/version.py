@@ -58,7 +58,9 @@ SCRIPTS_ROOT = Path(__file__).resolve().parent
 #           acikligi): `openings[].type` enum'una `passage` eklendi; rev-26:
 #           `stairs[].kind`'e `three_flight`, `well`/`flight_width_mm` alanlari (additif)
 #           ve `kind` varsayilani `dog_leg` oldu (davranis: projeler kind'i acik yazar).
-SCHEMA_VERSION = "1.2.0"
+#   1.3.0 - rev-27: `floors[].shafts[]` (saft/havalandirma/baca bosluklari;
+#           additif, bkz. scripts/shafts/).
+SCHEMA_VERSION = "1.3.0"
 
 # Alani tasimayan eski projeler icin varsayilan. Bugun tum projeler bu
 # surumden gelmektedir.
@@ -84,6 +86,7 @@ CONTRACT_MODULES: tuple[str, ...] = (
     "palette",
     "rooms",
     "sections",
+    "shafts",
     "stairs",
     "standards",
     "templates",
