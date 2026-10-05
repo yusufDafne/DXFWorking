@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-10-02T20:39:01+00:00",
+  "generated_at": "2026-10-05T12:30:54+00:00",
   "project_name": "Cok Katli Konut + Ticaret Binasi",
-  "project_revision": 22,
+  "project_revision": 24,
   "schema_version": {
-    "project": "1.0.0",
+    "project": "1.1.0",
     "project_declared": true,
-    "system": "1.0.0"
+    "system": "1.1.0"
   },
   "module_contracts": {
     "architect": "1.0",
@@ -20,17 +20,17 @@
     "legend": "1.0",
     "levels": "1.0",
     "northarrow": "1.0",
-    "openings": "1.1",
+    "openings": "1.2",
     "pafta": "1.0",
     "palette": "1.0",
     "rooms": "1.0",
     "sections": "1.0",
     "stairs": "1.1",
-    "standards": "1.0",
-    "templates": "1.0",
+    "standards": "1.2",
+    "templates": "1.1",
     "typography": "1.0",
     "walls": "1.0"
   },
-  "git_commit": "e44fe36",
+  "git_commit": "1b7db02",
   "output": "plan.dxf"
 }

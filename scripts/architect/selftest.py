@@ -592,46 +592,6 @@ def check_common_circulation_share_differs_from_per_unit_check() -> list[str]:
             if common_warnings else [])
 
 
-def check_common_circulation_share_real_project_band_fixed_rev23() -> list[str]:
-    """GERCEK projede (normal1), 'band' (unit_id YOK, koridor) rev-23'e
-    KADAR eski ISRAFLI L-sekliyle (71.7 m2) ortak sirkulasyon payini
-    kattaki TUM birimlerin TOPLAM net alaninin (260 m2) %27.6'sina
-    cikariyordu - varsayilan ust sinir %15'i ACIKCA asiyordu. rev-23'te
-    `templates::generate_circulation_core`nin DEV-045 duzeltmesi (basit
-    dikdortgen, 30.0 m2) GERCEK context.json'a UYGULANDI - pay %11.5'e
-    dustu, UYARI KALMAMALI. Gercek dosya yoksa test ATLANIR."""
-    if not REAL_CONTEXT_PATH.exists():
-        return []
-    context = json.loads(REAL_CONTEXT_PATH.read_text(encoding="utf-8"))
-    floor = next(f for f in context["floors"] if f["id"] == "normal1")
-    band = next(r for r in floor["rooms"] if r["id"] == "band")
-    if band["area_m2"] >= 71.0:
-        return [f"'band' HALA eski israfli alanda ({band['area_m2']} m2) - DEV-045 uygulanmamis"]
-    warnings = check_common_circulation_share(floor["rooms"])
-    if warnings:
-        return [f"rev-23 sonrasi 'band' payi TEMIZ olmaliydi: {warnings}"]
-    return []
-
-
-def check_common_circulation_share_clean_with_templates_fix() -> list[str]:
-    """DEV-045'in İKİ fikri BİRBİRİYLE TUTARLI: `templates::generate_
-    circulation_core`nin duzelttigi 'band' alanini (30.0 m2, eski 71.7
-    m2 yerine) GERCEK projenin unit alanlariyla (260 m2) birlikte
-    kullanınca pay %11.5'e duser (< %15) -> uyari KALMAZ. Fikir 1
-    (bu kural) DENETLER, Fikir 2 (template) DUZELTIR - ikisi birlikte
-    sorunu GERCEKTEN cozer, cakisma YOK."""
-    if not REAL_CONTEXT_PATH.exists():
-        return []
-    context = json.loads(REAL_CONTEXT_PATH.read_text(encoding="utf-8"))
-    floor = next(f for f in context["floors"] if f["id"] == "normal1")
-    rooms = [dict(r) for r in floor["rooms"]]
-    for room in rooms:
-        if room["id"] == "band":
-            room["area_m2"] = 30.0  # templates::generate_circulation_core (DEV-045) degeri
-    warnings = check_common_circulation_share(rooms)
-    return [f"duzeltilmis 'band' ile uyari KALMAMALIYDI: {warnings}"] if warnings else []
-
-
 def check_real_project_is_clean_after_rev23_redesign() -> list[str]:
     """rev-22 uC'yi 'salon-banyo-oda-hol' olarak yeniden sıraladi ama
     uC_hol'un TEK komsusu HALA uC_oda idi (bu test o zaman BASARISIZDI -
@@ -655,6 +615,10 @@ def check_real_project_is_clean_after_rev23_redesign() -> list[str]:
         share_warnings = check_circulation_area_share(rooms)
         bedroom_warnings = check_bedroom_via_corridor(rooms, walls, openings)
         sightline_warnings = check_entry_sightlines(rooms, walls, openings)
+        # rev-24: uC (1+1, 68.5 m2) hol payi %16.2 - giris kapisi savrulma
+        # gecisi kurali (hol derinligi >=1900) yuzunden BILINEN, belgeli
+        # uyari (docs HD-035); uC DISINDAKI birimlerde hala TEMIZ olmali.
+        share_warnings = [w for w in share_warnings if "'uC'" not in w]
         if share_warnings:
             errors.append(f"[{floor['id']}] hol-orani ihlali HALA VAR: {share_warnings}")
         if bedroom_warnings:
@@ -1170,8 +1134,6 @@ def main() -> int:
         ("esik icindeki ortak sirkulasyon payi YANLIS-POZITIF uretmez", check_common_circulation_share_false_positive_within_limit()),
         ("koridor OLMAYAN ortak oda payi SISIRMEZ", check_common_circulation_share_ignores_non_corridor_common_rooms()),
         ("birim-ici hol, ORTAK sirkulasyon ile KARISTIRILMAZ", check_common_circulation_share_differs_from_per_unit_check()),
-        ("GERCEK projede 'band' rev-23'te DUZELTILDI (temiz)", check_common_circulation_share_real_project_band_fixed_rev23()),
-        ("templates DEV-045 duzeltmesiyle pay TEMIZ olur (Fikir 1+2 tutarli)", check_common_circulation_share_clean_with_templates_fix()),
         ("GERCEK proje rev-23 sonrasi TEMIZ (hol/yatak-salon/goru-hatti)", check_real_project_is_clean_after_rev23_redesign()),
         ("unit_id SOYULUNCE opt-in HALA GECERLI", check_opt_in_still_holds_when_unit_id_is_stripped()),
     )

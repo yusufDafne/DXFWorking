@@ -83,7 +83,13 @@ from version import (  # noqa: E402
     project_schema_version,
 )
 from stairs import StairFitError, exit_door_alignment_warning, resolve_stair  # noqa: E402
-from standards import check_door_corridor_nuances, check_room_proportions, check_room_types  # noqa: E402
+from standards import (  # noqa: E402
+    check_door_corridor_nuances,
+    check_room_proportions,
+    check_room_types,
+    edge_wall_thicknesses,
+    net_area,
+)
 from architect import (  # noqa: E402
     check_bedroom_via_corridor,
     check_circulation_area_share,
@@ -178,7 +184,10 @@ def wall_gap_ranges(wall_dict: dict, openings: list[dict]) -> list[tuple[float, 
     return [(g_start, g_end) for g_start, g_end, _opening in gaps_for_wall(wall_obj, openings)]
 
 
-def check_rooms(units: str, rooms: list[dict]) -> list[str]:
+def check_rooms(units: str, rooms: list[dict], walls: list[dict] | None = None) -> list[str]:
+    """`area_m2`, oda poligonunun BRUT (merkez cizgisi) alanina VEYA - `walls`
+    verilmisse - duvar IC YUZLERI arasi NET alanina esit olmalidir (+-%3).
+    Kullanici karari (2026-10-05, rev-24): mahal alani NET yazilir."""
     errors: list[str] = []
 
     for room in rooms:
@@ -191,10 +200,17 @@ def check_rooms(units: str, rooms: list[dict]) -> list[str]:
             errors.append(f"Oda '{room['id']}' icin area_m2 pozitif olmali.")
             continue
         diff_ratio = abs(computed_m2 - declared_m2) / declared_m2
-        if diff_ratio > AREA_TOLERANCE_RATIO:
+        net_m2 = None
+        if walls:
+            thickness = edge_wall_thicknesses(room["polygon"], walls)
+            if any(thickness):
+                net_m2 = to_m2(net_area(room["polygon"], thickness), units)
+        net_ok = net_m2 is not None and abs(net_m2 - declared_m2) / declared_m2 <= AREA_TOLERANCE_RATIO
+        if diff_ratio > AREA_TOLERANCE_RATIO and not net_ok:
+            net_note = f" (duvar ic yuzleri arasi net {net_m2:.2f} m^2)" if net_m2 is not None else ""
             errors.append(
                 f"Oda '{room['id']}': beyan edilen alan {declared_m2:.2f} m^2, "
-                f"poligondan hesaplanan alan {computed_m2:.2f} m^2 ile tutarsiz "
+                f"poligondan hesaplanan alan {computed_m2:.2f} m^2{net_note} ile tutarsiz "
                 f"(fark %{diff_ratio*100:.1f}, tolerans %{AREA_TOLERANCE_RATIO*100:.0f})."
             )
 
@@ -411,7 +427,7 @@ def check_floor_codes(floors: list[dict]) -> list[str]:
 def check_floor(units: str, floor: dict) -> list[str]:
     errors: list[str] = []
     prefix = f"[{floor['id']}] "
-    errors += [prefix + e for e in check_rooms(units, floor["rooms"])]
+    errors += [prefix + e for e in check_rooms(units, floor["rooms"], floor["walls"])]
     errors += [prefix + e for e in check_walls(units, floor["walls"], floor["openings"])]
     errors += [prefix + e for e in check_openings(floor["openings"], floor["walls"])]
     # DEV-036: room_type VERILMIS ama standards.STANDARDS'ta TANIMSIZ bir

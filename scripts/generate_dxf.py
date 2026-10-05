@@ -73,6 +73,7 @@ from dimensions import DimensionSettings, FloorDimensionPlanner  # noqa: E402
 from walls import WallNetwork, draw_wall_network  # noqa: E402
 from walls.geometry import vec_add, vec_len, vec_norm, vec_scale, vec_sub  # noqa: E402
 from rooms import RoomLabeler  # noqa: E402
+from standards import edge_wall_thicknesses, net_area  # noqa: E402
 from typography import ROLE_ROOM_LABEL, TextStyles  # noqa: E402
 from furniture import (  # noqa: E402
     FurnitureBlocks,
@@ -351,10 +352,16 @@ def draw_floor_sheet(msp, floor: dict, dx: float, units: str, floor_width: float
     floor_code = floor.get("code", "")
     room_label_style = text_styles.style_of(ROLE_ROOM_LABEL)
     room_label_font = text_styles.font_of(ROLE_ROOM_LABEL)
+    area_divisor = 1_000_000.0 if units == "mm" else 1.0
     for room in tfloor["rooms"]:
+        # rev-24: mahal alani NET (duvar ic yuzleri arasi) yazilabilir; net
+        # alan burada hesaplanir ve `rooms` modulune verilir (modul bagimsiz).
+        thickness = edge_wall_thicknesses(room["polygon"], tfloor["walls"])
+        room_net_m2 = (net_area(room["polygon"], thickness) / area_divisor
+                       if any(thickness) else None)
         RoomLabeler.draw(msp, room, room_label_height, units,
                          floor_code=floor_code, style_name=room_label_style,
-                         font=room_label_font)
+                         font=room_label_font, net_area_m2=room_net_m2)
 
     draw_labels(msp, tfloor["labels"], text_height)
 

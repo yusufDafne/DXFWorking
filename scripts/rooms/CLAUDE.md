@@ -167,6 +167,13 @@ YENİDEN YAZMAZ.
 `architect/`, `pafta/`dır; tavan planı etiketleri bu görevin kapsamı
 DIŞINDA bırakıldı (bkz. `scripts/ceiling/CLAUDE.md`).
 
+## NET alan etiketi (rev-24)
+
+Kullanıcı kararı: mahal alanı duvar iç yüzleri arası NETtir. `Room.from_context`
+`net_area_m2` alır (brüt VEYA net beyan kabul, 1 ondalıkta); `RoomLabeler.draw`
+aynı parametreyi geçirir. Net hesabı `standards.net_area`dadır (rooms standards'ı
+import etmez; `generate_dxf` hesaplayıp verir). Test: `selftest.py`.
+
 ## Çakışma ayak izi (rev-12)
 
 `rooms/collision.py::footprints(floor, context)`, her odayı `container=True`

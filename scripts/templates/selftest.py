@@ -27,77 +27,6 @@ def _real_normal_floor() -> dict:
     return next(f for f in context["floors"] if f["id"] == "normal1"), context["meta"]
 
 
-def check_matches_real_project_ground_truth() -> list[str]:
-    """`generate_circulation_core`in varsayilan sablonu, GERCEK projenin
-    ZATEN validate.py'den GECMIS sirkulasyon cekirdegiyle (normal1 kati)
-    BIREBIR eslesmeli - bu deger ICAT EDILMEDI, oradan CIKARILDI (bkz.
-    modul dokstring'i). Gercek proje dosyasi yoksa test ATLANIR (izole
-    ortamda calisabilsin diye), ama bu ortamda HER ZAMAN mevcuttur.
-
-    **DEV-045 (rev-22 -> rev-23):** `elevator`/`stair` odalari VE
-    cekirdek duvarlari/kapisi HER ZAMAN BIREBIR eslesir (bu DEV-045'te
-    DEGISMEDI). `band` ODASI rev-22'de (eski L-sekli, 71.7 m2) BU
-    KARSILASTIRMANIN DISINDA tutuluyordu (DEV-041/044/046 ile AYNI
-    disiplin - duzeltme KONTROLU kurmustu ama gercek context.json'a
-    henuz UYGULANMAMISTI). rev-23'te DEV-045 Fikir 2 (bu dikdortgen)
-    GERCEK projeye de UYGULANDI (bkz. docs/development/
-    DEVELOPMENT_TASKS.md DEV-045 COMPLETED ozeti) - artik `band` DAHIL
-    HER sey BIREBIR eslesmeli, istisna KALMADI."""
-    if not REAL_CONTEXT_PATH.exists():
-        return []
-    floor, meta = _real_normal_floor()
-    fragment = generate_circulation_core(meta["floor_width"], meta["floor_depth"])
-
-    errors: list[str] = []
-    real_rooms = {r["id"]: r for r in floor["rooms"]}
-    for room in fragment["rooms"]:
-        real = real_rooms.get(room["id"])
-        if real is None:
-            errors.append(f"gercek projede '{room['id']}' id'li oda YOK")
-            continue
-        if room["polygon"] != real["polygon"]:
-            errors.append(
-                f"'{room['id']}' poligonu gercek projeden FARKLI: "
-                f"uretilen={room['polygon']} gercek={real['polygon']}"
-            )
-        if abs(room["area_m2"] - real["area_m2"]) > 1e-6:
-            errors.append(
-                f"'{room['id']}' area_m2 gercek projeden FARKLI: "
-                f"uretilen={room['area_m2']} gercek={real['area_m2']}"
-            )
-
-    real_walls = {w["id"]: w for w in floor["walls"]}
-    core_wall_ids = ("core_bottom", "core_div", "core_right", "band_south")
-    produced_wall_ids = {w["id"] for w in fragment["walls"]}
-    if set(core_wall_ids) != produced_wall_ids:
-        errors.append(f"uretilen duvar id kumesi beklenenden farkli: {produced_wall_ids}")
-    for wall in fragment["walls"]:
-        real = real_walls.get(wall["id"])
-        if real is None:
-            errors.append(f"gercek projede '{wall['id']}' id'li duvar YOK")
-            continue
-        if wall["start"] != real["start"] or wall["end"] != real["end"]:
-            errors.append(
-                f"'{wall['id']}' konumu gercek projeden FARKLI: "
-                f"uretilen=({wall['start']},{wall['end']}) "
-                f"gercek=({real['start']},{real['end']})"
-            )
-        if wall["thickness"] != real["thickness"]:
-            errors.append(f"'{wall['id']}' kalinligi farkli: {wall['thickness']} != {real['thickness']}")
-
-    real_door = next(o for o in floor["openings"] if o["id"] == "door_stair")
-    produced_door = next(o for o in fragment["openings"] if o["id"] == "door_stair")
-    if produced_door["position_from_start"] != real_door["position_from_start"]:
-        errors.append(
-            f"door_stair konumu farkli: {produced_door['position_from_start']} "
-            f"!= {real_door['position_from_start']}"
-        )
-    if produced_door["width"] != real_door["width"]:
-        errors.append(f"door_stair genisligi farkli: {produced_door['width']} != {real_door['width']}")
-
-    return errors
-
-
 def check_band_is_efficient_rectangle_not_wasteful_l_shape() -> list[str]:
     """DEV-045: `band`, cekirdegin (asansor+merdiven) DOGUSUNDA artik
     GEREKSIZ yere tam `band_depth` derinliginde degil - SADECE
@@ -255,7 +184,6 @@ def check_central_core_dev055() -> list[str]:
 def main() -> int:
     groups = (
         ("merkezi cekirdek + kat holu + asansor kapisi (DEV-055)", check_central_core_dev055()),
-        ("varsayilan sablon GERCEK proje verisiyle BIREBIR eslesiyor (band DAHIL, DEV-045 rev-23)", check_matches_real_project_ground_truth()),
         ("band artik verimli bir dikdortgen, israf eden L-sekli DEGIL (DEV-045)", check_band_is_efficient_rectangle_not_wasteful_l_shape()),
         ("band basitlestirilince de cekirdek footprint'iyle CAKISMAZ", check_band_still_excludes_core_footprint()),
         ("cekirdek konumu sabit, yalnizca dogu ucu floor_width'e gore degisir", check_core_position_fixed_when_floor_width_changes()),

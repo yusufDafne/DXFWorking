@@ -4,6 +4,28 @@ Aktif geçmiş kapasitesi: **50 kayıt**. En eski tamamlanmış kayıt, 51. kay�
 alınırken silinir. Ayrıntılı teknik değişiklikler git geçmişi ve ilgili proje
 provenance kayıtlarıyla ilişkilendirilir.
 
+## HD-035 — Proje güncellemesi rev-24: tüm bina merkezi çekirdekle yeniden planlandı
+
+- **Durum:** COMPLETED (kullanıcı commit onayı bekliyor)
+- **Tamamlanma:** 2026-10-05
+- **Kapsam:** `context.json`, `requests.jsonl`, `output/`, `scripts/validate.py`,
+  `scripts/rooms/`, `scripts/generate_dxf.py`, architect/templates selftest'leri.
+- **Sonuç:** DEV-049…057 sistem yetenekleri GERÇEK projeye uygulandı: şema 1.1.0,
+  yeni aks ızgarası (1–4 × A–E), 9 katın tamamı merkezi çekirdek + kat holü +
+  asansör kapısı (`elevator_door`) ile yeniden çizildi; K1–K5 üç birim (uA/uB/uC),
+  ZK lobi + 4 dükkân (`room_type='dukkan'`), B1/B2 otopark, TR teras; duvarlar
+  dış 200 / iç 150 mm.
+- **Net alan (kullanıcı kararı):** mahal alanı duvar iç yüzleri arası NET yazılır.
+  `validate.check_rooms(units, rooms, walls)` brüt VEYA net beyanı (±%3) kabul
+  eder; `Room.from_context(net_area_m2=)` ve `RoomLabeler.draw(net_area_m2=)`
+  etikette net alanı basar; `generate_dxf` net alanı `standards.net_area` ile hesaplar.
+- **Selftest düzeltmesi:** eski yerleşime BAĞLI gerçek-proje kontrolleri
+  (`band`, templates birebir eşleşme) kaldırıldı — sistem testleri proje verisine
+  bağlı olmamalı; rooms'a net alan testi eklendi.
+- **Bilinen sınırlar:** uC (1+1, 68.5 m²) hol payı %16.2 (>%15) uyarısı K1–K5'te
+  kalır (kapı savrulma geçişi ≥1900 hol derinliği); etüt yalnızca zonlama verir,
+  iç bölüntü elle tasarlandı; araç rampası modellenmedi; şaft/baca modülü ayrı fikir.
+
 ## HD-034 — Kümülatif mini düzeltmeler: ölçüm tutarlılığı, etüt seçimi, golden + şema 1.1.0 (DEV-057)
 
 - **Durum:** COMPLETED

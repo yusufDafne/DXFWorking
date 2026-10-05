@@ -213,6 +213,31 @@ def check_draw_places_label_inside_concave_room() -> list[str]:
     return errors
 
 
+def check_net_area_accepted_and_wrong_rejected() -> list[str]:
+    """rev-24: 6000x5000 oda, 4 kenarda 200mm duvar -> NET 5800x4800 = 27.84 m2
+    (elle). Brut 30.0 ve net 27.8 beyani kabul; 25.0 beyani REDDEDILIR."""
+    import validate
+    from rooms import Room
+    errors: list[str] = []
+    poly = _room()["polygon"]
+    walls = [{"id": f"w{i}", "start": poly[i], "end": poly[(i + 1) % 4],
+              "thickness": 200.0, "layer": "D"} for i in range(4)]
+    for declared, ok in ((30.0, True), (27.8, True), (25.0, False)):
+        got = not validate.check_rooms("mm", [_room(area_m2=declared)], walls)
+        if got != ok:
+            errors.append(f"check_rooms beyan {declared} icin kabul={got}, beklenen {ok}")
+    try:
+        Room.from_context(_room(area_m2=27.8), "mm", net_area_m2=27.84)
+    except Exception as exc:  # noqa: BLE001
+        errors.append(f"net alanli Room.from_context reddetti: {exc}")
+    try:
+        Room.from_context(_room(area_m2=25.0), "mm", net_area_m2=27.84)
+        errors.append("yanlis alan (25.0) Room.from_context'te KABUL edildi")
+    except ValueError:
+        pass
+    return errors
+
+
 def main() -> int:
     groups = (
         ("blok konumu eski duz-TEXT formuluyle ortusuyor", check_block_matches_raw_formula()),
@@ -223,6 +248,7 @@ def main() -> int:
         ("L-sekilli holde pole ICERDE, centroid DISARIDA (DEV-044)", check_pole_stays_inside_concave_l_shape()),
         ("dikdortgende local_extent == AABB (regresyon)", check_local_extent_matches_aabb_for_rectangle()),
         ("L-sekilli holde etiket GERCEKTEN oda icinde cizilir", check_draw_places_label_inside_concave_room()),
+        ("NET alan beyani kabul, yanlis alan RED (rev-24)", check_net_area_accepted_and_wrong_rejected()),
     )
     failed = False
     for name, errors in groups:

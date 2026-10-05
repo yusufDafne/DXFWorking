@@ -211,7 +211,12 @@ class Room:
     layer: str = "METIN"
 
     @classmethod
-    def from_context(cls, data: dict, units: str = "mm") -> "Room":
+    def from_context(cls, data: dict, units: str = "mm",
+                     net_area_m2: float | None = None) -> "Room":
+        """`area_m2` poligonun BRUT (merkez cizgisi) alanina veya - verilmisse -
+        `net_area_m2`ye (duvar IC YUZLERI arasi; kullanici karari 2026-10-05,
+        rev-24) esit olmalidir. Net alani hesaplamak cagiranin isidir (bu modul
+        `walls`/`standards` bilmez)."""
         room = cls(
             id=data["id"],
             name=data["name"],
@@ -225,7 +230,9 @@ class Room:
             raise ValueError(f"Self-intersecting room polygon: {room.id}")
         unit_factor = 1_000_000.0 if units == "mm" else 1.0
         calculated_area_m2 = PolygonOps.area(room.polygon) / unit_factor
-        if round(calculated_area_m2, 1) != round(room.area_m2, 1):
+        gross_ok = round(calculated_area_m2, 1) == round(room.area_m2, 1)
+        net_ok = net_area_m2 is not None and round(net_area_m2, 1) == round(room.area_m2, 1)
+        if not (gross_ok or net_ok):
             raise ValueError(f"Room area mismatch: {room.id}")
         return room
 
@@ -350,9 +357,9 @@ class RoomLabeler:
     @staticmethod
     def draw(msp, room: "Room | dict", max_text_height: float, units: str = "mm",
              floor_code: str = "", style_name: str | None = None,
-             font: str | None = None) -> None:
+             font: str | None = None, net_area_m2: float | None = None) -> None:
         data = room if isinstance(room, dict) else room.__dict__
-        Room.from_context(data, units)
+        Room.from_context(data, units, net_area_m2)
         polygon = data["polygon"]
         # DEV-044: centroid degil "pole of inaccessibility" - icbukey (L/T
         # seklinde) bir odada geometrik centroid odanin DISINA dusebilir
