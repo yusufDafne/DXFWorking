@@ -1,0 +1,196 @@
+{
+  "meta": {
+    "project_name": "Golden: uc kollu U merdiven (iki sahanlik)",
+    "schema_version": "1.0.0",
+    "units": "mm",
+    "scale": "1:50",
+    "project_type": "MIMARI_UYGULAMA",
+    "fonts": {
+      "default": "arialn.ttf",
+      "room_label": "arialn.ttf"
+    },
+    "cover": {
+      "signature_fields": [
+        "YONETIM",
+        "MIMAR"
+      ]
+    },
+    "floor_width": 4200.0,
+    "floor_depth": 8200.0
+  },
+  "layers": [
+    {
+      "name": "DUVARLAR",
+      "color": 7
+    },
+    {
+      "name": "KAPI-PENCERE",
+      "color": 5
+    },
+    {
+      "name": "METIN",
+      "color": 7
+    },
+    {
+      "name": "CERCEVE",
+      "color": 8
+    },
+    {
+      "name": "OLCU",
+      "color": 3
+    }
+  ],
+  "grid": {
+    "vertical_axes": [
+      {
+        "label": "1",
+        "position": 0.0
+      },
+      {
+        "label": "2",
+        "position": 4200.0
+      }
+    ],
+    "horizontal_axes": [
+      {
+        "label": "A",
+        "position": 0.0
+      },
+      {
+        "label": "B",
+        "position": 8200.0
+      }
+    ]
+  },
+  "floors": [
+    {
+      "id": "kat1",
+      "label": "ORNEK KAT",
+      "code": "K1",
+      "rooms": [
+        {
+          "id": "stair",
+          "name": "Merdiven",
+          "no": "01",
+          "area_m2": 9.0,
+          "polygon": [
+            [
+              100,
+              100
+            ],
+            [
+              3100,
+              100
+            ],
+            [
+              3100,
+              3100
+            ],
+            [
+              100,
+              3100
+            ]
+          ],
+          "room_type": "merdiven"
+        }
+      ],
+      "walls": [
+        {
+          "id": "w_alt",
+          "start": [
+            0.0,
+            0.0
+          ],
+          "end": [
+            3200.0,
+            0.0
+          ],
+          "thickness": 200.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "w_sag",
+          "start": [
+            3200.0,
+            0.0
+          ],
+          "end": [
+            3200.0,
+            3200.0
+          ],
+          "thickness": 200.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "w_ust",
+          "start": [
+            3200.0,
+            3200.0
+          ],
+          "end": [
+            0.0,
+            3200.0
+          ],
+          "thickness": 200.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "w_sol",
+          "start": [
+            0.0,
+            3200.0
+          ],
+          "end": [
+            0.0,
+            0.0
+          ],
+          "thickness": 200.0,
+          "layer": "DUVARLAR"
+        }
+      ],
+      "openings": [
+        {
+          "id": "p_exit",
+          "type": "passage",
+          "wall_id": "w_alt",
+          "position_from_start": 2600.0,
+          "width": 800.0,
+          "layer": "KAPI-PENCERE"
+        }
+      ],
+      "labels": [],
+      "stairs": [
+        {
+          "id": "merdiven_1",
+          "room_id": "stair",
+          "floor_to_floor_mm": 3000.0,
+          "kind": "three_flight",
+          "up_towards": "N",
+          "well": "open",
+          "exit_door_id": "p_exit"
+        }
+      ]
+    }
+  ],
+  "elevations": [
+    {
+      "id": "on_cephe",
+      "label": "ON CEPHE",
+      "width": 4200.0,
+      "axis_source": "vertical",
+      "levels": [
+        {
+          "label": "ZEMIN KAT",
+          "height": 3000.0
+        }
+      ]
+    }
+  ],
+  "rev_history": [
+    {
+      "rev": 1,
+      "ts": "2026-10-02T00:00:00Z",
+      "summary": "DEV-046/DEV-047 golden referansi: GERCEK projenin 'Merdiven' odasiyla (4000x3000mm net, 3000mm kat yuksekligi) AYNI boyutta tek odali bir kat - tek kollun StairFitError ile REDDETTIGI, kind='dog_leg'in narrowing bile GEREKMEDEN sigdigi somut senaryo (bkz. scripts/stairs/selftest.py::check_dog_leg_real_room_hand_computable - AYNI sayilar). Kapi ('d_exit'), merdivenin hesapladigi GERCEK cikis yonune ('W', up_towards='E'nin tersi) HIZALI konuldu ve exit_door_id ile isaretlendi - DEV-047'nin hizalama kontrolunun (validate.py::check_stairs) uctan uca TEMIZ (0 uyari) gectigini kanitlar. Amac: scripts/stairs modulunun cift kollu/sahanlikli yolunun uctan uca (schema+validate+generate+golden) dogru calistigini, tek kollu `golden/merdiven_ornek`den BAGIMSIZ, kucuk ve elle dogrulanabilir bir referansla kanitlamak."
+    }
+  ]
+}

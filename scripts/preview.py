@@ -252,7 +252,8 @@ def draw_floor(ax, floor: dict, dx: float) -> None:
         half = opening["width"] / 2.0
         gx1, gy1 = x1 + ux * (pos - half) + dx, y1 + uy * (pos - half)
         gx2, gy2 = x1 + ux * (pos + half) + dx, y1 + uy * (pos + half)
-        color = "#dc2626" if opening["type"] in ("door", "elevator_door") else "#2563eb"
+        color = ("#dc2626" if opening["type"] in ("door", "elevator_door")
+                 else "#16a34a" if opening["type"] == "passage" else "#2563eb")
         ax.plot([gx1, gx2], [gy1, gy2], color=color, linewidth=2, zorder=3)
 
     for counter in floor.get("counters", []):

@@ -111,6 +111,7 @@
           "id": "merdiven_1",
           "room_id": "merdiven",
           "floor_to_floor_mm": 3000.0,
+          "kind": "single_flight",
           "up_towards": "N"
         }
       ],

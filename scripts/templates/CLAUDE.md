@@ -5,6 +5,12 @@
 olarak üreten TAMAMEN deterministik bir Python fonksiyonu. Koridor
 **DEV-045'e kadar L-şekilliydi** — bkz. aşağıdaki "DEV-045 düzeltmesi".
 
+## Merkezi cekirdek kisa kenar yerlesimi (rev-25)
+
+`generate_central_core(stair_entry='short_edge')` varsayilandir: merdiven 3000x4000
+kisa kenariyla hole bakar (kapisiz `passage`), asansor 2100x3000, L-seklinde 1000 mm
+`shaft` odasi, cekirdek satiri 4000. `'long_edge'` rev-24 oncesi yerlesimi korur.
+
 ## Neden bu modül (kullanıcı talebi, 2026-09-28)
 
 > "kat planları ve oda yerleşimleri için genel şablonlara sahip olacak, bir

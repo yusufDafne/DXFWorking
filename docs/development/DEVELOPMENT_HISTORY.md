@@ -4,6 +4,15 @@ Aktif geçmiş kapasitesi: **50 kayıt**. En eski tamamlanmış kayıt, 51. kay�
 alınırken silinir. Ayrıntılı teknik değişiklikler git geçmişi ve ilgili proje
 provenance kayıtlarıyla ilişkilendirilir.
 
+## HD-036 — Merdiven kisa kenar girisi, `passage` acikligi ve proje rev-25
+
+- **Durum:** COMPLETED (commit/push kullanici onayiyla)
+- **Tamamlanma:** 2026-10-05
+- **Kapsam:** `scripts/stairs/`, `scripts/openings/`, `scripts/templates/`, `scripts/validate.py`, schema 1.2.0, `context.json`.
+- **Sonuc:** `type='passage'` (kapisiz duvar acikligi); `stair_entry_side`/`stair_access_warnings` (uzun kenardan giris, kapi, aciksiz merdiven UYARI); sablon `stair_entry='short_edge'`. Proje: merdiven 3000x4000 kisa kenari holde, hol 6100x3050, L saft, 8 katta `stairs[]` (dog_leg, riht 170/going 270), kapi yerine 2400 mm passage.
+- **rev-26 eki:** `kind` varsayilani `dog_leg`; yeni `three_flight` (U, iki ara sahanlik, `well` bos/dolu, `flight_width_mm`); `golden/merdiven_uc_kollu`; validate artik uc kollu merdiven odasina oda orani kuralini uygulamaz; `golden/merdiven_ornek` acikca `single_flight`. Stairs CONTRACT 1.3.
+- **Sinir:** sahanlik 1100 < kol 1500; ZK going 263.6'ya daralir (uyari); saft yalniz oda.
+
 ## HD-035 — Proje güncellemesi rev-24: tüm bina merkezi çekirdekle yeniden planlandı
 
 - **Durum:** COMPLETED (kullanıcı commit onayı bekliyor)

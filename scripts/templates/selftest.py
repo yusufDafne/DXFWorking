@@ -141,8 +141,8 @@ def check_central_core_dev055() -> list[str]:
     errors: list[str] = []
     r = generate_central_core(20000.0, 17500.0)
     areas = {x["id"]: x["area_m2"] for x in r["rooms"]}
-    if areas != {"elevator": 6.3, "stair": 12.0, "hall": 24.81}:
-        errors.append(f"alanlar 6.3/12.0/24.81 olmali: {areas}")
+    if areas != {"elevator": 6.3, "stair": 12.0, "hall": 24.81, "shaft": 6.1}:
+        errors.append(f"alanlar 6.3/12.0/24.81/6.1 (saft L: 2100x1000 + 1000x3000 + 1000x1000 ... elle) olmali: {areas}")
     if r["zone"]["option_id"] != "dikdortgen_3_2" or not r["zone"]["surrounds"]:
         errors.append(f"varsayilan: dikdortgen_3_2 ve cevrelenebilir olmali: {r['zone']}")
     elev = next(o for o in r["openings"] if o["type"] == "elevator_door")
@@ -151,7 +151,7 @@ def check_central_core_dev055() -> list[str]:
     if check_elevator_door_insets(r["rooms"], r["walls"], r["openings"]):
         errors.append("uretilen asansor kapisi kendi pay kuralindan gecmeli")
     for combo in ({}, {"core_side": "south"}, {"orientation": "y"}, {"core_side": "south", "orientation": "y"}):
-        g = generate_central_core(20000.0, 17500.0, elevator_variant="single", **combo)
+        g = generate_central_core(20000.0, 17500.0, elevator_variant="single", stair_entry="long_edge", **combo)
         bad = (check_rooms("mm", g["rooms"]) + check_walls("mm", g["walls"], g["openings"])
                + check_openings(g["openings"], g["walls"]))
         if bad:
@@ -165,6 +165,21 @@ def check_central_core_dev055() -> list[str]:
             tip = swing_geometry(wall, Opening.from_context(d), g0, g1).open_end
             if not point_in_polygon(tip, rooms[expect]["polygon"]):
                 errors.append(f"{combo}: {op} kanadi '{expect}' odasina acilmali")
+    # rev-25: kisa kenar (varsayilan) - merdiven KAPISIZ duvar acikligi, 3000x4000
+    for combo in ({}, {"core_side": "south"}, {"orientation": "y"}):
+        g = generate_central_core(20000.0, 17500.0, **combo)
+        bad = (check_rooms("mm", g["rooms"]) + check_walls("mm", g["walls"], g["openings"])
+               + check_openings(g["openings"], g["walls"]))
+        if bad:
+            errors.append(f"kisa kenar {combo}: validate.check_* temiz olmali: {bad}")
+        if any(o["type"] == "door" for o in g["openings"]):
+            errors.append("kisa kenarda merdiven icin KAPI olmamali")
+        if not any(o["type"] == "passage" for o in g["openings"]):
+            errors.append("kisa kenarda merdiven icin passage olmali")
+        stair = next(x for x in g["rooms"] if x["id"] == "stair")
+        xs = [p[0] for p in stair["polygon"]]; ys = [p[1] for p in stair["polygon"]]
+        if sorted(round(v, 3) for v in (max(xs) - min(xs), max(ys) - min(ys))) != [3000.0, 4000.0]:
+            errors.append(f"merdiven 3000x4000 olmali: {stair['polygon']}")
     # kasitli bozma: asansor kapisi kuyu genisligi kadar -> pay uyarisi
     g = generate_central_core(20000.0, 17500.0)
     for o in g["openings"]:

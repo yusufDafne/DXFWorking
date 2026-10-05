@@ -365,16 +365,15 @@ geliştirme görevleri, tamamlanmış geçmiş, fikirler ve geliştirici notlar�
   artik istisnadir (DEV-022, `scripts/stairs/`):** `floors[].stairs[]`
   ile ACIKCA bildirilirse gercek basamak/riht cizgileri + yon oku + kesme
   cizgisi cizilir (opsiyonel, opt-in - bildirilmezse eskisi gibi sadece
-  etiketli kapali oda). **Bu ornek projenin `Merdiven` odasi (4000x3000mm)
-  hala `stairs[]` VERISI TASIMIYOR** - modul artik (DEV-046/047,
-  2026-10-02) sahanlikli/cift kollu (`kind='dog_leg'`) merdiveni de
-  destekliyor ve bu oda bu TURLE (3000mm kat yuksekliginde narrowing bile
-  gerekmeden, 4000mm'de hafif bir going-daraltmasiyla) RAHATCA SIGIYOR -
-  ama `stairs[]` girdilerini (+ cikis kapisi hizalamasini) 8 kata
-  GERCEKTEN eklemek, DEV-041/DEV-044 ile AYNI disiplinde, BILEREK AYRI bir
-  proje revizyonuna birakildi (bu gorevin kapsami yalnizca MODUL destegini
-  kurmakti). Bkz. `scripts/stairs/CLAUDE.md` "Cift kollu merdiven
-  geometrisi (DEV-046)".
+  etiketli kapali oda). **Merdiven (rev-25, kullanici karari 2026-10-05):** merdiven KISA kenardan
+  baslar, ara sahanlikta doner (`kind='dog_leg'`); giris/cikis kat holunden,
+  merdivenin KISA kenarindaki ucundan yapilir, uzun kenarin ortasindan
+  girilmez ve merdiven alani icin KAPI konmaz - dogrudan duvar acikligi
+  (`type='passage'`) vardir. Bu projenin 8 katinda (B2..K5) `stairs[]`
+  verisi vardir (riht 170 / going 270, auto_flex). Turler (rev-26): varsayilan
+  `dog_leg` (U, tek ara sahanlik), `single_flight` (sahanliksiz ince uzun),
+  `three_flight` (kare bosluklu, iki sahanlikli U; ortasi bos/dolu `well`). Ayrinti:
+  `scripts/stairs/CLAUDE.md` "Kisa kenar girisi (rev-25)".
 
 ## Çizim standartları (ofis standardı, rev-3'ten itibaren)
 

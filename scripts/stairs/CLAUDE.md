@@ -153,6 +153,46 @@ Her esnetme (riht VEYA going) `StairResolution.warnings`e yazılır;
 (sessiz varsayım yapılmaz, bkz. kök CLAUDE.md "Deterministik üretim
 ilkesi").
 
+## Merdiven turleri (`kind`, rev-26)
+
+| `kind` | Sekil | Notlar |
+|---|---|---|
+| `dog_leg` | U, TEK ara sahanlik | **VARSAYILAN** (rev-26; eskiden `single_flight`). |
+| `single_flight` | sahanliksiz ince uzun tek kol | acikca `kind` ile istenir. |
+| `three_flight` | kare/yaklasik kare boslukta U, IKI ara sahanlik, uc kol | `well='open'` (varsayilan) / `'filled'`; `flight_width_mm` (varsayilan oda enine/3, >= 900). |
+
+`three_flight` kanonik cerceve: a = yukari eksenine dik, b = giris kenarindan
+yukari. Kol 1 (a:0..w, b:0..H-w) yukari, sahanlik 1 (w x w, kuzey-bati), kol 2
+(a:w..A-w, b:H-w..H) yan, sahanlik 2 (kuzey-dogu), kol 3 (a:A-w..A) geri iner;
+giris ve cikis AYNI kenarda (giris ucu = `up_towards`in tersi). Basamaklar kol
+boylariyla (H-w, A-2w, H-w) orantili dagitilir (en buyuk kalan), tek ortak going
+en siki kola gore daraltilir (MIN/MAX kurallari ayni). `up_towards` N/S/E/W
+serbesttir (kare odada uzun eksen yok); yoksa geometri N kabul edilir, ok cizilmez.
+Merdiven oda oranina "daha dikdortgen olmali" kurali `three_flight` odasina
+UYGULANMAZ (`validate.py`). `golden/merdiven_uc_kollu` + selftest elle hesaplar.
+
+## Kisa kenar girisi ve kapisiz acikli (rev-25)
+
+Kullanici karari: merdiven kisa kenardan baslar, ara sahanlikta doner; giris ve
+cikis KAT HOLUNDEN, kisa kenardaki giris ucundan yapilir; uzun kenarin
+ortasindan girilmez; merdiven alani icin KAPI yoktur, dogrudan duvar acikligi
+(`openings[].type='passage'`) vardir. Uygulama:
+
+- `stair_entry_side(resolution)` = giris ucunun yonu (`up_towards`in tersi;
+  dog_leg'de `exit_direction` ile ayni). `up_towards` yoksa `None`.
+- `stair_access_warnings(resolution, accesses)` (hepsi UYARI): giris kenari
+  disindaki (uzun kenar) acikliga, `door` tipli acikliga ve giriste hic
+  acikligi olmayan merdivene uyari. `validate.py::check_stairs`
+  (`_stair_room_accesses`) merdiven odasi sinirindaki acikliklari bulup
+  cagirir; `stairs/` `walls/`e bagimli degildir.
+- Standartlar degismedi: riht 170, going 270 (250-300), auto_flex; sahanlik
+  1100 ofis varsayilani. Bu projede 3000x4000 oda: 3000 mm katta 18 basamak 9+9
+  (daralma yok), ZK 4000 mm'de 24 basamak 12+12, going 263.6'ya daralir (UYARI).
+- Cekirdek yerlesimi `templates::generate_central_core(stair_entry='short_edge')`
+  (varsayilan; `'long_edge'` eski yerlesim): merdiven 3000x4000, asansor 2100x3000,
+  L-seklinde 1000 mm saft. Saft yalniz oda olarak ayrilir; saft/baca modulu ayri fikir.
+- Sinirlama: sahanlik (1100) kol genisliginden (1500) dar; cati katinda merdiven cizilmez.
+
 ## Public API
 
 ```python

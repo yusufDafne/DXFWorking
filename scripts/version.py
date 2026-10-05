@@ -54,7 +54,11 @@ SCRIPTS_ROOT = Path(__file__).resolve().parent
 #           kalir - yalniz minor uyari). Bugun tek proje 1.0.0'da; proje
 #           guncellemesi ayri bir revizyondur (meta.schema_version orada
 #           1.1.0'a cekilecek).
-SCHEMA_VERSION = "1.1.0"
+#   1.2.0 - rev-25 (kullanici talebi: merdiven alani icin kapi degil duvar
+#           acikligi): `openings[].type` enum'una `passage` eklendi; rev-26:
+#           `stairs[].kind`'e `three_flight`, `well`/`flight_width_mm` alanlari (additif)
+#           ve `kind` varsayilani `dog_leg` oldu (davranis: projeler kind'i acik yazar).
+SCHEMA_VERSION = "1.2.0"
 
 # Alani tasimayan eski projeler icin varsayilan. Bugun tum projeler bu
 # surumden gelmektedir.

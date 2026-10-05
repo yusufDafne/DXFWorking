@@ -132,7 +132,7 @@ def _exit_alignment_floor(door_wall_start, door_wall_end, door_position: float) 
         "rooms": [{"id": "stair", "polygon": [[0, 0], [4000, 0], [4000, 3000], [0, 3000]]}],
         "walls": [{"id": "w_door", "start": door_wall_start, "end": door_wall_end,
                    "thickness": 200.0, "layer": "DUVARLAR"}],
-        "openings": [{"id": "d_exit", "type": "door", "wall_id": "w_door",
+        "openings": [{"id": "d_exit", "type": "passage", "wall_id": "w_door",
                       "position_from_start": door_position, "width": 900.0,
                       "layer": "KAPI-PENCERE"}],
         "stairs": [{"id": "sA", "room_id": "stair", "floor_to_floor_mm": 3000.0,
@@ -158,10 +158,10 @@ def check_stairs_exit_door_misaligned_flags() -> list[str]:
     errors, warnings = check_stairs(floor)
     if errors:
         return [f"HATA OLMAMALIYDI (bu bir UYARI sinifidir): {errors}"]
-    if len(warnings) != 1:
-        return [f"TAM 1 UYARI beklenirdi, {len(warnings)} geldi: {warnings}"]
-    if "HIZALI" not in warnings[0].upper():
-        return [f"uyari hizasizligi ADLANDIRMALIYDI: {warnings[0]}"]
+    # rev-25: ayni acikliga ayrica "yanlis kenar" erisim uyarisi da gelir (2 uyari)
+    aligned = [w for w in warnings if "HIZALI" in w.upper()]
+    if len(aligned) != 1 or len(warnings) != 2:
+        return [f"1 hizasizlik + 1 erisim uyarisi beklenirdi: {warnings}"]
     return []
 
 
@@ -172,6 +172,7 @@ def check_stairs_exit_door_id_is_opt_in() -> list[str]:
     floor = _exit_alignment_floor([4000.0, 0.0], [4000.0, 3000.0], 1500.0)
     del floor["stairs"][0]["exit_door_id"]
     errors, warnings = check_stairs(floor)
+    warnings = [w for w in warnings if "HIZALI" in w.upper()]   # erisim uyarisi (rev-25) opt-in degil
     if errors or warnings:
         return [f"exit_door_id YOKKEN kontrol SESSIZ KALMALIYDI: errors={errors} warnings={warnings}"]
     return []

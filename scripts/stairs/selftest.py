@@ -19,7 +19,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import ezdxf  # noqa: E402
 
-from stairs import (  # noqa: E402
+from stairs import (
+    stair_access_warnings, stair_entry_side,  # noqa: E402
     DefaultStairStandard,
     StairFitError,
     _step_line_endpoints,  # ic yardimci - koordinat dogrulugu icin (bkz. asagi)
@@ -44,7 +45,7 @@ def check_explicit_step_count_derives_riser() -> list[str]:
     """3000mm / 18 basamak = elle: 166.667mm riht. Nominal (170) farki
     3.33mm < tolerans (5mm) -> UYARI olmamali."""
     errors: list[str] = []
-    spec = {"id": "sA", "room_id": "r1", "floor_to_floor_mm": 3000, "step_count": 18}
+    spec = {"id": "sA", "room_id": "r1", "kind": "single_flight", "floor_to_floor_mm": 3000, "step_count": 18}
     res = resolve_stair(spec, ROOM_5000x3000)
     expected_riser = 3000 / 18
     if abs(res.riser_mm - expected_riser) > TOLERANCE:
@@ -60,7 +61,7 @@ def check_auto_flex_true_adjusts_riser_with_warning() -> list[str]:
     """900mm / nominal 170 -> elle: round(900/170)=round(5.294)=5 basamak,
     riser=900/5=180.0mm. Fark 170 ile 10mm (>5mm tolerans) -> UYARI olmali."""
     errors: list[str] = []
-    spec = {"id": "sB", "room_id": "r1", "floor_to_floor_mm": 900}
+    spec = {"id": "sB", "room_id": "r1", "kind": "single_flight", "floor_to_floor_mm": 900}
     res = resolve_stair(spec, ROOM_5000x3000)
     if res.step_count != 5:
         errors.append(f"step_count 5 bekleniyordu, {res.step_count} bulundu")
@@ -76,7 +77,7 @@ def check_auto_flex_false_warns_without_adjusting() -> list[str]:
     (170) kalir, toplam 850mm kat yuksekligini (900mm) 50mm farkla
     KARSILAMAZ -> UYARI (riser DEGISMEZ, HATA da FIRLATILMAZ)."""
     errors: list[str] = []
-    spec = {"id": "sC", "room_id": "r1", "floor_to_floor_mm": 900, "auto_flex": False}
+    spec = {"id": "sC", "room_id": "r1", "kind": "single_flight", "floor_to_floor_mm": 900, "auto_flex": False}
     res = resolve_stair(spec, ROOM_5000x3000)
     if res.step_count != 5:
         errors.append(f"step_count 5 bekleniyordu, {res.step_count} bulundu")
@@ -92,7 +93,7 @@ def check_going_auto_shrinks_with_warning() -> list[str]:
     ama oda 1300mm -> elle: going=1300/5=260.0mm (>= MIN 250mm, HATA yok,
     UYARI var)."""
     errors: list[str] = []
-    spec = {"id": "sD", "room_id": "r1", "floor_to_floor_mm": 1000, "step_count": 6}
+    spec = {"id": "sD", "room_id": "r1", "kind": "single_flight", "floor_to_floor_mm": 1000, "step_count": 6}
     res = resolve_stair(spec, ROOM_1300x800)
     if abs(res.going_mm - 260.0) > TOLERANCE:
         errors.append(f"going 260.0 bekleniyordu, {res.going_mm} bulundu")
@@ -107,7 +108,7 @@ def check_going_below_minimum_raises_fit_error() -> list[str]:
     Yanlis-pozitif: AYNI basamak sayisiyla daha genis (1500mm) bir odada
     going=300mm olur (MIN'in ustunde) -> HATA FIRLAMAMALI."""
     errors: list[str] = []
-    spec = {"id": "sE", "room_id": "r1", "floor_to_floor_mm": 1000, "step_count": 6}
+    spec = {"id": "sE", "room_id": "r1", "kind": "single_flight", "floor_to_floor_mm": 1000, "step_count": 6}
     try:
         resolve_stair(spec, ROOM_900x600)
         errors.append("900mm odada StairFitError bekleniyordu ama firlamadi")
@@ -131,7 +132,7 @@ def check_explicit_going_below_minimum_raises_even_without_shrink() -> list[str]
     GECMEMELI - StairFitError firlamali. Yanlis-pozitif: MIN_GOING_MM'in
     TAM UZERINDE acikca verilmis bir going_mm HATA VERMEMELI."""
     errors: list[str] = []
-    bad = {"id": "sI", "room_id": "r1", "floor_to_floor_mm": 3000,
+    bad = {"id": "sI", "room_id": "r1", "kind": "single_flight", "floor_to_floor_mm": 3000,
            "step_count": 18, "going_mm": 100.0}
     try:
         resolve_stair(bad, ROOM_5000x3000)
@@ -155,7 +156,7 @@ def check_going_above_maximum_warns() -> list[str]:
     sigiyorsa (daraltma dalina hic GIRILMEDEN) HATA vermez (guvensiz degil,
     sadece standart disi) ama UYARI vermeli."""
     errors: list[str] = []
-    spec = {"id": "sJ", "room_id": "r1", "floor_to_floor_mm": 3000,
+    spec = {"id": "sJ", "room_id": "r1", "kind": "single_flight", "floor_to_floor_mm": 3000,
             "step_count": 18, "going_mm": 320.0}
     res = resolve_stair(spec, ROOM_10000x3000)
     if abs(res.going_mm - 320.0) > TOLERANCE:
@@ -170,7 +171,7 @@ def check_up_towards_must_match_travel_axis() -> list[str]:
     up_towards yalnizca 'E'/'W'. 'N' verilmesi HATA olmali (yanlis-pozitif:
     'E' verilmesi HATA OLMAMALI)."""
     errors: list[str] = []
-    bad = {"id": "sF", "room_id": "r1", "floor_to_floor_mm": 3000, "step_count": 18, "up_towards": "N"}
+    bad = {"id": "sF", "room_id": "r1", "kind": "single_flight", "floor_to_floor_mm": 3000, "step_count": 18, "up_towards": "N"}
     try:
         resolve_stair(bad, ROOM_5000x3000)
         errors.append("up_towards='N' (travel_axis='x' iken) HATA vermeliydi")
@@ -194,7 +195,7 @@ def check_step_line_coordinates_hand_computable() -> list[str]:
     errors: list[str] = []
 
     x_axis = resolve_stair(
-        {"id": "sX", "room_id": "r1", "floor_to_floor_mm": 3000, "step_count": 18, "up_towards": "E"},
+        {"id": "sX", "room_id": "r1", "kind": "single_flight", "floor_to_floor_mm": 3000, "step_count": 18, "up_towards": "E"},
         ROOM_5000x3000,
     )
     start, end = _step_line_endpoints(x_axis.travel_axis, x_axis.up_towards, x_axis.bbox, 270.0)
@@ -204,7 +205,7 @@ def check_step_line_coordinates_hand_computable() -> list[str]:
 
     y_room = [[100, 100], [1100, 100], [1100, 8100], [100, 8100]]
     y_axis = resolve_stair(
-        {"id": "sY", "room_id": "r1", "floor_to_floor_mm": 3000, "step_count": 18, "up_towards": "N"},
+        {"id": "sY", "room_id": "r1", "kind": "single_flight", "floor_to_floor_mm": 3000, "step_count": 18, "up_towards": "N"},
         y_room,
     )
     if y_axis.travel_axis != "y":
@@ -226,7 +227,7 @@ def check_draw_entity_counts() -> list[str]:
     standard = DefaultStairStandard()
 
     no_direction = resolve_stair(
-        {"id": "sG1", "room_id": "r1", "floor_to_floor_mm": 3000, "step_count": 18},
+        {"id": "sG1", "room_id": "r1", "kind": "single_flight", "floor_to_floor_mm": 3000, "step_count": 18},
         ROOM_5000x3000,
     )
     standard.draw(msp, no_direction, "MERDIVEN")
@@ -237,7 +238,7 @@ def check_draw_entity_counts() -> list[str]:
     ensure_stair_layer(doc2)
     msp2 = doc2.modelspace()
     with_direction = resolve_stair(
-        {"id": "sG2", "room_id": "r1", "floor_to_floor_mm": 1000, "step_count": 6, "up_towards": "E"},
+        {"id": "sG2", "room_id": "r1", "kind": "single_flight", "floor_to_floor_mm": 1000, "step_count": 6, "up_towards": "E"},
         ROOM_1300x800,
     )
     standard.draw(msp2, with_direction, "MERDIVEN")
@@ -254,7 +255,7 @@ def check_stairs_for_floor_skips_unknown_room_gracefully() -> list[str]:
     errors: list[str] = []
     floor = {
         "rooms": [{"id": "r1", "polygon": ROOM_5000x3000}],
-        "stairs": [{"id": "sH", "room_id": "GECERSIZ", "floor_to_floor_mm": 3000, "step_count": 18}],
+        "stairs": [{"id": "sH", "room_id": "GECERSIZ", "kind": "single_flight", "floor_to_floor_mm": 3000, "step_count": 18}],
     }
     try:
         resolutions = stairs_for_floor(floor)
@@ -383,7 +384,7 @@ def check_single_flight_fields_unaffected_by_dog_leg_additions() -> list[str]:
     eski 'yukari uc' noktasiyla AYNI, `exit_direction=up_towards`."""
     errors: list[str] = []
     r = resolve_stair(
-        {"id": "sSF", "room_id": "r1", "floor_to_floor_mm": 3000, "step_count": 18, "up_towards": "E"},
+        {"id": "sSF", "room_id": "r1", "kind": "single_flight", "floor_to_floor_mm": 3000, "step_count": 18, "up_towards": "E"},
         ROOM_5000x3000,
     )
     if r.kind != "single_flight":
@@ -441,6 +442,92 @@ def check_ensure_stair_layer_sets_rgb() -> list[str]:
     return errors
 
 
+ROOM_3000x4000 = [[0, 0], [3000, 0], [3000, 4000], [0, 4000]]
+
+
+def check_short_edge_entry_rev25() -> list[str]:
+    """rev-25: 3000x4000 oda, dog_leg, up_towards='N' -> giris ucu GUNEY (kisa
+    kenar). 3000mm katta 18 basamak 9+9, riht 166.67... (elle: 3000/18),
+    going 270 (daralma yok: 8*270=2160 <= 4000-1100=2900). Giris 'S'te kapisiz
+    acikliga UYARI yok; 'door' tipi, uzun kenar ('W') ve acikliksiz durum UYARI."""
+    errors: list[str] = []
+    spec = {"id": "s", "room_id": "r", "floor_to_floor_mm": 3000.0, "up_towards": "N",
+            "kind": "dog_leg"}
+    res = resolve_stair(spec, ROOM_3000x4000)
+    if res.step_count != 18 or tuple(res.flight_step_counts) != (9, 9):
+        errors.append(f"18 basamak 9+9 olmali: {res.step_count} {res.flight_step_counts}")
+    if abs(res.going_mm - 270.0) > 1e-9 or res.warnings:
+        errors.append(f"going 270, uyari yok olmali: {res.going_mm} {res.warnings}")
+    if stair_entry_side(res) != "S":
+        errors.append(f"giris kenari 'S' olmali: {stair_entry_side(res)}")
+    ok = [{"id": "p", "type": "passage", "point": (1500.0, 0.0)}]
+    if stair_access_warnings(res, ok):
+        errors.append(f"kisa kenarda passage UYARI vermemeli: {stair_access_warnings(res, ok)}")
+    if len(stair_access_warnings(res, [{"id": "d", "type": "door", "point": (1500.0, 0.0)}])) != 1:
+        errors.append("kisa kenarda KAPI tam 1 uyari vermeli")
+    if len(stair_access_warnings(res, [{"id": "w", "type": "passage", "point": (0.0, 2000.0)}])) != 1:
+        errors.append("uzun kenardan (W) giris tam 1 uyari vermeli")
+    if len(stair_access_warnings(res, [])) != 1:
+        errors.append("hic acikligi olmayan merdiven tam 1 uyari vermeli")
+    nodir = resolve_stair({k: v for k, v in spec.items() if k != "up_towards"}, ROOM_3000x4000)
+    if stair_access_warnings(nodir, []):
+        errors.append("up_towards yoksa kontrol SESSIZCE atlanmali (yon uydurulmaz)")
+    zk = resolve_stair({**spec, "floor_to_floor_mm": 4000.0}, ROOM_3000x4000)
+    if zk.step_count != 24 or abs(zk.going_mm - 2900.0 / 11.0) > 1e-6 or not zk.warnings:
+        errors.append(f"4000mm: 24 basamak, going 2900/11, daralma UYARISI: {zk.step_count} {zk.going_mm} {zk.warnings}")
+    return errors
+
+
+def check_three_flight_rev26() -> list[str]:
+    """rev-26: 3000x3000 kare oda, U seklinde uc kollu merdiven (iki sahanlik).
+    ELLE: w=3000/3=1000; kol boylari 2000/1000/2000; 18 basamak orantili dagilir
+    7.2/3.6/7.2 -> 7/4/7 (kalan 1 en buyuk kesre = kol 2); going 270 (en siki kol
+    2000/6=333, 1000/3=333 > 270, daralma YOK). 6+3+6 = 15 riht cizgisi.
+    Sahanliklar (0,2000,1000,3000) ve (2000,2000,3000,3000); kuyu (1000,0,2000,2000);
+    cikis (2500,0) yonu 'S' (giris ucu). E icin 90 derece donmus: cikis (0,500), 'W'."""
+    errors: list[str] = []
+    room = [[0, 0], [3000, 0], [3000, 3000], [0, 3000]]
+    spec = {"id": "s3", "room_id": "r", "floor_to_floor_mm": 3000.0, "kind": "three_flight",
+            "up_towards": "N"}
+    res = resolve_stair(spec, room)
+    if res.step_count != 18 or tuple(res.flight_step_counts) != (7, 4, 7):
+        errors.append(f"18 basamak 7/4/7 olmali: {res.step_count} {res.flight_step_counts}")
+    if abs(res.going_mm - 270.0) > 1e-9 or res.warnings:
+        errors.append(f"going 270, uyari yok olmali: {res.going_mm} {res.warnings}")
+    g = res.three_flight
+    if len(g["step_lines"]) != 15:
+        errors.append(f"15 riht cizgisi olmali: {len(g['step_lines'])}")
+    if g["landings"] != [(0.0, 2000.0, 1000.0, 3000.0), (2000.0, 2000.0, 3000.0, 3000.0)]:
+        errors.append(f"sahanliklar yanlis: {g['landings']}")
+    if g["well"] != (1000.0, 0.0, 2000.0, 2000.0):
+        errors.append(f"kuyu yanlis: {g['well']}")
+    if res.exit_point != (2500.0, 0.0) or res.exit_direction != "S" or stair_entry_side(res) != "S":
+        errors.append(f"cikis (2500,0) 'S' olmali: {res.exit_point} {res.exit_direction}")
+    east = resolve_stair({**spec, "up_towards": "E"}, room)
+    if east.exit_point != (0.0, 500.0) or east.exit_direction != "W":
+        errors.append(f"E icin cikis (0,500) 'W' olmali: {east.exit_point} {east.exit_direction}")
+    for well, lines, polys in (("open", 21, 3), ("filled", 20, 4)):
+        doc = ezdxf.new()
+        msp = doc.modelspace()
+        DefaultStairStandard().draw(msp, resolve_stair({**spec, "well": well}, room), "MERDIVEN")
+        got = (len(msp.query("LINE")), len(msp.query("LWPOLYLINE")))
+        if got != (lines, polys):
+            errors.append(f"well={well}: {lines} LINE/{polys} LWPOLYLINE beklendi, {got}")
+    try:
+        resolve_stair(spec, [[0, 0], [2000, 0], [2000, 2000], [0, 2000]])
+        errors.append("2000x2000'de (kol 667mm) StairFitError bekleniyordu")
+    except StairFitError:
+        pass
+    try:
+        resolve_stair({**spec, "well": "yok"}, room)
+        errors.append("gecersiz well StairFitError vermeli")
+    except StairFitError:
+        pass
+    if resolve_stair({"id": "d", "room_id": "r", "floor_to_floor_mm": 3000.0}, ROOM_3000x4000).kind != "dog_leg":
+        errors.append("kind verilmeyince VARSAYILAN dog_leg olmali")
+    return errors
+
+
 def main() -> int:
     groups = (
         ("acik step_count'tan riht turetme (elle hesap)", check_explicit_step_count_derives_riser()),
@@ -462,6 +549,8 @@ def main() -> int:
         ("bilinmeyen kind StairFitError (yazim hatasi korumasi)", check_unknown_kind_raises_fit_error()),
         ("single_flight YENI alanlar eski davranisi birebir yansitir (regresyon)", check_single_flight_fields_unaffected_by_dog_leg_additions()),
         ("dog_leg cizim varlik sayilari (yonlu/yonsuz, DEV-047 cikis)", check_dog_leg_draw_entity_counts()),
+        ("kisa kenar giris + kapisiz acikli (rev-25)", check_short_edge_entry_rev25()),
+        ("uc kollu U merdiven + kuyu + varsayilan dog_leg (rev-26)", check_three_flight_rev26()),
     )
     failed = False
     for name, errors in groups:

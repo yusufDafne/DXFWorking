@@ -191,6 +191,14 @@ def check_variants() -> list[str]:
     if len(msp.lines) != 4 or msp.arcs:
         errors.append(f"Pencere 4 cizgi ve 0 yay olmali, "
                       f"{len(msp.lines)} cizgi / {len(msp.arcs)} yay cikti.")
+
+    # rev-25: passage (kapisiz duvar acikligi) = yalniz 2 soye cizgisi; kanat/yay/cam YOK
+    msp = FakeMsp()
+    style.draw_opening(msp, wall, 1000.0, 1900.0,
+                       _opening(type="passage").as_dict())
+    if len(msp.lines) != 2 or msp.arcs:
+        errors.append(f"passage 2 soye cizgisi ve 0 yay olmali, "
+                      f"{len(msp.lines)} cizgi / {len(msp.arcs)} yay cikti.")
     return errors
 
 

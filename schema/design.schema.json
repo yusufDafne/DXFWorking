@@ -69,7 +69,7 @@
       "additionalProperties": false,
       "properties": {
         "id": { "type": "string" },
-        "type": { "type": "string", "enum": ["door", "window", "elevator_door"], "description": "elevator_door (DEV-055): asansor kapisi; varsayilan varyanti 'sliding'." },
+        "type": { "type": "string", "enum": ["door", "window", "elevator_door", "passage"], "description": "elevator_door (DEV-055): asansor kapisi; varsayilan varyanti 'sliding'. passage (rev-25): KAPISIZ duvar acikligi (orn. merdiven alaninin kat holune acilisi); yalniz bosluk + soye cizgisi cizilir." },
         "wall_id": { "type": "string", "description": "Ait oldugu duvarin id degeri" },
         "position_from_start": {
           "type": "number",
@@ -164,9 +164,11 @@
         },
         "kind": {
           "type": "string",
-          "enum": ["single_flight", "dog_leg"],
-          "description": "DEV-046. Verilmezse 'single_flight' (eski/tek davranis). 'dog_leg' (sahanlikli, 180 derece donuslu cift kollu merdiven) oda kisa eksenini iki kola boler; kucuk/kare'ye yakin odalarda tek kollun sigmadigi durumlar icin."
+          "enum": ["single_flight", "dog_leg", "three_flight"],
+          "description": "Verilmezse 'dog_leg' (rev-26 varsayilani: tek ara sahanlikli U merdiven; DEV-046). 'single_flight' sahanliksiz ince uzun tek kol. 'three_flight' (rev-26): kare/yaklasik kare boslukta U seklinde, iki ara sahanlikli uc kollu merdiven (kol genisligi flight_width_mm veya oda enine/3; ortasi well ile bos/dolu)."
         },
+        "well": { "type": "string", "enum": ["open", "filled"], "description": "YALNIZCA kind='three_flight': merdiven boslugu (ortasi) bos ('open', varsayilan) veya dolu ('filled')." },
+        "flight_width_mm": { "type": "number", "exclusiveMinimum": 0, "description": "YALNIZCA kind='three_flight': kol genisligi (sahanliklar bu kenarli karedir). Verilmezse oda enine/3; en az 900mm." },
         "landing_depth_mm": {
           "type": "number",
           "exclusiveMinimum": 0,

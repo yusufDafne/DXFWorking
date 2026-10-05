@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Protocol
 
-from .opening import TYPE_DOOR, TYPE_ELEVATOR_DOOR, VARIANT_SINGLE
+from .opening import TYPE_DOOR, TYPE_ELEVATOR_DOOR, TYPE_PASSAGE, VARIANT_SINGLE
 from .symbols import DOOR_SYMBOLS, draw_jambs, draw_window
 
 
@@ -37,5 +37,7 @@ class DefaultPlanOpeningStyle:
                     f"sembol yok. Tanimli varyantlar: "
                     f"{', '.join(sorted(self.door_symbols))}")
             symbol(msp, wall, g_start, g_end, opening)
+        elif opening.get("type") == TYPE_PASSAGE:
+            return  # kapisiz duvar acikligi: yalniz bosluk + soye cizgileri
         else:
             draw_window(msp, wall, g_start, g_end, opening)

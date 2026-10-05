@@ -82,7 +82,9 @@ from version import (  # noqa: E402
     check_compatibility,
     project_schema_version,
 )
-from stairs import StairFitError, exit_door_alignment_warning, resolve_stair  # noqa: E402
+from stairs import (  # noqa: E402
+    StairFitError, exit_door_alignment_warning, resolve_stair, stair_access_warnings,
+)
 from standards import (  # noqa: E402
     check_door_corridor_nuances,
     check_room_proportions,
@@ -350,6 +352,32 @@ def check_openings(openings: list[dict], walls: list[dict]) -> list[str]:
     return errors
 
 
+def _stair_room_accesses(polygon: list, walls_by_id: dict, openings: list) -> list[dict]:
+    """Merdiven odasi SINIRINDAKI (kapi/duvar acikligi) acikliklar: acikligin
+    duvar-merkez-cizgisi konumu poligon kenarina duvar yarim kalinligi + 10mm
+    icinde ise o odaya aittir. Pencere sayilmaz."""
+    found: list[dict] = []
+    for op in openings:
+        if op.get("type") == "window":
+            continue
+        wall = walls_by_id.get(op.get("wall_id"))
+        if wall is None:
+            continue
+        point = Wall.from_context(wall, WallCatalog()).centerline_point(op["position_from_start"])
+        limit = float(wall["thickness"]) / 2.0 + 10.0
+        n = len(polygon)
+        for k in range(n):
+            ax, ay = polygon[k]
+            bx, by = polygon[(k + 1) % n]
+            dx, dy = bx - ax, by - ay
+            seg2 = dx * dx + dy * dy
+            t = 0.0 if seg2 == 0 else max(0.0, min(1.0, ((point[0] - ax) * dx + (point[1] - ay) * dy) / seg2))
+            if ((point[0] - ax - t * dx) ** 2 + (point[1] - ay - t * dy) ** 2) ** 0.5 <= limit:
+                found.append({"id": op["id"], "type": op["type"], "point": (point[0], point[1])})
+                break
+    return found
+
+
 def check_stairs(floor: dict) -> tuple[list[str], list[str]]:
     """Arity-1 (DEV-022): `stairs[].room_id` bu kattaki bir odaya isaret
     ediyor mu, ve `resolve_stair` (cizim koduyla AYNI TEK kaynak, bkz.
@@ -382,6 +410,8 @@ def check_stairs(floor: dict) -> tuple[list[str], list[str]]:
             errors.append(str(exc))
             continue
         warnings.extend(resolution.warnings)
+        warnings.extend(stair_access_warnings(
+            resolution, _stair_room_accesses(room["polygon"], walls_by_id, floor.get("openings", []))))
 
         exit_door_id = spec.get("exit_door_id")
         if exit_door_id is None:
@@ -542,7 +572,12 @@ def run_validation(context_path: Path = DEFAULT_CONTEXT_PATH) -> bool:
         # ZAMAN UYARIdir, uretimi DURDURMAZ.
         standards_warnings += [
             f"[{floor['id']}] " + w
-            for w in check_room_proportions(floor["rooms"], units, floor["walls"])
+            for w in check_room_proportions(
+                # rev-26: uc kollu (kare bosluklu) merdiven odasi KARE olmak ZORUNDADIR;
+                # "merdiven odasi daha dikdortgen olmali" orani ona uygulanmaz.
+                [r for r in floor["rooms"] if r["id"] not in {
+                    st["room_id"] for st in floor.get("stairs", []) if st.get("kind") == "three_flight"}],
+                units, floor["walls"])
         ]
         # DEV-039: iliskisel (arity-2+) mimari mantik kurallari - standards
         # ile AYNI politika (HER ZAMAN UYARI, asla HATA). Tumu rooms[].

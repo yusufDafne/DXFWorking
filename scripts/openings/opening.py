@@ -28,6 +28,10 @@ TYPE_WINDOW = "window"
 # kapisi olur"). Kapi kurallarina (oda kapisi asgarisi, odaya acilma, giris/WC
 # nuanslari) GIRMEZ; kendi kurallari `openings/elevator.py`dedir.
 TYPE_ELEVATOR_DOOR = "elevator_door"
+# rev-25 (kullanici karari: "merdiven alani icin kapi olmaz, dogrudan duvar
+# acikligi vardir"): KAPISIZ duvar acikligi. Duvarda bosluk + iki soye cizgisi
+# cizilir; kanat/yay/cam YOKTUR, kapi kurallarina (acilim, giris/WC nuansi) girmez.
+TYPE_PASSAGE = "passage"
 
 VARIANT_SINGLE = "single"
 VARIANT_DOUBLE = "double"

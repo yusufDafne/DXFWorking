@@ -39,8 +39,8 @@ DEFAULT_TEXT_HEIGHT = 180.0
 DEFAULT_ROW_HEIGHT = 400.0
 DEFAULT_TITLE_ROW_HEIGHT = 500.0
 
-_TYPE_LABELS = {"door": "KAPI", "window": "PENCERE", "elevator_door": "ASANSOR KAPISI"}
-_TYPE_PREFIX = {"door": "K", "window": "P", "elevator_door": "A"}
+_TYPE_LABELS = {"door": "KAPI", "window": "PENCERE", "elevator_door": "ASANSOR KAPISI", "passage": "DUVAR ACIKLIGI"}
+_TYPE_PREFIX = {"door": "K", "window": "P", "elevator_door": "A", "passage": "G"}
 _VARIANT_MARK_SUFFIX = {"single": "", "double": "-D", "sliding": "-S", "folding": "-F",
                         "sliding_double": "-SD"}
 _VARIANT_LABELS = {
