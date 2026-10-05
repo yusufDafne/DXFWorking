@@ -218,6 +218,21 @@ bir `collision.py` ayak izi sağlayıcısı taşımasını ya da
 arar. "Bu modül hangi modülle çakışabilir?" sorusu artık cevapsız
 bırakılamaz — düzyazı bir hatırlatma bu hata sınıfını engellemiyordu.
 
+### Muhakeme katmanı (PLANLANAN — `DEV-048`, plan: `docs/development/ARCHITECTURAL_REASONING_PLAN.md`)
+
+Çakışma denetimi "iki eleman aynı yeri mi işgal ediyor" sorusunu tek yerde topladığı gibi,
+muhakeme katmanı "bu tasarım mimari olarak **düşünülmüş** mü" sorusunu toplar — ve AYNI
+bağımlılık yönünü izler: `scripts/reasoning/` çekirdeği bilgi taşımaz ve hiçbir çizim modülünü
+import etmez; bilgi (veçhe beyanı, ölçüm, kural) **sahibi modülde** yaşar
+(`scripts/<modül>/reasoning.py`); çekirdek onları noktalı referansla tembel çözer. Bir **mercek**
+(mahremiyet, ışık-hava-yönelim, yaşanabilirlik …) kural değil bir soru ailesidir; **veçheler**
+(alt örneklemler) zamanla artar. Yeni bir modül eklerken sorulan ikinci soru artık şudur:
+*"bu modül hangi mercek(ler)e ölçüm veya kural sağlar?"* — `doc_check` bunu `collision.py`/
+`COLLISION_EXEMPT` gibi mekanik denetleyecek (her modül `reasoning.py` **ya da** gerekçeli
+`REASONING_EXEMPT`; `DEV-060`). Bu bir **plandır**, kod henüz yok; mevcut `check_*` fonksiyonları
+DEĞİŞMEZ (adaptörle kaydedilir) ve `validate.py` çıktısı bozulmaz. Aşağıdaki tabloda `reasoning/`,
+`spatial/`, `impact/`, `brief/` satırları `PLANLANAN` olarak durur.
+
 ### Sürüm sözleşmesi (UYGULANDI — rev-12, `DEV-020`)
 
 Her modül `__init__.py` içinde bir `CONTRACT_VERSION` taşır. Bu **kod sürümü
@@ -298,6 +313,10 @@ Ortak desen (pafta + walls ile kanitlandi):
 | `standards/`  | `RoomStandard`, `STANDARDS`, `room_aspect_ratio`, `validate_standards`, `check_room_types`, `check_room_proportions` | UYGULANDI (DEV-036, 2026-09-28); sartname/oransal mahal kutuphanesi, ihlal HER ZAMAN UYARI |
 | `templates/`  | `CirculationCoreTemplate`, `DEFAULT_TEMPLATE`, `generate_circulation_core` | UYGULANDI (DEV-037, 2026-09-28; DEV-045 duzeltmesi, 2026-10-02); sirkulasyon cekirdegi sablon ureteci, v1 yalnizca cekirdek (birim ici bolme YOK), koridor artik israf eden L-sekli DEGIL |
 | `architect/`  | `check_circulation_area_share`, `check_common_circulation_share`, `check_bedroom_via_corridor`, `check_entry_sightlines`, `check_door_core_balance`, `check_wet_area_reachable_without_bedroom`, `check_wet_area_door_proximity`, `FeasibilityReport`, `check_fits`, `ZoneAssignment`, `ZoningPlan`, `resolve_unit_zoning`, `PlacementOption`, `options_for_core_placement`, `place_unit_entry_doors` | UYGULANDI (DEV-039, 2026-09-28; DEV-042/043/045, 2026-10-02); iliskisel (arity-2+) mimari mantik kurallari, DEV-038 absorbe edildi, `rooms[].unit_id` opt-in |
+| `spatial/`    | (yok) | PLANLANAN (DEV-059; DEV-048 Faz 1a): eleman-farkindali mekansal sorgu katmani - kapi->oda, ortak kenar, gorus hatti; 5 kopyanin tek sahibe tasinmasi |
+| `reasoning/`  | (yok) | PLANLANAN (DEV-060…DEV-070; DEV-048): muhakeme cekirdegi - mercek/veche/bulgu/koku modeli, kayit, kapsam raporu; bilgi sahibi modulde yasar |
+| `impact/`     | (yok) | PLANLANAN (DEV-068): revizyon etki analizi - bir patchin etki alani ve minimal patch plani |
+| `brief/`      | (yok) | PLANLANAN (DEV-069): kullanici ihtiyac beyani ve mimari program toplama |
 
 > Bu tablo `scripts/doc_check.py` tarafindan DENETLENIR: `UYGULANDI` isaretli bir
 > satirda anilan her sinif adi, o modulde gercekten tanimli olmalidir. Yalnizca

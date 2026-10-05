@@ -504,6 +504,14 @@ opt-in'in hâlâ geçerli kaldığı da ayrıca kanıtlanır).
 
 ## Gelecek yönü — 2. nesil mimari mantık motoru (planlama notu, 2026-09-28)
 
+> **2026-10-05 güncellemesi:** aşağıdaki altı fikir `DEV-048`in genişletilmiş planına
+> (`docs/development/ARCHITECTURAL_REASONING_PLAN.md`, §10.2) oturtuldu: Fikir 1 (şiddet
+> sayısı) → bulgu modeli, Fikir 2 (bina tipi profilleri) → `Profile`, Fikir 3 (katlar arası) →
+> aday `tesisat_hijyen` merceğine girdi, Fikir 4 (`options_for_*`) → `remedies`, Fikir 5
+> (proje bazlı profil) → yalnız profil SEÇİMİ, Fikir 6 (göz ardı izi) → `DEV-065`. Bu modülün
+> mevcut `check_*` fonksiyonları DEĞİŞMEZ; `reasoning/` onları adaptörle "mahremiyet" gibi
+> merceklere KAYDEDER (`DEV-061`). Değişmez ilke (yalnız UYARI, FORBID yok) aynen sürer.
+
 **Kullanıcının kendi çerçevelemesi (DEV-039'un commit'inden ÖNCE, uyarı
 sisteminin gerçek projede çalıştığı doğrulandıktan SONRA verildi):**
 *"bu programı gerçek bir mimar yapan en önemli yapı taşının temellerini
