@@ -13,6 +13,7 @@ from .opening import (
     VARIANT_FOLDING,
     VARIANT_SINGLE,
     VARIANT_SLIDING,
+    VARIANT_SLIDING_DOUBLE,
 )
 
 
@@ -72,6 +73,22 @@ def draw_sliding_door(msp, wall, g_start: float, g_end: float, data: dict) -> No
     msp.add_line(panel_end, _add(panel_end, tick), dxfattribs={"layer": layer})
 
 
+def draw_sliding_double_door(msp, wall, g_start: float, g_end: float, data: dict) -> None:
+    """Ikili surme (buyuk asansor kapilari): iki esit panel, ortada bulusur ve
+    zit yonlere kayar - her panelin ucunda disa dogru bir kisa isaret."""
+    layer = data.get("layer", "KAPI-PENCERE")
+    sign = side_sign(data.get("host_side", "pos"))
+    offset = _scale(wall.normal, sign * wall.thickness / 3.0)
+    tick = _scale(wall.normal, sign * wall.thickness / 6.0)
+    middle = (g_start + g_end) / 2.0
+    for a, b, outer in ((g_start, middle, g_start), (middle, g_end, g_end)):
+        pa = _add(wall.centerline_point(a), offset)
+        pb = _add(wall.centerline_point(b), offset)
+        msp.add_line(pa, pb, dxfattribs={"layer": layer})
+        end = _add(wall.centerline_point(outer), offset)
+        msp.add_line(end, _add(end, tick), dxfattribs={"layer": layer})
+
+
 def draw_folding_door(msp, wall, g_start: float, g_end: float, data: dict) -> None:
     """Katlanir kapi: iki esit kanat, akordeon gibi ortada kirilir."""
     layer = data.get("layer", "KAPI-PENCERE")
@@ -104,6 +121,7 @@ DOOR_SYMBOLS = {
     VARIANT_DOUBLE: draw_double_door,
     VARIANT_SLIDING: draw_sliding_door,
     VARIANT_FOLDING: draw_folding_door,
+    VARIANT_SLIDING_DOUBLE: draw_sliding_double_door,
 }
 
 # Varyant basina uretilen ACILIM YAYI sayisi. Bu, semantik golden kuralinin
@@ -116,4 +134,5 @@ ARCS_PER_VARIANT = {
     VARIANT_DOUBLE: 2,
     VARIANT_SLIDING: 0,   # kanat duvara paralel kayar, yay yoktur
     VARIANT_FOLDING: 0,   # akordeon kirilma, yay yoktur
+    VARIANT_SLIDING_DOUBLE: 0,   # iki panel zit yone kayar, yay yoktur
 }

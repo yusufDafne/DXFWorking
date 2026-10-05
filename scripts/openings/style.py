@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Protocol
 
-from .opening import TYPE_DOOR, VARIANT_SINGLE
+from .opening import TYPE_DOOR, TYPE_ELEVATOR_DOOR, VARIANT_SINGLE
 from .symbols import DOOR_SYMBOLS, draw_jambs, draw_window
 
 
@@ -27,8 +27,9 @@ class DefaultPlanOpeningStyle:
     def draw_opening(self, msp, wall, g_start: float, g_end: float,
                      opening: dict) -> None:
         draw_jambs(msp, wall, g_start, g_end)
-        if opening.get("type") == TYPE_DOOR:
-            variant = opening.get("variant", VARIANT_SINGLE)
+        if opening.get("type") in (TYPE_DOOR, TYPE_ELEVATOR_DOOR):
+            default = "sliding" if opening.get("type") == TYPE_ELEVATOR_DOOR else VARIANT_SINGLE
+            variant = opening.get("variant", default)
             symbol = self.door_symbols.get(variant)
             if symbol is None:
                 raise KeyError(

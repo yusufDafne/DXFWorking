@@ -27,77 +27,6 @@ def _real_normal_floor() -> dict:
     return next(f for f in context["floors"] if f["id"] == "normal1"), context["meta"]
 
 
-def check_matches_real_project_ground_truth() -> list[str]:
-    """`generate_circulation_core`in varsayilan sablonu, GERCEK projenin
-    ZATEN validate.py'den GECMIS sirkulasyon cekirdegiyle (normal1 kati)
-    BIREBIR eslesmeli - bu deger ICAT EDILMEDI, oradan CIKARILDI (bkz.
-    modul dokstring'i). Gercek proje dosyasi yoksa test ATLANIR (izole
-    ortamda calisabilsin diye), ama bu ortamda HER ZAMAN mevcuttur.
-
-    **DEV-045 (rev-22 -> rev-23):** `elevator`/`stair` odalari VE
-    cekirdek duvarlari/kapisi HER ZAMAN BIREBIR eslesir (bu DEV-045'te
-    DEGISMEDI). `band` ODASI rev-22'de (eski L-sekli, 71.7 m2) BU
-    KARSILASTIRMANIN DISINDA tutuluyordu (DEV-041/044/046 ile AYNI
-    disiplin - duzeltme KONTROLU kurmustu ama gercek context.json'a
-    henuz UYGULANMAMISTI). rev-23'te DEV-045 Fikir 2 (bu dikdortgen)
-    GERCEK projeye de UYGULANDI (bkz. docs/development/
-    DEVELOPMENT_TASKS.md DEV-045 COMPLETED ozeti) - artik `band` DAHIL
-    HER sey BIREBIR eslesmeli, istisna KALMADI."""
-    if not REAL_CONTEXT_PATH.exists():
-        return []
-    floor, meta = _real_normal_floor()
-    fragment = generate_circulation_core(meta["floor_width"], meta["floor_depth"])
-
-    errors: list[str] = []
-    real_rooms = {r["id"]: r for r in floor["rooms"]}
-    for room in fragment["rooms"]:
-        real = real_rooms.get(room["id"])
-        if real is None:
-            errors.append(f"gercek projede '{room['id']}' id'li oda YOK")
-            continue
-        if room["polygon"] != real["polygon"]:
-            errors.append(
-                f"'{room['id']}' poligonu gercek projeden FARKLI: "
-                f"uretilen={room['polygon']} gercek={real['polygon']}"
-            )
-        if abs(room["area_m2"] - real["area_m2"]) > 1e-6:
-            errors.append(
-                f"'{room['id']}' area_m2 gercek projeden FARKLI: "
-                f"uretilen={room['area_m2']} gercek={real['area_m2']}"
-            )
-
-    real_walls = {w["id"]: w for w in floor["walls"]}
-    core_wall_ids = ("core_bottom", "core_div", "core_right", "band_south")
-    produced_wall_ids = {w["id"] for w in fragment["walls"]}
-    if set(core_wall_ids) != produced_wall_ids:
-        errors.append(f"uretilen duvar id kumesi beklenenden farkli: {produced_wall_ids}")
-    for wall in fragment["walls"]:
-        real = real_walls.get(wall["id"])
-        if real is None:
-            errors.append(f"gercek projede '{wall['id']}' id'li duvar YOK")
-            continue
-        if wall["start"] != real["start"] or wall["end"] != real["end"]:
-            errors.append(
-                f"'{wall['id']}' konumu gercek projeden FARKLI: "
-                f"uretilen=({wall['start']},{wall['end']}) "
-                f"gercek=({real['start']},{real['end']})"
-            )
-        if wall["thickness"] != real["thickness"]:
-            errors.append(f"'{wall['id']}' kalinligi farkli: {wall['thickness']} != {real['thickness']}")
-
-    real_door = next(o for o in floor["openings"] if o["id"] == "door_stair")
-    produced_door = next(o for o in fragment["openings"] if o["id"] == "door_stair")
-    if produced_door["position_from_start"] != real_door["position_from_start"]:
-        errors.append(
-            f"door_stair konumu farkli: {produced_door['position_from_start']} "
-            f"!= {real_door['position_from_start']}"
-        )
-    if produced_door["width"] != real_door["width"]:
-        errors.append(f"door_stair genisligi farkli: {produced_door['width']} != {real_door['width']}")
-
-    return errors
-
-
 def check_band_is_efficient_rectangle_not_wasteful_l_shape() -> list[str]:
     """DEV-045: `band`, cekirdegin (asansor+merdiven) DOGUSUNDA artik
     GEREKSIZ yere tam `band_depth` derinliginde degil - SADECE
@@ -199,9 +128,62 @@ def check_custom_template_scales_linearly() -> list[str]:
     return errors
 
 
+def check_central_core_dev055() -> list[str]:
+    """DEV-055: merkezi cekirdek + kat holu. Kat 20000x17500, 3:2 hol: blok
+    x 6950..13050, hol y 5216.67..9283.33 (derinlik 4066.67), cekirdek satiri
+    9283.33..12283.33 (3000). Asansor 2100x3000 = 6.3 m2, merdiven 4000x3000 =
+    12.0 m2, hol 6100x4066.67 = 24.81 m2. Asansor kapisi 2100-2*250 = 1600."""
+    from validate import check_openings, check_rooms, check_walls
+    from walls import Wall, WallCatalog, gaps_for_wall
+    from openings import Opening, check_elevator_door_insets, swing_geometry
+    from collision.geometry import point_in_polygon
+    from templates import generate_central_core
+    errors: list[str] = []
+    r = generate_central_core(20000.0, 17500.0)
+    areas = {x["id"]: x["area_m2"] for x in r["rooms"]}
+    if areas != {"elevator": 6.3, "stair": 12.0, "hall": 24.81}:
+        errors.append(f"alanlar 6.3/12.0/24.81 olmali: {areas}")
+    if r["zone"]["option_id"] != "dikdortgen_3_2" or not r["zone"]["surrounds"]:
+        errors.append(f"varsayilan: dikdortgen_3_2 ve cevrelenebilir olmali: {r['zone']}")
+    elev = next(o for o in r["openings"] if o["type"] == "elevator_door")
+    if elev["width"] != 1600.0 or elev["variant"] != "sliding":
+        errors.append(f"asansor kapisi 1600mm / sliding olmali: {elev}")
+    if check_elevator_door_insets(r["rooms"], r["walls"], r["openings"]):
+        errors.append("uretilen asansor kapisi kendi pay kuralindan gecmeli")
+    for combo in ({}, {"core_side": "south"}, {"orientation": "y"}, {"core_side": "south", "orientation": "y"}):
+        g = generate_central_core(20000.0, 17500.0, elevator_variant="single", **combo)
+        bad = (check_rooms("mm", g["rooms"]) + check_walls("mm", g["walls"], g["openings"])
+               + check_openings(g["openings"], g["walls"]))
+        if bad:
+            errors.append(f"{combo}: validate.check_* temiz olmali: {bad}")
+        rooms = {x["id"]: x for x in g["rooms"]}
+        walls = {w["id"]: Wall.from_context(w, WallCatalog()) for w in g["walls"]}
+        for op, expect in (("door_elevator", "hall"), ("door_stair", "stair")):
+            data = next(o for o in g["openings"] if o["id"] == op)
+            wall = walls[data["wall_id"]]
+            (g0, g1, d), = gaps_for_wall(wall, [data])
+            tip = swing_geometry(wall, Opening.from_context(d), g0, g1).open_end
+            if not point_in_polygon(tip, rooms[expect]["polygon"]):
+                errors.append(f"{combo}: {op} kanadi '{expect}' odasina acilmali")
+    # kasitli bozma: asansor kapisi kuyu genisligi kadar -> pay uyarisi
+    g = generate_central_core(20000.0, 17500.0)
+    for o in g["openings"]:
+        if o["type"] == "elevator_door":
+            o["width"] = 2100.0
+    if not check_elevator_door_insets(g["rooms"], g["walls"], g["openings"]):
+        errors.append("kuyu genisligi kadar kapi (0 pay) UYARI vermeli")
+    # sigmayan kat
+    try:
+        generate_central_core(6000.0, 17500.0)
+        errors.append("6000mm katta ValueError bekleniyordu")
+    except ValueError:
+        pass
+    return errors
+
+
 def main() -> int:
     groups = (
-        ("varsayilan sablon GERCEK proje verisiyle BIREBIR eslesiyor (band DAHIL, DEV-045 rev-23)", check_matches_real_project_ground_truth()),
+        ("merkezi cekirdek + kat holu + asansor kapisi (DEV-055)", check_central_core_dev055()),
         ("band artik verimli bir dikdortgen, israf eden L-sekli DEGIL (DEV-045)", check_band_is_efficient_rectangle_not_wasteful_l_shape()),
         ("band basitlestirilince de cekirdek footprint'iyle CAKISMAZ", check_band_still_excludes_core_footprint()),
         ("cekirdek konumu sabit, yalnizca dogu ucu floor_width'e gore degisir", check_core_position_fixed_when_floor_width_changes()),

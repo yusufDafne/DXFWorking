@@ -4,7 +4,7 @@ Kat paftalarındaki merdiven odasının İÇİNE gerçek basamak/rıht geometris
 (yön biliniyorsa) bir yön oku ve bir kesme çizgisi çizer. Kök `CLAUDE.md`nin
 eskiden "bilinen basitleştirme" saydığı ("asansör/merdiven kapı sembolü
 çizilmez, sadece etiketli kapalı oda olarak gösterilir") boşluğu merdiven
-tarafında kapatır.
+tarafında kapatır. **(2026-10-05, DEV-055: bu "basitleştirme" asansör kapısı için de KALDIRILDI — bkz. `scripts/openings/CLAUDE.md`.)**
 
 ## Neden ayrı bir modül (kullanıcı kararı, 2026-09-25)
 

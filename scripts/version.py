@@ -45,7 +45,16 @@ SCRIPTS_ROOT = Path(__file__).resolve().parent
 # Sistemin BUGUNKU context sozlesmesi. MAJOR yalnizca geriye uyumsuz bir
 # schema degisikliginde artar (alan kaldirma/yeniden adlandirma/anlam
 # degistirme); alan EKLEMEK minor'dur.
-SCHEMA_VERSION = "1.0.0"
+#
+# Surum gecmisi:
+#   1.0.0 - rev-12 baslangic.
+#   1.1.0 - DEV-055/DEV-057 Grup C (kullanici karari 2026-10-05: "artir"):
+#           `openings[].type` enum'una `elevator_door`, `variant` enum'una
+#           `sliding_double` eklendi (additif; eski projeler 1.0.0 ile gecerli
+#           kalir - yalniz minor uyari). Bugun tek proje 1.0.0'da; proje
+#           guncellemesi ayri bir revizyondur (meta.schema_version orada
+#           1.1.0'a cekilecek).
+SCHEMA_VERSION = "1.1.0"
 
 # Alani tasimayan eski projeler icin varsayilan. Bugun tum projeler bu
 # surumden gelmektedir.

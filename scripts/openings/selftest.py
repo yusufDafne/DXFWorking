@@ -236,8 +236,175 @@ def check_schedule() -> list[str]:
     return errors
 
 
+
+def check_double_door_hinges_outside() -> list[str]:
+    """DEV-051 (kullanici karari): cift kanatli kapinin mentesesi DISTA
+    (aciklik kenarlarinda), kanatlar ortada bulusur."""
+    import ezdxf
+    from openings import DOOR_SYMBOLS
+    errors: list[str] = []
+    wall = Wall.from_context({"id": "w", "start": [0, 0], "end": [4000, 0], "thickness": 200, "layer": "D"}, WallCatalog())
+    msp = ezdxf.new().modelspace()
+    DOOR_SYMBOLS["double"](msp, wall, 1000.0, 2800.0, {"id": "dd", "type": "door", "wall_id": "w",
+                                                        "position_from_start": 1900, "width": 1800})
+    centers = sorted(round(a.dxf.center.x) for a in msp.query("ARC"))
+    if centers != [1000, 2800]:
+        errors.append(f"mentese merkezleri aciklik kenarlarinda (1000, 2800) olmali: {centers}")
+    return errors
+
+
+def check_leaf_clearance_along_dev057() -> list[str]:
+    """DEV-057: kanat BOYUNCA yakinlik. Guney duvar y=0, kapi x=2050..2950 (merkez 2500, 900),
+    swing left -> mentese x=2050, kanat x=2050 dogrusunda y=0..900. Kisa 'stub' duvar x=2100,
+    y=400..500 (kalinlik 100): kanat ortasi (y=450) ile mesafe 50 - 50(yarim kalinlik) = 0mm
+    (yalniz uc olcen eski kural bunu GORMEZDI: uc (2050,900) stub'a ~403mm)."""
+    from openings import check_door_leaf_clearance
+    errors: list[str] = []
+    walls = [
+        {"id": "s", "start": [0, 0], "end": [5000, 0], "thickness": 200, "layer": "D"},
+        {"id": "stub", "start": [2100, 400], "end": [2100, 500], "thickness": 100, "layer": "D"},
+    ]
+    door = {"id": "d", "type": "door", "wall_id": "s", "position_from_start": 2500, "width": 900}
+    got = check_door_leaf_clearance(walls, [door])
+    if len(got) != 1 or "boyunca" not in got[0]:
+        errors.append(f"kanat boyunca stub duvara 0mm: 'boyunca' UYARISI bekleniyordu: {got}")
+    far = [walls[0], {**walls[1], "start": [2600, 400], "end": [2600, 500]}]
+    if check_door_leaf_clearance(far, [door]):
+        errors.append("stub 550mm uzaktayken UYARI olmamali (yanlis-pozitif)")
+    return errors
+
+
+def check_wall_nuances() -> list[str]:
+    """DEV-050 madde 1,2,3,5,6,11 - ELLE hesaplanabilir degerlerle."""
+    from openings import check_opening_nuances, check_opening_wall_nuances
+    errors: list[str] = []
+    def walls_rect():
+        return [
+            {"id": "s", "start": [0, 0], "end": [5000, 0], "thickness": 200, "layer": "D"},
+            {"id": "e", "start": [5000, 0], "end": [5000, 4000], "thickness": 200, "layer": "D"},
+            {"id": "n", "start": [5000, 4000], "end": [0, 4000], "thickness": 200, "layer": "D"},
+            {"id": "w", "start": [0, 4000], "end": [0, 0], "thickness": 200, "layer": "D"},
+        ]
+    def door(i, pos, width, **kw):
+        return {"id": i, "type": "door", "wall_id": "s", "position_from_start": pos, "width": width, **kw}
+    # madde 1: duvar basinda 100mm (merkez) - 100 (w duvari yarim kalinligi) = 0 -> UYARI;
+    # pos=700,w=900: baslangic 250, w yarim kalinlik 100 -> 150 kati duvar -> UYARI YOK
+    if not any("basina" in w for w in check_opening_wall_nuances(walls_rect(), [door("d0", 550, 900)])):
+        errors.append("550/900 kapi: 100-100=0mm kati duvar -> UYARI bekleniyordu")
+    if any("basina" in w for w in check_opening_wall_nuances(walls_rect(), [door("d1", 700, 900)])):
+        errors.append("700/900 kapi: 250-100=150mm -> UYARI OLMAMALI (yanlis-pozitif)")
+    # madde 2: 1000-1450 ve 1600-... aralik 150 < 200
+    two = [door("a", 1900, 900), door("b", 3050, 900)]  # a: 1450-2350, b: 2600-3500 -> 250 TAM esik (DEV-053: iki kapi)
+    if any("arasi" in w for w in check_opening_wall_nuances(walls_rect(), two)):
+        errors.append("iki kapi arasi 250mm tam esik UYARI vermemeli")
+    two[1]["position_from_start"] = 2900  # 2450-3350: aralik 100 (<250)
+    if not any("arasi" in w for w in check_opening_wall_nuances(walls_rect(), two)):
+        errors.append("100mm aralik UYARI vermeli")
+    # DEV-053: kapi-kapi 200mm artik YETERSIZ (250), ama kapi-pencere 200 yeterli
+    dw = [door("a", 1900, 900), {"id": "pw", "type": "window", "wall_id": "s", "position_from_start": 3000, "width": 900}]  # aralik 200
+    if any("arasi" in w for w in check_opening_wall_nuances(walls_rect(), dw)):
+        errors.append("kapi-pencere 200mm UYARI vermemeli (yalniz iki kapi icin 250)")
+    dd = [door("a", 1900, 900), door("b", 3000, 900)]  # aralik 200 (<250)
+    if not any("asgari 250mm" in w for w in check_opening_wall_nuances(walls_rect(), dd)):
+        errors.append("iki kapi arasi 200mm artik UYARI vermeli (asgari 250)")
+    # madde 3: pencere dis koseye (0,0) yakin: pos=800,w=900 -> 350-100=250 < 350
+    win = [{"id": "w1", "type": "window", "wall_id": "s", "position_from_start": 800, "width": 900}]
+    if not any("dis kosenin" in w for w in check_opening_wall_nuances(walls_rect(), win)):
+        errors.append("kosede pencere UYARI vermeli")
+    win[0]["position_from_start"] = 1100  # 650-100=550
+    if any("dis kosenin" in w for w in check_opening_wall_nuances(walls_rect(), win)):
+        errors.append("kosedeki 550mm pencere UYARI vermemeli")
+    # madde 5: cift kanat 900 genislik -> kanat 450 < 600; kenar payi 150
+    dbl = [door("dd", 1500, 900, variant="double")]
+    if not any("Cift kanatli" in w for w in check_opening_wall_nuances(walls_rect(), dbl)):
+        errors.append("450mm kanat UYARI vermeli")
+    dbl = [door("dd", 1500, 1200, variant="double")]
+    if any("Cift kanatli" in w for w in check_opening_wall_nuances(walls_rect(), dbl)):
+        errors.append("2x600 cift kanat UYARI vermemeli")
+    # madde 6: surme kapi 1500 genislik 4000 uzunluk duvarda ortada: iki yanda ~1100 < 1500 -> UYARI
+    from openings import check_sliding_door_parking
+    slide = [{"id": "sl", "type": "door", "wall_id": "w", "position_from_start": 2000, "width": 1500, "variant": "sliding"}]
+    if not any("duvar disina" in w for w in check_sliding_door_parking(walls_rect(), slide)):
+        errors.append("kayacak yuzey yetersiz surme kapi UYARI vermeli")
+    slide[0]["width"] = 900
+    if check_sliding_door_parking(walls_rect(), slide):
+        errors.append("yeterli yuzeyli surme kapi UYARI vermemeli")
+    # DEV-051: baska aciklik alani + baska kapinin acilim sektoru (iki yan da bloke)
+    def big():
+        return [
+            {"id": "s", "start": [0, 0], "end": [8000, 0], "thickness": 200, "layer": "D"},
+            {"id": "e", "start": [8000, 0], "end": [8000, 4000], "thickness": 200, "layer": "D"},
+            {"id": "n", "start": [8000, 4000], "end": [0, 4000], "thickness": 200, "layer": "D"},
+            {"id": "w", "start": [0, 4000], "end": [0, 0], "thickness": 200, "layer": "D"},
+        ]
+    sl = {"id": "sl", "type": "door", "wall_id": "s", "position_from_start": 6200, "width": 900, "variant": "sliding"}
+    left_block = {"id": "lb", "type": "door", "wall_id": "s", "position_from_start": 5000, "width": 900}
+    side_door = {"id": "sd", "type": "door", "wall_id": "e", "position_from_start": 500, "width": 900}
+    got = check_sliding_door_parking(big(), [sl, left_block, side_door])
+    if not got or "aciklik alanina" not in got[0] or "acilim alanina" not in got[0]:
+        errors.append(f"iki yan bloke (aciklik + sektor) UYARI vermeli: {got}")
+    if check_sliding_door_parking(big(), [sl, left_block]):
+        errors.append("bir yan serbestken (sektor yok) UYARI OLMAMALI (yanlis-pozitif)")
+    # madde 11: kanat ucu karsi duvara yakin. 5000x4000 oda, kuzey duvari y=4000;
+    # guney duvardaki kapi kanadi +Y'ye ac: 900'luk kanat ucu y=900 -> uzak, UYARI YOK;
+    # oda 1000 derinlikte olsa ucu karsi duvar yuzune (1000-100=900) degecek
+    if check_opening_nuances(walls_rect(), [door("far", 2500, 900)]) != []:
+        errors.append("karsi duvar uzaktayken UYARI olmamali")
+    shallow = walls_rect()
+    shallow[1]["end"] = [5000, 1000]; shallow[2]["start"] = [5000, 1000]
+    shallow[2]["end"] = [0, 1000]; shallow[3]["start"] = [0, 1000]
+    got = [w for w in check_opening_nuances(shallow, [door("near", 2500, 900)]) if "kanat ucu" in w]
+    if not got:
+        errors.append("1000mm derinlikte 900mm kanat ucu karsi duvara dayanmali (UYARI)")
+    return errors
+
+
+def check_elevator_doors_dev055() -> list[str]:
+    """DEV-055: asansor kapisi (3 tur, varsayilan surme, kuyudan 250mm daraltilmis)."""
+    import ezdxf
+    from openings import (DOOR_SYMBOLS, ELEVATOR_DEFAULT_VARIANT, Opening,
+                          check_elevator_door_insets, elevator_door_width)
+    errors: list[str] = []
+    if ELEVATOR_DEFAULT_VARIANT != "sliding":
+        errors.append("asansor kapisi varsayilani surme olmali")
+    if Opening.from_context({"id": "e", "type": "elevator_door", "wall_id": "w",
+                             "position_from_start": 1000, "width": 1600}).variant != "sliding":
+        errors.append("varyanti verilmeyen asansor kapisi 'sliding' olmali")
+    for v in ("single", "sliding", "sliding_double"):
+        Opening.from_context({"id": "e", "type": "elevator_door", "wall_id": "w",
+                              "position_from_start": 1000, "width": 1600, "variant": v})
+    try:
+        Opening.from_context({"id": "e", "type": "elevator_door", "wall_id": "w",
+                              "position_from_start": 1000, "width": 1600, "variant": "folding"})
+        errors.append("asansor kapisi icin 'folding' reddedilmeli")
+    except ValueError:
+        pass
+    if elevator_door_width(2100.0) != 1600.0 or elevator_door_width(2100.0, 200.0) != 1700.0:
+        errors.append("kuyu 2100 -> kapi 1600 (250 pay), 1700 (200 pay) olmali")
+    # ikili surme: iki panel + iki isaret = 4 LINE, yay yok; aciklik kenarlari 1000..2800
+    wall = Wall.from_context({"id": "w", "start": [0, 0], "end": [4000, 0], "thickness": 200, "layer": "D"}, WallCatalog())
+    msp = ezdxf.new().modelspace()
+    DOOR_SYMBOLS["sliding_double"](msp, wall, 1000.0, 2800.0, {"id": "e", "type": "elevator_door"})
+    if len(msp.query("LINE")) != 4 or len(msp.query("ARC")) != 0:
+        errors.append(f"ikili surme 4 LINE / 0 ARC cizmeli: {len(msp.query('LINE'))}/{len(msp.query('ARC'))}")
+    # kuyu paylari: kuyu x 0..2100 (asansor odasi), kapi 1600 ortada -> 250/250 TEMIZ; 1900 genis -> 100 UYARI
+    well = {"id": "a", "room_type": "asansor", "polygon": [[0, 0], [2100, 0], [2100, 3000], [0, 3000]]}
+    walls = [{"id": "w", "start": [0, 0], "end": [4000, 0], "thickness": 200, "layer": "D"}]
+    ok = {"id": "e", "type": "elevator_door", "wall_id": "w", "position_from_start": 1050, "width": 1600}
+    if check_elevator_door_insets([well], walls, [ok]):
+        errors.append("250/250 pay UYARI vermemeli (yanlis-pozitif)")
+    wide = {**ok, "width": 1900}
+    if len(check_elevator_door_insets([well], walls, [wide])) != 2:
+        errors.append("100/100 pay: iki kenar icin UYARI bekleniyordu")
+    return errors
+
+
 def main() -> int:
     groups = (
+        ("asansor kapisi: 3 tur, varsayilan surme, 250mm pay (DEV-055)", check_elevator_doors_dev055()),
+        ("kanat boyunca duvar yakinligi (DEV-057 Grup A)", check_leaf_clearance_along_dev057()),
+        ("cift kanat mentese DISTA (DEV-051)", check_double_door_hinges_outside()),
+        ("aciklik duvar nuanslari (DEV-050 #1,2,3,5,6,11)", check_wall_nuances()),
         ("varsayilanlar (rev-12 davranisi)", check_defaults()),
         ("yay her zaman 90 derece (gizli hata)", check_sweep_always_90()),
         ("mentese ve acilim tarafi", check_swing_sides()),

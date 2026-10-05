@@ -1,0 +1,38 @@
+{
+  "source": "golden/asansor_merkezi_cekirdek",
+  "entity_count": 536,
+  "entity_types": {
+    "ARC": 4,
+    "ATTRIB": 27,
+    "CIRCLE": 72,
+    "DIMENSION": 36,
+    "HATCH": 15,
+    "INSERT": 9,
+    "LINE": 159,
+    "LWPOLYLINE": 56,
+    "TEXT": 158
+  },
+  "layers": {
+    "AKS": 216,
+    "CERCEVE": 46,
+    "DUVARLAR": 90,
+    "KAPI-PENCERE": 21,
+    "KESIT": 30,
+    "KOT": 24,
+    "METIN": 95,
+    "OLCU": 14
+  },
+  "modelspace_bbox": [
+    -500.0,
+    -4150.0,
+    131800.0,
+    16150.0
+  ],
+  "blocks": [
+    "MAHAL_ETIKET",
+    "_CLOSEDFILLED"
+  ],
+  "block_inserts": {
+    "MAHAL_ETIKET": 9
+  }
+}

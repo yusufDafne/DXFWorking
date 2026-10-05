@@ -380,6 +380,109 @@ penceresi eklendi, `band_south`teki üç giriş kapısı + `uA`/`uB`nin WC
 kapıları kaydırıldı, tüm 9 katta `band` DEV-045 dikdörtgenine çekildi).
 Ayrıntı: `docs/development/DEVELOPMENT_HISTORY.md` `HD-025`.
 
+## DEV-050: kapı/pencere ilişkisel nuanslar
+
+`rules.py`: `check_wet_door_window_gap` (#4, ıslak hacim kapısı ↔ aynı
+duvardaki pencere ≥600), `check_wet_door_swing_inward` (#12, WC/banyo kapısı
+kendi hacmine açılır), `check_entry_door_swing_inward` (#13, giriş kapısı
+birime içe açılır), `check_kitchen_wet_door_opposite` (#14, mutfak kapısı ↔
+WC/banyo kapısı aynı eksende karşı karşıya olmaz); toplayıcı
+`check_door_window_nuances`. Açılma yönü `host_side` + duvar normaliyle 400 mm
+ileri bir noktanın hangi odaya düştüğünden bulunur (sürme/katlanır → atlanır).
+Hepsi UYARI; `room_type`/`unit_id` opt-in. #15 (giriş ↔ WC mesafe) `DEV-053`.
+
+## DEV-051: kapılar odalara doğru açılır
+
+`rules.py::check_doors_open_into_rooms(rooms, walls, openings, swing_policy=
+"into_room")` — konut varsayılanı (kullanıcı kararı); koridor↔oda arasındaki
+kapı koridora açılıyorsa UYARI. Islak hacim (#12) ve giriş (#13) tekrarlanmaz;
+çekirdek/sürme/katlanır atlanır. `swing_policy="any"` kapatır: hastane/otel
+gibi kaçış planlı yapılarda yön kuralları ayrıca incelenecek (genişletme
+noktası). `check_door_window_nuances` toplayıcısına dahildir.
+
+## DEV-052: WC/banyo gerçek komşuluk
+
+`rules.py::check_wet_area_adjacency` (varsayılan `require_shared_wall=True`):
+WC ve banyo ortak kenar paylaşmalı (>1 mm örtüşme, köşe teması sayılmaz,
+asgari uzunluk yok), en yakın kapı çifti aynı doğru üzerinde olmalı
+(sırt sırta/karşılıklı olamaz), ıslak hacim kapıları aynı birimin diğer oda
+kapılarından kendi çiftlerinden daha uzak olmalı (göreli kural). DEV-043'ün
+mesafe üst sınırı korunur. Şaft/havalandırma bu madde kapsamında KODLANMADI.
+
+
+`python scripts/architect/selftest.py` — otuz üç kontrol grubu: yedi
+`rules.py` fonksiyonunun her biri hem bir İHLAL hem (giriş-WC görüş
+hattı için İKİ farklı: koni-dışı VE duvarla-engellenmiş; ıslak hacim
+yakınlığı için ayrıca bir `max_distance` OVERRIDE testi; ortak
+sirkülasyon payı için ayrıca "koridor OLMAYAN ortak oda" VE "birim-içi
+hol KARIŞTIRILMAZ" yanlış-pozitifleri) bir YANLIŞ-POZİTİF senaryosuyla;
+`check_fits`/`resolve_unit_zoning`in elle hesaplanabilir sonuçları
+(DEV-038'in gerçek keşfettiği 7700mm/8400mm senaryosu DAHİL);
+`options_for_core_placement`in giriş kenarını YÜKSEK puanladığı;
+`place_unit_entry_doors`in zone merkezlerine kapı koyduğu; VE gerçek
+`context.json`'daki (rev-21'den itibaren gerçek `unit_id` taşıyan) oda
+verisiyle hol-oranı ihlalinin, `uC`'nin yatak-odası zincirinin VE eski
+`band`in ortak sirkülasyon ihlalinin GERÇEKTEN yakalandığı, `uA`/`uB`'nin
+ilgili kurallarda TEMİZ kaldığı, düzeltilmiş `band` değeriyle ortak
+sirkülasyon uyarısının KALKTIĞI (`unit_id` bellek-içi SOYULDUĞUNDA
+opt-in'in hâlâ geçerli kaldığı da ayrıca kanıtlanır).
+
+## DEV-053: giriş kapısı ↔ WC/banyo kapısı
+
+`rules.py::check_entry_wet_door_proximity` (DEV-050 #15 ile birleşik): temiz
+kapı aralığı ≥250 mm (100 çerçeve + 150 priz — kullanıcı kararı) ve giriş
+kapısının önünde/çaprazında (45–60°, ≤3000 mm, arada duvar yok) WC/banyo kapısı
+olmaması. Dar koni (≤45°) `check_entry_sightlines`te kalır, tekrarlanmaz.
+Yalnız WC/banyo; mutfak vb. kontrol edilmez (yerleşim planı konusu).
+
+## DEV-054: hol topolojisi kütüphanesi (`topology.py`)
+
+`options_for_hall_topology(...)` bir birimin hol şekli için puanlanmış aday
+listesi döndürür (düz/I, L, T, merkezi kare, oran korunan merkezi dikdörtgen;
+tarak varsayılan DEĞİL, kullanıcı bildirimiyle `allowed`). Hesaplar, çizmez,
+context'e yazmaz (`options.py` ile aynı sınır); koordinatlar birim-yerel ve
+merkez çizgisindedir. Puan: kapı cephesi / hol payı / oran; WC görünürlüğü
+KATI kural değildir (kullanıcı kararı). Dik açılı kalır;
+`register_topology(id, label, builder)` tarak/açılı şekiller için
+genişletme noktasıdır.
+
+## DEV-055: merkezi kat holü alternatifleri (`core_hall.py`)
+
+`options_for_central_hall(floor_width, floor_depth, ...)` BEŞ alternatif
+sunar ve puanlar: kare (1:1), dikdörtgen 3:2, 2:1, koridor tipi 3:1, asgari
+genişlikli koridor. Blok = çekirdek satırı (asansör 2100 + merdiven 4000,
+derinlik 3000) + hol (genişlik = çekirdek genişliği, derinlik = genişlik/oran,
+en az 1500 net + duvar). Puan: dört cephede daire derinliği payı
+(`surrounds`: bloğun dört yanında ≥ salon asgari kısa kenarı 3000), hol payı
+(ideal %7, sınır %15), hol cephesi, merkezîlik. Merkezde olursa daireler katı
+çevreler (dört cephede pencere); kenara kayınca payı daralan taraflar
+cezalanır. Yalnız SAYI hesaplar; geometriyi `templates/central.py` üretir
+(bağımlılık yönü: templates → architect).
+
+## DEV-056: etüt 2D zonlama (`layout.py`)
+
+`study_floor(floor_width, floor_depth, program, weights=StudyWeights())`:
+DEV-055 merkezi çekirdek+hol seçenekleri × 16 halka bölme deseni × komşu
+bölüm birleştirmeleri × birim atamaları; sert kapı: hol cephesine temas ≥
+kapı+2×250 mm ve alan ≥ tip asgarisi; puan: alan uyumu/cephe/oran/hol payı/hol
+seçeneği (varsayılan ağırlıklar agent'ın optimum başlangıcı, kullanıcı örnek
+çıktıları yorumladıkça ayarlanır). Deterministiktir; ölçü/koordinat uydurmaz;
+context'e YAZMAZ. **Kullanıcının sağlaması gereken veri:** kat ölçüleri ve birim
+programı (`CURRENT_PROJECT_PROGRAM` yalnız örnektir). Dil modeli
+`suggest_unit_mixes` ile "bu kata kaç daire/kaç odalı olabilir" geri bildirimi
+verir. Yalnız zonlama; iç bölüntü ayrı fikir. Örnek çıktı:
+`python scripts/architect/study_report.py 20000 17500 2+1 2+1 1+1`.
+
+## DEV-057 Grup B: etüt kaydırma iyileştirmesi + tercihe göre seçim
+
+`study_floor(..., refine=True)` en iyi 12 yapıyı blok kaydırma (1000→250 mm,
+|kayma| ≤ 4000 mm) ile iyileştirir; merkezi (kaymasız) en iyi aday geri dönüş
+olarak listede kalır. `StudyPreference` dil modelinin kullanıcı talebinden
+çevirdiği yapılandırılmış tercihtir; `select_study_option` / `study_and_select`
+tercihe en yakın adayı (yakınlık ≥ 0.5) seçer, aksi halde (tercih yok/belirsiz/
+hiçbiri yakın değil) hol merkezde olan en yüksek puanlı sürümü seçer
+(kullanıcı kararı). Ölçü/koordinat dil modelinden gelmez.
+
 ## Doğrulama
 
 `python scripts/architect/selftest.py` — otuz üç kontrol grubu: yedi

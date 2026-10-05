@@ -223,9 +223,10 @@ def rule_opening_symbols(doc, context: dict) -> list[str]:
     for floor in context["floors"]:
         floor_expected = 0
         for opening in floor["openings"]:
-            if opening["type"] != "door":
+            if opening["type"] not in ("door", "elevator_door"):
                 continue
-            variant = opening.get("variant", VARIANT_SINGLE)
+            default = "sliding" if opening["type"] == "elevator_door" else VARIANT_SINGLE
+            variant = opening.get("variant", default)
             floor_expected += ARCS_PER_VARIANT.get(variant, 1)
         if floor_has_ceiling_data(floor):
             floor_expected *= 2

@@ -115,6 +115,52 @@ raporu vermelidir.
 birbirine açılıyor" kontrolü **HATA** durumuna çekildi. Sürme kapı sektör
 üretmediği için bu kontrolden doğal olarak muaftır.
 
+## Açıklık nuans kuralları (DEV-050, `rules.py`)
+
+Açıklığın KENDİ duvarına göre kuralları; hepsi UYARI, esikler kütüphane
+varsayılanı (context'e yazılmaz): #1 duvar ucunda ≥100 mm katı duvar (uçtaki
+dik duvarın yarım kalınlığı düşülür), #2 açıklıklar arası ≥200 (iki KAPI arası ≥250: 100 çerçeve + 150 priz, DEV-053), #3 pencere ↔
+bina dış köşesi ≥350, #5 çift kanatta 150 kasa payı + kanat ≥600, #6 sürme
+kapıda kayacağı duvar yüzeyi ≥ açıklık genişliği, #11 açık kanat ucu ile başka
+duvar yüzü ≥50 (`swing_geometry` kullanılır; v1 yalnız kanat UCU). Public:
+`check_opening_nuances`, `check_opening_wall_nuances`,
+`check_door_leaf_clearance`. Sözleşme alanları DEĞİŞMEDİ (`CONTRACT_VERSION`
+1.1). Test: `selftest.py::check_wall_nuances`. Ayrıntı: `DEV-050`.
+
+## DEV-051: sürme kapı park alanı + çift kanat menteşe invariantı
+
+`rules.py::check_sliding_door_parking` (DEV-050 #6'nın dinamik hali): sürme
+kanat, açıklık genişliği kadar duvar yüzünde iki yandan birine park eder; iki
+yan da denenir (yan UYDURULMAZ). Bir yan duvar katı ucunu aşarsa, başka bir
+açıklık alanına girerse veya başka bir kapının açılım sektörüyle
+(`collision.footprints` — çizilen yayla AYNI kaynak) kesişirse uygun
+değildir; ikisi de uygun değilse UYARI. Çift kanat: menteşe açıklık
+kenarlarındadır (kullanıcı kararı) — `selftest.py` bunu kilitler.
+
+## DEV-055: asansör kapısı (`elevator.py`) — eski "çizilmez" kuralı KALDIRILDI
+
+Kullanıcı kararı (2026-10-05): "asansörlerin kapısı olur; eski kuralı genel şablon
+çıkarırken gereksiz token yemesin diye söylemiştim." `type='elevator_door'`
+(oda kapısı kurallarına GİRMEZ): üç tür — `single` (kapı gibi açılan),
+`sliding` (**varsayılan**), `sliding_double` (büyük kapılar için ikili sürgülü,
+iki panel zıt yöne, yay yok, sektör üretmez). Kuyu genişliğinden her kenardan
+200–300 mm (varsayılan 250) daraltılır: `elevator_door_width(2100)` = 1600.
+`check_elevator_door_insets` (UYARI) pay [200,300] dışında ise. Şema: `type`
+enum'una `elevator_door`, `variant` enum'una `sliding_double` eklendi
+(additif); `CONTRACT_VERSION` 1.1 → 1.2; lejant `A…`/`-SD` işaretleri.
+
+## DEV-057 Grup A: kanat boyunca yakınlık
+
+`rules.py::check_door_leaf_clearance` artık yalnız kanat ucunu değil kanadı
+menteşe→uç doğrusu üzerinde dört noktadan (1/4, 1/2, 3/4, uç) ölçer; en yakın
+nokta 50 mm'den yakınsa UYARI ('ucu' veya 'boyunca').
+
+## DEV-057 Grup C: golden referansı + şema sürümü
+
+Asansör kapısının üç türü `golden/asansor_merkezi_cekirdek/` ile sınanır (varsayılan
+sürgülü, ikili sürgülü, kapı gibi açılan; beklenen ARC = 4). Şema additif genişledi
+ve `scripts/version.py::SCHEMA_VERSION` 1.1.0 oldu (kullanıcı kararı).
+
 ## Kabul
 
 Açıklık boşlukları duvar rails ile tutarlı, sembol stili enjekte edilebilir, schedule verisi deterministik ve mevcut plan çıktısı korunmuş olmalıdır.

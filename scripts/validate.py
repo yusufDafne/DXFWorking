@@ -83,17 +83,25 @@ from version import (  # noqa: E402
     project_schema_version,
 )
 from stairs import StairFitError, exit_door_alignment_warning, resolve_stair  # noqa: E402
-from standards import check_room_proportions, check_room_types  # noqa: E402
+from standards import (  # noqa: E402
+    check_door_corridor_nuances,
+    check_room_proportions,
+    check_room_types,
+    edge_wall_thicknesses,
+    net_area,
+)
 from architect import (  # noqa: E402
     check_bedroom_via_corridor,
     check_circulation_area_share,
     check_common_circulation_share,
     check_door_core_balance,
+    check_door_window_nuances,
     check_entry_sightlines,
     check_wet_area_door_proximity,
     check_wet_area_reachable_without_bedroom,
 )
-from walls import Wall, WallCatalog, gaps_for_wall  # noqa: E402
+from openings import check_elevator_door_insets, check_opening_nuances  # noqa: E402
+from walls import Wall, WallCatalog, check_wall_thickness, gaps_for_wall  # noqa: E402
 
 AREA_TOLERANCE_RATIO = 0.03  # oda alani vs poligon alani icin tolerans
 
@@ -176,7 +184,10 @@ def wall_gap_ranges(wall_dict: dict, openings: list[dict]) -> list[tuple[float, 
     return [(g_start, g_end) for g_start, g_end, _opening in gaps_for_wall(wall_obj, openings)]
 
 
-def check_rooms(units: str, rooms: list[dict]) -> list[str]:
+def check_rooms(units: str, rooms: list[dict], walls: list[dict] | None = None) -> list[str]:
+    """`area_m2`, oda poligonunun BRUT (merkez cizgisi) alanina VEYA - `walls`
+    verilmisse - duvar IC YUZLERI arasi NET alanina esit olmalidir (+-%3).
+    Kullanici karari (2026-10-05, rev-24): mahal alani NET yazilir."""
     errors: list[str] = []
 
     for room in rooms:
@@ -189,10 +200,17 @@ def check_rooms(units: str, rooms: list[dict]) -> list[str]:
             errors.append(f"Oda '{room['id']}' icin area_m2 pozitif olmali.")
             continue
         diff_ratio = abs(computed_m2 - declared_m2) / declared_m2
-        if diff_ratio > AREA_TOLERANCE_RATIO:
+        net_m2 = None
+        if walls:
+            thickness = edge_wall_thicknesses(room["polygon"], walls)
+            if any(thickness):
+                net_m2 = to_m2(net_area(room["polygon"], thickness), units)
+        net_ok = net_m2 is not None and abs(net_m2 - declared_m2) / declared_m2 <= AREA_TOLERANCE_RATIO
+        if diff_ratio > AREA_TOLERANCE_RATIO and not net_ok:
+            net_note = f" (duvar ic yuzleri arasi net {net_m2:.2f} m^2)" if net_m2 is not None else ""
             errors.append(
                 f"Oda '{room['id']}': beyan edilen alan {declared_m2:.2f} m^2, "
-                f"poligondan hesaplanan alan {computed_m2:.2f} m^2 ile tutarsiz "
+                f"poligondan hesaplanan alan {computed_m2:.2f} m^2{net_note} ile tutarsiz "
                 f"(fark %{diff_ratio*100:.1f}, tolerans %{AREA_TOLERANCE_RATIO*100:.0f})."
             )
 
@@ -409,7 +427,7 @@ def check_floor_codes(floors: list[dict]) -> list[str]:
 def check_floor(units: str, floor: dict) -> list[str]:
     errors: list[str] = []
     prefix = f"[{floor['id']}] "
-    errors += [prefix + e for e in check_rooms(units, floor["rooms"])]
+    errors += [prefix + e for e in check_rooms(units, floor["rooms"], floor["walls"])]
     errors += [prefix + e for e in check_walls(units, floor["walls"], floor["openings"])]
     errors += [prefix + e for e in check_openings(floor["openings"], floor["walls"])]
     # DEV-036: room_type VERILMIS ama standards.STANDARDS'ta TANIMSIZ bir
@@ -524,7 +542,7 @@ def run_validation(context_path: Path = DEFAULT_CONTEXT_PATH) -> bool:
         # ZAMAN UYARIdir, uretimi DURDURMAZ.
         standards_warnings += [
             f"[{floor['id']}] " + w
-            for w in check_room_proportions(floor["rooms"], units)
+            for w in check_room_proportions(floor["rooms"], units, floor["walls"])
         ]
         # DEV-039: iliskisel (arity-2+) mimari mantik kurallari - standards
         # ile AYNI politika (HER ZAMAN UYARI, asla HATA). Tumu rooms[].
@@ -541,6 +559,20 @@ def run_validation(context_path: Path = DEFAULT_CONTEXT_PATH) -> bool:
                 + check_door_core_balance(rooms, walls, openings)
                 + check_wet_area_reachable_without_bedroom(rooms, walls, openings)
                 + check_wet_area_door_proximity(rooms, walls, openings)
+                # DEV-050: kapi/pencere iliskisel nuanslar (madde 4,12,13,14)
+                + check_door_window_nuances(rooms, walls, openings)
+            )
+        ]
+        # DEV-050: arity-1 nuanslar - acikligin kendi duvarina gore
+        # (madde 1,2,3,5,6,11), mahal/koridor tipine gore (madde 7-10) ve
+        # dis/ic duvar kalinligi hiyerarsisi (madde 16). HER ZAMAN UYARI.
+        standards_warnings += [
+            f"[{floor['id']}] " + w
+            for w in (
+                check_opening_nuances(walls, openings)
+                + check_elevator_door_insets(rooms, walls, openings)
+                + check_door_corridor_nuances(rooms, walls, openings)
+                + check_wall_thickness(walls, rooms, units)
             )
         ]
 

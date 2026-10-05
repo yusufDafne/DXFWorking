@@ -24,12 +24,23 @@ from dataclasses import dataclass
 
 TYPE_DOOR = "door"
 TYPE_WINDOW = "window"
+# DEV-055: asansor kapisi AYRI bir tiptir (kullanici karari 2026-10-05: "asansorlerin
+# kapisi olur"). Kapi kurallarina (oda kapisi asgarisi, odaya acilma, giris/WC
+# nuanslari) GIRMEZ; kendi kurallari `openings/elevator.py`dedir.
+TYPE_ELEVATOR_DOOR = "elevator_door"
 
 VARIANT_SINGLE = "single"
 VARIANT_DOUBLE = "double"
 VARIANT_SLIDING = "sliding"
 VARIANT_FOLDING = "folding"
-DOOR_VARIANTS = (VARIANT_SINGLE, VARIANT_DOUBLE, VARIANT_SLIDING, VARIANT_FOLDING)
+# DEV-055: buyuk asansor kapilari icin IKILI surme (iki panel zit yone acilir).
+VARIANT_SLIDING_DOUBLE = "sliding_double"
+DOOR_VARIANTS = (VARIANT_SINGLE, VARIANT_DOUBLE, VARIANT_SLIDING, VARIANT_FOLDING,
+                 VARIANT_SLIDING_DOUBLE)
+# Asansor kapisi UC turdur: kapi gibi acilan (single), surme (VARSAYILAN),
+# ikili surme. Diger varyantlar asansorde anlamsizdir.
+ELEVATOR_DOOR_VARIANTS = (VARIANT_SINGLE, VARIANT_SLIDING, VARIANT_SLIDING_DOUBLE)
+ELEVATOR_DEFAULT_VARIANT = VARIANT_SLIDING
 
 SWING_LEFT = "left"
 SWING_RIGHT = "right"
@@ -59,6 +70,10 @@ class Opening:
             raise ValueError(
                 f"Aciklik '{self.id}': bilinmeyen varyant '{self.variant}'. "
                 f"Gecerli varyantlar: {', '.join(DOOR_VARIANTS)}")
+        if self.type == TYPE_ELEVATOR_DOOR and self.variant not in ELEVATOR_DOOR_VARIANTS:
+            raise ValueError(
+                f"Aciklik '{self.id}': asansor kapisi varyanti "
+                f"{ELEVATOR_DOOR_VARIANTS} olmali, '{self.variant}' verildi.")
         if self.swing not in SWINGS:
             raise ValueError(
                 f"Aciklik '{self.id}': 'swing' {SWINGS} olmali, "
@@ -70,6 +85,8 @@ class Opening:
 
     @classmethod
     def from_context(cls, data: dict) -> "Opening":
+        default_variant = (ELEVATOR_DEFAULT_VARIANT if data["type"] == TYPE_ELEVATOR_DOOR
+                           else VARIANT_SINGLE)
         return cls(
             id=data["id"],
             type=data["type"],
@@ -77,7 +94,7 @@ class Opening:
             position_from_start=float(data["position_from_start"]),
             width=float(data["width"]),
             layer=data.get("layer", DEFAULT_LAYER),
-            variant=data.get("variant", VARIANT_SINGLE),
+            variant=data.get("variant", default_variant),
             swing=data.get("swing", SWING_LEFT),
             host_side=data.get("host_side", SIDE_POS),
         )

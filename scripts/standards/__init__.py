@@ -61,6 +61,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from .measure import NarrowPoint, edge_wall_thicknesses, inset_polygon, narrowest_point, net_area
+from .nuances import check_door_corridor_nuances
+
 
 @dataclass(frozen=True)
 class RoomStandard:
@@ -131,10 +134,18 @@ STANDARDS: dict[str, RoomStandard] = {
         "salon", "Salon", min_ratio=1.0, max_ratio=2.3,
         min_short_edge_mm=3000.0,
         source="v1 pratik varsayilan."),
+    "dukkan": RoomStandard(
+        "dukkan", "Dukkan (ticari)", min_ratio=1.0, max_ratio=5.0,
+        source="v1 pratik varsayilan (DEV-051 ek karar, 2026-10-05: dukkanlar "
+               "konut sayilmaz, ayri islenir). Yalnizca en-boy orani siniri; "
+               "kisa kenar/alan esigi UYDURULMADI - yonetmelik gelince "
+               "eklenecek."),
     "koridor": RoomStandard(
         "koridor", "Koridor / hol", min_ratio=1.0, max_ratio=8.0,
-        min_short_edge_mm=1100.0,
-        source="v1 pratik varsayilan - koridorlar DOGASI GEREGI uzun-ince "
+        min_short_edge_mm=1500.0,
+        source="v1 pratik varsayilan (DEV-049: 1100 -> 1500mm, kullanici "
+               "karari 2026-10-05: 'hol genisligi minimum 1,5 metre'; "
+               "gercek yonetmelik gelince degisecek) - koridorlar DOGASI GEREGI uzun-ince "
                "olur; bu yuzden max_ratio digerlerinden COK daha genistir "
                "(bu tip icin bir UST sinirin bile anlami tartismalidir, "
                "ama tamamen sinirsiz birakmak yazim hatalarini - orn. "
@@ -214,10 +225,16 @@ def check_room_types(rooms: list[dict]) -> list[str]:
     return errors
 
 
-def check_room_proportions(rooms: list[dict], units: str) -> list[str]:
+def check_room_proportions(
+    rooms: list[dict], units: str, walls: list[dict] | None = None
+) -> list[str]:
     """WARN sinifi (kullanici karari, 2026-09-28): esik disina cikan bir
     mahal uretimi DURDURMAZ, yalnizca UYARI verir - kullanici context.json'da
     o geometriyi BIRAKIRSA (isteğine devam ederse) uretim GERCEKLESIR.
+    `walls` (opsiyonel, ayni kat) verilirse en-boy orani, asgari kisa kenar/
+    yerel en dar nokta VE alan duvar IC YUZLERI arasi NET olculur (DEV-049/
+    DEV-057: mimari gelenek; `STANDARDS` esikleri NET yorumlanir); verilmezse
+    oda poligonu net kabul edilir (eski davranis).
     `room_type` verilmeyen VEYA `STANDARDS`ta tanimsiz (bu ikinci durum
     `check_room_types` icinde zaten HATA) bir oda kontrole HIC GIRMEZ."""
     warnings: list[str] = []
@@ -227,27 +244,52 @@ def check_room_proportions(rooms: list[dict], units: str) -> list[str]:
         standard = STANDARDS.get(room_type) if room_type else None
         if standard is None:
             continue
-        short_edge, long_edge = _aabb_edges(room["polygon"])
+        gross_short, _gross_long = _aabb_edges(room["polygon"])
+        thick = edge_wall_thicknesses(room["polygon"], walls) if walls else None
+        # DEV-057 (kullanici karari 2026-10-05): oran ve alan da duvar IC
+        # YUZLERI arasi NET poligonla olculur; `STANDARDS` esikleri NET olarak
+        # yorumlanir. `walls` verilmezse poligon net kabul edilir.
+        net_poly = inset_polygon(room["polygon"], thick) if thick and any(thick) else room["polygon"]
+        short_edge, long_edge = _aabb_edges(net_poly)
+        net_tag = " (net)" if thick and any(thick) else ""
         ratio = long_edge / short_edge if short_edge > 0 else float("inf")
         if ratio < standard.min_ratio or ratio > standard.max_ratio:
             warnings.append(
-                f"Oda '{room['id']}' ({standard.label}): en-boy orani "
+                f"Oda '{room['id']}' ({standard.label}): en-boy orani{net_tag} "
                 f"{ratio:.2f}, izin verilen aralik "
                 f"[{standard.min_ratio:.2f}, {standard.max_ratio:.2f}] disinda."
             )
         if standard.min_short_edge_mm is not None:
-            short_edge_mm = short_edge * unit_to_mm
-            if short_edge_mm < standard.min_short_edge_mm:
-                warnings.append(
-                    f"Oda '{room['id']}' ({standard.label}): kisa kenar "
-                    f"{short_edge_mm:.0f}mm, asgari "
-                    f"{standard.min_short_edge_mm:.0f}mm altinda."
-                )
+            narrow = narrowest_point(room["polygon"], thick)
+            if narrow is not None:
+                net_mm = narrow.width * unit_to_mm
+                if net_mm < standard.min_short_edge_mm - 1e-6:
+                    if abs(narrow.gross - gross_short) < 1e-6:
+                        warnings.append(
+                            f"Oda '{room['id']}' ({standard.label}): kisa kenar "
+                            f"{net_mm:.0f}mm"
+                            + (" (duvar ic yuzleri arasi net)" if thick else "")
+                            + f", asgari {standard.min_short_edge_mm:.0f}mm altinda."
+                        )
+                    else:
+                        where = "x" if narrow.axis == "y" else "y"
+                        warnings.append(
+                            f"Oda '{room['id']}' ({standard.label}): yerel en dar "
+                            f"nokta {net_mm:.0f}mm"
+                            + (" (duvar ic yuzleri arasi net)" if thick else "")
+                            + f" ({where}={narrow.at:g} kesitinde, "
+                            f"{narrow.span[0]:g}-{narrow.span[1]:g} araliginda), "
+                            f"asgari {standard.min_short_edge_mm:.0f}mm altinda "
+                            f"(dis kutu kisa kenari {gross_short * unit_to_mm:.0f}mm "
+                            f"bunu gizliyordu)."
+                        )
         if standard.min_area_m2 is not None:
             area_m2 = room["area_m2"]
+            if thick and any(thick):
+                area_m2 = net_area(room["polygon"], thick) / (1e6 if units == "mm" else 1.0)
             if area_m2 < standard.min_area_m2:
                 warnings.append(
-                    f"Oda '{room['id']}' ({standard.label}): alan "
+                    f"Oda '{room['id']}' ({standard.label}): alan{net_tag} "
                     f"{area_m2:.1f} m2, asgari {standard.min_area_m2:.1f} m2 "
                     f"altinda."
                 )
@@ -258,9 +300,10 @@ def check_room_proportions(rooms: list[dict], units: str) -> list[str]:
 # DEGILDIR - yalnizca RoomStandard'in ALAN SEKLI veya check_* fonksiyonlarinin
 # imzasi/donus formati degisirse artar (bkz. modul dokstring "Gelecek
 # guncelleme sozlesmesi"). Bkz. scripts/version.py
-CONTRACT_VERSION = "1.0"
+CONTRACT_VERSION = "1.2"
 
 __all__ = [
     "RoomStandard", "STANDARDS", "room_aspect_ratio", "validate_standards",
-    "check_room_types", "check_room_proportions", "CONTRACT_VERSION",
+    "check_room_types", "check_room_proportions", "narrowest_point",
+    "edge_wall_thicknesses", "net_area", "check_door_corridor_nuances", "NarrowPoint", "CONTRACT_VERSION",
 ]

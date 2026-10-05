@@ -1,0 +1,745 @@
+{
+  "meta": {
+    "project_name": "Golden - Merkezi Cekirdek + Asansor Kapisi",
+    "schema_version": "1.1.0",
+    "units": "mm",
+    "scale": "1:50",
+    "project_type": "MIMARI_UYGULAMA",
+    "fonts": {
+      "default": "arialn.ttf",
+      "room_label": "arialn.ttf"
+    },
+    "cover": {
+      "signature_fields": [
+        "YONETIM",
+        "MIMAR"
+      ]
+    },
+    "floor_width": 12000.0,
+    "floor_depth": 12000.0
+  },
+  "layers": [
+    {
+      "name": "DUVARLAR",
+      "color": 7
+    },
+    {
+      "name": "KAPI-PENCERE",
+      "color": 5
+    },
+    {
+      "name": "METIN",
+      "color": 7
+    },
+    {
+      "name": "CERCEVE",
+      "color": 8
+    },
+    {
+      "name": "OLCU",
+      "color": 3
+    }
+  ],
+  "grid": {
+    "vertical_axes": [
+      {
+        "label": "1",
+        "position": 0.0
+      },
+      {
+        "label": "2",
+        "position": 2950.0
+      },
+      {
+        "label": "3",
+        "position": 9050.0
+      },
+      {
+        "label": "4",
+        "position": 12000.0
+      }
+    ],
+    "horizontal_axes": [
+      {
+        "label": "A",
+        "position": 0.0
+      },
+      {
+        "label": "B",
+        "position": 2975.0
+      },
+      {
+        "label": "C",
+        "position": 9025.0
+      },
+      {
+        "label": "D",
+        "position": 12000.0
+      }
+    ]
+  },
+  "floors": [
+    {
+      "id": "kat1",
+      "label": "ZEMIN KAT (varsayilan surme)",
+      "code": "ZK",
+      "rooms": [
+        {
+          "id": "elevator",
+          "name": "Asansor",
+          "room_type": "asansor",
+          "polygon": [
+            [
+              2950.0,
+              6025.0
+            ],
+            [
+              5050.0,
+              6025.0
+            ],
+            [
+              5050.0,
+              9025.0
+            ],
+            [
+              2950.0,
+              9025.0
+            ]
+          ],
+          "area_m2": 6.3,
+          "no": "01"
+        },
+        {
+          "id": "stair",
+          "name": "Merdiven",
+          "room_type": "merdiven",
+          "polygon": [
+            [
+              5050.0,
+              6025.0
+            ],
+            [
+              9050.0,
+              6025.0
+            ],
+            [
+              9050.0,
+              9025.0
+            ],
+            [
+              5050.0,
+              9025.0
+            ]
+          ],
+          "area_m2": 12.0,
+          "no": "02"
+        },
+        {
+          "id": "hall",
+          "name": "Kat Holu",
+          "room_type": "koridor",
+          "polygon": [
+            [
+              2950.0,
+              2975.0
+            ],
+            [
+              9050.0,
+              2975.0
+            ],
+            [
+              9050.0,
+              6025.0
+            ],
+            [
+              2950.0,
+              6025.0
+            ]
+          ],
+          "area_m2": 18.61,
+          "no": "03"
+        }
+      ],
+      "walls": [
+        {
+          "id": "hall_south",
+          "start": [
+            2950.0,
+            2975.0
+          ],
+          "end": [
+            9050.0,
+            2975.0
+          ],
+          "thickness": 200.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "hall_west",
+          "start": [
+            2950.0,
+            2975.0
+          ],
+          "end": [
+            2950.0,
+            6025.0
+          ],
+          "thickness": 200.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "hall_east",
+          "start": [
+            9050.0,
+            2975.0
+          ],
+          "end": [
+            9050.0,
+            6025.0
+          ],
+          "thickness": 200.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "core_west",
+          "start": [
+            2950.0,
+            6025.0
+          ],
+          "end": [
+            2950.0,
+            9025.0
+          ],
+          "thickness": 200.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "core_east",
+          "start": [
+            9050.0,
+            6025.0
+          ],
+          "end": [
+            9050.0,
+            9025.0
+          ],
+          "thickness": 200.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "core_north",
+          "start": [
+            2950.0,
+            9025.0
+          ],
+          "end": [
+            9050.0,
+            9025.0
+          ],
+          "thickness": 200.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "core_bottom",
+          "start": [
+            2950.0,
+            6025.0
+          ],
+          "end": [
+            9050.0,
+            6025.0
+          ],
+          "thickness": 200.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "core_div",
+          "start": [
+            5050.0,
+            6025.0
+          ],
+          "end": [
+            5050.0,
+            9025.0
+          ],
+          "thickness": 200.0,
+          "layer": "DUVARLAR"
+        }
+      ],
+      "openings": [
+        {
+          "id": "door_stair",
+          "type": "door",
+          "wall_id": "core_bottom",
+          "position_from_start": 4100.0,
+          "width": 900.0,
+          "layer": "KAPI-PENCERE",
+          "host_side": "pos"
+        },
+        {
+          "id": "door_elevator",
+          "type": "elevator_door",
+          "wall_id": "core_bottom",
+          "position_from_start": 1050.0,
+          "width": 1600.0,
+          "layer": "KAPI-PENCERE",
+          "host_side": "neg"
+        }
+      ],
+      "labels": []
+    },
+    {
+      "id": "kat2",
+      "label": "1. KAT (ikili surme)",
+      "code": "K1",
+      "rooms": [
+        {
+          "id": "elevator",
+          "name": "Asansor",
+          "room_type": "asansor",
+          "polygon": [
+            [
+              2950.0,
+              6025.0
+            ],
+            [
+              5050.0,
+              6025.0
+            ],
+            [
+              5050.0,
+              9025.0
+            ],
+            [
+              2950.0,
+              9025.0
+            ]
+          ],
+          "area_m2": 6.3,
+          "no": "01"
+        },
+        {
+          "id": "stair",
+          "name": "Merdiven",
+          "room_type": "merdiven",
+          "polygon": [
+            [
+              5050.0,
+              6025.0
+            ],
+            [
+              9050.0,
+              6025.0
+            ],
+            [
+              9050.0,
+              9025.0
+            ],
+            [
+              5050.0,
+              9025.0
+            ]
+          ],
+          "area_m2": 12.0,
+          "no": "02"
+        },
+        {
+          "id": "hall",
+          "name": "Kat Holu",
+          "room_type": "koridor",
+          "polygon": [
+            [
+              2950.0,
+              2975.0
+            ],
+            [
+              9050.0,
+              2975.0
+            ],
+            [
+              9050.0,
+              6025.0
+            ],
+            [
+              2950.0,
+              6025.0
+            ]
+          ],
+          "area_m2": 18.61,
+          "no": "03"
+        }
+      ],
+      "walls": [
+        {
+          "id": "hall_south",
+          "start": [
+            2950.0,
+            2975.0
+          ],
+          "end": [
+            9050.0,
+            2975.0
+          ],
+          "thickness": 200.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "hall_west",
+          "start": [
+            2950.0,
+            2975.0
+          ],
+          "end": [
+            2950.0,
+            6025.0
+          ],
+          "thickness": 200.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "hall_east",
+          "start": [
+            9050.0,
+            2975.0
+          ],
+          "end": [
+            9050.0,
+            6025.0
+          ],
+          "thickness": 200.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "core_west",
+          "start": [
+            2950.0,
+            6025.0
+          ],
+          "end": [
+            2950.0,
+            9025.0
+          ],
+          "thickness": 200.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "core_east",
+          "start": [
+            9050.0,
+            6025.0
+          ],
+          "end": [
+            9050.0,
+            9025.0
+          ],
+          "thickness": 200.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "core_north",
+          "start": [
+            2950.0,
+            9025.0
+          ],
+          "end": [
+            9050.0,
+            9025.0
+          ],
+          "thickness": 200.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "core_bottom",
+          "start": [
+            2950.0,
+            6025.0
+          ],
+          "end": [
+            9050.0,
+            6025.0
+          ],
+          "thickness": 200.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "core_div",
+          "start": [
+            5050.0,
+            6025.0
+          ],
+          "end": [
+            5050.0,
+            9025.0
+          ],
+          "thickness": 200.0,
+          "layer": "DUVARLAR"
+        }
+      ],
+      "openings": [
+        {
+          "id": "door_stair",
+          "type": "door",
+          "wall_id": "core_bottom",
+          "position_from_start": 4100.0,
+          "width": 900.0,
+          "layer": "KAPI-PENCERE",
+          "host_side": "pos"
+        },
+        {
+          "id": "door_elevator",
+          "type": "elevator_door",
+          "wall_id": "core_bottom",
+          "position_from_start": 1050.0,
+          "width": 1600.0,
+          "layer": "KAPI-PENCERE",
+          "variant": "sliding_double",
+          "host_side": "neg"
+        }
+      ],
+      "labels": []
+    },
+    {
+      "id": "kat3",
+      "label": "2. KAT (kapi gibi acilan)",
+      "code": "K2",
+      "rooms": [
+        {
+          "id": "elevator",
+          "name": "Asansor",
+          "room_type": "asansor",
+          "polygon": [
+            [
+              2950.0,
+              6025.0
+            ],
+            [
+              5050.0,
+              6025.0
+            ],
+            [
+              5050.0,
+              9025.0
+            ],
+            [
+              2950.0,
+              9025.0
+            ]
+          ],
+          "area_m2": 6.3,
+          "no": "01"
+        },
+        {
+          "id": "stair",
+          "name": "Merdiven",
+          "room_type": "merdiven",
+          "polygon": [
+            [
+              5050.0,
+              6025.0
+            ],
+            [
+              9050.0,
+              6025.0
+            ],
+            [
+              9050.0,
+              9025.0
+            ],
+            [
+              5050.0,
+              9025.0
+            ]
+          ],
+          "area_m2": 12.0,
+          "no": "02"
+        },
+        {
+          "id": "hall",
+          "name": "Kat Holu",
+          "room_type": "koridor",
+          "polygon": [
+            [
+              2950.0,
+              2975.0
+            ],
+            [
+              9050.0,
+              2975.0
+            ],
+            [
+              9050.0,
+              6025.0
+            ],
+            [
+              2950.0,
+              6025.0
+            ]
+          ],
+          "area_m2": 18.61,
+          "no": "03"
+        }
+      ],
+      "walls": [
+        {
+          "id": "hall_south",
+          "start": [
+            2950.0,
+            2975.0
+          ],
+          "end": [
+            9050.0,
+            2975.0
+          ],
+          "thickness": 200.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "hall_west",
+          "start": [
+            2950.0,
+            2975.0
+          ],
+          "end": [
+            2950.0,
+            6025.0
+          ],
+          "thickness": 200.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "hall_east",
+          "start": [
+            9050.0,
+            2975.0
+          ],
+          "end": [
+            9050.0,
+            6025.0
+          ],
+          "thickness": 200.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "core_west",
+          "start": [
+            2950.0,
+            6025.0
+          ],
+          "end": [
+            2950.0,
+            9025.0
+          ],
+          "thickness": 200.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "core_east",
+          "start": [
+            9050.0,
+            6025.0
+          ],
+          "end": [
+            9050.0,
+            9025.0
+          ],
+          "thickness": 200.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "core_north",
+          "start": [
+            2950.0,
+            9025.0
+          ],
+          "end": [
+            9050.0,
+            9025.0
+          ],
+          "thickness": 200.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "core_bottom",
+          "start": [
+            2950.0,
+            6025.0
+          ],
+          "end": [
+            9050.0,
+            6025.0
+          ],
+          "thickness": 200.0,
+          "layer": "DUVARLAR"
+        },
+        {
+          "id": "core_div",
+          "start": [
+            5050.0,
+            6025.0
+          ],
+          "end": [
+            5050.0,
+            9025.0
+          ],
+          "thickness": 200.0,
+          "layer": "DUVARLAR"
+        }
+      ],
+      "openings": [
+        {
+          "id": "door_stair",
+          "type": "door",
+          "wall_id": "core_bottom",
+          "position_from_start": 4100.0,
+          "width": 900.0,
+          "layer": "KAPI-PENCERE",
+          "host_side": "pos"
+        },
+        {
+          "id": "door_elevator",
+          "type": "elevator_door",
+          "wall_id": "core_bottom",
+          "position_from_start": 1050.0,
+          "width": 1600.0,
+          "layer": "KAPI-PENCERE",
+          "variant": "single",
+          "host_side": "neg"
+        }
+      ],
+      "labels": []
+    }
+  ],
+  "elevations": [
+    {
+      "id": "on_cephe",
+      "label": "ON CEPHE",
+      "width": 12000.0,
+      "axis_source": "vertical",
+      "levels": [
+        {
+          "label": "ZEMIN KAT",
+          "height": 3000.0,
+          "window_count": 2,
+          "door": true
+        },
+        {
+          "label": "1. KAT",
+          "height": 3000.0,
+          "window_count": 2
+        },
+        {
+          "label": "2. KAT",
+          "height": 3000.0,
+          "window_count": 2
+        }
+      ]
+    }
+  ],
+  "rev_history": [
+    {
+      "rev": 1,
+      "ts": "2026-10-05T00:00:00Z",
+      "summary": "DEV-057 Grup C golden: DEV-055 merkezi cekirdek + kat holu (dikdortgen_2_1, 12000x12000) ve asansor kapisinin UC turu (varsayilan surme / ikili surme / kapi gibi acilan), schema_version 1.1.0. Gercek projeden BAGIMSIZ; icerik templates::generate_central_core ciktisidir (elle yazilmadi). 1:50'de A4 kapak blogu 14850 yuksek oldugundan kat derinligi 12000 secildi."
+    }
+  ]
+}

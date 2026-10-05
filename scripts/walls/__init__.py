@@ -17,6 +17,15 @@ from .standard import (
     RailDrawingStandard,
     wall_fill_spans,
 )
+from .thickness import (
+    CLASS_EXTERIOR,
+    CLASS_INTERIOR,
+    DEFAULT_EXTERIOR_THICKNESS_MM,
+    INTERIOR_THICKNESS_DELTA_MM,
+    check_wall_thickness,
+    classify_walls,
+    interior_thickness,
+)
 from .wall import Wall
 
 # Bu modulun CONTEXT SOZLESMESI surumu (DEV-020). KOD surumu DEGILDIR:
@@ -25,6 +34,13 @@ from .wall import Wall
 CONTRACT_VERSION = "1.0"
 
 __all__ = [
+    "CLASS_EXTERIOR",
+    "CLASS_INTERIOR",
+    "DEFAULT_EXTERIOR_THICKNESS_MM",
+    "INTERIOR_THICKNESS_DELTA_MM",
+    "check_wall_thickness",
+    "classify_walls",
+    "interior_thickness",
     "BRICK_HATCH_PATTERN",
     "BRICK_KIND",
     "CatalogRailStandard",
