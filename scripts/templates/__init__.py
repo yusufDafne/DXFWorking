@@ -217,7 +217,7 @@ def generate_circulation_core(
 # rooms/walls/openings alan adlari) degisirse artar - `CirculationCoreTemplate`
 # varsayilan DEGERLERI (icat edilmemis, gercek projeden cikarildi) serbestce
 # ayarlanabilir, surum ARTIRMAZ (standards.STANDARDS ile AYNI disiplin).
-CONTRACT_VERSION = "1.2"  # rev-26: merdiven 4000x4000, passage tam genislik, zone['niche']; # DEV-055: generate_central_core eklendi (yeni dict seklini `zone` ile)
+CONTRACT_VERSION = "1.3"  # rev-27: yan yana yekpare cekirdek, merdiven holde acik;  # rev-26: merdiven 4000x4000, passage tam genislik, zone['niche']; # DEV-055: generate_central_core eklendi (yeni dict seklini `zone` ile)
 
 __all__ = [
     "CirculationCoreTemplate", "DEFAULT_TEMPLATE",

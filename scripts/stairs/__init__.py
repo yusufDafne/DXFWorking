@@ -134,6 +134,7 @@ class StairResolution:
     # "z_mm": ust yuzey kotu (alt kattan)}] ve cok kollu turlerde yon oku yolu (nokta listesi).
     treads: tuple = ()
     arrow_path: tuple | None = None
+    flight_width_mm: float = 0.0
 
 
 def _bbox(polygon: list[list[float]]) -> tuple[float, float, float, float]:
@@ -162,7 +163,12 @@ def resolve_stair(spec: dict, room_polygon: list[list[float]]) -> StairResolutio
         )
 
     up_towards = spec.get("up_towards")
-    if up_towards is not None and kind != THREE_FLIGHT:
+    if kind == DOG_LEG and up_towards is not None:
+        # rev-27: U merdivenin kollari `up_towards` ekseni boyunca uzanir (oda uzun
+        # ekseni olmak ZORUNDA degil): kol 1 giris kenarindan baslar, sahanlik uzak uctadir.
+        travel_axis = "x" if up_towards in ("E", "W") else "y"
+        run_available = dx if travel_axis == "x" else dy
+    if up_towards is not None and kind not in (THREE_FLIGHT, DOG_LEG):
         expected = {"x": ("E", "W"), "y": ("N", "S")}[travel_axis]
         if up_towards not in expected:
             raise StairFitError(
@@ -212,11 +218,17 @@ def resolve_stair(spec: dict, room_polygon: list[list[float]]) -> StairResolutio
         # (bkz. scripts/stairs/CLAUDE.md "cift kollu merdiven geometrisi").
         landing_depth_mm = float(spec.get("landing_depth_mm", DEFAULT_LANDING_DEPTH_MM))
         perpendicular = dy if travel_axis == "x" else dx
-        half_width = perpendicular / 2.0
-        if half_width < MIN_FLIGHT_WIDTH_MM:
+        # rev-27: kol genisligi `flight_width_mm` ile verilebilir; kalan en kollar arasinda
+        # BOSLUK olarak kalir (varsayilan: oda enine/2, bosluk yok = eski davranis).
+        dog_leg_width = float(spec.get("flight_width_mm", perpendicular / 2.0))
+        if dog_leg_width * 2.0 > perpendicular + 1e-6:
+            raise StairFitError(
+                f"Merdiven '{stair_id}': iki kol ({dog_leg_width:.0f}mm x 2) odanin enine "
+                f"({perpendicular:.0f}mm) sigmiyor.")
+        if dog_leg_width < MIN_FLIGHT_WIDTH_MM:
             raise StairFitError(
                 f"Merdiven '{stair_id}': cift kollu icin kol genisligi "
-                f"({half_width:.1f}mm = oda kisa ekseni/2) minimum konfor "
+                f"({dog_leg_width:.1f}mm) minimum konfor "
                 f"sinirinin ({MIN_FLIGHT_WIDTH_MM:.0f}mm) altinda kalir - "
                 f"oda buyutulmeli veya tek kollu merdivene donulmeli."
             )
@@ -284,6 +296,7 @@ def resolve_stair(spec: dict, room_polygon: list[list[float]]) -> StairResolutio
 
     bbox = (xmin, ymin, xmax, ymax)
     three_flight = None
+    flight_width = 0.0
     treads: tuple = ()
     arrow_path = None
     if kind == THREE_FLIGHT:
@@ -296,8 +309,9 @@ def resolve_stair(spec: dict, room_polygon: list[list[float]]) -> StairResolutio
     elif kind == DOG_LEG:
         flight1_steps, flight2_steps = flight_step_counts
         exit_point, exit_direction, landing_bbox, arrow_path, treads = _dog_leg_exit_and_landing(
-            travel_axis, up_towards, bbox, going, flight1_steps, flight2_steps, riser,
+            travel_axis, up_towards, bbox, going, flight1_steps, flight2_steps, riser, dog_leg_width,
         )
+        flight_width = dog_leg_width
         lx0, ly0, lx1, ly1 = landing_bbox
         landing_depth_mm = (lx1 - lx0) if travel_axis == "x" else (ly1 - ly0)
     else:
@@ -314,6 +328,7 @@ def resolve_stair(spec: dict, room_polygon: list[list[float]]) -> StairResolutio
         landing_depth_mm=landing_depth_mm, landing_bbox=landing_bbox,
         flight_step_counts=flight_step_counts, warnings=warnings,
         three_flight=three_flight, treads=treads, arrow_path=arrow_path,
+        flight_width_mm=(plan3["w"] if kind == THREE_FLIGHT else flight_width),
     )
 
 
@@ -503,6 +518,7 @@ def _single_flight_treads(travel_axis, up_towards, bbox, step_count, going, rise
 def _dog_leg_exit_and_landing(
     travel_axis: str, up_towards: str | None, bbox: tuple[float, float, float, float],
     going_mm: float, flight1_steps: int, flight2_steps: int, riser: float,
+    flight_width: float | None = None,
 ):
     """Cift kollu (U) merdiven: kol 1 giris ucundan (n1-1)*going kadar yukselir,
     SAHANLIK odanin UZAK UCUNDA ve tum genisliktedir (artan boy sahanliga
@@ -513,9 +529,11 @@ def _dog_leg_exit_and_landing(
     down_c, up_c = _travel_coords(travel_axis, up_towards, bbox)
     direction = 1.0 if up_c >= down_c else -1.0
     perp_min, perp_max = (ymin, ymax) if travel_axis == "x" else (xmin, xmax)
-    mid_perp = (perp_min + perp_max) / 2.0
-    s1 = (perp_min + mid_perp) / 2.0
-    s2 = (mid_perp + perp_max) / 2.0
+    w = (perp_max - perp_min) / 2.0 if flight_width is None else flight_width
+    mid_perp = perp_min + w            # kol 1 seridinin ic kenari
+    mid2 = perp_max - w                # kol 2 seridinin ic kenari
+    s1 = perp_min + w / 2.0
+    s2 = perp_max - w / 2.0
 
     landing_start = down_c + direction * (flight1_steps - 1) * going_mm
     landing_end = up_c
@@ -537,9 +555,9 @@ def _dog_leg_exit_and_landing(
     for j in range(1, flight2_steps):
         treads.append({"kind": "tread", "bbox": _cp_bbox(travel_axis, landing_start - direction * j * going_mm,
                                                          landing_start - direction * (j - 1) * going_mm,
-                                                         mid_perp, perp_max),
+                                                         mid2, perp_max),
                        "z_mm": (flight1_steps + j) * riser})
-    treads.append({"kind": "floor", "bbox": _cp_bbox(travel_axis, down_c, exit_coord, mid_perp, perp_max),
+    treads.append({"kind": "floor", "bbox": _cp_bbox(travel_axis, down_c, exit_coord, mid2, perp_max),
                    "z_mm": (flight1_steps + flight2_steps) * riser})
     exit_direction = _OPPOSITE_DIRECTION.get(up_towards) if up_towards else None
     return exit_point, exit_direction, landing_bbox, arrow_path, tuple(treads)
@@ -627,7 +645,9 @@ class DefaultStairStandard:
         xmin, ymin, xmax, ymax = resolution.bbox
         travel_axis = resolution.travel_axis
         perp_min, perp_max = (ymin, ymax) if travel_axis == "x" else (xmin, xmax)
-        mid_perp = (perp_min + perp_max) / 2.0
+        w = resolution.flight_width_mm or (perp_max - perp_min) / 2.0
+        mid_perp = perp_min + w
+        mid2 = perp_max - w
         down_c, up_c = _travel_coords(travel_axis, resolution.up_towards, resolution.bbox)
         direction = 1.0 if up_c >= down_c else -1.0
         flight1_steps, flight2_steps = resolution.flight_step_counts
@@ -638,14 +658,15 @@ class DefaultStairStandard:
             msp.add_line(start, end, dxfattribs={"layer": layer})
         landing_start = down_c + direction * (flight1_steps - 1) * g
         for j in range(1, flight2_steps):
-            start, end = _perp_line_endpoints(travel_axis, (mid_perp, perp_max), landing_start - direction * j * g)
+            start, end = _perp_line_endpoints(travel_axis, (mid2, perp_max), landing_start - direction * j * g)
             msp.add_line(start, end, dxfattribs={"layer": layer})
 
         lx0, ly0, lx1, ly1 = resolution.landing_bbox
         msp.add_lwpolyline([(lx0, ly0), (lx1, ly0), (lx1, ly1), (lx0, ly1)],
                            dxfattribs={"layer": layer}).closed = True
-        div_start, div_end = _travel_line(travel_axis, mid_perp, down_c, landing_start)
-        msp.add_line(div_start, div_end, dxfattribs={"layer": layer})
+        for edge in sorted({mid_perp, mid2}):   # bosluk yoksa tek bolucu, varsa iki ic kenar
+            div_start, div_end = _travel_line(travel_axis, edge, down_c, landing_start)
+            msp.add_line(div_start, div_end, dxfattribs={"layer": layer})
 
     @staticmethod
     def _break_line_perp_span(resolution: StairResolution) -> float:
@@ -747,7 +768,7 @@ def stair_entry_side(resolution: StairResolution) -> str | None:
 
 
 def stair_access_warnings(resolution: StairResolution,
-                          accesses: list[dict]) -> list[str]:
+                          accesses: list[dict], entry_edge_open: bool = False) -> list[str]:
     """Kullanici karari (2026-10-05, rev-25): merdivene giris/cikis KAT
     HOLUNDEN, merdivenin KISA kenarindaki giris ucundan yapilir; uzun
     kenarin ortasindan girilmez ve merdiven alani icin KAPI konmaz - dogrudan
@@ -780,7 +801,7 @@ def stair_access_warnings(resolution: StairResolution,
             )
     if accesses and not at_entry:
         pass  # her acikligin yanlis kenari yukarida zaten raporlandi
-    elif not accesses:
+    elif not accesses and not entry_edge_open:
         warnings.append(
             f"Merdiven '{resolution.stair_id}': giris ucunda ('{entry}') kat holune "
             f"acilan bir duvar acikligi (type='passage') bulunamadi."
@@ -840,7 +861,7 @@ def draw_stairs_on_floor(msp, floor: dict, standard: StairDrawingStandard | None
 # 1.0 -> 1.1 (DEV-046/047): context.json'dan OKUNAN YENI opsiyonel alanlar
 # (stairs[].kind/landing_depth_mm/exit_door_id) eklendi - eski alanlarin
 # ANLAMI DEGISMEDI (geriye donuk uyumlu, MINOR artis). Bkz. scripts/version.py
-CONTRACT_VERSION = "1.3"  # rev-26: kind=three_flight, varsayilan kind=dog_leg (rev-25: stair_entry_side / stair_access_warnings)
+CONTRACT_VERSION = "1.4"  # rev-27: dog_leg kol ekseni up_towards, flight_width_mm + kollar arasi bosluk, entry_edge_open;  # rev-26: kind=three_flight, varsayilan kind=dog_leg (rev-25: stair_entry_side / stair_access_warnings)
 
 __all__ = [
     "STAIR_LAYER",

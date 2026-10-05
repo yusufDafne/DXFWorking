@@ -7,9 +7,10 @@ olarak üreten TAMAMEN deterministik bir Python fonksiyonu. Koridor
 
 ## Merkezi cekirdek kisa kenar yerlesimi (rev-25)
 
-`generate_central_core(stair_entry='short_edge')` varsayilandir (rev-26): KARE 4000x4000 merdiven
-holde (kapisiz, merdiven genisligi kadar `passage`), asansor 2100x3000; asansorun ustundeki
-2100x1000 nis ODA DEGILDIR, `zone['niche']` olarak bildirilir (komsu oda ustlenir); cekirdek satiri 4000. `'long_edge'` rev-24 oncesi yerlesimi korur.
+`generate_central_core(stair_entry='short_edge')` varsayilandir (rev-27): asansor 2300x3300 + merdiven
+3800x3300 YAN YANA, AYNI hizada, cikintisiz yekpare dikdortgen cekirdek (kullanici U beton planliyor);
+merdiven kat holune tam genislikte ACIK (hol duvari yalniz asansor onunde, kapi/passage yok); nis/saft
+odasi uretilmez. `zone['niche']` artik `None`. `'long_edge'` rev-24 oncesi yerlesimi korur.
 
 ## Neden bu modül (kullanıcı talebi, 2026-09-28)
 

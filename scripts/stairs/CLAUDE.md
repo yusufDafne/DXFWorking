@@ -153,6 +153,24 @@ Her esnetme (riht VEYA going) `StairResolution.warnings`e yazılır;
 (sessiz varsayım yapılmaz, bkz. kök CLAUDE.md "Deterministik üretim
 ilkesi").
 
+## rev-27: yekpare cekirdek, dikdortgen U merdiven (kullanici, 2026-10-06)
+
+Kullanici merdiven ve asansoru cevreleyen U seklinde bir beton planliyor (beton modulu henuz yok,
+beton CIZILMEZ): asansor ve merdiven YAN YANA, AYNI hizada, cikintisiz yekpare dikdortgen. Bu yuzden
+proje cekirdegi asansor 2300x3300 + merdiven 3800x3300'dur. Merdiven degisiklikleri:
+- `dog_leg` kollari `up_towards` ekseni boyunca uzanir (oda UZUN ekseni olmak zorunda degil): 3800x3300
+  odada up 'N' -> kollar kisa eksen boyunca, her kol KISA kenardan (genislik ucundan) baslar, giris ve
+  cikis AYNI (holdeki) kenarda; kollar arasi uzun kenarin ortasindan girilmez.
+- `flight_width_mm` (dog_leg): kol genisligi; `oda eni - 2*kol` = kollar arasi BOSLUK (varsayilan: oda
+  eni/2, bosluk yok = eski davranis). Proje: 1500 mm kol, 800 mm bosluk. Bosluk icin iki ic kenar cizgisi.
+- Sahanlik bosluk ucundadir (rev-26) ve tum oda eni boyuncadir.
+- Merdiven kat holune TAM GENISLIKTE ACIKTIR: aradaki duvar ve `passage` kaldirildi (duvar 0);
+  `validate._entry_edge_open` giris kenarinda duvar yoksa "giriste acik" sayar
+  (`stair_access_warnings(..., entry_edge_open=True)`).
+- 4000 mm kat (ZK) 3300 derinlige dog_leg olarak SIGMAZ (going (3300-1100)/11=200 < 250);
+  ZK `three_flight` (8/8/8, kuyu ~1890 kare). Oda orani "daha dikdortgen olmali" kurali dog_leg ve
+  three_flight icin uygulanmaz (yalniz single_flight).
+
 ## rev-26 geri bildirim duzeltmeleri (kullanici, 2026-10-05)
 
 - **Sahanlik HER ZAMAN merdiven boslugunun UCUNDA** (dog_leg: odanin uzak ucu, tum

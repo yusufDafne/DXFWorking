@@ -354,6 +354,29 @@ def check_openings(openings: list[dict], walls: list[dict]) -> list[str]:
     return errors
 
 
+def _entry_edge_open(resolution, walls: list[dict]) -> bool:
+    """Merdivenin giris kenarinda (oda bbox kenari) HIC duvar yoksa True: merdiven kat
+    holune tam genislikte ACIKTIR (kullanici karari rev-27: merdiven duvarinda 10 cm
+    cikinti/kapi mantigi olmasin, duvar 0 olabilir)."""
+    from stairs import stair_entry_side
+    side = stair_entry_side(resolution)
+    if side is None:
+        return False
+    x0, y0, x1, y1 = resolution.bbox
+    for w in walls:
+        (sx, sy), (ex, ey) = w["start"], w["end"]
+        tol = float(w["thickness"]) / 2.0 + 1.0
+        if side in ("N", "S"):
+            y = y1 if side == "N" else y0
+            if abs(sy - y) <= tol and abs(ey - y) <= tol and min(max(sx, ex), x1) - max(min(sx, ex), x0) > 1.0:
+                return False
+        else:
+            x = x1 if side == "E" else x0
+            if abs(sx - x) <= tol and abs(ex - x) <= tol and min(max(sy, ey), y1) - max(min(sy, ey), y0) > 1.0:
+                return False
+    return True
+
+
 def _stair_room_accesses(polygon: list, walls_by_id: dict, openings: list) -> list[dict]:
     """Merdiven odasi SINIRINDAKI (kapi/duvar acikligi) acikliklar: acikligin
     duvar-merkez-cizgisi konumu poligon kenarina duvar yarim kalinligi + 10mm
@@ -413,7 +436,8 @@ def check_stairs(floor: dict) -> tuple[list[str], list[str]]:
             continue
         warnings.extend(resolution.warnings)
         warnings.extend(stair_access_warnings(
-            resolution, _stair_room_accesses(room["polygon"], walls_by_id, floor.get("openings", []))))
+            resolution, _stair_room_accesses(room["polygon"], walls_by_id, floor.get("openings", [])),
+            entry_edge_open=_entry_edge_open(resolution, floor.get("walls", []))))
 
         exit_door_id = spec.get("exit_door_id")
         if exit_door_id is None:
@@ -579,10 +603,10 @@ def run_validation(context_path: Path = DEFAULT_CONTEXT_PATH) -> bool:
         standards_warnings += [
             f"[{floor['id']}] " + w
             for w in check_room_proportions(
-                # rev-26: uc kollu (kare bosluklu) merdiven odasi KARE olmak ZORUNDADIR;
+                # rev-26/27: U seklindeki (dog_leg/three_flight) merdiven odasi kareye yakin olabilir;
                 # "merdiven odasi daha dikdortgen olmali" orani ona uygulanmaz.
                 [r for r in floor["rooms"] if r["id"] not in {
-                    st["room_id"] for st in floor.get("stairs", []) if st.get("kind") == "three_flight"}],
+                    st["room_id"] for st in floor.get("stairs", []) if st.get("kind", "dog_leg") != "single_flight"}],
                 units, floor["walls"])
         ]
         standards_warnings += [

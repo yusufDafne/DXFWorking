@@ -137,6 +137,26 @@ def check_drawing() -> list[str]:
     return errors
 
 
+def check_drawn_over_net_void() -> list[str]:
+    """Saft duvar BANDININ degil, duvar yuzleri arasindaki bosluga cizilir: 650x650 poligonun
+    4 kenarinda 150 mm duvar -> cizilen kare 500x500 ve poligonun ORTASINDA (elle: 75 mm iceri)."""
+    errors: list[str] = []
+    poly = rect(1000, 1000, 1650, 1650)
+    walls = [{"id": f"w{i}", "start": poly[i], "end": poly[(i + 1) % 4], "thickness": 150.0, "layer": "D"}
+             for i in range(4)]
+    doc = ezdxf.new(); ensure_shaft_layer(doc); msp = doc.modelspace()
+    draw_shafts_on_floor(msp, {"shafts": [{"id": "s", "kind": "tesisat", "polygon": poly}], "walls": walls})
+    pts = [tuple(round(c, 3) for c in p[:2]) for p in list(msp.query("LWPOLYLINE"))[0].get_points()]
+    if sorted(set(pts)) != [(1075.0, 1075.0), (1075.0, 1575.0), (1575.0, 1075.0), (1575.0, 1575.0)]:
+        errors.append(f"500x500 net kare (1075..1575) beklenirdi: {pts}")
+    doc2 = ezdxf.new(); ensure_shaft_layer(doc2); msp2 = doc2.modelspace()
+    draw_shafts_on_floor(msp2, {"shafts": [{"id": "s", "kind": "tesisat", "polygon": poly}], "walls": []})
+    pts2 = sorted({tuple(round(c, 3) for c in p[:2]) for p in list(msp2.query("LWPOLYLINE"))[0].get_points()})
+    if pts2 != [(1000.0, 1000.0), (1000.0, 1650.0), (1650.0, 1000.0), (1650.0, 1650.0)]:
+        errors.append(f"duvarsiz durumda poligonun kendisi beklenirdi: {pts2}")
+    return errors
+
+
 def main() -> int:
     groups = (
         ("varsayilanlar ve geometri yardimcilari", check_defaults_and_geometry()),
@@ -144,6 +164,7 @@ def main() -> int:
         ("kasitli bozma + yanlis-pozitif", check_deliberate_breaks()),
         ("saft tum katlarda ayni konumda", check_across_floors()),
         ("cizim: SAFT katmani, kare + capraz", check_drawing()),
+        ("cizim duvar yuzleri arasindaki NET boslugun uzerine oturur (rev-27b)", check_drawn_over_net_void()),
     )
     failed = False
     for name, errors in groups:

@@ -16,6 +16,12 @@ değiştirilir (tür başına farklı ölçü UYDURULMAZ, yönetmelik verilmedi)
 - Şaft düşey bir boşluktur: aynı `id`, bulunduğu tüm katlarda aynı poligonda olmalı (UYARI,
   `check_shafts_across_floors`).
 
+## Cizim (rev-27 duzeltmesi)
+Saft poligonu duvar MERKEZ cizgisindedir (650); cizim ise duvar YUZLERI arasindaki NET bosluga (500x500)
+oturur (`net_polygon`: `standards.measure.inset_polygon`). Kullanici: "resim tam bosluğun uzerine gelmeli".
+Saft komsu odalardan degil, ilgili islak hacimler (WC/banyo) ile yapilan kollarla acilmali; yasam alani
+(giyinme/salon) icinden gecirilmez (kullanici geri bildirimi rev-28).
+
 ## Public API
 `Shaft`, `SHAFT_KINDS`, `DEFAULT_NET_SIDE_MM`, `shaft_centerline_side`, `shared_edge_length`,
 `check_shafts(floor)` → (errors, warnings), `check_shafts_across_floors(floors)`,

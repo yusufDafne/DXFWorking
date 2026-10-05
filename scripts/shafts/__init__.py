@@ -26,9 +26,11 @@ from dataclasses import dataclass
 try:
     from ..collision.geometry import polygon_intersection_area, shoelace_area
     from ..palette import color_for
+    from ..standards.measure import edge_wall_thicknesses, inset_polygon
 except ImportError:
     from collision.geometry import polygon_intersection_area, shoelace_area
     from palette import color_for
+    from standards.measure import edge_wall_thicknesses, inset_polygon
 
 SHAFT_LAYER = "SAFT"
 SHAFT_RGB = color_for(SHAFT_LAYER)
@@ -180,14 +182,29 @@ def ensure_shaft_layer(doc) -> None:
     layer.rgb = SHAFT_RGB
 
 
+def net_polygon(shaft: Shaft, walls: list[dict] | None) -> list[list[float]]:
+    """Saftin GERCEK BOSLUGU: poligon duvar merkez cizgisinde oldugu icin etrafindaki
+    duvarlarin yarim kalinligi iceri alinir (500 net icin 650 poligon). Duvar yoksa
+    poligonun kendisi."""
+    poly = [list(p) for p in shaft.polygon]
+    if not walls:
+        return poly
+    thickness = edge_wall_thicknesses(poly, walls)
+    return inset_polygon(poly, thickness) if any(thickness) else poly
+
+
 def draw_shafts_on_floor(msp, floor: dict) -> int:
-    """Her saft icin kapali dikdortgen + iki capraz cizgi (`SAFT` katmani). Cizilen saft sayisini doner."""
+    """Her saft icin kapali dikdortgen + iki capraz cizgi (`SAFT` katmani), DUVAR
+    YUZLERI ARASINDAKI GERCEK BOSLUGUN (net) uzerine cizilir - duvar bandinin ustune degil.
+    Cizilen saft sayisini doner."""
     n = 0
     for data in floor.get("shafts", []):
         if data.get("kind") not in SHAFT_KINDS:
             continue
         shaft = Shaft.from_context(data)
-        x0, y0, x1, y1 = shaft.bbox
+        poly = net_polygon(shaft, floor.get("walls"))
+        xs = [p[0] for p in poly]; ys = [p[1] for p in poly]
+        x0, y0, x1, y1 = min(xs), min(ys), max(xs), max(ys)
         msp.add_lwpolyline([(x0, y0), (x1, y0), (x1, y1), (x0, y1)], dxfattribs={"layer": SHAFT_LAYER}).closed = True
         msp.add_line((x0, y0), (x1, y1), dxfattribs={"layer": SHAFT_LAYER})
         msp.add_line((x1, y0), (x0, y1), dxfattribs={"layer": SHAFT_LAYER})
@@ -195,11 +212,11 @@ def draw_shafts_on_floor(msp, floor: dict) -> int:
     return n
 
 
-CONTRACT_VERSION = "1.0"
+CONTRACT_VERSION = "1.1"  # rev-27b: cizim net (duvar yuzleri arasi) bosluga
 
 __all__ = [
     "SHAFT_LAYER", "SHAFT_RGB", "SHAFT_KINDS", "KIND_PLUMBING", "KIND_VENTILATION", "KIND_CHIMNEY",
     "DEFAULT_NET_SIDE_MM", "DEFAULT_WALL_MM", "SHAFT_MAX_RATIO", "Shaft", "shaft_centerline_side",
     "shared_edge_length", "check_shafts", "check_shafts_across_floors", "ensure_shaft_layer",
-    "draw_shafts_on_floor", "CONTRACT_VERSION",
+    "draw_shafts_on_floor", "net_polygon", "CONTRACT_VERSION",
 ]

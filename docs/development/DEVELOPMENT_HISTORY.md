@@ -4,6 +4,14 @@ Aktif geçmiş kapasitesi: **50 kayıt**. En eski tamamlanmış kayıt, 51. kay�
 alınırken silinir. Ayrıntılı teknik değişiklikler git geçmişi ve ilgili proje
 provenance kayıtlarıyla ilişkilendirilir.
 
+## HD-039 — Yekpare çekirdek, dikdörtgen U merdiven, şaft çizimi düzeltmesi ve proje rev-28
+
+- **Durum:** COMPLETED
+- **Tamamlanma:** 2026-10-06
+- **Kapsam:** `scripts/stairs/`, `scripts/shafts/`, `scripts/templates/`, `scripts/validate.py`, `context.json`.
+- **Sonuç:** kullanıcı geri bildirimiyle: asansör 2300x3300 + merdiven 3800x3300 yan yana, aynı hizada yekpare çekirdek (depo/niş kaldırıldı, hol 6100x3750, aks C 9000); merdiven holde tam açık (duvar/passage yok); `dog_leg` kolları `up_towards` ekseninde, `flight_width_mm` + kollar arası boşluk; ZK `three_flight` 8/8/8; şaft çizimi net (duvar yüzleri arası) boşluğa; giyinme odası kaldırıldı (uB eski alanı salona katıldı, WC/banyo şaftı sarar).
+- **Sınır:** uB salon L kolu net 2225 mm (şartname salon asgarisi 3000) ve uC banyo kuyruk daralması uyarıları; uC hol payı.
+
 ## HD-038 — `shafts/`: şaft / havalandırma / baca modülü (DEV-058)
 
 - **Durum:** COMPLETED

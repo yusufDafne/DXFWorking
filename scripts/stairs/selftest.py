@@ -561,6 +561,57 @@ def check_square_three_flight_project_rev26() -> list[str]:
     return errors
 
 
+def check_dog_leg_wide_room_with_gap_rev27() -> list[str]:
+    """rev-27 (proje): 3800x3300 oda, dog_leg, up 'N' (kollar KISA eksen boyunca), kol genisligi
+    1500 -> kollar arasi bosluk 3800-3000=800. ELLE: 3000 mm kat -> 18 basamak 9+9; kol 1 8 riht
+    cizgisi*270=2160 -> sahanlik (3300-2160)=1140 mm, oda ucunda (y=1140+... ); sahanlik tum en;
+    cikis kol 2'nin merkezi (x=3800-750=3050), giris yonu 'S'. ZK 4000 mm dog_leg SIGMAZ
+    (going (3300-1100)/11=200 < 250 -> StairFitError), three_flight 8/8/8 sigar."""
+    errors: list[str] = []
+    room = [[0, 0], [3800, 0], [3800, 3300], [0, 3300]]
+    spec = {"id": "s", "room_id": "r", "floor_to_floor_mm": 3000.0, "kind": "dog_leg", "up_towards": "N",
+            "flight_width_mm": 1500.0}
+    r = resolve_stair(spec, room)
+    if r.travel_axis != "y" or tuple(r.flight_step_counts) != (9, 9) or abs(r.going_mm - 270.0) > 1e-9 or r.warnings:
+        errors.append(f"y ekseni, 9+9, going 270, uyari yok: {r.travel_axis} {r.flight_step_counts} {r.going_mm} {r.warnings}")
+    if tuple(round(v, 3) for v in r.landing_bbox) != (0.0, 2160.0, 3800.0, 3300.0):
+        errors.append(f"sahanlik (0,2160,3800,3300) olmali: {r.landing_bbox}")
+    if (round(r.exit_point[0], 3), round(r.exit_point[1], 3)) != (3050.0, 0.0) or r.exit_direction != "S":
+        errors.append(f"cikis (3050,0) 'S': {r.exit_point} {r.exit_direction}")
+    if r.flight_width_mm != 1500.0 or stair_entry_side(r) != "S":
+        errors.append("kol genisligi 1500, giris 'S' olmali")
+    doc = ezdxf.new(); ensure_stair_layer(doc); msp = doc.modelspace()
+    DefaultStairStandard().draw(msp, r, "MERDIVEN")
+    # 8+8 riht + 1 sahanlik + 2 ic kenar (bosluk var) + 3 ok govdesi + 1 ok basi = 23
+    if len(msp) != 23:
+        errors.append(f"bosluklu dog_leg cizimi 23 varlik beklenirdi, {len(msp)}")
+    # bosluk YOK (kol genisligi verilmez): tek bolucu, eski sayi 22
+    nogap = resolve_stair({k: v for k, v in spec.items() if k != "flight_width_mm"}, room)
+    doc2 = ezdxf.new(); ensure_stair_layer(doc2); m2 = doc2.modelspace()
+    DefaultStairStandard().draw(m2, nogap, "MERDIVEN")
+    if len(m2) != 22:
+        errors.append(f"bosluksuz dog_leg 22 varlik beklenirdi, {len(m2)}")
+    try:
+        resolve_stair({**spec, "floor_to_floor_mm": 4000.0}, room)
+        errors.append("ZK 4000: dog_leg StairFitError vermeli (sigmaz)")
+    except StairFitError:
+        pass
+    z = resolve_stair({**spec, "floor_to_floor_mm": 4000.0, "kind": "three_flight"}, room)
+    if tuple(z.flight_step_counts) != (8, 8, 8) or z.warnings:
+        errors.append(f"ZK three_flight 8/8/8, uyari yok: {z.flight_step_counts} {z.warnings}")
+    try:
+        resolve_stair({**spec, "flight_width_mm": 2000.0}, room)
+        errors.append("2 kol (4000) odaya (3800) sigmaz: StairFitError")
+    except StairFitError:
+        pass
+    # acik giris kenari: duvar/acikligi olmasa da UYARI YOK; acik degilse ve acikliksizsa 1 uyari
+    if stair_access_warnings(r, [], entry_edge_open=True):
+        errors.append("giris kenari ACIKSA acikliksiz UYARI VERMEMELI")
+    if len(stair_access_warnings(r, [], entry_edge_open=False)) != 1:
+        errors.append("giris kenari kapali ve acikliksizsa 1 UYARI")
+    return errors
+
+
 def main() -> int:
     groups = (
         ("acik step_count'tan riht turetme (elle hesap)", check_explicit_step_count_derives_riser()),
@@ -585,6 +636,7 @@ def main() -> int:
         ("kisa kenar giris + kapisiz acikli (rev-25)", check_short_edge_entry_rev25()),
         ("uc kollu U merdiven + kuyu + varsayilan dog_leg (rev-26)", check_three_flight_rev26()),
         ("kare 4000x4000 uc kollu merdiven (proje) + kesit profili (rev-26)", check_square_three_flight_project_rev26()),
+        ("dikdortgen merdiven: tek sahanlik, kollar arasi bosluk, kisa eksen boyunca (rev-27)", check_dog_leg_wide_room_with_gap_rev27()),
     )
     failed = False
     for name, errors in groups:
