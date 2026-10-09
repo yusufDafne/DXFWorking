@@ -755,6 +755,7 @@ belirleyeceksin ... her birini sıralama olarak birbirine bağla"):**
   3. `rooms.PolygonOps._point_in_polygon` taşınsın mı? Öneri: evet; `collision.geometry.point_in_polygon`a delege + ince takma ad (selftest'e dokunulmaz).
   4. Sıfır uzunluklu duvar: iki davranış korunur (`door_midpoint` başlangıç noktası, `door_frame` `None`). Öneri: evet; birleştirmek ayrı, açık bir değişikliktir.
 - **Metin düzeltmeleri (onayla birlikte uygulanır):** Kabul (i)–(iv) yerine: diferansiyel selftest; 'validate/golden bu taşımaya kördür' notu; `doc_check` şartlarının TAMAMI (`CLAUDE.md`, `scripts/CLAUDE.md` anması, `CONTRACT_VERSION`, `version.CONTRACT_MODULES`, `COLLISION_EXEMPT`). 'Yaprak' sözcüğünü çıkar; '5 kopya' → 'en az 5'; `_centroid` → `vertex_mean`; `shafts.shared_edge_length` genel API'dir, yeniden dışa aktarım korunur.
+- **Kullanıcı kararları (2026-10-09, netleştirme tamam; başlamak için kullanıcı onayı bekleniyor):** (1) `spatial/`, tek yönlü `spatial → collision.geometry` — EVET; (2) `shared_edge_length` tek anlam = mimari sürüm, dört sınır farkı selftest'te sabitlenir — EVET; (3) `rooms.PolygonOps._point_in_polygon` delege + takma ad — EVET; (4) sıfır uzunluklu duvarda iki davranış korunur — EVET. Metin düzeltmeleri bu kararlarla kesinleşti.
 
 ### DEV-060 — `reasoning/` — muhakeme çekirdeği
 
@@ -788,6 +789,7 @@ belirleyeceksin ... her birini sıralama olarak birbirine bağla"):**
   3. Veçhe kaydı nerede yaşar? Öneri: **lens paketinde** (çok modüllü veçhe için tek ev, örn. ıslak hacim↔yatak odası ortak duvarı), modül `reasoning.py`si yalnız rol + ölçüm beyanı; plan §2.3-8/§8.4/§9 buna göre düzeltilir.
   4. Rapor komutunun adı: öneri `scripts/reasoning_report.py [context.json] [--before ctx.json]` (talep akışında `validate` sonrası ek adım).
 - **Metin düzeltmeleri (onayla birlikte uygulanır):** `explain.py`, rakam lint'i, kümeleme kapsamdan çıkar (→ `DEV-064`); gate #11 'veçhe kaydı dizgesi AST ile çözülür' diye yeniden yazılır (örnek dizgeyi reddetmez); asgari terfi makinesi eklenir (subject_kind, konu başına ölçüm, `legacy` bayrağı, tetik oranı raporu); 'komut adı açık karar' → plan §11'e madde olarak eklenir.
+- **Kullanıcı kararları (2026-10-09, netleştirme tamam; başlamak için kullanıcı onayı bekleniyor):** (1) plan §11 #1 (`scripts/reasoning/`) ve #2 (`validate.py` çıktısı değişmez, rapor ek) — ONAY; (2) kapı #10 üç durumlu (sağlayıcı / gerekçeli muaf / `PENDING`, blokaj `DEV-067` sonunda) — ONAY; (3) veçhe kaydı **lens paketinde**, modül `reasoning.py` yalnız rol+ölçüm — ONAY (plan §2.3-8/§8.4/§9 düzeltilecek); (4) rapor komutu `scripts/reasoning_report.py` — ONAY. Önkoşul: `DEV-059` bitmeli (yumuşak), ardından görev `READY`.
 
 ### DEV-061 — `reasoning/` — mahremiyet mercek paketi
 
