@@ -71,6 +71,9 @@ ekler (15 → 16 satır; konu sayısı etkilenmez: `legacy.surum` sunulmaz). Ger
 `python scripts/reasoning/selftest.py` — 30 kontrol (DEV-065: karar çekirdeği, şema+validate, düşen kabulün sunumu, `decide` uçtan uca; 14 çekirdek + 5 mahremiyet paketi + 7 DEV-064: lint/render, §5.6 örneği, kuyruk+modlar, koku+kapsam cümlesi, diyalog kaydı, kapı #13, CLI uçtan uca; 6 kasıtlı bozma ilgili testleri kırdı; mahremiyet: durum dağılımı, `validate.py` bağlama iddiasının koddan sabitlenmesi, 22 vaka + kasıtlı bozma, rev-28 ölçümleri, rapor); elle hesaplanan anahtar/eğri değerleri; üretim koduna
 kasıtlı bozma (imzada rakam, kapı #10 çoklu-yer, kapsam durumu karışması) selftest'i GERÇEKTEN kırar.
 
+## Bilgi mühendisi
+Mercek/veçhe/vaka ekleme kuralları, izin sınırı ve terfi merdiveni: `docs/agents/KNOWLEDGE_ENGINEER_AGENT.md` (DEV-070). Çekirdeği (bu klasördeki `*.py`) bilgi mühendisi DEĞİŞTİRMEZ.
+
 ## Muhakeme katkısı (DEV-048)
 **Rol:** çekirdek + ilk mercek paketi (`lenses/mahremiyet.py`, DEV-061). Bilinen boşluk: açıklama motoru, rakam lint'i,
 sunum kuyruğu (`DEV-064`); ışık-hava (`DEV-062`) ve yaşanabilirlik (`DEV-063`) paketleri. Rapor, kullanıcıya sunulan

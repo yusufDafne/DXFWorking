@@ -35,6 +35,12 @@ Bu agent sistem kodunu, schema'yı, katalogları, Protocol'leri, modül sözleş
     politikasına uygun kayıt ekle, `DEVELOPER_NOTES.md`yi güncelle ve kilidi
     serbest bırak.
 
+## Muhakeme bilgisi büyütme
+
+Mercek/veçhe/vaka eklemek (`scripts/reasoning/lenses/`, `<modül>/reasoning.py`, `cases/`) sistem geliştirme değil **bilgi mühendisliğidir**:
+rol, izin sınırı, kontrol listesi ve terfi merdiveni `docs/agents/KNOWLEDGE_ENGINEER_AGENT.md`dedir. Çekirdek (`scripts/reasoning/*.py`),
+şema ve `validate.py` değişikliği bu agent'a (sistem geliştirme maddesi) kalır.
+
 ## Geliştirme geçmişi politikası
 
 Tamamlanan geliştirmeler `DEVELOPMENT_HISTORY.md` içinde en fazla 50 kayıt

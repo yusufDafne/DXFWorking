@@ -114,7 +114,7 @@ kod gerektirmeden **bugünden** geçerli işletim ilkeleridir:
    yok → yönelim değerlendirilemedi). "Temiz" ile "hiç bakılmadı" aynı şey değildir.
 6. Aynı kök nedene bağlı uyarıları (özellikle özdeş katlardakileri) **tek konu** olarak sun.
 7. Yeni bir ilke keşfedersen (kullanıcı bir defekt gösterdi ya da kendin buldun) bunu
-   **vaka → ilke → veçhe** olarak kaydedilmek üzere işaretle; proje operatörü merkezi dokümana
+   **vaka → ilke → veçhe** olarak kaydedilmek üzere işaretle (kayıt rolü ve kuralları: `docs/agents/KNOWLEDGE_ENGINEER_AGENT.md`); proje operatörü merkezi dokümana
    yazamaz, bunu kullanıcıya bildirir, kayıt sistem geliştirme oturumunda yapılır.
 
 ## Mimari referans

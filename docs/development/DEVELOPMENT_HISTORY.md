@@ -4,6 +4,15 @@ Aktif geçmiş kapasitesi: **50 kayıt**. En eski tamamlanmış kayıt, 51. kay�
 alınırken silinir. Ayrıntılı teknik değişiklikler git geçmişi ve ilgili proje
 provenance kayıtlarıyla ilişkilendirilir.
 
+## HD-044 — Şema 1.4.0 + `reasoning/`: tasarım kararı kaydı (DEV-065)
+
+- **Durum:** COMPLETED
+- **Tamamlanma:** 2026-10-09
+- **Kapsam:** `schema/design.schema.json`, `scripts/version.py` (1.4.0), `scripts/reasoning/decisions.py` (yeni), `scripts/reasoning/{explain,__init__,selftest}.py`, `scripts/reasoning_dialogue.py` (`decide`), `scripts/validate.py` (+3 satır), operatör/reviewer talimatları, kök ve modül `CLAUDE.md`'leri, plan §5.5.
+- **Sonuç:** opt-in üst seviye `design_decisions[]`; bir kayıt `covers[]` ile N bulguyu kapsar, ölçülen sayıların anlık görüntüsü yazılır; v1'de herhangi bir ölçüm değişimi (iyileşme dahil) kabulü düşürür ve konu ilk sırada "önce → şimdi" ile geri gelir; kanıtı aynı kabul sessiz ama sayısı söylenir; boş gerekçe `make_decision`/`decide`/`validate.py`de reddedilir. Kullanıcı kararları: kayıt `context.json`da, `covers[]`, v1 düşme kuralı, anlık görüntü.
+- **Doğrulama:** alanı olmayan context aynı çıktıyı verir (sürüm uyarısı satırı hariç: 15 → 16, konu sayısı değişmez); `reasoning/selftest.py` 30/30 (6 kasıtlı bozma yakalandı); 16 selftest, `--golden-set`, `doc_check` temiz.
+- **Golden etkisi:** yok. **Sınır:** gerçek projenin `meta.schema_version` değeri 1.3.0 (güncellemek ayrı revizyon); gerçek projeye karar yazılmadı; ekleme-yalnızlık konvansiyonla (reviewer git diff). **Sonraki direktif:** `DEV-070`.
+
 ## HD-043 — `reasoning/`: açıklama motoru, rakam lint'i, diyalog köprüsü (DEV-064)
 
 - **Durum:** COMPLETED

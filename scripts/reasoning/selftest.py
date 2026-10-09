@@ -972,6 +972,35 @@ def check_decide_cli_end_to_end() -> list[str]:
     return e
 
 
+def check_knowledge_engineer_role() -> list[str]:
+    """DEV-070: rol belgesi + izin girisi tutarli; yasak/yazma sinirlari mekanik sabitlenir."""
+    perms = json.loads((ROOT / "docs" / "development" / "AGENT_PERMISSIONS.json").read_text(encoding="utf-8"))
+    e = []
+    ke = perms.get("knowledge_engineering")
+    if not ke:
+        return ["AGENT_PERMISSIONS.json: knowledge_engineering girisi yok"]
+    for need in ("scripts/reasoning/lenses/", "scripts/reasoning/cases/", "scripts/<module>/reasoning.py"):
+        if need not in ke["write"]:
+            e.append(f"knowledge_engineering.write icinde yok: {need}")
+    for need in ("schema/", "scripts/validate.py", "context.json", "scripts/reasoning/*.py", "CLAUDE.md"):
+        if need not in ke["forbidden"]:
+            e.append(f"knowledge_engineering.forbidden icinde yok: {need}")
+    if any(w.startswith(("schema", "scripts/validate")) or w in ("scripts/", "context.json") for w in ke["write"]):
+        e.append("knowledge_engineering.write yasak alana dokunuyor")
+    if "docs/development/reviews/" in ke["write"] or "docs/development/reviews/" not in perms["review_validation"]["write"]:
+        e.append("docs/development/reviews/ yalniz reviewer'in yazma alani olmali")
+    if not any("never self-accepted" in r for r in ke["requires"]) or not any("active promotion" in r for r in ke["requires"]):
+        e.append("kendi kendini kabul etmeme ve 'active' yalniz kullanici karariyla sartlari yazili olmali")
+    doc = (ROOT / "docs" / "agents" / "KNOWLEDGE_ENGINEER_AGENT.md").read_text(encoding="utf-8")
+    for needle in ("Vaka → İlke → Veçhe", "Yapmayacakların", "Terfi merdiveni", "Muhakeme katkısı (DEV-048)", "RAKAMSIZ", "kesin"):
+        if needle not in doc:
+            e.append(f"rol belgesinde bolum/ifade yok: {needle}")
+    ref = (ROOT / "docs" / "agents" / "REVIEWER_VALIDATOR_AGENT.md").read_text(encoding="utf-8")
+    if "Sistem sınavı" not in ref or "docs/development/reviews/" not in ref:
+        e.append("REVIEWER_VALIDATOR_AGENT.md 'Sistem sinavi' bolumu ve reviews yolu eksik")
+    return e
+
+
 def main() -> int:
     checks = [check_keys_and_signature, check_severity_curve, check_diff, check_legacy_parse,
               check_real_validate_parity, check_registry_validation, check_gate10_three_state,
@@ -981,7 +1010,8 @@ def main() -> int:
               check_mahremiyet_real_project, check_mahremiyet_report,
               check_lint_and_render, check_narrative_example, check_queue_and_modes,
               check_smells_and_coverage_sentence, check_dialogue_log, check_digit_gate_13, check_dialogue_cli,
-              check_decision_core, check_decision_schema_and_validate, check_reopened_presentation, check_decide_cli_end_to_end]
+              check_decision_core, check_decision_schema_and_validate, check_reopened_presentation, check_decide_cli_end_to_end,
+              check_knowledge_engineer_role]
     failed = 0
     for check in checks:
         try:

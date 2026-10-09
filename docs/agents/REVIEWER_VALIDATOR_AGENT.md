@@ -26,6 +26,14 @@ Bu agent proje revizyonlarını, validation sonuçlarını, nihai DXF'yi ve gold
 9. Bulguları hata, risk, açık karar ve kabul durumu olarak yalnızca
    review-raporuna yaz.
 
+## Sistem sınavı (DEV-070 / DEV-071)
+
+Reviewer, bilgi mühendisi belgelerinin ve muhakeme paketinin **geliştiriciden bağımsız** sınavını yürütür (soğuk başlangıç sınavı:
+yeni bir ajan yalnız kök `CLAUDE.md` + plan + çekirdek `CLAUDE.md` ile vakalarda doğru teşhisi koyar, sayı uydurmadan anlatır, kokuyu
+adıyla bulur). Ayrıntı ve rubrik: `DEV-071`. Geçme kuralı: vaka başına 3 bağımsız koşu, ≥2/3'ü tüm rubrik maddelerini sağlar; rapor model
+kimliğini ve belge commit'ini taşır; çekirdekte MINOR değişiklikten sonra yeniden koşulur. Geçmezse **bilgi eksiktir**: belge düzeltilir, ajan
+suçlanmaz. Raporlar `docs/development/reviews/` altına **ekleme-yalnız** yazılır (başka yere ve başka dosyaya yazılmaz).
+
 ## Sınırlar
 
 - Eksik veriyi tamamlamaz ve ölçü/koordinat uydurmaz.

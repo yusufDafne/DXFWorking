@@ -63,7 +63,7 @@ Tamamlanan işlerin ayrıntılı gerekçesi, karar süreci ve ölçülen etkisi
 | DEV-060 | `reasoning/` — muhakeme çekirdeği (mercek/veçhe/bulgu modeli, kayıt, kapsam raporu, `doc_check` kapıları; `DEV-048` Faz 1b) | COMPLETED (2026-10-09) |
 | DEV-061 | `reasoning/` — mahremiyet mercek paketi (mevcut kuralların kaydı + yeni veçheler; Faz 2) | COMPLETED (2026-10-09) |
 | DEV-064 | `reasoning/`+operatör talimatı — diyalog sözleşmesi + açıklama motoru + kök-neden kümeleme (Faz 2) | COMPLETED (2026-10-09) |
-| DEV-065 | Şema + `reasoning/` — tasarım kararı kaydı (`design_decisions[]`), kanıta bağlı kabul (Faz 4) | PLANNED (sıra 5/12) |
+| DEV-065 | Şema + `reasoning/` — tasarım kararı kaydı (`design_decisions[]`), kanıta bağlı kabul (Faz 4) | COMPLETED (2026-10-09) |
 | DEV-070 | `docs/agents/` — bilgi mühendisi rolü + büyütme protokolü (Faz 2) | PLANNED (sıra 6/12) |
 | DEV-062 | `reasoning/` — ışık-hava-yönelim mercek paketi (Faz 3) | PLANNED (sıra 7/12) |
 | DEV-063 | `reasoning/`+`furniture/` — yaşanabilirlik mercek paketi + deneme yerleşimi (Faz 3) | PLANNED (sıra 8/12) |
@@ -71,6 +71,7 @@ Tamamlanan işlerin ayrıntılı gerekçesi, karar süreci ve ölçülen etkisi
 | DEV-069 | `brief/` — kullanıcı ihtiyaç beyanı ve mimari program toplama (Faz 6) | PLANNED (sıra 10/12) |
 | DEV-068 | `impact/` — revizyon etki analizi (minimal patch planlama; Faz 6) | PLANNED (sıra 11/12) |
 | DEV-067 | Tüm modüller — her modülün muhakeme katkısı (`reasoning.py` veya gerekçeli muafiyet; Faz 5) | PLANNED (sıra 12/12) |
+| DEV-071 | `docs/development/reviews/` — soğuk başlangıç sınavı (reviewer; `DEV-070` ayrılan parça, önkoşulsuz) | PLANNED |
 
 ## READY
 
@@ -719,28 +720,6 @@ belirleyeceksin ... her birini sıralama olarak birbirine bağla"):**
 > sürümü uyarısı satırı bilinen tek istisnadır). Bölünmesi önerilen maddelerde parçalar **sayısal** yeni DEV
 > kimlikleri olur (`doc_check` `### DEV-\d+` ister; `DEV-063A` gibi kimlikler görünmez kalır).
 
-### DEV-065 — Şema + `reasoning/` — tasarım kararı kaydı
-
-- **Durum:** PLANNED
-- **Kapsam (plan §5.5; `DEV-040` Fikir 6):** `design_decisions[]` (üst seviye, opt-in,
-  ekleme-yalnız): `id`, `finding_key`, `reason` (**zorunlu, boş olamaz**), `evidence_hash`,
-  `ts`, `devredilmis`. **Kanıta bağlı kabul:** `evidence_hash` değişirse kabul düşer ve bulgu
-  yeniden sunulur. Şema MINOR artışı (1.4.0); `validate.py` boş gerekçeyi HATA sayar (veri kalitesi;
-  bulgunun kendisi yine UYARI); `rev_history` ile ilişki.
-- **Şema değişikliği = sistem mimarı kararı** (plan §11 #3). **Kabul ölçütü:** kabul sonrası
-  kanıt kötüleşince bulgu geri gelir, aynıysa sessiz kalır; boş gerekçe reddedilir; alanı
-  olmayan eski context'ler KIRILMAZ (opt-in).
-- **Önkoşul:** `DEV-060`, `DEV-064`.
-- **Sıra:** 5/12 — plan §10.1; geliştirici yorumu ve netleştirme soruları 2026-10-09 kod denetimine dayanır (iki bağımsız ajan; `DEV-070` yalnız bir denetim).
-- **Geliştirici yorumu:** Fikir doğru ve şema tarafı güvenli: opt-in üst seviye dizi 14/14 bağlamı bozmuyor. Üç düzeltme: (1) tek `finding_key`+tek `evidence_hash` K1–K5'in beş özdeş bulgusunu beş kayda böler → bir kayıt `covers[]` taşımalı; (2) `evidence_hash` tek başına 'kötüleşti' diyemez ve 'ne değişti'yi anlatıcıya veremez → ölçülen sayıların anlık görüntüsü de yazılır (anayasa 2: sayı yalnız kanıttan) ve v1'de herhangi bir değişim (iyileşme dahil) kabulü düşürür, yeniden sorulur; (3) bir LLM bu kaydı elle yazmamalı → `scripts/reasoning/decisions.py` yazıcı/okuyucu. Şema MINOR (1.4.0) `validate` çıktısına bir sürüm-uyarısı satırı ekler (15→16), bu 'çıktı bire bir aynı' ortak şartıyla çelişir: şartın istisnası yazılmalı. Bugünkü üç canlı uyarı (uB salon, uC banyo, uC hol payı) için hemen işe yarar. 'MAJOR kırılım' ve 'ekleme-yalnız denetlenemez' iddiaları aşırıydı (konvansiyon + `supersedes` + reviewer git-diff yeter).
-- **Netleştirme soruları** (her biri önerilen varsayılanla; kullanıcı tek tek onaylayınca madde `READY` olur):
-  1. Karar kaydı nerede yaşar? Öneri: `context.json` üst seviye `design_decisions[]` (anayasa 6, proje kopyalanırsa kararlar da gider).
-  2. Bir kayıt N bulguyu kapsasın mı (`covers[]`: her biri finding_key+evidence_hash+evidence, ortak gerekçe)? Öneri: evet.
-  3. Kanıt düşme kuralı v1: herhangi bir değişimde düşsün ve operatör 'önce → şimdi' sayılarıyla yeniden sorsun (yön-duyarlı kural sonra, kalibrasyonla)? Öneri: evet.
-  4. Kayda yalnız `Plain.numbers` ile adlandırılan ölçülen değerlerin anlık görüntüsü de yazılsın mı? Öneri: evet.
-- **Kullanıcı kararları (2026-10-09, netleştirme tamam; başlamak için kullanıcı onayı bekleniyor):** (1) kayıt `context.json` üst seviye `design_decisions[]` — EVET; (2) bir kayıt `covers[]` ile N bulguyu kapsar — EVET; (3) v1 kanıt düşme: herhangi bir değişimde (iyileşme dahil) kabul düşer, operatör 'önce → şimdi' ile yeniden sorar — EVET; (4) `Plain.numbers` ile adlandırılan ölçülen değerlerin anlık görüntüsü kayda yazılır — EVET.
-- **Uygulama sonucu (2026-10-09, kabul bekliyor):** şema 1.4.0 (`schema/design.schema.json` üst seviye opt-in `design_decisions[]`, `scripts/version.py`), `reasoning/decisions.py` (anlık görüntü + hash, `make_decision`, `check_decisions`, `evaluate`), `validate.py`ye YALNIZ `check_decisions` kancası (+3 satır; çıktı aynı), `select_topics(..., decisions=)` + `narrate` "önce → şimdi", `reasoning_dialogue.py decide` (ve brief/append/verify karar farkındalığı), `reasoning` `CONTRACT_VERSION` 1.1, operatör/reviewer talimatları, plan §5.5. **Kanıt:** kabulden sonra rev-28 hol payı konusu sessiz (3 → 2 konu, "5 bulgu kabul edilmiş" notu); yalnız normal5'te ölçüm değişince (kötüleşme VE iyileşme) konu yalnız o katla, ilk sırada, "önce 16.3 → şimdi 16.4" ve gerekçeyle GERİ GELİR, anlatımdaki sayılar karar kaydı + bulgudan kaynaklı (karar kaydı olmadan "önce" sayısı kaynaksız sayılır); boş/boşluktan oluşan gerekçe `make_decision`, `decide` ve `validate.py`de reddedilir; alanı olmayan context aynı çıktıyı verir; `decide` yalnız ekleme yapar (diff: en çok kapanış satırı). `reasoning/selftest.py` 30/30; 6 kasıtlı bozma (hash'i yok say, boş gerekçe, kabul edileni sun, validate kancası, validate gerekçe denetimi, boş anlık görüntü) yakalandı. **Mevcut davranış değişiklikleri (kabul şartı istisnası):** `validate` çıktısı "sürüm uyarısı satırı hariç aynı": proje 1.3.0 / sistem 1.4.0 → `UYARI (surum)` satırı (15 → 16); konu kümelemesi ve `brief` bunu sunmaz (`legacy.surum` dışlandı); `NUMBER_RE` artık harfe bitişik rakamı (m2, uC_oda2) sayı saymaz (doğrulama sıkılaşmadı, yanlış-pozitif azaldı); selftest bir kontrol çökerse temiz FAIL yazar. **Kullanıcıya:** gerçek projenin `meta.schema_version` değerini 1.4.0'a çekmek ayrı bir proje revizyonudur (sürüm notu o zaman kalkar); bugünkü üç canlı uyarı için `decide` hazır ama proje verisine karar YAZILMADI. Kilit bırakıldı.
-
 ### DEV-070 — `docs/agents/` — bilgi mühendisi rolü ve büyütme protokolü
 
 - **Durum:** PLANNED
@@ -763,7 +742,7 @@ belirleyeceksin ... her birini sıralama olarak birbirine bağla"):**
   3. Geçme kuralı: vaka başına 3 koşu, ≥2/3 tüm rubrik maddeleri; rapor model kimliği + belge commit'ini taşır; MINOR çekirdek değişikliğinden sonra yeniden koşulur. Öneri: evet.
   4. Reviewer rapor yeri: `review_validation.write`a `docs/development/reviews/` (ekleme-yalnız) eklensin ve `REVIEWER_VALIDATOR_AGENT.md`ye 'Sistem sınavı' bölümü (`DEV-064` aynı dosyayı da düzenler — sıra önemli). Öneri: evet.
 - **Kullanıcı kararları (2026-10-09, netleştirme tamam; başlamak için kullanıcı onayı bekleniyor):** (1) soğuk başlangıç sınavı ayrı maddeye çıkarılır (öneri `DEV-071`, önkoşulsuz; kayıt `DEV-070` onayında açılır), `DEV-070` rol belgesi + izin + protokol — EVET; (2) soğukluk: proje içi mühürlü paket, yalnız çıkarma tarifi commit'lenir, cevap anahtarı pakette yok — EVET; (3) geçme: vaka başına 3 koşu, ≥2/3 tüm rubrik; rapor model kimliği + belge commit'i taşır; çekirdekte MINOR değişiklikten sonra yeniden koşulur — EVET; (4) reviewer raporu `docs/development/reviews/` (ekleme-yalnız), `review_validation.write`a eklenir, `REVIEWER_VALIDATOR_AGENT.md`ye 'Sistem sınavı' bölümü (`DEV-064` ile aynı dosya, sıra önemli) — EVET.
-- **Metin düzeltmeleri (onayla birlikte uygulanır):** Önkoşul satırı 'DEV-060 + DEV-061' korunur, 'paralel' gösterimi her yerde silinir; sınav tanımı ayrı madde olabilir.
+- **Uygulama sonucu (2026-10-09, kabul bekliyor):** `docs/agents/KNOWLEDGE_ENGINEER_AGENT.md` (rol, izin sınırı, Vaka→İlke→Veçhe, veçhe ekleme kontrol listesi — `DEV-061` paketinden damıtıldı, terfi merdiveni: `active` yalnız kullanıcı kararı, "yapmayacakların", standart "Muhakeme katkısı" bölümü), `AGENT_PERMISSIONS.json` `knowledge_engineering` girişi + `review_validation.write`a `docs/development/reviews/` (ekleme-yalnız; dizin + README), `REVIEWER_VALIDATOR_AGENT.md` "Sistem sınavı" bölümü, `SYSTEM_DEVELOPMENT_AGENT.md` ve kök `CLAUDE.md` işaretçileri; soğuk başlangıç sınavı `DEV-071` olarak ayrıldı (önkoşulsuz, PLANNED). **Kanıt:** izin girişi ve rol belgesi tutarlılığı `reasoning/selftest.py`de mekanik sınanır (yasak listesinde şema/`validate.py`/`context.json`/çekirdek, yazma listesinde lens/vaka/sağlayıcı, kabul kuralı); `doc_check` temiz; kod/`validate` çıktısı DEĞİŞMEDİ. **Kullanıcıya:** `AGENT_PERMISSIONS.json` değişiklikleri (DEV-064'teki operatör okuma izni + bu giriş) sistem mimarı onayı ister; sınavın kendisi (DEV-071) henüz KOŞULMADI — bilgi mühendisi belgesinin yeterliliği ancak o sınavla kanıtlanır. Kilit bırakıldı.
 
 ### DEV-062 — `reasoning/` — ışık-hava-yönelim mercek paketi
 
@@ -915,6 +894,14 @@ belirleyeceksin ... her birini sıralama olarak birbirine bağla"):**
   4. Defter tutma: dalga 1'i `061`/`062`/`063` emer; `067` yalnız kalan dalgalar. Öneri: evet.
 - **Kullanıcı kararları (2026-10-09, netleştirme tamam; başlamak için kullanıcı onayı bekleniyor):** (1) kapı #10 üç durumlu (sağlayıcı / `EXEMPT` / `PENDING`), liste yalnız küçülür — EVET; (2) veçhe kaydı yalnız lens paketlerinde, modül `reasoning.py`si ROL+ÖLÇÜM beyanı — EVET; (3) muaf sözlüğü merkezi `scripts/reasoning/providers.py`, `knowledge_engineering` yazma izni yalnız bu dosya — EVET; (4) dalga 1'i `061`/`062`/`063` üstlenir, `067` yalnız kalan dalgaları yürütür — EVET.
 - **Metin düzeltmeleri (onayla birlikte uygulanır):** Önkoşul 'DEV-060' → 'DEV-059 + DEV-060'; 'rolling' ifadesi silinir; `northarrow` sırası `DEV-062` ile çakışır (northarrow önce); 'şablona uyar' ve 'gerekçe yazılı' kabulleri deterministik hale getirilir (başlık+alan varlığı, boş olmayan gerekçe).
+
+### DEV-071 — `docs/development/reviews/` — soğuk başlangıç sınavı (reviewer)
+
+- **Durum:** PLANNED
+- **Kapsam (plan §8.5; `DEV-070` kullanıcı kararı 2026-10-09):** yeni bir ajan yalnız kök `CLAUDE.md` + plan + çekirdek `CLAUDE.md` ile üç vakada (a) doğru teşhisi koyar, (b) sayı uydurmadan §5 iskeletiyle anlatır, (c) `uC` vakasındaki kokuyu adıyla bulur. Sınavı **reviewer** (geliştirici dışı) yürütür. Soğukluk: proje kökü içinde silinen **mühürlü paket**; yalnız çıkarma tarifi (commit + kat + komut) commit'lenir, cevap anahtarı pakette yoktur. Rubrik + vaka seti bu maddede yazılır.
+- **Geçme kuralı:** vaka başına 3 bağımsız koşu, ≥2/3'ü tüm rubrik maddelerini sağlar; rapor model kimliği + belge commit'ini taşır; çekirdekte MINOR değişiklikten sonra yeniden koşulur. Raporlar `docs/development/reviews/` (ekleme-yalnız). Geçmezse bilgi eksiktir, belge düzeltilir.
+- **Önkoşul:** yok (bugünkü belgelerle bir taban koşusu yapılabilir; `DEV-070` rol belgesi ve `DEV-064` anlatım yolu sınanan malzemedir).
+- **Kullanıcı kararları:** `DEV-070` netleştirmesinde (1)–(3) EVET (2026-10-09). Başlamak için kullanıcı onayı bekleniyor.
 
 ## COMPLETED
 
@@ -2035,3 +2022,8 @@ Bir görev için agent şunları yapmadan `COMPLETED` yazamaz:
 
 - **Durum:** COMPLETED (2026-10-09) — kullanıcı onayıyla (dört netleştirme kararı) uygulandı. Ayrıntılı kayıt: `HD-043`.
 - **Özet:** `reasoning/explain.py` (rakam lint'i, sunum kuyruğu, anlatım, `dialogue.jsonl`) + `scripts/reasoning_dialogue.py` + `doc_check` #13 + operatör/reviewer talimatları; `validate.py` değişmedi; rev-28 15 satır → 3 konu.
+
+### DEV-065 — Şema + `reasoning/` — tasarım kararı kaydı
+
+- **Durum:** COMPLETED (2026-10-09) — kullanıcı onayıyla (dört netleştirme kararı) uygulandı. Ayrıntılı kayıt: `HD-044`.
+- **Özet:** şema 1.4.0 opt-in `design_decisions[]` + `reasoning/decisions.py` + `reasoning_dialogue.py decide`; kanıta bağlı kabul (ölçüm değişirse düşer, "önce → şimdi"); `validate.py` yalnız `check_decisions` kancası; çıktı sürüm uyarısı satırı hariç aynı.

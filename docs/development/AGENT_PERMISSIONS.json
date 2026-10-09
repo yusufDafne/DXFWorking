@@ -17,10 +17,39 @@
       "acceptance before final"
     ]
   },
+  "knowledge_engineering": {
+    "roles": ["knowledge-engineer"],
+    "read": ["scripts/", "schema/", "docs/", "CLAUDE.md"],
+    "write": [
+      "scripts/reasoning/lenses/",
+      "scripts/reasoning/cases/",
+      "scripts/<module>/reasoning.py",
+      "scripts/<provider-module>/<new-measurement-file>.py",
+      "scripts/<module>/CLAUDE.md#Muhakeme-katkisi"
+    ],
+    "forbidden": [
+      "schema/",
+      "scripts/validate.py",
+      "scripts/reasoning/*.py",
+      "scripts/doc_check.py",
+      "context.json",
+      "other-projects/",
+      "existing-code-of-other-modules/",
+      "CLAUDE.md"
+    ],
+    "requires": [
+      "explicit user directive or READY task",
+      "sourced thresholds only; no 'kesin' without source",
+      "doc_check clean",
+      "reasoning selftest with deliberate-break proof",
+      "reviewer acceptance (never self-accepted)",
+      "active promotion only by explicit user decision"
+    ]
+  },
   "review_validation": {
     "roles": ["reviewer", "validator"],
     "read": ["assigned-project/", "scripts/", "schema/", "docs/"],
-    "write": ["assigned-project/review-reports/"],
+    "write": ["assigned-project/review-reports/", "docs/development/reviews/"],
     "forbidden": ["context.json", "scripts/", "schema/", "other-projects/"],
     "requires": [
       "independent run",
