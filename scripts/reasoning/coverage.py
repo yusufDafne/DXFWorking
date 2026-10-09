@@ -22,13 +22,19 @@ class CoverageReport:
     entries: tuple[CoverageEntry, ...]
     lens_count: int
     facet_count: int
+    unmeasured: tuple[str, ...] = ()   # status idea/draft: olcum kodu YOK, kosmaz (kostu sayilmaz)
 
     def text(self) -> str:
         if self.lens_count == 0:
             return "Kapsam: HICBIR mercek kayitli degil - muhakeme degerlendirmesi YAPILMADI (bu 'temiz' demek degildir)."
-        lines = [f"Kapsam: {self.lens_count} mercek, {self.facet_count} veche."]
-        for e in self.entries:
-            if e.state != STATE_RAN:
+        counts = {s: sum(1 for e in self.entries if e.state == s) for s in (STATE_RAN, STATE_BLOCKED, STATE_NA)}
+        lines = [f"Kapsam: {self.lens_count} mercek, {self.facet_count} veche; veche x kat: "
+                 f"{counts[STATE_RAN]} kostu, {counts[STATE_BLOCKED]} kosamadi, {counts[STATE_NA]} uygulanmaz."]
+        if self.unmeasured:
+            lines.append(f"  Henuz OLCULMEYEN {len(self.unmeasured)} veche (idea/draft - olcum kodu yok, 'temiz' degil): "
+                         + ", ".join(self.unmeasured))
+        for e in self.entries:  # 'uygulanmaz' bir eksiklik DEGIL (kat ilgisiz) - yalniz sayilir; 'kosamadi' tek tek soylenir
+            if e.state == STATE_BLOCKED:
                 lines.append(f"  - {e.facet_id} [{e.floor_id or '*'}]: {e.state.upper()} - {e.reason}")
         return "\n".join(lines)
 
@@ -57,7 +63,11 @@ def _applies(rule: str, floor: dict) -> bool:
 
 def build_coverage(registry: Registry, context: dict) -> CoverageReport:
     entries: list[CoverageEntry] = []
+    unmeasured: list[str] = []
     for facet in registry.facets.values():
+        if facet.status in ("idea", "draft"):
+            unmeasured.append(facet.id)
+            continue
         for floor in context.get("floors", []):
             fid = floor.get("id")
             if not _applies(facet.applies_when, floor):
@@ -77,4 +87,4 @@ def build_coverage(registry: Registry, context: dict) -> CoverageReport:
                     if total and have < total:
                         partial.append(f"{need} {have}/{total}")
                 entries.append(CoverageEntry(facet.id, fid, STATE_RAN, "kismi: " + ", ".join(partial) if partial else ""))
-    return CoverageReport(tuple(entries), len(registry.lenses), len(registry.facets))
+    return CoverageReport(tuple(entries), len(registry.lenses), len(registry.facets), tuple(unmeasured))

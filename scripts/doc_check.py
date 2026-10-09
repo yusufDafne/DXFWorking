@@ -359,7 +359,7 @@ def check_contract_versions() -> list[str]:
 # "Henuz degerlendirilmedi" gecis kaydinin DONUK ust siniri: bunun disinda hicbir ad PENDING'e
 # girebilir. DEV-067 PENDING'i bosaltinca bu kume SILINIR ve kapi blokajci olur.
 _PENDING_FROZEN = frozenset({
-    "architect", "axis", "ceiling", "collision", "columns", "dimensions", "elevations", "furniture",
+    "axis", "ceiling", "collision", "columns", "dimensions", "elevations", "furniture",
     "importer", "legend", "levels", "northarrow", "openings", "pafta", "palette", "rooms", "sections",
     "shafts", "stairs", "standards", "templates", "typography", "walls",
 })
@@ -487,6 +487,8 @@ def check_reasoning_cases(registry=None, cases_root=None) -> list[str]:
     for f in registry.facets.values():
         if f.status not in STATUSES or STATUSES.index(f.status) < 2:
             continue
+        if f.legacy:
+            continue  # validate.py'nin zaten cagirdigi kural: terfi kapisindan muaf (model.Facet.legacy); selftest'leri modulde
         roles = set()
         for name in f.cases:
             case_json = root / name / "case.json"

@@ -1,0 +1,6 @@
+{
+ "expect_keys": [
+  "mahremiyet.gecis.islak_yatak_odasindan|*|A,ban|cfd4fb21"
+ ],
+ "expect_absent": []
+}

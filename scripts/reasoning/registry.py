@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import ast
 import importlib.util
+import sys
 from pathlib import Path
 
 from .model import (CONFIDENCES, FACET_ID_RE, KINDS, LENS_ID_RE, PLACEHOLDER_SOURCES, SCOPES, STATUSES,
@@ -15,8 +16,8 @@ from .model import (CONFIDENCES, FACET_ID_RE, KINDS, LENS_ID_RE, PLACEHOLDER_SOU
 
 ROOT_SCRIPTS = Path(__file__).resolve().parent.parent
 
-# `<modul>/reasoning.py` saglayicilari (register(reg) fonksiyonu tasir). Bugun HICBIRI yok.
-REASONING_PROVIDERS: tuple[str, ...] = ()
+# `<modul>/reasoning.py` saglayicilari (register(reg) fonksiyonu tasir). Veche kayitlari lens paketlerindedir.
+REASONING_PROVIDERS: tuple[str, ...] = ("architect",)  # DEV-061
 
 # Gerekceli muafiyet ("dusunuldu, bu modul olcum/kural vermez") - COLLISION_EXEMPT ile AYNI idiom.
 REASONING_EXEMPT: dict[str, str] = {
@@ -28,7 +29,7 @@ REASONING_EXEMPT: dict[str, str] = {
 # "Henuz degerlendirilmedi" gecis kaydi (DEV-067 bosaltir). TEK YONLU: kume yalniz kuculur;
 # doc_check'teki _PENDING_FROZEN disinda hicbir ad girilemez.
 REASONING_PENDING: frozenset[str] = frozenset({
-    "architect", "axis", "ceiling", "collision", "columns", "dimensions", "elevations", "furniture",
+    "axis", "ceiling", "collision", "columns", "dimensions", "elevations", "furniture",
     "importer", "legend", "levels", "northarrow", "openings", "pafta", "palette", "rooms", "sections",
     "shafts", "stairs", "standards", "templates", "typography", "walls",
 })
@@ -138,6 +139,9 @@ def load_registry(scripts_root: Path | None = None) -> tuple[Registry, list[str]
     """Saglayici/lens dosyalarini YOLLA yukler (paket __init__i calistirmadan); `register(reg)` cagirir.
     Donus: (kayit, yukleme hatalari)."""
     reg, errors = Registry(), []
+    root = str(scripts_root or ROOT_SCRIPTS)
+    if root not in sys.path:  # saglayicilar `reasoning.*` import eder
+        sys.path.insert(0, root)
     for path in provider_files(scripts_root):
         if not path.exists():
             errors.append(f"saglayici dosyasi yok: {path}")

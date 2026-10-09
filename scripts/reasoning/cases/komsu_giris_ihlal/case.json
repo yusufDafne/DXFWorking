@@ -1,0 +1,109 @@
+{
+ "id": "komsu_giris_ihlal",
+ "facet": "mahremiyet.birimler_arasi.komsu_giris_yakinligi",
+ "role": "ihlal",
+ "origin": "elle yazilmis, uydurulmus mini sahne (DEV-061; gercek gecmis geometri DEGIL)",
+ "floor": {
+  "rooms": [
+   {
+    "id": "ort",
+    "room_type": "koridor",
+    "polygon": [
+     [
+      0,
+      -2000
+     ],
+     [
+      6000,
+      -2000
+     ],
+     [
+      6000,
+      0
+     ],
+     [
+      0,
+      0
+     ]
+    ]
+   },
+   {
+    "id": "uA_hol",
+    "room_type": "koridor",
+    "unit_id": "uA",
+    "polygon": [
+     [
+      0,
+      0
+     ],
+     [
+      3000,
+      0
+     ],
+     [
+      3000,
+      3000
+     ],
+     [
+      0,
+      3000
+     ]
+    ]
+   },
+   {
+    "id": "uB_hol",
+    "room_type": "koridor",
+    "unit_id": "uB",
+    "polygon": [
+     [
+      3000,
+      0
+     ],
+     [
+      6000,
+      0
+     ],
+     [
+      6000,
+      3000
+     ],
+     [
+      3000,
+      3000
+     ]
+    ]
+   }
+  ],
+  "walls": [
+   {
+    "id": "w_in",
+    "start": [
+     0,
+     0
+    ],
+    "end": [
+     6000,
+     0
+    ],
+    "thickness": 100.0,
+    "layer": "D"
+   }
+  ],
+  "openings": [
+   {
+    "id": "uA_giris",
+    "type": "door",
+    "wall_id": "w_in",
+    "position_from_start": 2000,
+    "width": 900
+   },
+   {
+    "id": "uB_giris",
+    "type": "door",
+    "wall_id": "w_in",
+    "position_from_start": 4000,
+    "width": 900
+   }
+  ]
+ }
+}

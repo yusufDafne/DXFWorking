@@ -1,0 +1,81 @@
+{
+ "id": "wc_kapi_yonu_temiz",
+ "facet": "mahremiyet.gorsel.wc_kapisi_disa_aciliyor",
+ "role": "temiz",
+ "origin": "elle yazilmis, uydurulmus mini sahne (DEV-061; gercek gecmis geometri DEGIL)",
+ "floor": {
+  "rooms": [
+   {
+    "id": "hol",
+    "room_type": "koridor",
+    "unit_id": "A",
+    "polygon": [
+     [
+      0,
+      0
+     ],
+     [
+      4000,
+      0
+     ],
+     [
+      4000,
+      1500
+     ],
+     [
+      0,
+      1500
+     ]
+    ]
+   },
+   {
+    "id": "wc",
+    "room_type": "wc",
+    "unit_id": "A",
+    "polygon": [
+     [
+      0,
+      -1500
+     ],
+     [
+      1500,
+      -1500
+     ],
+     [
+      1500,
+      0
+     ],
+     [
+      0,
+      0
+     ]
+    ]
+   }
+  ],
+  "walls": [
+   {
+    "id": "w_wc",
+    "start": [
+     0,
+     0
+    ],
+    "end": [
+     4000,
+     0
+    ],
+    "thickness": 100.0,
+    "layer": "D"
+   }
+  ],
+  "openings": [
+   {
+    "id": "dwc",
+    "type": "door",
+    "wall_id": "w_wc",
+    "position_from_start": 750,
+    "width": 800,
+    "host_side": "neg"
+   }
+  ]
+ }
+}

@@ -1,0 +1,124 @@
+{
+ "id": "mutfak_wc_temiz",
+ "facet": "mahremiyet.gorsel.mutfak_wc_karsilikli",
+ "role": "temiz",
+ "origin": "elle yazilmis, uydurulmus mini sahne (DEV-061; gercek gecmis geometri DEGIL)",
+ "floor": {
+  "rooms": [
+   {
+    "id": "hol",
+    "room_type": "koridor",
+    "unit_id": "A",
+    "polygon": [
+     [
+      0,
+      0
+     ],
+     [
+      4000,
+      0
+     ],
+     [
+      4000,
+      1500
+     ],
+     [
+      0,
+      1500
+     ]
+    ]
+   },
+   {
+    "id": "wc",
+    "room_type": "wc",
+    "unit_id": "A",
+    "polygon": [
+     [
+      0,
+      -1500
+     ],
+     [
+      1500,
+      -1500
+     ],
+     [
+      1500,
+      0
+     ],
+     [
+      0,
+      0
+     ]
+    ]
+   },
+   {
+    "id": "mut",
+    "room_type": "mutfak",
+    "unit_id": "A",
+    "polygon": [
+     [
+      2500,
+      1500
+     ],
+     [
+      4000,
+      1500
+     ],
+     [
+      4000,
+      3000
+     ],
+     [
+      2500,
+      3000
+     ]
+    ]
+   }
+  ],
+  "walls": [
+   {
+    "id": "w_wc",
+    "start": [
+     0,
+     0
+    ],
+    "end": [
+     4000,
+     0
+    ],
+    "thickness": 100.0,
+    "layer": "D"
+   },
+   {
+    "id": "w_k",
+    "start": [
+     2500,
+     1500
+    ],
+    "end": [
+     4000,
+     1500
+    ],
+    "thickness": 100.0,
+    "layer": "D"
+   }
+  ],
+  "openings": [
+   {
+    "id": "dwc",
+    "type": "door",
+    "wall_id": "w_wc",
+    "position_from_start": 750,
+    "width": 800,
+    "host_side": "neg"
+   },
+   {
+    "id": "dk",
+    "type": "door",
+    "wall_id": "w_k",
+    "position_from_start": 750,
+    "width": 800
+   }
+  ]
+ }
+}

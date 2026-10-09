@@ -583,8 +583,8 @@ etkindir**.
   kapıları 1485 mm) gerçek projede **hiçbir kural tarafından görülmüyor**; bunlar plan
   değişikliği değil bilgidir, kullanıcı isterse ayrı revizyon konusudur.
 - **Durum (2026-10-09 oturum sonu):** `DEV-059` (`spatial/`) ve `DEV-060` (`reasoning/` çekirdeği) **COMPLETED**
-  (`HD-040`, `HD-041`). `DEV-061` (mahremiyet paketi) soruları yanıtlandı ve karar kayıtlı (görev maddesinde
-  "Kullanıcı kararları"); **uygulama BAŞLAMADI** — kullanıcı onayı bekliyor (büyük madde, bilerek bekletildi).
+  (`HD-040`, `HD-041`). `DEV-061` (mahremiyet paketi) **UYGULANDI, kabul bekliyor** (2026-10-09; görev maddesinde "Uygulama sonucu");
+  sıradaki: kullanıcı kabulü → COMPLETED + HD kaydı → `DEV-064`.
   Kalan sıra: `061 → 064 → 065 → 070 → 062 → 063 → 066 → 069 → 068 → 067` (plan §10.1). `DEV-064`…`DEV-067`
   maddelerinin netleştirme soruları henüz sorulmadı.
 - **Planlı genel kontrol:** kullanıcı, planlanan tüm maddeler tamamlandıktan SONRA ayrıca bir genel kontrol

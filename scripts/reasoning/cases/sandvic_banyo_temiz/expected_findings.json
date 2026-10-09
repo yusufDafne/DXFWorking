@@ -1,0 +1,6 @@
+{
+ "expect_keys": [],
+ "expect_absent": [
+  "mahremiyet.gecis.islak_iki_bolgeye_kapili|*|oda,salon,uA,wc|e27e7109"
+ ]
+}

@@ -1,0 +1,166 @@
+{
+ "id": "islak_komsuluk_ihlal",
+ "facet": "mahremiyet.gorsel.islak_hacim_komsulugu",
+ "role": "ihlal",
+ "origin": "elle yazilmis, uydurulmus mini sahne (DEV-061; gercek gecmis geometri DEGIL)",
+ "floor": {
+  "rooms": [
+   {
+    "id": "hol",
+    "room_type": "koridor",
+    "unit_id": "A",
+    "polygon": [
+     [
+      0,
+      0
+     ],
+     [
+      4000,
+      0
+     ],
+     [
+      4000,
+      1500
+     ],
+     [
+      0,
+      1500
+     ]
+    ]
+   },
+   {
+    "id": "ban",
+    "room_type": "banyo",
+    "unit_id": "A",
+    "polygon": [
+     [
+      0,
+      1500
+     ],
+     [
+      1500,
+      1500
+     ],
+     [
+      1500,
+      3500
+     ],
+     [
+      0,
+      3500
+     ]
+    ]
+   },
+   {
+    "id": "wc",
+    "room_type": "wc",
+    "unit_id": "A",
+    "polygon": [
+     [
+      2000,
+      1500
+     ],
+     [
+      3000,
+      1500
+     ],
+     [
+      3000,
+      3500
+     ],
+     [
+      2000,
+      3500
+     ]
+    ]
+   },
+   {
+    "id": "sal",
+    "room_type": "salon",
+    "unit_id": "A",
+    "polygon": [
+     [
+      2500,
+      1500
+     ],
+     [
+      4000,
+      1500
+     ],
+     [
+      4000,
+      3500
+     ],
+     [
+      2500,
+      3500
+     ]
+    ]
+   }
+  ],
+  "walls": [
+   {
+    "id": "w_b",
+    "start": [
+     0,
+     1500
+    ],
+    "end": [
+     1500,
+     1500
+    ],
+    "thickness": 100.0,
+    "layer": "D"
+   },
+   {
+    "id": "w_w",
+    "start": [
+     1500,
+     1500
+    ],
+    "end": [
+     2500,
+     1500
+    ],
+    "thickness": 100.0,
+    "layer": "D"
+   },
+   {
+    "id": "w_s",
+    "start": [
+     2500,
+     1500
+    ],
+    "end": [
+     4000,
+     1500
+    ],
+    "thickness": 100.0,
+    "layer": "D"
+   }
+  ],
+  "openings": [
+   {
+    "id": "db",
+    "type": "door",
+    "wall_id": "w_b",
+    "position_from_start": 750,
+    "width": 800
+   },
+   {
+    "id": "dw",
+    "type": "door",
+    "wall_id": "w_w",
+    "position_from_start": 500,
+    "width": 800
+   },
+   {
+    "id": "ds",
+    "type": "door",
+    "wall_id": "w_s",
+    "position_from_start": 1000,
+    "width": 800
+   }
+  ]
+ }
+}

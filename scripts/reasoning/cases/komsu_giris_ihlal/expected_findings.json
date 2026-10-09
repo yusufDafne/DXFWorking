@@ -1,0 +1,6 @@
+{
+ "expect_keys": [
+  "mahremiyet.birimler_arasi.komsu_giris_yakinligi|*|uA,uA_giris,uB,uB_giris|65861987"
+ ],
+ "expect_absent": []
+}

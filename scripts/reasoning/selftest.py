@@ -212,8 +212,10 @@ def check_gate10_three_state() -> list[str]:
         e.append(f"URETIM kaydi kirmizi: {dc.check_reasoning_coverage()}")
     if set(REASONING_PENDING) - dc._PENDING_FROZEN:
         e.append("uretim PENDING kumesi donuk kumenin disina cikmis")
-    if REASONING_PROVIDERS:
-        e.append("DEV-060 sonrasi uretimde saglayici beklenmiyordu (DEV-061 ekler; bu test o zaman guncellenir)")
+    if tuple(REASONING_PROVIDERS) != ("architect",):
+        e.append(f"DEV-061 sonrasi tek saglayici 'architect' beklenir: {REASONING_PROVIDERS}")
+    if "architect" in REASONING_PENDING or "architect" in dc._PENDING_FROZEN:
+        e.append("architect saglayici oldu: PENDING ve donuk listeden CIKMALI (kume yalniz kuculur)")
     return e
 
 
@@ -289,8 +291,8 @@ def check_coverage() -> list[str]:
     empty = build_coverage(Registry(), {"floors": []})
     if "HICBIR mercek" not in empty.text():
         e.append("bos kayitta kapsam raporu 'hicbir mercek kayitli degil' demeli")
-    f_run = idea("mahremiyet.gecis.a", status="draft", provenance=prov(), needs=("rooms[].unit_id",), applies_when="has_room_type:salon|yatak_odasi")
-    f_north = idea("isik.yonelim.b", lens="isik", status="draft", provenance=prov(), needs=("meta.north_angle",))
+    f_run = idea("mahremiyet.gecis.a", status="shadow", check_ref="a:b", provenance=prov(), needs=("rooms[].unit_id",), applies_when="has_room_type:salon|yatak_odasi")
+    f_north = idea("isik.yonelim.b", lens="isik", status="shadow", check_ref="a:b", provenance=prov(), needs=("meta.north_angle",))
     r = Registry()
     r.register_lens(Lens("mahremiyet", "t", "p"))
     r.register_lens(Lens("isik", "t", "p"))
@@ -311,6 +313,12 @@ def check_coverage() -> list[str]:
         e.append("K2: unit_id hicbir elemanda yok -> koSAMADI (uygulanmaz ile KARISMAMALI)")
     if st[("isik.yonelim.b", "K1")].state != "kosamadi" or "north_angle" not in st[("isik.yonelim.b", "K1")].reason:
         e.append("meta.north_angle yok -> kosamadi + neden")
+    r.register_facet(idea("mahremiyet.gecis.taslak", status="draft", provenance=prov(), needs=("rooms[].unit_id",)))
+    rep2 = build_coverage(r, ctx)
+    if "mahremiyet.gecis.taslak" not in rep2.unmeasured or any(x.facet_id == "mahremiyet.gecis.taslak" for x in rep2.entries):
+        e.append("draft veche 'kostu' sayilmamali: olcum kodu yok -> 'OLCULMEYEN' (temiz ile karismamali)")
+    if "OLCULMEYEN" not in rep2.text().upper():
+        e.append("kapsam metni olculmeyen vecheyi soylemeli")
     ctx["meta"]["north_angle"] = 30
     if {(x.facet_id, x.floor_id): x for x in build_coverage(r, ctx).entries}[("isik.yonelim.b", "K1")].state != "kostu":
         e.append("north_angle verilince kostu olmali (yanlis-pozitif)")
@@ -354,8 +362,11 @@ def check_production_loading_is_side_effect_free() -> list[str]:
     from reasoning import load_registry
     reg, errs = load_registry()
     e = []
-    if errs or reg.facets or reg.lenses:
-        e.append(f"uretim kaydi bugun bos ve hatasiz olmali: {errs} {len(reg.facets)}")
+    if errs or set(reg.lenses) != {"mahremiyet"} or len(reg.facets) != 14:
+        e.append(f"uretim kaydi: yalniz 'mahremiyet' merceginin 14 vechesi, hatasiz olmali: {errs} {sorted(reg.lenses)} {len(reg.facets)}")
+    from reasoning import validate_registry as _vr
+    if _vr(reg):
+        e.append(f"uretim kaydi ic tutarlilik hatasi: {_vr(reg)}")
     # saglayici dosyasi cizim modulu import ederse REDDEDILMELI
     import reasoning.registry as rr
     tmp = Path(tempfile.mkdtemp())
@@ -371,11 +382,159 @@ def check_production_loading_is_side_effect_free() -> list[str]:
     return e
 
 
+# ------------------------------------------------------------------ DEV-061: mahremiyet paketi
+def _prod_registry():
+    from reasoning import load_registry
+    reg, errs = load_registry()
+    return reg, errs
+
+
+def _normal1():
+    ctx = json.loads((ROOT / "context.json").read_text(encoding="utf-8"))
+    return next(f for f in ctx["floors"] if f["id"] == "normal1")
+
+
+def check_mahremiyet_statuses() -> list[str]:
+    reg, errs = _prod_registry()
+    e = list(errs)
+    from collections import Counter
+    got = Counter(f.status for f in reg.facets.values() if f.lens == "mahremiyet")
+    if dict(got) != {"active": 5, "shadow": 6, "draft": 2, "idea": 1}:
+        e.append(f"durum dagilimi 5 active / 6 shadow / 2 draft / 1 idea olmali: {dict(got)}")
+    legacy = {f.id for f in reg.facets.values() if f.legacy}
+    if len(legacy) != 5 or any(reg.facets[i].status != "active" for i in legacy):
+        e.append("legacy bayragi tam beş active vecheye ait olmali")
+    for f in reg.facets.values():
+        if f.status == "active" and f.plain and any(ch.isdigit() for ch in f.plain.problem + f.plain.consequence):
+            e.append(f"{f.id}: plain metninde rakam var (sayi yalniz olcumden gelir)")
+    if {s.id for s in reg.smells.values()} != {"sandvic_banyo", "gecis_odasi_yatak", "dikizli_giris"}:
+        e.append("uc koku kayitli olmali")
+    return e
+
+
+def check_mahremiyet_wiring_claim() -> list[str]:
+    """'validate.py'nin cagirdigi bes = active+legacy, DEV-052/053 = shadow' iddiasi KODDAN sabitlenir:
+    biri validate'e baglanirsa bu test kirilir ve durum guncellenir (sessiz sapma olmaz)."""
+    import re
+    reg, _ = _prod_registry()
+    validate_src = (ROOT / "scripts" / "validate.py").read_text(encoding="utf-8")
+    rules_src = (ROOT / "scripts" / "architect" / "rules.py").read_text(encoding="utf-8")
+    nuances = rules_src[rules_src.index("def check_door_window_nuances"):]
+    e = []
+    for f in reg.facets.values():
+        if f.adapter is None or not f.adapter.ref.startswith("architect.rules:"):
+            continue
+        name = f.adapter.ref.split(":")[1]
+        called = bool(re.search(rf"\+?\s*{name}\(rooms, walls, openings\)", validate_src)) or f"{name}(rooms, walls, openings)" in nuances
+        if f.legacy and not called:
+            e.append(f"{f.id}: legacy ama validate.py {name}'i CAGIRMIYOR")
+        if not f.legacy and called:
+            e.append(f"{f.id}: shadow ama validate.py artik {name}'i cagiriyor - durumu active+legacy yap")
+    return e
+
+
+def check_mahremiyet_cases() -> list[str]:
+    import reasoning_report as rr
+    from reasoning import list_cases, load_case, run_case
+    reg, _ = _prod_registry()
+    e = []
+    cases = list_cases()
+    if len(cases) != 22:
+        e.append(f"22 vaka beklenirdi (11 vechenin ihlal+temiz): {len(cases)}")
+    for path in cases:
+        case, _x = load_case(path)
+        facet = reg.facets.get(case["facet"])
+        if facet is None or facet.adapter is None:
+            e.append(f"{path.name}: vechesi/adaptoru yok")
+            continue
+        e += run_case(path, rr.facet_check(facet))
+    # kasitli bozma: ihlal sahnesini temizlersek de, temiz sahneyi bozarsak da kosucu YAKALAMALI
+    tmp = Path(tempfile.mkdtemp())
+    for name, door_pos in (("giristen_yatak_gorus_ihlal", 500), ("giristen_yatak_gorus_temiz", 2700)):
+        src = next(p for p in cases if p.name == name)
+        case, expected = load_case(src)
+        for o in case["floor"]["openings"]:
+            if o["id"] == "d_hedef":
+                o["position_from_start"] = door_pos
+        d = tmp / name
+        d.mkdir()
+        (d / "case.json").write_text(json.dumps(case), encoding="utf-8")
+        (d / "expected_findings.json").write_text(json.dumps(expected), encoding="utf-8")
+        if not run_case(d, rr.facet_check(reg.facets["mahremiyet.gorsel.giristen_yatak_odasi_gorus"])):
+            e.append(f"kasitli bozma YAKALANMADI: {name}")
+    return e
+
+
+def check_mahremiyet_real_project() -> list[str]:
+    """rev-28 normal1: plan §6.1 olcumleri. Degerler EL ile kontrol edildi: uC 16.1/1978, uB 20.2/2025, uB-uC 1485, 5/6."""
+    from architect import privacy as pv
+    fl = _normal1()
+    a = (fl["rooms"], fl["walls"], fl["openings"])
+    e = []
+    msgs = pv.check_entry_bedroom_sightline(*a)
+    if not (len(msgs) == 2 and any("uC_d_entry" in m and "sapma 16 " in m and "1978mm" in m for m in msgs)
+            and any("uB_d_entry" in m and "sapma 20 " in m and "2025mm" in m for m in msgs)):
+        e.append(f"olcum #4: uC 16/1978 ve uB 20/2025 beklenirdi: {msgs}")
+    if pv.entry_bedroom_sightline_subjects(*a) != {"uA": False, "uB": True, "uC": True}:
+        e.append(f"olcum #4 ozneleri: {pv.entry_bedroom_sightline_subjects(*a)}")
+    msgs = pv.check_neighbor_entry_proximity(*a)
+    if not (len(msgs) == 1 and "'uB'" in msgs[0] and "'uC'" in msgs[0] and "1485mm" in msgs[0]):
+        e.append(f"olcum #5: uB-uC 1485 beklenirdi: {msgs}")
+    subj = pv.wet_shared_wall_same_unit_subjects(*a)
+    if (sum(1 for v in subj.values() if v), len(subj)) != (5, 6):
+        e.append(f"olcum #6: ayni birimde 5/6 beklenirdi: {subj}")
+    if any(pv.wet_double_zone_doors_subjects(*a).values()):
+        e.append("gercek projede sandvic banyo YOK (sentetik vaka); tetiklememeli")
+    # opt-in: unit_id soyulunca 4 olcum de SESSIZ
+    bare = [{k: v for k, v in r.items() if k != "unit_id"} for r in fl["rooms"]]
+    for fn in (pv.check_entry_bedroom_sightline, pv.check_neighbor_entry_proximity,
+               pv.check_wet_shared_wall_same_unit, pv.check_wet_double_zone_doors):
+        if fn(bare, fl["walls"], fl["openings"]):
+            e.append(f"{fn.__name__}: unit_id yokken sessiz kalmali (opt-in)")
+    # esik override: 1000 mm esikte komsu giris uyarisi KALKAR (yanlis-pozitif tarafi)
+    if pv.check_neighbor_entry_proximity(*a, min_distance=1000.0):
+        e.append("min_distance=1000 iken 1485mm uyari vermemeli")
+    return e
+
+
+def check_mahremiyet_report() -> list[str]:
+    """reasoning_report: golge bolumu + asgari tetik orani; validate.py cikisi DEGISMEZ (15 satir)."""
+    import reasoning_report as rr
+    reg, _ = _prod_registry()
+    ctx = json.loads((ROOT / "context.json").read_text(encoding="utf-8"))
+    e = []
+    sh = rr.shadow_findings(reg, ctx)
+    got = {k: len(v) for k, v in sh.items()}
+    want = {"mahremiyet.gorsel.giris_wc_kapi_yakin": 0, "mahremiyet.gorsel.islak_hacim_komsulugu": 0,
+            "mahremiyet.gorsel.giristen_yatak_odasi_gorus": 10, "mahremiyet.birimler_arasi.komsu_giris_yakinligi": 5,
+            "mahremiyet.isitsel.islak_ortak_duvar_ayni_birim": 30, "mahremiyet.gecis.islak_iki_bolgeye_kapili": 0}
+    if got != want:
+        e.append(f"golge bulgu sayilari (5 ozdes kat): {got}")
+    rates = {r.facet_id: (r.fired, r.eligible, r.degenerate) for r in rr.shadow_triggers(reg, ctx)}
+    if rates.get("mahremiyet.isitsel.islak_ortak_duvar_ayni_birim") != (5, 6, False):
+        e.append(f"#6 tetik orani 5/6 olmali: {rates}")
+    if rates.get("mahremiyet.gecis.islak_iki_bolgeye_kapili") != (0, 6, True):
+        e.append("gercek projede hic otmeyen vechenin DEJENERE diye raporlanmasi gerekir")
+    out = subprocess.run([sys.executable, str(ROOT / "scripts" / "reasoning_report.py")],
+                         capture_output=True, text=True, timeout=600).stdout
+    for needle in ("15 uyari satiri -> 3 tekil konu", "Golge vecheler", "5/6 ozne tetikledi", "OLCULMEYEN"):
+        if needle not in out:
+            e.append(f"rapor ciktisinda '{needle}' yok")
+    import difflib
+    del difflib
+    diff = subprocess.run(["git", "diff", "--stat", "--", "scripts/validate.py"], cwd=ROOT, capture_output=True, text=True).stdout
+    if diff.strip():
+        e.append("validate.py DEGISMEMELI (DEV-061 kabul sarti)")
+    return e
+
+
 def main() -> int:
     checks = [check_keys_and_signature, check_severity_curve, check_diff, check_legacy_parse,
               check_real_validate_parity, check_registry_validation, check_gate10_three_state,
               check_gate11_refs, check_gate12_cases, check_case_runner, check_coverage,
-              check_provenance_gate_and_info, check_promotion, check_production_loading_is_side_effect_free]
+              check_provenance_gate_and_info, check_promotion, check_production_loading_is_side_effect_free,
+              check_mahremiyet_statuses, check_mahremiyet_wiring_claim, check_mahremiyet_cases,
+              check_mahremiyet_real_project, check_mahremiyet_report]
     failed = 0
     for check in checks:
         errs = check()

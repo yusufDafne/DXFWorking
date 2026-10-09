@@ -1,0 +1,6 @@
+{
+ "expect_keys": [
+  "mahremiyet.gorsel.islak_hacim_komsulugu|*|A,ban,wc|302e9158"
+ ],
+ "expect_absent": []
+}

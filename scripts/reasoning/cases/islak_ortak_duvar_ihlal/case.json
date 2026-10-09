@@ -1,0 +1,58 @@
+{
+ "id": "islak_ortak_duvar_ihlal",
+ "facet": "mahremiyet.isitsel.islak_ortak_duvar_ayni_birim",
+ "role": "ihlal",
+ "origin": "elle yazilmis, uydurulmus mini sahne (DEV-061; gercek gecmis geometri DEGIL)",
+ "floor": {
+  "rooms": [
+   {
+    "id": "wc",
+    "room_type": "wc",
+    "unit_id": "uA",
+    "polygon": [
+     [
+      0,
+      0
+     ],
+     [
+      2000,
+      0
+     ],
+     [
+      2000,
+      3000
+     ],
+     [
+      0,
+      3000
+     ]
+    ]
+   },
+   {
+    "id": "oda",
+    "room_type": "yatak_odasi",
+    "unit_id": "uA",
+    "polygon": [
+     [
+      2000,
+      0
+     ],
+     [
+      5000,
+      0
+     ],
+     [
+      5000,
+      3000
+     ],
+     [
+      2000,
+      3000
+     ]
+    ]
+   }
+  ],
+  "walls": [],
+  "openings": []
+ }
+}

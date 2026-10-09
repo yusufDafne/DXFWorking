@@ -1,0 +1,136 @@
+{
+ "id": "islak_yatak_zinciri_ihlal",
+ "facet": "mahremiyet.gecis.islak_yatak_odasindan",
+ "role": "ihlal",
+ "origin": "elle yazilmis, uydurulmus mini sahne (DEV-061; gercek gecmis geometri DEGIL)",
+ "floor": {
+  "rooms": [
+   {
+    "id": "hol",
+    "room_type": "koridor",
+    "unit_id": "A",
+    "polygon": [
+     [
+      0,
+      0
+     ],
+     [
+      4000,
+      0
+     ],
+     [
+      4000,
+      1500
+     ],
+     [
+      0,
+      1500
+     ]
+    ]
+   },
+   {
+    "id": "oda",
+    "room_type": "yatak_odasi",
+    "unit_id": "A",
+    "polygon": [
+     [
+      0,
+      1500
+     ],
+     [
+      2000,
+      1500
+     ],
+     [
+      2000,
+      3500
+     ],
+     [
+      0,
+      3500
+     ]
+    ]
+   },
+   {
+    "id": "ban",
+    "room_type": "banyo",
+    "unit_id": "A",
+    "polygon": [
+     [
+      2000,
+      1500
+     ],
+     [
+      4000,
+      1500
+     ],
+     [
+      4000,
+      3500
+     ],
+     [
+      2000,
+      3500
+     ]
+    ]
+   }
+  ],
+  "walls": [
+   {
+    "id": "w_o",
+    "start": [
+     0,
+     1500
+    ],
+    "end": [
+     2000,
+     1500
+    ],
+    "thickness": 100.0,
+    "layer": "D"
+   },
+   {
+    "id": "w_ob",
+    "start": [
+     2000,
+     1500
+    ],
+    "end": [
+     2000,
+     3500
+    ],
+    "thickness": 100.0,
+    "layer": "D"
+   },
+   {
+    "id": "w_b",
+    "start": [
+     2000,
+     1500
+    ],
+    "end": [
+     4000,
+     1500
+    ],
+    "thickness": 100.0,
+    "layer": "D"
+   }
+  ],
+  "openings": [
+   {
+    "id": "d_hol_oda",
+    "type": "door",
+    "wall_id": "w_o",
+    "position_from_start": 1000,
+    "width": 800
+   },
+   {
+    "id": "d_oda_ban",
+    "type": "door",
+    "wall_id": "w_ob",
+    "position_from_start": 1000,
+    "width": 800
+   }
+  ]
+ }
+}

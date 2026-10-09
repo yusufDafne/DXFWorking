@@ -167,6 +167,27 @@ parametresi taşımıyor — DEV-037'nin "Bilinen sınırlamalar"ı, bkz.
 `DEVELOPMENT_TASKS.md` `DEV-039` "Kalan küçük teknik detaylar"); yalnızca
 kose ADAYLARINI puanlar.
 
+## `privacy.py` ve `reasoning.py` (DEV-061, mahremiyet merceği)
+
+`privacy.py`: `validate.py` tarafından **çağrılmayan**, yalnız muhakeme katmanının (`scripts/reasoning_report.py`)
+`shadow` veçhelerini besleyen dört ölçüm — `check_entry_bedroom_sightline` (girişten yatak odası kapısı görünür mü;
+`check_entry_sightlines` ile aynı koni/görüş hattı, hedef yatak odası), `check_neighbor_entry_proximity` (farklı
+birimlerin giriş kapıları orta noktaları < 3000 mm; eşik `DEFAULT_ENTRY_FRONT_MAX_DISTANCE_MM`den ödünç, kaynak
+yok), `check_wet_shared_wall_same_unit` (aynı birimde WC/banyo ↔ yatak odası/salon ortak duvarı; duvar türü
+ayırıcısı yok), `check_wet_double_zone_doors` (`sandvic_banyo` bileşeni). Her birinin `*_subjects` ikizi `{özne:
+True|False|None}` verir (asgari tetik oranı için). Mekânsal sorgular `spatial/`dan gelir. **rev-28 normal1'de:** #4
+uC 16°/1978 mm + uB 20°/2025 mm; #5 uB–uC 1485 mm; #6 5/6 ıslak hacim. Hepsi `unit_id` opt-in (soyulunca sessiz).
+`reasoning.py` yalnız ROL + ölçüm beyanıdır (`REASONING_PROVIDERS`); veçhe kayıtları
+`scripts/reasoning/lenses/mahremiyet.py`dedir. Sınama `scripts/reasoning/selftest.py`de (22 vaka + rev-28 ölçümleri).
+
+## Muhakeme katkısı (DEV-048)
+**Rol:** ölçüm ve kural sahibi (sağlayıcı). **Mercek:** `mahremiyet` — kayıtlı kurallar `rules.py`
+(`validate.py`nin çağırdığı beşi `active`+`legacy`: `check_entry_sightlines`, `check_bedroom_via_corridor`,
+`check_wet_area_reachable_without_bedroom`, `check_wet_door_swing_inward`, `check_kitchen_wet_door_opposite`;
+`DEV-052`/`053` kuralları `check_wet_area_adjacency`, `check_entry_wet_door_proximity` yalnız `shadow` — `validate.py`ye
+bağlamak çıktıyı değiştirir, ayrı karar) ve yeni ölçümler `privacy.py`. Bilinen boşluk: ışık-hava-yönelim
+(`DEV-062`) ve yaşanabilirlik (`DEV-063`) için ölçüm yok; kademelenme derinliği (birim-içi graf) ve misafir WC ölçümü yok.
+
 ## Çakışma denetimi: EXEMPT
 
 `collision/scene.py::COLLISION_EXEMPT` içinde. Gerekçe: bu modül HİÇ
