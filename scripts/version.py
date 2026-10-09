@@ -84,6 +84,7 @@ CONTRACT_MODULES: tuple[str, ...] = (
     "openings",
     "pafta",
     "palette",
+    "reasoning",
     "rooms",
     "sections",
     "shafts",

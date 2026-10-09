@@ -126,7 +126,7 @@ kapı açık kalır: bilgi mühendisi rolünün talimatı (`docs/agents/…`) za
 7. **Her bilgi kendi epistemik statüsünü taşır** (`kesin` / `yaygin` / `tercih`) ve
    anlatım buna uyar: "yönetmelik gereği" ile "genelde tercih edilmez" ile "zevk
    meselesi" aynı sesle söylenmez. Kaynaksız iddia `kesin` işaretlenemez.
-8. **Modül bağımsızlığı.** Bir mercek bilgisi *sahibi modülde* yaşar; çekirdek hiçbir
+8. **Modül bağımsızlığı.** Veçhe KAYDI lens paketinde (`reasoning/lenses/<mercek>.py`), ÖLÇÜM/KURAL sahibi modülde yaşar (kullanıcı kararı 2026-10-09, `DEV-060`); çekirdek hiçbir
    çizim modülünü import etmez; bir modül yalnız kendi `reasoning.py`si ve
    `CLAUDE.md`si açılarak geliştirilebilir.
 
@@ -485,7 +485,7 @@ scripts/
       mahremiyet.py   isik_hava_yonelim.py   yasanabilirlik.py
     cases/                      #   VAKALAR (golden DEĞİL — bkz. §8.2)
     selftest.py     CLAUDE.md
-  <modül>/reasoning.py          # OPSİYONEL: o modülün veçhe beyanları + ölçümleri
+  <modül>/reasoning.py          # saglayici modul: ROL + ÖLÇÜM beyanı (veçhe kaydı lens paketinde); yoksa REASONING_EXEMPT/PENDING
   <modül>/CLAUDE.md             #   standart "## Muhakeme katkısı" bölümü (§8.4)
 ```
 
@@ -580,7 +580,7 @@ aynı: **değer** değişimi sürüm artırmaz; **alan şekli** değişimi artı
 ## Muhakeme katkısı (DEV-048)
 - **Rol:** ölçüm sağlayıcı | kural sahibi | sunum | muaf (gerekçe: …)
 - **Sağladığı ölçümler:** (fonksiyon → ne ölçer → hangi veçheler kullanır)
-- **Sahip olduğu veçheler:** (id listesi + durum idea/draft/shadow/active)
+- **Katıldığı veçheler:** (lens paketindeki veçhe kimlikleri; kayıt lens paketindedir, bu modül yalnız ölçümünü sağlar)
 - **Bildiği gerilimler:** (bu modülün kararının dokunduğu diğer veçheler)
 - **Bilinen boşluklar / bir sonraki en değerli veçhe:**
 - **Bilgi mühendisi için not:** (bu modülde yeni veçhe eklerken dikkat edilecek tuzaklar)
@@ -705,7 +705,7 @@ her görevin "Geliştirici yorumu" bölümündedir; planı değiştiren çapraz 
    selftest** şarttır.
 2. **Kapı #10 ilk gün kırmızı.** 23 paketin hiçbirinde `reasoning.py` ya da gerekçeli muafiyet yok
    (spatial/reasoning ile 25). Kapı üç durumlu olur (§7.2); bloklayıcılık `DEV-067` sonunda.
-3. **Veçhe sahipliği çelişkisi.** §2.1/§7.1 "lens paketinde", §2.3-8/§8.4/§9 "sahibi modülde" diyordu.
+3. **Veçhe sahipliği çelişkisi — ÇÖZÜLDÜ (kullanıcı kararı 2026-10-09): veçhe kaydı lens paketinde, ölçüm/kural sahibi modülde.** Eskiden §2.1/§7.1 "lens paketinde", §2.3-8/§8.4/§9 "sahibi modülde" diyordu.
    İki denetim zıt öneri verdi (060: modül-sahipli, 067: lens paketinde + modül yalnız rol/ölçüm).
    **Kullanıcı kararı bekliyor** (görev `DEV-060`, soru 3).
 4. **`DEV-060` ↔ `DEV-064` kapsam çakışması.** `explain.py`, rakam lint'i ve kök-neden kümeleme yalnız

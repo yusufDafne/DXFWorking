@@ -72,6 +72,8 @@ COLLISION_EXEMPT: dict[str, str] = {
     "levels": "Kot (seviye/datum) isareti (DEV-029) bir ANOTASYONDUR "
               "(bayrak+metin) - dimensions/axis ile AYNI gerekce, plan "
               "geometrisinde anlamli bir alan kaplamaz.",
+    "reasoning": "Muhakeme cekirdegi (DEV-060): bilgi/veri tipleri ve kayit; hicbir geometri uretmez, "
+                 "hicbir ayak izi saglamaz; mimari sagduyu WARN kuraldir, fiziksel cakisma degildir.",
     "spatial": "Salt SORGU kutuphanesi (DEV-059): kapi orta noktasi, oda temasi, ortak kenar, "
                "goru hatti. Hicbir ayak izi URETMEZ, hicbir geometri cizmez; mevcut "
                "oda/duvar/kapi ayak izlerini OKUYAN kurallarin ortak yardimcisidir.",

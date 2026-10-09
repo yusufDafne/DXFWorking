@@ -60,7 +60,7 @@ Tamamlanan işlerin ayrıntılı gerekçesi, karar süreci ve ölçülen etkisi
 | DEV-057 | Kümülatif mini düzeltmeler (DEV-049…056 sırasında çıkanlar; seansın KAPANIŞ maddesi) | COMPLETED (2026-10-05) |
 | DEV-058 | `shafts/` — şaft / havalandırma / baca boşlukları modülü | COMPLETED (2026-10-05) |
 | DEV-059 | `spatial/` — ortak mekânsal sorgu katmanı (5 kopyanın tek sahibe taşınması; `DEV-048` Faz 1a önkoşulu) | COMPLETED (2026-10-09) |
-| DEV-060 | `reasoning/` — muhakeme çekirdeği (mercek/veçhe/bulgu modeli, kayıt, kapsam raporu, `doc_check` kapıları; `DEV-048` Faz 1b) | PLANNED (sıra 2/12) |
+| DEV-060 | `reasoning/` — muhakeme çekirdeği (mercek/veçhe/bulgu modeli, kayıt, kapsam raporu, `doc_check` kapıları; `DEV-048` Faz 1b) | VALIDATION (sıra 2/12) |
 | DEV-061 | `reasoning/` — mahremiyet mercek paketi (mevcut kuralların kaydı + yeni veçheler; Faz 2) | PLANNED (sıra 3/12) |
 | DEV-064 | `reasoning/`+operatör talimatı — diyalog sözleşmesi + açıklama motoru + kök-neden kümeleme (Faz 2) | PLANNED (sıra 4/12) |
 | DEV-065 | Şema + `reasoning/` — tasarım kararı kaydı (`design_decisions[]`), kanıta bağlı kabul (Faz 4) | PLANNED (sıra 5/12) |
@@ -721,7 +721,7 @@ belirleyeceksin ... her birini sıralama olarak birbirine bağla"):**
 
 ### DEV-060 — `reasoning/` — muhakeme çekirdeği
 
-- **Durum:** PLANNED
+- **Durum:** VALIDATION
 - **Kapsam (plan §3, §7):** `scripts/reasoning/` — `model.py` (Lens, Facet, Provenance,
   Thresholds, Finding, Smell, Tension, Profile), `registry.py` (`register_lens`/
   `register_facet`, noktalı referansı TEMBEL çözme), `findings.py` (kararlı anahtar, şiddet
@@ -752,6 +752,7 @@ belirleyeceksin ... her birini sıralama olarak birbirine bağla"):**
   4. Rapor komutunun adı: öneri `scripts/reasoning_report.py [context.json] [--before ctx.json]` (talep akışında `validate` sonrası ek adım).
 - **Metin düzeltmeleri (onayla birlikte uygulanır):** `explain.py`, rakam lint'i, kümeleme kapsamdan çıkar (→ `DEV-064`); gate #11 'veçhe kaydı dizgesi AST ile çözülür' diye yeniden yazılır (örnek dizgeyi reddetmez); asgari terfi makinesi eklenir (subject_kind, konu başına ölçüm, `legacy` bayrağı, tetik oranı raporu); 'komut adı açık karar' → plan §11'e madde olarak eklenir.
 - **Kullanıcı kararları (2026-10-09, netleştirme tamam; başlamak için kullanıcı onayı bekleniyor):** (1) plan §11 #1 (`scripts/reasoning/`) ve #2 (`validate.py` çıktısı değişmez, rapor ek) — ONAY; (2) kapı #10 üç durumlu (sağlayıcı / gerekçeli muaf / `PENDING`, blokaj `DEV-067` sonunda) — ONAY; (3) veçhe kaydı **lens paketinde**, modül `reasoning.py` yalnız rol+ölçüm — ONAY (plan §2.3-8/§8.4/§9 düzeltilecek); (4) rapor komutu `scripts/reasoning_report.py` — ONAY. Önkoşul: `DEV-059` bitmeli (yumuşak), ardından görev `READY`.
+- **Uygulama sonucu (2026-10-09, kabul bekliyor):** `scripts/reasoning/` çekirdeği kuruldu (model, kayıt, bulgu anahtarı/farkı/kümeleme, `validate` stdout adaptörü, kapsam raporu, asgari terfi ölçeri, vaka koşucusu) + `scripts/reasoning_report.py` + `doc_check` kapıları #10 (üç durumlu, PENDING donuk/tek yönlü), #11, #12, #14, #15 (bilgi kanalı, `run_info`). Çekirdek bilgi taşımaz, çizim modülü import etmez; sağlayıcılar dosya yoluyla yüklenir, import yasağı AST ile denetlenir. **Kapsam notu:** `explain.py`/rakam lint'i/sunum kuyruğu `DEV-064`te (kapı #13 oradadır); `legacy` adaptör fonksiyon değil KATEGORİ düzeyindedir (`legacy.<kategori>`, stdout ayrıştırması parite'yi yapı gereği verir), fonksiyon düzeyi `CheckAdapter` kaydıyla `DEV-061`de. **Kanıt:** `validate.py`, şema ve `golden_report.py` DEĞİŞMEDİ (`git diff` boş; `validate.py`/`generate_dxf.py` içinde `reasoning` geçmiyor); kök context `validate` çıktısı taban çizgisiyle bire bir aynı; 15 mevcut selftest çıktısı aynı; `--golden-set` ve `validate_selftest` aynı; `reasoning/selftest.py` 14/14 — kapılar ENJEKTE edilen bozuk kayıtlarla sınanır (üretim kaydı bilerek boş, bu kanıt sayılmaz) ve üretim koduna üç kasıtlı bozma (imzada rakam, kapı #10 çoklu-yer, kapsam durumu karışması) selftest'i gerçekten kırdı; `reasoning_report` rev-28'de "hiçbir mercek kayıtlı değil" der ve 15 satırı 3 konuya indirir; `version.module_contracts()` `reasoning: 1.0`; `doc_check` temiz. **Bilinen kalan:** 13 golden context'in tek tek `validate` çıktısı için ayrı taban çizgisi alınmadı (yapısal olarak etkilenmez: `validate.py` değişmedi ve `reasoning` import etmez; `--golden-set` aynı). Plan §2.3-8/§7.1/§8.4/§10.4 veçhe sahipliği kararıyla düzeltildi.
 
 ### DEV-061 — `reasoning/` — mahremiyet mercek paketi
 

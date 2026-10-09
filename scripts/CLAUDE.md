@@ -67,6 +67,12 @@ kalanını bilmeye ihtiyaç duymadan o modül üzerinde derinlemesine/izole
   `check_shafts` (şaft↔oda kesişimi HATA, ıslak hacim sırt sırta/şafta değmeli,
   WC+banyo çifti arası şaft), kat arası aynı konum kontrolü, `SAFT` katmanı
   çizimi. Yerleşimi üretmez, doğrular — bkz. `scripts/shafts/CLAUDE.md`, `HD-038`.
+- ✅ **`scripts/reasoning/`** — `DEV-060` (2026-10-09): mimari muhakeme ÇEKİRDEĞİ (plan:
+  `docs/development/ARCHITECTURAL_REASONING_PLAN.md`). Mercek → veçhe → bulgu modeli, kayıt defteri
+  (`REASONING_PROVIDERS`/`REASONING_EXEMPT`/`REASONING_PENDING`), kararlı bulgu anahtarı + regresyon
+  farkı + kat-bağımsız kümeleme, `validate.py` stdout adaptörü, kapsam raporu, asgari terfi ölçeri,
+  vaka koşucusu. **Bilgi taşımaz**, çizim modülü import etmez (`collision/` deseni); `doc_check`
+  kapıları #10–#12, #14, #15. Rapor komutu `scripts/reasoning_report.py`. Bkz. `scripts/reasoning/CLAUDE.md`.
 - ✅ **`scripts/spatial/`** — `DEV-059` (2026-10-09): eleman-farkındalıklı mekânsal sorguların
   (kapı → orta nokta, değen odalar, ortak kenar, görüş hattı) TEK sahibi. `architect`/`standards`/
   `shafts`/`rooms` içindeki kopyalar buraya **davranış korunarak** taşındı; `spatial → collision.geometry`
@@ -319,7 +325,7 @@ Ortak desen (pafta + walls ile kanitlandi):
 | `templates/`  | `CirculationCoreTemplate`, `DEFAULT_TEMPLATE`, `generate_circulation_core` | UYGULANDI (DEV-037, 2026-09-28; DEV-045 duzeltmesi, 2026-10-02); sirkulasyon cekirdegi sablon ureteci, v1 yalnizca cekirdek (birim ici bolme YOK), koridor artik israf eden L-sekli DEGIL |
 | `architect/`  | `check_circulation_area_share`, `check_common_circulation_share`, `check_bedroom_via_corridor`, `check_entry_sightlines`, `check_door_core_balance`, `check_wet_area_reachable_without_bedroom`, `check_wet_area_door_proximity`, `FeasibilityReport`, `check_fits`, `ZoneAssignment`, `ZoningPlan`, `resolve_unit_zoning`, `PlacementOption`, `options_for_core_placement`, `place_unit_entry_doors` | UYGULANDI (DEV-039, 2026-09-28; DEV-042/043/045, 2026-10-02); iliskisel (arity-2+) mimari mantik kurallari, DEV-038 absorbe edildi, `rooms[].unit_id` opt-in |
 | `spatial/`    | `door_midpoint`, `door_frame`, `rooms_touching_point`, `dist_point_segment`, `touches_within`, `vertex_mean`, `segments_intersect`, `clear_line_of_sight`, `shared_edge_length`, `point_in_polygon` | UYGULANDI (DEV-059, 2026-10-09); eleman-farkindali mekansal sorgularin TEK sahibi; davranis korunarak tasindi, `spatial -> collision.geometry` tek yonlu |
-| `reasoning/`  | (yok) | PLANLANAN (DEV-060…DEV-070; DEV-048): muhakeme cekirdegi - mercek/veche/bulgu/koku modeli, kayit, kapsam raporu; bilgi sahibi modulde yasar |
+| `reasoning/`  | `Lens`, `Facet`, `Finding`, `Registry`, `CheckAdapter`, `Thresholds`, `Provenance`, `build_coverage`, `parse_validate_output`, `diff_findings`, `group_across_floors`, `trigger_report`, `load_registry`, `validate_registry` | UYGULANDI (DEV-060, 2026-10-09); muhakeme cekirdegi - bilgi tasimaz; mercek paketleri (DEV-061+) ve aciklama motoru (DEV-064) sonraki maddeler |
 | `impact/`     | (yok) | PLANLANAN (DEV-068): revizyon etki analizi - bir patchin etki alani ve minimal patch plani |
 | `brief/`      | (yok) | PLANLANAN (DEV-069): kullanici ihtiyac beyani ve mimari program toplama |
 

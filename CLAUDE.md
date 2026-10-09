@@ -190,6 +190,7 @@ geliştirme görevleri, tamamlanmış geçmiş, fikirler ve geliştirici notlar�
    python scripts/sections/selftest.py
    python scripts/northarrow/selftest.py
    python scripts/spatial/selftest.py  # DEV-059 (eski<->yeni diferansiyel)
+   python scripts/reasoning/selftest.py  # DEV-060 (kapilar enjekte edilen bozuk kayitla sinanir)
    python scripts/shafts/selftest.py   # rev-27 (stairs/standards/templates/architect de kendi selftest'leriyle)
    ```
 
@@ -197,6 +198,9 @@ geliştirme görevleri, tamamlanmış geçmiş, fikirler ve geliştirici notlar�
    **kasıtlı bozmayla** sınanır. "Temiz döndü" çıktısı tek başına hiçbir şey
    kanıtlamaz — kontrol hiç çalışmasa da temiz dönerdi. Her test ayrıca
    **yanlış-pozitif** tarafını da sınar.
+   **Muhakeme raporu (DEV-060, EK ve BLOKLAMAZ):** `python scripts/reasoning_report.py [context.json]
+   [--before onceki.json]` — kapsam (hangi mercek koştu/koşamadı) + uyarıları kat-bağımsız tek konulara
+   indirger; `validate.py` çıktısı DEĞİŞMEZ.
 8. **Doküman tutarlılığı:** `python scripts/doc_check.py` çalıştırılır. Bu
    kontrol, "çalışma sonunda dokümanları güncelle" kuralını düzyazı olmaktan
    çıkarıp MEKANİK hale getirir: görev durumu ile bulunduğu bölüm, durum özeti

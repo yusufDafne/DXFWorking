@@ -30,6 +30,10 @@ Kontroller:
 9. SOZLESME SURUMU (DEV-020): her modul `CONTRACT_VERSION` tasimali ve
    `version.py::CONTRACT_MODULES` listesiyle BIREBIR ortusmelidir; aksi halde
    provenance kaydi eksik/bayat cikar.
+10-15. MUHAKEME KAPILARI (DEV-060, plan §7.2): #10 her paket tam BIR yerde: saglayici /
+   gerekceli muaf / PENDING (tek yonlu kuculen gecis kaydi); #11 shadow+ veche basvurulari
+   AST ile cozulur; #12 shadow+ veche icin ihlal+temiz vaka; #14 kaynaksiz `kesin` yasak;
+   #15 bayat `reviewed` BILGI satiri (bloklamaz). #13 (rakam lint'i) DEV-064'tedir.
 
 Kullanim:
     python scripts/doc_check.py
@@ -351,9 +355,200 @@ def check_contract_versions() -> list[str]:
     return errors
 
 
+# ---------------------------------------------------------------- muhakeme kapilari (DEV-060)
+# "Henuz degerlendirilmedi" gecis kaydinin DONUK ust siniri: bunun disinda hicbir ad PENDING'e
+# girebilir. DEV-067 PENDING'i bosaltinca bu kume SILINIR ve kapi blokajci olur.
+_PENDING_FROZEN = frozenset({
+    "architect", "axis", "ceiling", "collision", "columns", "dimensions", "elevations", "furniture",
+    "importer", "legend", "levels", "northarrow", "openings", "pafta", "palette", "rooms", "sections",
+    "shafts", "stairs", "standards", "templates", "typography", "walls",
+})
+# Bayat sayilma yasi (gun). Bir POLITIKA parametresidir, olcum degil: sistem mimari karari bekliyor.
+REVIEW_MAX_AGE_DAYS = 365
+
+
+def _reasoning_registry_module():
+    sys.path.insert(0, str(ROOT / "scripts"))
+    from reasoning import registry as reg  # saf Python; ezdxf gerektirmez
+    return reg
+
+
+def check_reasoning_coverage(providers=None, exempt=None, pending=None, packages=None,
+                             scripts_root=None, frozen=None) -> list[str]:
+    """#10: her paket tam BIR yerde (saglayici / gerekceli muaf / PENDING)."""
+    reg = _reasoning_registry_module()
+    providers = reg.REASONING_PROVIDERS if providers is None else providers
+    exempt = reg.REASONING_EXEMPT if exempt is None else exempt
+    pending = reg.REASONING_PENDING if pending is None else pending
+    frozen = _PENDING_FROZEN if frozen is None else frozen
+    root = Path(scripts_root) if scripts_root else ROOT / "scripts"
+    names = packages if packages is not None else [m.name for m in _drawing_modules()]
+    provider_pkgs = {p.split(".")[0] for p in providers}
+    errors: list[str] = []
+    for name in names:
+        has_file = (root / name / "reasoning.py").exists()
+        is_provider = name in provider_pkgs
+        if has_file and not is_provider:
+            errors.append(f"scripts/{name}/reasoning.py var ama REASONING_PROVIDERS'te listelenmemis - hic yuklenmiyor.")
+        if is_provider and not has_file:
+            errors.append(f"REASONING_PROVIDERS: '{name}' listelenmis ama scripts/{name}/reasoning.py yok.")
+        places = [label for label, ok in (("saglayici", is_provider and has_file),
+                                          ("muaf", name in exempt), ("PENDING", name in pending)) if ok]
+        if not places:
+            errors.append(f"scripts/{name}/: ne reasoning.py ne REASONING_EXEMPT gerekcesi ne PENDING kaydi var. "
+                          f"'Bu modul hangi merceklere olcum/kural saglar?' sorusu yanitlanmamis (DEV-048).")
+        elif len(places) > 1:
+            errors.append(f"scripts/{name}/: birden fazla yerde kayitli ({', '.join(places)}) - tam biri olmali.")
+    for name, why in exempt.items():
+        if not str(why).strip():
+            errors.append(f"REASONING_EXEMPT['{name}']: gerekce bos.")
+    for name in pending:
+        if name not in frozen:
+            errors.append(f"REASONING_PENDING: '{name}' donuk listede yok - PENDING'e yeni ad eklenemez "
+                          f"(yeni modul dogarken saglayici ya da gerekceli muaf olmali).")
+    existing = set(names)
+    for label, group in (("REASONING_EXEMPT", exempt), ("REASONING_PENDING", pending)):
+        for name in group:
+            if name not in existing:
+                errors.append(f"{label}: '{name}' diye bir modul YOK (bayat kayit).")
+    return errors
+
+
+def _file_symbols(path: Path) -> dict:
+    """Dosyadaki ust duzey adlar: {ad: konumsal parametre adlari ya da None}. Modulu import etmez."""
+    import ast
+    tree = ast.parse(path.read_bytes().decode("utf-8"))
+    out: dict = {}
+    for node in tree.body:
+        if isinstance(node, ast.FunctionDef):
+            out[node.name] = [a.arg for a in node.args.args]
+        elif isinstance(node, ast.ClassDef):
+            out[node.name] = None
+        elif isinstance(node, ast.Assign):
+            for t in node.targets:
+                if isinstance(t, ast.Name):
+                    out[t.id] = None
+        elif isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
+            out[node.target.id] = None
+    return out
+
+
+def _resolve_ref(ref: str, scripts_root: Path):
+    """'pkg.sub:ad' -> (dosya, sembol sozlugu veya None). Dosya yoksa (None, None)."""
+    module, _, symbol = ref.partition(":")
+    parts = module.split(".")
+    for candidate in (scripts_root.joinpath(*parts).with_suffix(".py"), scripts_root.joinpath(*parts, "__init__.py")):
+        if candidate.exists():
+            return candidate, symbol
+    return None, symbol
+
+
+def check_reasoning_refs(registry=None, scripts_root=None) -> list[str]:
+    """#11: status >= shadow her vechenin adapter/measure/check basvurusu AST ile cozulur."""
+    reg_mod = _reasoning_registry_module()
+    if registry is None:
+        registry, load_errors = reg_mod.load_registry()
+        errors = list(load_errors)
+    else:
+        errors = []
+    root = Path(scripts_root) if scripts_root else ROOT / "scripts"
+    from reasoning.model import STATUSES
+    for f in registry.facets.values():
+        if f.status not in STATUSES or STATUSES.index(f.status) < 2:
+            continue
+        refs = [("measure_ref", f.measure_ref), ("check_ref", f.check_ref)]
+        if f.adapter is not None:
+            refs.append(("adapter.ref", f.adapter.ref))
+        for label, ref in refs:
+            if not ref:
+                continue
+            path, symbol = _resolve_ref(ref, root)
+            if path is None:
+                errors.append(f"{f.id}: {label} '{ref}' - dosya bulunamadi.")
+                continue
+            symbols = _file_symbols(path)
+            if symbol not in symbols:
+                errors.append(f"{f.id}: {label} '{ref}' - '{symbol}' {path.name} icinde TANIMLI degil.")
+            elif label == "adapter.ref" and f.adapter.inputs and symbols[symbol] is not None:
+                if list(f.adapter.inputs) != symbols[symbol][:len(f.adapter.inputs)]:
+                    errors.append(f"{f.id}: adapter.inputs {list(f.adapter.inputs)} fonksiyonun konumsal "
+                                  f"parametreleriyle ({symbols[symbol]}) ortusmuyor.")
+    return errors
+
+
+def check_reasoning_cases(registry=None, cases_root=None) -> list[str]:
+    """#12: status >= shadow veche icin en az bir 'ihlal' ve bir 'temiz' vaka bildirilmis ve diskte var."""
+    import json
+    reg_mod = _reasoning_registry_module()
+    registry = registry if registry is not None else reg_mod.load_registry()[0]
+    root = Path(cases_root) if cases_root else ROOT / "scripts" / "reasoning" / "cases"
+    from reasoning.model import STATUSES
+    errors: list[str] = []
+    for f in registry.facets.values():
+        if f.status not in STATUSES or STATUSES.index(f.status) < 2:
+            continue
+        roles = set()
+        for name in f.cases:
+            case_json = root / name / "case.json"
+            if not case_json.exists() or not (root / name / "expected_findings.json").exists():
+                errors.append(f"{f.id}: vaka '{name}' diskte yok (case.json + expected_findings.json gerekir).")
+                continue
+            roles.add(json.loads(case_json.read_text(encoding="utf-8")).get("role"))
+        for need in ("ihlal", "temiz"):
+            if need not in roles:
+                errors.append(f"{f.id}: status {f.status} icin '{need}' rolunde vaka yok (kasitli bozma + yanlis-pozitif).")
+    return errors
+
+
+def check_reasoning_provenance(registry=None) -> list[str]:
+    """#14: 'kesin' statu kaynaksiz olamaz (provenance.source ve esik kaynagi)."""
+    reg_mod = _reasoning_registry_module()
+    registry = registry if registry is not None else reg_mod.load_registry()[0]
+    from reasoning.model import PLACEHOLDER_SOURCES
+    errors: list[str] = []
+    for f in registry.facets.values():
+        if f.provenance is None or f.provenance.confidence != "kesin":
+            continue
+        if f.provenance.source.strip().lower() in PLACEHOLDER_SOURCES:
+            errors.append(f"{f.id}: 'kesin' ama provenance.source bos/'v1 pratik varsayilan' - kaynaksiz kesin iddia yok.")
+        if f.thresholds is not None and f.thresholds.source.strip().lower() in PLACEHOLDER_SOURCES:
+            errors.append(f"{f.id}: 'kesin' ama esik kaynagi (thresholds.source) bos/'v1 pratik varsayilan'.")
+    return errors
+
+
+def check_reasoning_registry() -> list[str]:
+    """Uretim kaydinin yuklenmesi ve ic tutarliligi (validate_registry + yukleme hatalari)."""
+    reg_mod = _reasoning_registry_module()
+    registry, load_errors = reg_mod.load_registry()
+    return list(load_errors) + reg_mod.validate_registry(registry)
+
+
+def run_info(today=None, registry=None) -> list[str]:
+    """#15: BILGI satirlari (cikis kodunu ETKILEMEZ): PENDING sayisi, bayat provenance.reviewed."""
+    import datetime
+    reg_mod = _reasoning_registry_module()
+    registry = registry if registry is not None else reg_mod.load_registry()[0]
+    today = today or datetime.date.today()
+    info = [f"muhakeme: {len(reg_mod.REASONING_PENDING)} paket 'henuz degerlendirilmedi' (REASONING_PENDING); "
+            f"{len(registry.facets)} veche kayitli."]
+    for f in registry.facets.values():
+        if f.provenance is not None and f.provenance.reviewed:
+            try:
+                age = (today - datetime.date.fromisoformat(f.provenance.reviewed)).days
+            except ValueError:
+                info.append(f"{f.id}: provenance.reviewed gecerli ISO tarih degil ({f.provenance.reviewed!r}).")
+                continue
+            if age > REVIEW_MAX_AGE_DAYS:
+                info.append(f"{f.id}: provenance.reviewed {age} gun once - gozden gecirme onerilir.")
+    return info
+
+
+
 def run() -> list[str]:
     return (check_tasks() + check_paths() + check_architecture_table()
-            + check_collision_coverage() + check_contract_versions())
+            + check_collision_coverage() + check_contract_versions()
+            + check_reasoning_coverage() + check_reasoning_registry()
+            + check_reasoning_refs() + check_reasoning_cases() + check_reasoning_provenance())
 
 
 def main() -> int:
@@ -363,6 +558,8 @@ def main() -> int:
         for error in errors:
             print(f"  - {error}")
         return 1
+    for line in run_info():
+        print("BILGI:", line)
     print("Dokuman tutarliligi TAMAM: gorev durumlari, ozet tablo, HD atiflari, "
           "modul/golden yollari, cakisma kapsami ve sozlesme surumleri ortusuyor.")
     return 0
