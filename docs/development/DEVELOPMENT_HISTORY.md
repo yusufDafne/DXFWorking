@@ -4,6 +4,15 @@ Aktif geçmiş kapasitesi: **50 kayıt**. En eski tamamlanmış kayıt, 51. kay�
 alınırken silinir. Ayrıntılı teknik değişiklikler git geçmişi ve ilgili proje
 provenance kayıtlarıyla ilişkilendirilir.
 
+## HD-046 — `reasoning/`: ışık-hava-yönelim mercek paketi (DEV-062)
+
+- **Durum:** COMPLETED
+- **Tamamlanma:** 2026-10-09
+- **Kapsam:** `scripts/reasoning/lenses/isik_hava_yonelim.py`, `scripts/openings/{daylight,reasoning}.py`, `scripts/shafts/{ventilation,reasoning}.py`, `scripts/spatial/__init__.py` (yalnız ekleme), `schema/design.schema.json` (`openings[].height`), `scripts/reasoning/{model,coverage,registry,selftest}.py`, `scripts/reasoning_report.py`, 8 vaka, modül `CLAUDE.md`'leri.
+- **Sonuç:** 5 veçhe (4 `shadow`: yaşam mahalli penceresi, çapraz havalandırma, ıslak hacim havalandırması, salon yönelimi; 1 `draft`: pencere/taban oranı). Kullanıcı kararları: yaşam mahalli/ıslak hacim kümeleri lens-yerel, `tesisat`/`havalandirma` şaftı havalandırma sayılır (≥300 mm), cephe prob noktasıyla, pencere yüksekliği opt-in. Yön uydurulmaz: `meta.north_angle` yoksa yönelim koşamaz ve söyler. Kapsam raporu aynı nedeni tek satırda toplar (`Facet.needs_note_tr`).
+- **Doğrulama:** rev-28 normal1: 14 pencerenin dış yönü tayin edildi; penceresiz yaşam mahalli 0/8, çapraz havalandırma yetersiz 0/3, havalandırmasız ıslak hacim 0/6 (hepsi dejenere); `north_angle=30` ile yönelim 1/3; `reasoning/selftest.py` 34/34 (6 kasıtlı bozma yakalandı, biri test eklenerek); tüm selftest'ler, `--golden-set`, `doc_check` temiz; `validate` çıktısı değişmedi.
+- **Golden etkisi:** yok. **Sınır:** gerçek projede `north_angle` yok; yönelim eşiği 'tercih' (kaynaksız); pencere/taban oranı için eşik ve yükseklik verisi yok; çapraz-mercek gerilimi yazılmadı. **Sonraki direktif:** kullanıcı bekletiyor (`DEV-063`).
+
 ## HD-045 — `docs/agents/`: bilgi mühendisi rolü ve büyütme protokolü (DEV-070)
 
 - **Durum:** COMPLETED

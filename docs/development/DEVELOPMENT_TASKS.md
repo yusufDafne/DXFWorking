@@ -65,7 +65,7 @@ Tamamlanan işlerin ayrıntılı gerekçesi, karar süreci ve ölçülen etkisi
 | DEV-064 | `reasoning/`+operatör talimatı — diyalog sözleşmesi + açıklama motoru + kök-neden kümeleme (Faz 2) | COMPLETED (2026-10-09) |
 | DEV-065 | Şema + `reasoning/` — tasarım kararı kaydı (`design_decisions[]`), kanıta bağlı kabul (Faz 4) | COMPLETED (2026-10-09) |
 | DEV-070 | `docs/agents/` — bilgi mühendisi rolü + büyütme protokolü (Faz 2) | COMPLETED (2026-10-09) |
-| DEV-062 | `reasoning/` — ışık-hava-yönelim mercek paketi (Faz 3) | PLANNED (sıra 7/12) |
+| DEV-062 | `reasoning/` — ışık-hava-yönelim mercek paketi (Faz 3) | COMPLETED (2026-10-09) |
 | DEV-063 | `reasoning/`+`furniture/` — yaşanabilirlik mercek paketi + deneme yerleşimi (Faz 3) | PLANNED (sıra 8/12) |
 | DEV-066 | `reasoning/` — kalibrasyon, ayırt edicilik ve terfi (shadow→active) protokolü (Faz 4) | PLANNED (sıra 9/12) |
 | DEV-069 | `brief/` — kullanıcı ihtiyaç beyanı ve mimari program toplama (Faz 6) | PLANNED (sıra 10/12) |
@@ -719,34 +719,6 @@ belirleyeceksin ... her birini sıralama olarak birbirine bağla"):**
 > **mevcut `validate.py` çıktısını ve golden referansları bozmamak** ortak kabul şartıdır (`DEV-065`in şema
 > sürümü uyarısı satırı bilinen tek istisnadır). Bölünmesi önerilen maddelerde parçalar **sayısal** yeni DEV
 > kimlikleri olur (`doc_check` `### DEV-\d+` ister; `DEV-063A` gibi kimlikler görünmez kalır).
-
-### DEV-062 — `reasoning/` — ışık-hava-yönelim mercek paketi
-
-- **Durum:** PLANNED
-- **Kapsam (plan §6.2):** `lenses/isik_hava_yonelim.py` — yaşam mahalli penceresi/dış duvarı,
-  cephe tayini + çapraz havalandırma, ıslak hacim havalandırması (pencere **veya** şaft),
-  yönelim veçheleri (`meta.north_angle` yoksa **koşamadı** ve kullanıcıya sorulur; yön
-  uydurulmaz), pencere/taban oranı (yükseklik verisi gelene dek `draft`). Yeni mekânsal
-  sorgular (`facade_of_wall`, `window_rooms`) `spatial/`e eklenir.
-- **Şema:** ilk yarı şemasız; pencere yüksekliği için veri alanı **ayrı karar** (plan §11 #4,
-  öneri: opsiyonel, opt-in alan; katalog varsayılanıyla uydurma YOK). Güneş yolu
-  (enlem/boylam) kapsam DIŞI.
-- **Kabul ölçütü:** `727405f` K1 `uC_oda` (değen pencere sayısı 0, doğrulandı) yakalanır,
-  `7d32a2d` (1 pencere) temiz; rev-28'de penceresiz yaşam mahalli 0; `north_angle` yokken
-  kapsam raporu "yönelim koşamadı: kuzey yönü verilmedi" der; `north_angle` verilen bir
-  deneme vakasında yönelim veçhesi koşar. Yönetmelik rakamı kullanıcı kaynağı getirmeden
-  `kesin` OLMAZ.
-- **Önkoşul:** `DEV-060`, `DEV-070` (protokole uyularak yazılır — genişletilebilirliğin ilk
-  kanıtıdır).
-- **Sıra:** 7/12 — plan §10.1; geliştirici yorumu ve netleştirme soruları 2026-10-09 kod denetimine dayanır (iki bağımsız ajan; `DEV-070` yalnız bir denetim).
-- **Geliştirici yorumu:** Bölme önerisi: (A) mevcut veriyle çalışanlar (pencere varlığı, çapraz havalandırma, ıslak hacim havalandırması), (B) `meta.north_angle` ister (gerçek projede yok → kapsam raporu 'koşamadı' der), (C) pencere yüksekliği ister (şema kararı). Gerçek projede 76 pencerenin 76'sı tek odaya düşüyor, dış duvarlar şaft boşlukları hariç `ext_*` ile birebir çıkıyor, rev-28'de penceresiz yaşam mahalli 0. Eksik tanımlar: 'yaşam mahalli' ve 'ıslak hacim' kümeleri kodda yok (mutfak ayrı mı?); ıslak hacim havalandırma veçhesi mevcut `shafts.check_shafts` ile çakışıyor (aynı soruyu iki yerde sormayalım); 'room_type'sız oda için 'temiz' ne demek, sınırı yazılı değil (sessiz geçiş yasağı). Kabul cümlesi '`7d32a2d` temiz' yaşam mahalli tanımına bağlı — tanım yazılınca doğru olur.
-- **Netleştirme soruları** (her biri önerilen varsayılanla; kullanıcı tek tek onaylayınca madde `READY` olur):
-  1. 'Yaşam mahalli' (pencere şart) ve 'ıslak hacim' kümeleri: öneri lens-yerel sabitler (`standards/`e değil; `RoomStandard` sözleşmesi değişmesin), salon+yatak odası pencere şart, mutfak ayrı kayıt, `yaygın` statüsü.
-  2. `tesisat` türü şaft, ıslak hacim için havalandırma sayılır mı (gerçek projede yalnız `tesisat` var)? Öneri: evet, ≥300 mm ortak kenar (`shafts.check_shafts` ile aynı tanım, `DEV-059` sahibinden).
-  3. Dış duvar/cephe tespiti: duvarın bir tarafında oda ve şaft dışında kalan bir prob noktası (kalınlık/2+10 mm). Çapraz havalandırma = ≥2 farklı dış normal yönünde pencere. Öneri: evet.
-  4. Pencere yüksekliği: opt-in veri alanı (şema 1.4.0'a `DEV-065` ile birlikte). Öneri: evet; katalog varsayılanıyla uydurma YOK.
-- **Kullanıcı kararları (2026-10-09, netleştirme tamam; başlamak için kullanıcı onayı bekleniyor):** (1) yaşam mahalli/ıslak hacim kümeleri lens-yerel sabitler (`standards/`e değil), 'yaygın' statüsü — EVET; (2) `tesisat` türü şaft ıslak hacim havalandırması sayılır (≥300 mm ortak kenar, `DEV-059` tanımı) — EVET; (3) dış duvar/cephe tespiti prob noktasıyla, çapraz havalandırma ≥2 farklı dış normal yönünde pencere — EVET; (4) pencere yüksekliği opsiyonel opt-in alan (`DEV-065` ile aynı MINOR), katalog varsayılanıyla uydurma YOK — EVET.
-- **Uygulama sonucu (2026-10-09, kabul bekliyor):** `reasoning/lenses/isik_hava_yonelim.py` (5 veçhe: 4 `shadow` — yaşam mahalli penceresi, çapraz havalandırma, ıslak hacim havalandırması, salon yönelimi; 1 `draft` — pencere/taban oranı; `active` YOK), ölçüm sahipleri `openings/daylight.py` + `shafts/ventilation.py` (sağlayıcılar `openings/reasoning.py`, `shafts/reasoning.py`; ikisi PENDING'den çıktı), `spatial`e cephe sorguları (`facade_normal`, `window_rooms`, `exterior_windows`; yalnız ekleme), şema: `openings[].height` (opsiyonel, opt-in; DEV-065 ile AYNI 1.4.0 MINOR), `Facet.needs_note_tr` + kapsam raporunda aynı nedenin tek satırda kat listesiyle toplanması, `reasoning_report` `meta.north_angle` girdisini bulur, 8 sentetik vaka, modül `CLAUDE.md` "Muhakeme katkısı" bölümleri. **Kanıt (rev-28 normal1, elle doğrulanan):** 14 pencerenin hepsinin dış yönü tayin edilir (4 cephe); penceresiz yaşam mahalli 0/8; çapraz havalandırma yetersiz birim 0/3 (uC batı+güney, uB batı+kuzey, uA doğu+güney+kuzey); havalandırmasız ıslak hacim 0/6 (hepsi tesisat şaftına bitişik) — üçü de dejenere olarak raporlanır (bilgi taşımıyor, vaka kanıtı sentetik); `north_angle` yokken kapsam raporu "yönelim değerlendirilemedi: kuzey yönü verilmedi (meta.north_angle)" der ve veçhe KOŞMAZ; `north_angle` verilince (30°) koşar (uA salonu yalnız doğuya baktığı için 1/3 tetikler); `room_type`'sız oda kapsamda "kısmi" diye söylenir (sessiz geçilmez); `baca` şaftı sayılmaz, 299 mm ortak kenar tetikler/300 mm tetiklemez. `reasoning/selftest.py` 34/34; 6 kasıtlı bozma (pencere koşulunu tersle, iç duvar probunu kapat, `baca`yı ekle, yönelim işaretini çevir, çapraz eşik, neden notunu sil) yakalandı — biri (çapraz eşik) ilk turda YAKALANMADI, özne ikizi–uyarı tutarlılık testi eklenerek kapatıldı. Tüm selftest'ler, `--golden-set`, `doc_check` temiz; `validate` çıktısı DEĞİŞMEDİ. **Karar gereken / bilinen:** salon yönelim eşiği (kuzey yarısı = kuzeyden 90°'den az sapma) 'tercih', kaynaksız; pencere/taban oranı için doğrulanmış oran eşiği ve yükseklik verisi yok (`draft`); şaft verisi olmayan projede ıslak hacim penceresizse veçhe öter; ışık ↔ mahremiyet gerilimi karşı veçhe kayıtlı olmadığından yazılmadı; gerçek projeye `north_angle` EKLENMEDİ (proje revizyonu, sizin bilgi vermeniz gerekir: kuzey nerede?). Kilit bırakıldı.
 
 ### DEV-063 — `reasoning/`+`furniture/` — yaşanabilirlik mercek paketi + deneme yerleşimi
 
@@ -2008,3 +1980,8 @@ Bir görev için agent şunları yapmadan `COMPLETED` yazamaz:
 
 - **Durum:** COMPLETED (2026-10-09) — kullanıcı onayıyla (dört netleştirme kararı) uygulandı. Ayrıntılı kayıt: `HD-044`.
 - **Özet:** şema 1.4.0 opt-in `design_decisions[]` + `reasoning/decisions.py` + `reasoning_dialogue.py decide`; kanıta bağlı kabul (ölçüm değişirse düşer, "önce → şimdi"); `validate.py` yalnız `check_decisions` kancası; çıktı sürüm uyarısı satırı hariç aynı.
+
+### DEV-062 — `reasoning/` — ışık-hava-yönelim mercek paketi
+
+- **Durum:** COMPLETED (2026-10-09) — kullanıcı onayıyla (dört netleştirme kararı) uygulandı. Ayrıntılı kayıt: `HD-046`.
+- **Özet:** `lenses/isik_hava_yonelim.py` (4 `shadow` + 1 `draft`, `active` yok) + `openings/daylight.py` + `shafts/ventilation.py` + `spatial` cephe sorguları + opsiyonel `openings[].height`; `north_angle` yokken yönelim "kuzey yönü verilmedi" diye koşamaz.
