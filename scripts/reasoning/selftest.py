@@ -989,6 +989,12 @@ def check_knowledge_engineer_role() -> list[str]:
         e.append("knowledge_engineering.write yasak alana dokunuyor")
     if "docs/development/reviews/" in ke["write"] or "docs/development/reviews/" not in perms["review_validation"]["write"]:
         e.append("docs/development/reviews/ yalniz reviewer'in yazma alani olmali")
+    # gorev ayrimi: reviewer raporunu gelistirici ya da bilgi muhendisi yazamaz (bagimsizlik)
+    for role in ("system_development", "knowledge_engineering"):
+        if "docs/development/reviews/" not in perms[role]["forbidden"]:
+            e.append(f"{role}.forbidden icinde docs/development/reviews/ yok (reviewer bagimsizligi)")
+    if set(perms["project_operation"]["write"]) != {"assigned-project/"}:
+        e.append("project_operation yazma alani yalniz atanmis proje olmali")
     if not any("never self-accepted" in r for r in ke["requires"]) or not any("active promotion" in r for r in ke["requires"]):
         e.append("kendi kendini kabul etmeme ve 'active' yalniz kullanici karariyla sartlari yazili olmali")
     doc = (ROOT / "docs" / "agents" / "KNOWLEDGE_ENGINEER_AGENT.md").read_text(encoding="utf-8")

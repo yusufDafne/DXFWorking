@@ -3,7 +3,7 @@
     "roles": ["system-architect", "system-developer"],
     "read": ["scripts/", "schema/", "docs/", "CLAUDE.md"],
     "write": ["scripts/", "schema/", "docs/"],
-    "forbidden": ["other-projects/", "project-context-without-directive/"],
+    "forbidden": ["other-projects/", "project-context-without-directive/", "docs/development/reviews/"],
     "requires": ["READY task", "explicit scope", "focused validation"]
   },
   "project_operation": {
@@ -33,6 +33,7 @@
       "scripts/reasoning/*.py",
       "scripts/doc_check.py",
       "context.json",
+      "docs/development/reviews/",
       "other-projects/",
       "existing-code-of-other-modules/",
       "CLAUDE.md"
