@@ -4,6 +4,16 @@ Aktif geçmiş kapasitesi: **50 kayıt**. En eski tamamlanmış kayıt, 51. kay�
 alınırken silinir. Ayrıntılı teknik değişiklikler git geçmişi ve ilgili proje
 provenance kayıtlarıyla ilişkilendirilir.
 
+## HD-040 — `spatial/`: ortak mekânsal sorgu katmanı (DEV-059)
+
+- **Durum:** COMPLETED
+- **Tamamlanma:** 2026-10-09
+- **Kapsam:** `scripts/spatial/` (yeni), `scripts/architect/rules.py`, `scripts/standards/nuances.py`, `scripts/shafts/__init__.py`, `scripts/rooms/__init__.py`, `scripts/version.py`, `scripts/collision/scene.py`, `scripts/CLAUDE.md`, kök `CLAUDE.md`.
+- **Sonuç:** kapı orta noktası, oda teması, ortak kenar, görüş hattı, nokta-poligon yardımcıları tek sahibe (`spatial → collision.geometry`, tek yönlü) taşındı; eski modüller aynı özel adlarla takma ad aldı (40+ çağrı noktası değişmedi). Kullanıcı kararları: `shared_edge_length` tek anlam = mimari sürüm (dört sınır farkı ölçülüp sabitlendi), sıfır uzunluklu duvarda iki davranış korundu, `rooms` delege.
+- **Doğrulama:** `validate.py` çıktısı bire bir aynı; 15 selftest çıktısı bayt düzeyinde aynı; `--golden-set` (13) ve `validate_selftest` aynı; yeni `spatial/selftest.py` 6/6 (eski kodun commit `9f97553`ten donmuş kopyalarıyla gerçek context ve sentetik girdide diferansiyel); `doc_check` temiz.
+- **Golden etkisi:** yok. **Önemli bulgu:** `validate.py` 11 mekânsal yardımcının 6'sına, `--golden-set` denenen 9'una kördür — taşıma doğruluğu yalnız diferansiyel testle kanıtlanabilir.
+- **Sınır:** `validate.py` (2) ve `architect/layout.py` (1) içindeki kopyalar taşınmadı. **Sonraki direktif:** `DEV-060` (muhakeme çekirdeği).
+
 ## HD-039 — Yekpare çekirdek, dikdörtgen U merdiven, şaft çizimi düzeltmesi ve proje rev-28
 
 - **Durum:** COMPLETED

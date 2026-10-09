@@ -59,7 +59,7 @@ Tamamlanan işlerin ayrıntılı gerekçesi, karar süreci ve ölçülen etkisi
 | DEV-056 | `architect/study.py` — etüt modülünün 2D yerleşim optimizasyonuna genişletilmesi | COMPLETED (2026-10-05) |
 | DEV-057 | Kümülatif mini düzeltmeler (DEV-049…056 sırasında çıkanlar; seansın KAPANIŞ maddesi) | COMPLETED (2026-10-05) |
 | DEV-058 | `shafts/` — şaft / havalandırma / baca boşlukları modülü | COMPLETED (2026-10-05) |
-| DEV-059 | `spatial/` — ortak mekânsal sorgu katmanı (5 kopyanın tek sahibe taşınması; `DEV-048` Faz 1a önkoşulu) | VALIDATION (sıra 1/12) |
+| DEV-059 | `spatial/` — ortak mekânsal sorgu katmanı (5 kopyanın tek sahibe taşınması; `DEV-048` Faz 1a önkoşulu) | COMPLETED (2026-10-09) |
 | DEV-060 | `reasoning/` — muhakeme çekirdeği (mercek/veçhe/bulgu modeli, kayıt, kapsam raporu, `doc_check` kapıları; `DEV-048` Faz 1b) | PLANNED (sıra 2/12) |
 | DEV-061 | `reasoning/` — mahremiyet mercek paketi (mevcut kuralların kaydı + yeni veçheler; Faz 2) | PLANNED (sıra 3/12) |
 | DEV-064 | `reasoning/`+operatör talimatı — diyalog sözleşmesi + açıklama motoru + kök-neden kümeleme (Faz 2) | PLANNED (sıra 4/12) |
@@ -718,45 +718,6 @@ belirleyeceksin ... her birini sıralama olarak birbirine bağla"):**
 > **mevcut `validate.py` çıktısını ve golden referansları bozmamak** ortak kabul şartıdır (`DEV-065`in şema
 > sürümü uyarısı satırı bilinen tek istisnadır). Bölünmesi önerilen maddelerde parçalar **sayısal** yeni DEV
 > kimlikleri olur (`doc_check` `### DEV-\d+` ister; `DEV-063A` gibi kimlikler görünmez kalır).
-
-### DEV-059 — `spatial/` — ortak mekânsal sorgu katmanı
-
-- **Durum:** VALIDATION
-- **Neden (ölçüm, plan §1.1 #9):** eleman-farkındalıklı mekânsal sorgular — kapı → orta
-  nokta, bir noktaya değen odalar, iki poligonun ortak kenarı, doğru parçası kesişimi/
-  görüş hattı — **5 yerde ayrı yazılı**: `architect/rules.py` (`_door_midpoint`,
-  `_rooms_touching_point`, `_shared_wall_length`, `_segments_intersect`,
-  `_clear_line_of_sight`, `_centroid`), `standards/nuances.py` (`_door_mid`, `_touches`,
-  `_point_in_polygon`, `_dist_point_segment`), `shafts/__init__.py` (`shared_edge_length`),
-  `rooms/__init__.py` (iç `_point_in_polygon`) ve poligon matematiği `collision/geometry.py`de.
-  `rev-13` dersi ("iki yerde ayrı hesaplanan geometri sessizce ayrışır") tekrar eder; üç
-  yeni mercek 6.–7. kopyayı doğurur. `standards/nuances.py` yeniden yazmayı açıkça
-  "modül bağımsızlığı" için yapmıştı — doğru bir kaygı; çözüm kopya değil **yaprak bir
-  ortak bağımlılıktır** (`collision/geometry.py`nin kendi gerekçesi).
-- **Kapsam:** saf-Python yeni modül (`ezdxf` yok, çizim modülü import etmez; poligon
-  matematiği `collision/geometry.py`de KALIR ve oradan tüketilir). **Yalnız davranış
-  korumalı taşıma** (faz kapısı): yukarıdaki yardımcılar tek sahibe, tüketiciler oradan
-  import eder; `_TOUCH_TOLERANCE_MM` gibi sabitler tek yerde. Yeni sorgular (cephe tayini,
-  pencere → oda) `DEV-062`/`DEV-063`te eklenir, bu maddede DEĞİL.
-- **Şema/context:** değişmez. **Golden etkisi:** sıfır olmalı.
-- **Kabul ölçütü:** (i) taşınan her yardımcı için eski/yeni sürüm gerçek `context.json`
-  üzerinde aynı girdilerde AYNI çıktıyı verir; (ii) `validate.py` `UYARI` çıktısı bire bir
-  aynı (diff); (iii) `architect`/`standards`/`shafts`/`rooms` `selftest.py`ları geçer;
-  (iv) `doc_check` temiz (`CONTRACT_VERSION`, `version.CONTRACT_MODULES`,
-  `COLLISION_EXEMPT` gerekçesi: salt sorgu, geometri üretmez).
-- **Açık karar:** modül adı (`spatial/` önerilir); kullanıcı onayı.
-- **İlişkili modüller:** `collision/` (geometry emsali), `architect/`, `standards/`,
-  `shafts/`, `rooms/`.
-- **Sıra:** 1/12 — plan §10.1; geliştirici yorumu ve netleştirme soruları 2026-10-09 kod denetimine dayanır (iki bağımsız ajan; `DEV-070` yalnız bir denetim).
-- **Geliştirici yorumu:** Yön doğru ama "beş kopyanın taşınması" lafzıyla uygulanamaz: kopyalar sınırda farklı davranıyor (ortak kenar: 0,5 mm örtüşmede mimari sürüm 0, şaft sürümü 0,5 döner; sıfır uzunluklu duvarda biri başlangıç noktasını, diğeri `None` verir; `_centroid` köşe ortalamasıdır, `rooms` centroid'i alan ağırlıklıdır ve 144 odanın 37'sinde fark çıkar — adı `vertex_mean` olmalı). Asıl tehlike: `validate.py` çıktısı 11 yardımcının 6'sına, `--golden-set` denenen 9'unun hepsine kördür; yani "çıktı aynı" kabulü taşımayı doğrulamaz. Çözüm: eski↔yeni diferansiyel selftest (gerçek 188 açıklık / 144 oda üzerinde) ve sınır farklarının selftest'te sabitlenmesi. Kopya listesi de eksik (`validate.py`'de `walls/geometry`in kopyası, `architect/layout.py`). Düşük riskli, ucuz, kimseye görünmez ama sonraki her şeyin zemini.
-- **Netleştirme soruları** (her biri önerilen varsayılanla; kullanıcı tek tek onaylayınca madde `READY` olur):
-  1. Ad `spatial/` ve tek yönlü bağımlılık `spatial → collision.geometry` (collision spatial'ı asla import etmez)? Öneri: evet; 'yaprak' sözcüğü metinden çıkar.
-  2. `shared_edge_length` için tek anlam: mimari sürüm (her yönde) + dört sınır farkı (0,5 mm örtüşme, tam 1,0 mm boşluk, tam 1,0 mm örtüşme, 45° kenar) selftest'te sabitlenir. Öneri: evet (tüketici eşikleri duyarsız).
-  3. `rooms.PolygonOps._point_in_polygon` taşınsın mı? Öneri: evet; `collision.geometry.point_in_polygon`a delege + ince takma ad (selftest'e dokunulmaz).
-  4. Sıfır uzunluklu duvar: iki davranış korunur (`door_midpoint` başlangıç noktası, `door_frame` `None`). Öneri: evet; birleştirmek ayrı, açık bir değişikliktir.
-- **Metin düzeltmeleri (onayla birlikte uygulanır):** Kabul (i)–(iv) yerine: diferansiyel selftest; 'validate/golden bu taşımaya kördür' notu; `doc_check` şartlarının TAMAMI (`CLAUDE.md`, `scripts/CLAUDE.md` anması, `CONTRACT_VERSION`, `version.CONTRACT_MODULES`, `COLLISION_EXEMPT`). 'Yaprak' sözcüğünü çıkar; '5 kopya' → 'en az 5'; `_centroid` → `vertex_mean`; `shafts.shared_edge_length` genel API'dir, yeniden dışa aktarım korunur.
-- **Kullanıcı kararları (2026-10-09, netleştirme tamam; başlamak için kullanıcı onayı bekleniyor):** (1) `spatial/`, tek yönlü `spatial → collision.geometry` — EVET; (2) `shared_edge_length` tek anlam = mimari sürüm, dört sınır farkı selftest'te sabitlenir — EVET; (3) `rooms.PolygonOps._point_in_polygon` delege + takma ad — EVET; (4) sıfır uzunluklu duvarda iki davranış korunur — EVET. Metin düzeltmeleri bu kararlarla kesinleşti.
-- **Uygulama sonucu (2026-10-09, kabul bekliyor):** `scripts/spatial/` kuruldu (10 genel ad, `CONTRACT_VERSION 1.0`); `architect/rules.py` (6 yardımcı), `standards/nuances.py` (4), `shafts` (`shared_edge_length`), `rooms` (`_point_in_polygon`) artık buna takma adla bağlı — 40'tan fazla çağrı noktası değişmedi. **Kanıt:** `validate.py` çıktısı bire bir aynı (taban çizgisi diff'i boş); 15 mevcut selftest çıktısı bayt düzeyinde aynı; `validate_selftest` ve `--golden-set` (13 referans) aynı; yeni `spatial/selftest.py` 6/6 (eski kodun commit `9f97553`ten donmuş kopyalarıyla gerçek context'te açıklık×oda, oda çiftleri, görüş hatları ve sentetik girdilerde diferansiyel; dört sınır farkı ölçülüp sabitlendi; kasıtlı bozulmuş `door_midpoint` testi gerçekten kırdı). `doc_check` temiz. Kayıtlar: `version.CONTRACT_MODULES`, `COLLISION_EXEMPT`, `scripts/CLAUDE.md` (madde + tablo), kök `CLAUDE.md` selftest listesi. **Bilinen kalan:** `validate.py`/`architect/layout.py` içindeki üç kopya taşınmadı (modül `CLAUDE.md` 'Bilinen sınırlamalar'). Kilit (`ACTIVE_TASK.lock`) iş doğrulandıktan sonra bırakıldı (kabul beklenirken tutulmaz).
 
 ### DEV-060 — `reasoning/` — muhakeme çekirdeği
 
@@ -2129,3 +2090,9 @@ Bir görev için agent şunları yapmadan `COMPLETED` yazamaz:
 > BLOCKED maddeler "PLANNED" başlığı altında birikti. Kullanıcı fark etti.
 > Düzyazı hatırlatma bu hata sınıfını engellemiyor, bu yüzden `doc_check.py`
 > yazıldı ve kontrolleri kasıtlı bozma testleriyle doğrulandı.
+
+### DEV-059 — `spatial/` — ortak mekânsal sorgu katmanı
+
+- **Durum:** COMPLETED (2026-10-09) — kullanıcı onayıyla (dört netleştirme kararı) uygulandı. Ayrıntılı kayıt: `HD-040`.
+- **Özet:** `scripts/spatial/` kuruldu; `architect`/`standards`/`shafts`/`rooms` kopyaları davranış korunarak taşındı (`spatial → collision.geometry`); doğruluk eski↔yeni diferansiyel selftest'le kanıtlandı çünkü `validate.py`/`--golden-set` bu yardımcılara kördür.
+
