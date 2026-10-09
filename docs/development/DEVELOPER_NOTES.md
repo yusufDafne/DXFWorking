@@ -582,11 +582,16 @@ etkindir**.
   bayatlamıştır. Özellikle #4 (girişten görünen yatak odası kapısı) ve #5 (komşu giriş
   kapıları 1485 mm) gerçek projede **hiçbir kural tarafından görülmüyor**; bunlar plan
   değişikliği değil bilgidir, kullanıcı isterse ayrı revizyon konusudur.
-- **Önerilen sonraki direktif (2026-10-09 denetimi sonrası):** sıra doğrusaldır:
-  `DEV-059 → 060 → 061 → 064 → 065 → 070 → 062 → 063 → 066 → 069 → 068 → 067` (plan §10.1). Hiçbir madde
-  `READY` değildir; kullanıcı her maddenin "Netleştirme soruları"nı **tek tek** yanıtlayınca o madde `READY` olur.
-  Önce `DEV-059` ve `DEV-060` soruları (toplam 8) yanıtlanmalıdır. **Dikkat:** 12 görevin 9'u denetimde
-  'olduğu gibi uygulanamaz' çıktı (ayrıntı plan §10.4) — metin düzeltmeleri onayla birlikte uygulanır.
+- **Durum (2026-10-09 oturum sonu):** `DEV-059` (`spatial/`) ve `DEV-060` (`reasoning/` çekirdeği) **COMPLETED**
+  (`HD-040`, `HD-041`). `DEV-061` (mahremiyet paketi) soruları yanıtlandı ve karar kayıtlı (görev maddesinde
+  "Kullanıcı kararları"); **uygulama BAŞLAMADI** — kullanıcı onayı bekliyor (büyük madde, bilerek bekletildi).
+  Kalan sıra: `061 → 064 → 065 → 070 → 062 → 063 → 066 → 069 → 068 → 067` (plan §10.1). `DEV-064`…`DEV-067`
+  maddelerinin netleştirme soruları henüz sorulmadı.
+- **Planlı genel kontrol:** kullanıcı, planlanan tüm maddeler tamamlandıktan SONRA ayrıca bir genel kontrol
+  yapılacağını belirtti (tüm selftest'ler, `validate` çıktısı, `--golden-set`, `doc_check`, plan §10.3 geriye
+  dönük doğrulama ve §8.5 soğuk başlangıç sınavı).
+- **Devam ederken ilk ucuz kontrol:** `python scripts/doc_check.py`, `python scripts/reasoning/selftest.py`,
+  `python scripts/spatial/selftest.py`, `python scripts/reasoning_report.py` (rev-28: 15 satır → 3 konu).
 - **Kullanıcıya bildirilecek yan bulgu:** `check_wet_area_adjacency` (`DEV-052`) ve
   `check_entry_wet_door_proximity` (`DEV-053`) tamamlanmış ve selftest'li ama `validate.py` tarafından
   **hiç çağrılmıyor**; gerçek projede çalışmıyorlar. Bağlamak çıktıyı değiştirir (kullanıcı kararı).
