@@ -39,12 +39,12 @@ satırda yazılıdır ve yeniden üretilebilir.
 | 1 | `validate.py` çıktısındaki `UYARI` satırları, kat adı çıkarılıp tekilleştirildi | **15 satır → 3 tekil konu** (K1–K5 özdeş) | Kök-neden kümeleme yok; kullanıcıya konu değil satır sayısı gösteriliyor. |
 | 2 | `meta.north_angle` | **yok** | Yönelim değerlendirmesi yapılamaz ve sistem bunu **söylemiyor** (opt-in sessiz geçiş: "temiz" ile "hiç bakılmadı" ayırt edilemiyor). |
 | 3 | Pencere alanları | yalnız `width`; **yükseklik/denizlik yok** | Pencere/taban oranı veçhesi mevcut veriyle hesaplanamaz; yükseklik ya katalog varsayılanı + kullanıcı onayı ya da veri ister (uydurulmaz). |
-| 4 | Giriş kapısından aynı birimin **yatak odası** kapısına görüş hattı (mevcut `check_entry_sightlines`ın koni+duvar testi, hedef türü yatak odası) | **`uC`: giriş → `uC_d_oda_hol`, sapma 16.1°, mesafe 1978 mm** (K1–K5'te aynı) | Mevcut kural yalnız WC/banyo'ya bakıyor; "girişten yatak odası kapısı görünür" mahremiyet bulgusu hiçbir yerde adlandırılmamış. |
+| 4 | Giriş kapısından aynı birimin **yatak odası** kapısına görüş hattı (mevcut `check_entry_sightlines`ın koni+duvar testi, hedef türü yatak odası) | **`uC`: giriş → `uC_d_oda_hol`, sapma 16.1°, mesafe 1978 mm; `uB` de ateşler: 20.2°, 2025 mm** (K1–K5'te aynı; `uB` 2026-10-09 denetiminde bulundu, ilk ölçüm yalnız `uC`yi görmüştü) | Mevcut kural yalnız WC/banyo'ya bakıyor; "girişten yatak odası kapısı görünür" mahremiyet bulgusu hiçbir yerde adlandırılmamış. |
 | 5 | Komşu birimlerin giriş kapıları arası mesafe (kapı orta noktaları) | **`uB`–`uC`: 1485 mm** (dX 1050, dY 1050); `uA`–`uB` 6125, `uA`–`uC` 5075 | Hiçbir kural komşu birimlerin giriş kapılarına bakmıyor (yalnız aynı birimin kapıları ölçülüyor). |
-| 6 | Islak hacim ↔ yatak odası/salon ortak duvarı (poligon ortak kenarı > 1 mm) | **6/6 ıslak hacim tetiklenir** (örn. `uA_wc`↔`uA_salon` 2700 mm) | Böyle bir veçhe **her birimde ötter**: ayırt edicilik düşük, kalibre edilmeden kullanıcıya gösterilirse alarm yorgunluğu yapar (§8.3). |
+| 6 | Islak hacim ↔ yatak odası/salon ortak duvarı (poligon ortak kenarı > 1 mm) | **aynı birimde 5/6 ıslak hacim tetiklenir** (örn. `uA_wc`↔`uA_salon` 2700 mm); hol hedef sayılırsa ya da birimler arası dahil edilirse 6/6 — sayı **tanım seçimine bağlıdır** | Böyle bir veçhe **her birimde ötter**: ayırt edicilik düşük, kalibre edilmeden kullanıcıya gösterilirse alarm yorgunluğu yapar (§8.3). |
 | 7 | `floors[].furniture[]` dolu kat sayısı | **0 / 9** | "Yatak odası" etiketi bir yatağın sığdığını kanıtlamıyor; mobilyalanabilirlik hiç sınanmıyor (`uC_oda` AABB 3100×3350 mm). |
 | 8 | Yaşam mahalli (salon/yatak/mutfak) penceresiz oda sayısı, 9 kat | **0** (bugün temiz) | İyi haber, ama `rev-22`de `uC_oda` penceresizdi ve **elle** fark edildi; veçhe olsaydı deterministik yakalanırdı (geriye dönük doğrulama, §10.3). |
-| 9 | Kapı-ortası / oda-teması / ortak-duvar / nokta-poligon yardımcıları | **5 ayrı yerde** (`collision/geometry`, `architect/rules`, `standards/nuances`, `shafts`, `rooms`) | `rev-13` swing dersinin ("iki yerde ayrı hesaplanan geometri sessizce ayrışır") tekrarı riski; üç yeni mercek bunu 7'ye çıkarırdı → `DEV-059` önkoşul (§10). |
+| 9 | Kapı-ortası / oda-teması / ortak-duvar / nokta-poligon yardımcıları | **en az 5 ayrı yerde** (denetim: `validate.py` ve `architect/layout.py` içinde de kopyalar var) (`collision/geometry`, `architect/rules`, `standards/nuances`, `shafts`, `rooms`) | `rev-13` swing dersinin ("iki yerde ayrı hesaplanan geometri sessizce ayrışır") tekrarı riski; üç yeni mercek bunu 7'ye çıkarırdı → `DEV-059` önkoşul (§10). |
 
 > Ölçüm #4 ve #5 normal katların beşinde (K1–K5) de aynı çıkar — özdeşlik ayrıca
 > doğrulandı (giriş kapısı konumları, oda/duvar/açıklık sayıları aynı).
@@ -379,10 +379,10 @@ bu yüzden **altı veçhe ailesi** vardır.
 | Aile | Veçhe (düz dil sorusu) | Bugünkü durum | Not |
 | ---- | ---------------------- | ------------- | --- |
 | **Görsel** | Girişten WC kapısı görünür mü? | VAR `check_entry_sightlines`, `check_entry_wet_door_proximity` | adaptörle kaydedilir |
-|  | Girişten **yatak odası** kapısı görünür mü? | **YOK** — ölçüm #4: `uC`, 16.1°, 1978 mm | yeni veçhe; en değerli ilk ekleme |
+|  | Girişten **yatak odası** kapısı görünür mü? | **YOK** — ölçüm #4: `uC` 16.1°/1978 mm, `uB` 20.2°/2025 mm | yeni veçhe; en değerli ilk ekleme |
 |  | Mutfak kapısı ↔ WC kapısı karşılıklı mı? | VAR `check_kitchen_wet_door_opposite` | |
 |  | WC/banyo kapısı kendi hacmine mi açılıyor? | VAR `check_wet_door_swing_inward` (#12) | mahremiyetle ilişkisi (kapı açıkken içerisinin holden görünmemesi) yaygın gerekçedir; **kayıtlı kaynak yok** → bilgi mühendisi gerekçeyi doğrulayıp `provenance`a yazar |
-| **İşitsel** | Islak hacim yatak odası/salonla ortak duvar paylaşıyor mu? | **YOK** — ölçüm #6: 6/6 tetiklenir | **önce shadow**: ayırt edicilik düşük; duvar türü (`walls.kind`, kütle) ve ıslak hacmin tipi (WC≠banyo) şiddeti ayırmalı |
+| **İşitsel** | Islak hacim yatak odası/salonla ortak duvar paylaşıyor mu? | **YOK** — ölçüm #6: aynı birimde 5/6 tetiklenir | **önce shadow**: ayırt edicilik düşük; duvar türü (`walls.kind`, kütle) ve ıslak hacmin tipi (WC≠banyo) şiddeti ayırmalı |
 |  | Yatak odası–salon ortak duvarı | KISMEN (`check_bedroom_via_corridor` salon *kapısına* bakar) | duvar tarafı yok |
 |  | Birimler arası ortak duvar | **YOK** | yatak odası komşu daire salonuna mı bakıyor |
 | **Geçiş** | Bir odaya gitmek için başka bir özel odadan geçmek gerekiyor mu? | VAR `check_wet_area_reachable_without_bedroom`, `check_bedroom_via_corridor` | |
@@ -499,7 +499,7 @@ Mercek paketleri (`lenses/*.py`) yalnız **bildirir ve noktalı referans verir**
 
 | # | Kapı | Emsal |
 | - | ---- | ----- |
-| 10 | Her çizim/doğrulama modülünün `reasoning.py`si **ya da** `REASONING_EXEMPT[modül]` içinde gerekçesi vardır; ikisi birden olamaz | #8 çakışma kapsamı |
+| 10 | Her çizim/doğrulama modülünün `reasoning.py`si **ya da** `REASONING_EXEMPT[modül]` içinde gerekçesi vardır; ikisi birden olamaz. **Üç durumlu (2026-10-09 denetimi):** üçüncü durum `REASONING_PENDING` ("henüz değerlendirilmedi") yalnız küçülebilir, bilgi kanalıdır ve `DEV-067` bitince kapı bloklayıcı olur — aksi halde kapı 23 pakette ilk gün kırmızıdır | #8 çakışma kapsamı |
 | 11 | Her veçhenin `measure_ref`/`check_ref`i AST ile çözülür (`module_symbols` tekniği; modül import edilmez) | #7 |
 | 12 | `status ≥ shadow` veçhenin ≥1 ihlal + ≥1 yanlış-pozitif **vakası** vardır ve `cases/`te dosyası bulunur | golden disiplini |
 | 13 | Anlatım şablonlarında rakam yok; yer-tutucular `Plain.numbers` ile uyumlu | §5.3 |
@@ -637,31 +637,39 @@ demektir ve gerekçe yazılıdır.
 
 ## 10. Uygulama planı
 
-### 10.1 Fazlar ve bağımlılık
+### 10.1 Uygulama sırası (2026-10-09 — kod denetimiyle belirlendi)
 
-| Faz | İçerik | Görev | Şema | Kabul ölçütü (deterministik) |
-| --- | ------ | ----- | ---- | ----------------------------- |
-| **0** | Belge + etkin işletim ilkeleri (bu oturum) | `DEV-048` | — | `doc_check` temiz; kök `CLAUDE.md` işaretçisi; §11 kararları görünür |
-| **1a** | Ortak mekânsal sorgu katmanı (5 kopyanın tek sahibe) | `DEV-059` | — | 5 modülün selftest'i aynen geçer; `golden --golden-set` entity/bbox farkı yok |
-| **1b** | `reasoning/` çekirdeği: model, kayıt, bulgu, kapsam, lint, `doc_check` #10–15 | `DEV-060` | — | selftest: kasıtlı bozma + yanlış-pozitif; kapılar bozuk kayıtta **gerçekten** hata verir |
-| **2** | Mahremiyet paketi (mevcut kuralları **kaydet**, yeni veçheler `shadow`) | `DEV-061` | — | mevcut `validate` çıktısı bire bir aynı; muhakeme raporu ölçüm #4 ve #5'i bulur |
-| **2** | Diyalog sözleşmesi + açıklama motoru + operatör talimatı | `DEV-064` | — | rakam lint'i; §5.6 örneği şablonlardan **üretilir**; 15 satır → 3 konu |
-| **2** | Bilgi mühendisi rolü + büyütme protokolü | `DEV-070` | — | soğuk başlangıç sınavı (§8.5) geçer |
-| **3** | Işık-hava-yönelim paketi | `DEV-062` | (yükseklik kararı) | kapsam raporu "yönelim koşamadı" der; `rev-22` penceresiz vakası yakalanır |
-| **3** | Yaşanabilirlik paketi + deneme yerleşimi | `DEV-063` | — | tefrişsiz projede "yatak odası sığar mı" cevabı; kasıtlı küçük oda yakalanır |
-| **4** | Karar kaydı + kanıta bağlı kabul | `DEV-065` | **evet** | kabul sonrası kanıt kötüleşince bulgu geri gelir |
-| **4** | Kalibrasyon/terfi protokolü | `DEV-066` | — | ayırt edicilik raporu; #6 gibi veçhe `shadow`da kalır |
-| **5** | Modül yaygınlaştırma (her modül `reasoning.py`/muafiyet) | `DEV-067` | — | `doc_check` #10 temiz, her modül `CLAUDE.md`de bölüm |
-| **6** | Etki analizi (`impact/`) | `DEV-068` | — | "banyoyu büyüt" → etkilenen eleman kümesi + yeniden doğrulanacak mercekler |
-| **6** | İhtiyaç beyanı (brief) | `DEV-069` | **evet** | beyan → program → etüt zinciri; gerekçe izlenebilir |
+**Sıra DOĞRUSALDIR.** Eski taslaktaki "paralel" gösterimler (`{061 ∥ 064 ∥ 070}`, `{062, 063}`) geçersizdir:
+görev kuyruğunun kuralı aynı anda **tek** `IN_PROGRESS` görevdir ve `DEV-070` zaten `DEV-061`e
+sert bağımlıydı (eski sıra kendi içinde çelişiyordu). Sırayı üç şey belirledi: (i) sert bağımlılıklar
+(her biri iki bağımsız ajanca koda karşı doğrulandı), (ii) kullanıcıya görünür değerin ne zaman doğduğu,
+(iii) kullanıcı kararlarının ve şema değişikliklerinin gruplanması.
 
-Sıra gerekçesi: **1a önkoşul** (yeni mercek ölçümleri 6–7. kopyayı doğurmasın);
-**1b ← 2** (paket çekirdeksiz yazılamaz); **diyalog ve mahremiyet paralel** (diyalog
-gerçek bulgu ister, mahremiyet paketi bulguyu üretir); **bilgi mühendisi rolü paket 2'den
-sonra** (gerçek bir paketten damıtılmış protokol); **3. fazdaki iki paket protokole
-uyularak yazılır** — bu, genişletilebilirliğin ilk kanıtıdır; **kalibrasyon ≥2 paketten
-sonra** (tek paketle ayırt edicilik karşılaştırılamaz); etki analizi/brief **bağımsız
-büyük işlerdir**, çekirdeğe bağlı ama onu beklemez.
+| Sıra | Görev | Efor | Sert önkoşul | Kullanıcıya görünür sonuç | Şema |
+| ---- | ----- | ---- | ------------ | ------------------------- | ---- |
+| 1 | `DEV-059` ortak mekânsal sorgu katmanı | M | — | yok (temel; bakım riski düşer) | — |
+| 2 | `DEV-060` muhakeme çekirdeği | L | — (`059` yumuşak) | yok (altyapı) | — |
+| 3 | `DEV-061` mahremiyet paketi | L | 060 | ilk yeni bulgular **gölgede** (rapor); ölçüm #4/#5 raporda | — |
+| 4 | `DEV-064` diyalog + açıklama motoru | L | 060 | **ilk görünür kazanç:** 15 uyarı satırı → 3 konu, sade anlatım | — |
+| 5 | `DEV-065` karar kaydı | M | 060, 064 | bilinen 3 canlı uyarıyı gerekçeyle **kabul edebilme** | **1.4.0** |
+| 6 | `DEV-070` bilgi mühendisi rolü + soğuk başlangıç sınavı | M | 060, 061 | yok (genişletilebilirlik kanıtı) | — |
+| 7 | `DEV-062` ışık-hava-yönelim paketi | L | 059, 060 | penceresiz yaşam mahalli / havalandırma / (veri gelirse) yönelim | pencere yüksekliği kararı |
+| 8 | `DEV-063` yaşanabilirlik + deneme yerleşimi | L | 059, 060 | "yatak odası sığar mı" cevabı | — |
+| 9 | `DEV-066` kalibrasyon ve terfi politikası | L | 059, 060, 061 | shadow→active terfileri (asgari makine 060/061'de) | — |
+| 10 | `DEV-069` ihtiyaç beyanı | L | — (`056` tamam) | mimar olmayan kullanıcıdan ihtiyaç toplama (önce v0, şemasız) | v1'de evet |
+| 11 | `DEV-068` etki analizi | XL | 059 | "banyoyu büyüt" → etkilenen eleman kümesi (v1: yalnız rapor) | — |
+| 12 | `DEV-067` modül yaygınlaştırma (kalan dalgalar) | XL | 059, 060 | kapı #10 bloklayıcı olur | — |
+
+**Neden bu sıra:**
+- `059`→`060` **temel**: yeni mercek ölçümleri 6.–7. geometri kopyasını doğurmasın; çekirdek olmadan paket yazılamaz.
+- `061` çekirdeğin ilk gerçek sınavıdır ve gerçek geçmiş vakalarla (iki commit) kanıtlanır.
+- `064` **`061`den hemen sonra**: kullanıcının fark edeceği ilk iyileşme budur (15 satır → 3 konu); gerçek bulgu ve facet kaydı gerektirir.
+- `065` `064`ten sonra: `064` olmadan sunulan bulgu yok, kabul edilecek şey de yok; üstelik bugün zaten görünen 3 uyarı için **hemen** işe yarar. Şema MINOR artışı bir kez yapılır; pencere yüksekliği alanı (varsa) aynı sürüme alınır.
+- `070` **iki paketten önce değil, `061`den sonra**: protokol gerçek bir paketten damıtılır; `062`/`063` protokole uyularak yazılır ve **genişletilebilirliğin ilk kanıtı** olur.
+- `066` ≥2 paketten sonra: politika/sınırlar tek paketle karşılaştırılamaz. **Ancak asgari terfi makinesi (konu başına ölçüm sözleşmesi, tetik oranı raporu, `legacy` bayrağı, imzalı terfi kaydı) `060`/`061`e çekilir;** aksi halde `061`in kabulü `066`ya, `066` da `061`e bağımlı olurdu (döngü).
+- `069`, `068`, `067` çekirdeğe bağımlı ama onu beklemeyen **büyük işlerdir**; değer/efor sırasıyla sona. `067`nin ilk dalgası zaten paketlere gömülür (sürekli "rolling" iş tek-`IN_PROGRESS` kuralıyla uyuşmaz).
+
+**Kritik yol:** `059 → 060 → 061 → 064 → 065`. İlk görünür kazanç 4. adımdadır.
 
 ### 10.2 `DEV-040` fikirlerinin bu plana oturması
 
@@ -683,6 +691,39 @@ sayısı 0, rev-23 düzeltmesi `7d32a2d`'de 1 — vaka gerçek eski geometridir)
 (iv) bugünkü rev-28 → ölçüm #4/#5 bulgusu. Dördü de yakalanmıyorsa bilgi modeli yetersizdir.
 
 ---
+
+### 10.4 Kod denetiminin bulguları (2026-10-09) — plana geri yazılan düzeltmeler
+
+On iki görev, gerçek koda karşı ayrı ajanlarca denetlendi; on biri ikinci bir ajanca çürütülmeye
+çalışıldı (`DEV-070` limit nedeniyle yalnız tek denetim aldı). Ortak sonuç: **12 görevin 9'u
+olduğu gibi uygulanamıyordu** (kabul ölçütü döngüsel, kör ya da kendi kendiyle çelişiyor). Ayrıntılar
+her görevin "Geliştirici yorumu" bölümündedir; planı değiştiren çapraz bulgular:
+
+1. **Kör doğrulama.** `validate.py` çıktısı 11 mekânsal yardımcının 6'sına, `--golden-set` ise
+   denenen 9 doğrulama yardımcısının hepsine **kördür** (mutasyon denemesi). "Çıktı bire bir aynı"
+   tek başına taşımanın doğruluğunu kanıtlamaz; her taşıma/adaptör için eski↔yeni **diferansiyel
+   selftest** şarttır.
+2. **Kapı #10 ilk gün kırmızı.** 23 paketin hiçbirinde `reasoning.py` ya da gerekçeli muafiyet yok
+   (spatial/reasoning ile 25). Kapı üç durumlu olur (§7.2); bloklayıcılık `DEV-067` sonunda.
+3. **Veçhe sahipliği çelişkisi.** §2.1/§7.1 "lens paketinde", §2.3-8/§8.4/§9 "sahibi modülde" diyordu.
+   İki denetim zıt öneri verdi (060: modül-sahipli, 067: lens paketinde + modül yalnız rol/ölçüm).
+   **Kullanıcı kararı bekliyor** (görev `DEV-060`, soru 3).
+4. **`DEV-060` ↔ `DEV-064` kapsam çakışması.** `explain.py`, rakam lint'i ve kök-neden kümeleme yalnız
+   `DEV-064`ündür; `060` yalnız `Finding`/anahtar/kayıt/kapsam raporu taşır.
+5. **Mevcut `check_*` → `Finding` adaptörü.** Çağrı imzası 8 çeşit; mesajdan türetilen anahtar
+   tekil değil; 33 fonksiyonun 3'ü toplayıcı, bir kısmı `validate.py`nin HATA kanalında, bir kısmı
+   **hiç çağrılmıyor**. v1 adaptör anahtarı `legacy.<modül>.<fonksiyon>|<kat>|<sıra>`, şiddet `None`.
+6. **Tamamlanmış ama bağlanmamış kurallar.** `check_wet_area_adjacency` (`DEV-052`) ve
+   `check_entry_wet_door_proximity` (`DEV-053`) tanımlı ve selftest'li, fakat `validate.py` bunları
+   **hiç çağırmıyor** (doğrulandı: `validate.py:97-105` içe aktarımları ve `:624-631` çağrıları). Gerçek
+   projede çalışmıyorlar. Bunları bağlamak `validate.py` çıktısını değiştirir → plan §11 #2 ile
+   birlikte kullanıcı kararı; `DEV-061` bunları **shadow** kaydeder.
+7. **Terfi makinesi döngüsü** (yukarıda 066 notu): asgari makine öne çekilir.
+8. **Alt görev kimlikleri sayısal olmalı.** `doc_check.py` `### DEV-\d+` ister; `DEV-063A` gibi
+   kimlikler maddeyi görünmez kılar. Bölünen her parça ayrı **numaralı** DEV olur (örn. sınav için
+   önerilen `DEV-071`); bölme, ilgili maddenin netleştirme turunda kullanıcıyla kararlaştırılır.
+9. **Operatör kaynak erişimi.** Plan başlığı "operatör ajan → §3,4,5" diyor ama operatör talimatı
+   `docs/development/`i okuyamıyor; `DEV-064` bu erişimi (ya da kopyasını) çözmek zorunda.
 
 ## 11. Açık kararlar (kullanıcı/sistem mimarı)
 

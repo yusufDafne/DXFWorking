@@ -582,9 +582,16 @@ etkindir**.
   bayatlamıştır. Özellikle #4 (girişten görünen yatak odası kapısı) ve #5 (komşu giriş
   kapıları 1485 mm) gerçek projede **hiçbir kural tarafından görülmüyor**; bunlar plan
   değişikliği değil bilgidir, kullanıcı isterse ayrı revizyon konusudur.
-- **Önerilen sonraki direktif:** `DEV-059` (ortak mekânsal sorgu katmanı, davranış korumalı
-  taşıma) → `DEV-060` (çekirdek). Yeni mercek ölçümleri 6.–7. geometri kopyasını doğurmasın
-  diye `DEV-059` önkoşuldur.
+- **Önerilen sonraki direktif (2026-10-09 denetimi sonrası):** sıra doğrusaldır:
+  `DEV-059 → 060 → 061 → 064 → 065 → 070 → 062 → 063 → 066 → 069 → 068 → 067` (plan §10.1). Hiçbir madde
+  `READY` değildir; kullanıcı her maddenin "Netleştirme soruları"nı **tek tek** yanıtlayınca o madde `READY` olur.
+  Önce `DEV-059` ve `DEV-060` soruları (toplam 8) yanıtlanmalıdır. **Dikkat:** 12 görevin 9'u denetimde
+  'olduğu gibi uygulanamaz' çıktı (ayrıntı plan §10.4) — metin düzeltmeleri onayla birlikte uygulanır.
+- **Kullanıcıya bildirilecek yan bulgu:** `check_wet_area_adjacency` (`DEV-052`) ve
+  `check_entry_wet_door_proximity` (`DEV-053`) tamamlanmış ve selftest'li ama `validate.py` tarafından
+  **hiç çağrılmıyor**; gerçek projede çalışmıyorlar. Bağlamak çıktıyı değiştirir (kullanıcı kararı).
+- **Denetim kaydı:** denetim/çürütme sonuçları workflow günlüğündedir (`wf_942eee3c-6d3`); `DEV-070` için
+  çürütme ajanı kullanım limiti nedeniyle koşamadı, yorumu tek denetime dayanır.
 - **Kullanıcı kararı bekleyen maddeler:** plan §11 (10 madde; öneriler yazılı). En çok bloklayanlar:
   #1 çekirdeğin adı/yeri, #2 `validate.py` çıktısının değişmemesi, #3 `design_decisions[]` şema
   alanı, #4 pencere yüksekliği (veri alanı mı), #6 hangi yönetmelik maddelerinin önce getirileceği.
