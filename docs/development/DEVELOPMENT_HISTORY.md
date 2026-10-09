@@ -4,6 +4,15 @@ Aktif geçmiş kapasitesi: **50 kayıt**. En eski tamamlanmış kayıt, 51. kay�
 alınırken silinir. Ayrıntılı teknik değişiklikler git geçmişi ve ilgili proje
 provenance kayıtlarıyla ilişkilendirilir.
 
+## HD-041 — `reasoning/`: mimari muhakeme çekirdeği (DEV-060)
+
+- **Durum:** COMPLETED
+- **Tamamlanma:** 2026-10-09
+- **Kapsam:** `scripts/reasoning/` (yeni), `scripts/reasoning_report.py` (yeni), `scripts/doc_check.py`, `scripts/version.py`, `scripts/collision/scene.py`, `scripts/CLAUDE.md`, kök `CLAUDE.md`, plan belgesi.
+- **Sonuç:** mercek→veçhe→bulgu modeli, kayıt defteri (`REASONING_PROVIDERS`/`EXEMPT`/`PENDING`), kararlı bulgu anahtarı + regresyon farkı + kat-bağımsız kümeleme, `validate` stdout adaptörü, kapsam raporu (koştu/koşamadı/uygulanmaz), asgari terfi ölçeri, vaka koşucusu; `doc_check` kapıları #10 (üç durumlu, PENDING donuk), #11, #12, #14, #15 (bilgi). Kullanıcı kararları: `scripts/reasoning/`, `validate` çıktısı değişmez, üç durumlu kapı, veçhe kaydı lens paketinde (ölçüm sahibi modülde), `scripts/reasoning_report.py`.
+- **Doğrulama:** `validate`/şema/`golden_report` değişmedi; kök context çıktısı bire bir aynı; 15 selftest aynı; `--golden-set` aynı; `reasoning/selftest.py` 14/14 (kapılar enjekte edilen bozuk kayıtla sınanır; üretim koduna 3 kasıtlı bozma selftest'i kırdı); rev-28'de rapor 15 satırı 3 konuya indirir.
+- **Golden etkisi:** yok. **Sınır:** adaptör kategori düzeyinde (`legacy.<kategori>`); kapı #13 ve açıklama motoru `DEV-064`te; üretim kaydı bilerek boş. **Sonraki direktif:** `DEV-061` (mahremiyet paketi).
+
 ## HD-040 — `spatial/`: ortak mekânsal sorgu katmanı (DEV-059)
 
 - **Durum:** COMPLETED

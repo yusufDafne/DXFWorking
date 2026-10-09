@@ -60,7 +60,7 @@ Tamamlanan işlerin ayrıntılı gerekçesi, karar süreci ve ölçülen etkisi
 | DEV-057 | Kümülatif mini düzeltmeler (DEV-049…056 sırasında çıkanlar; seansın KAPANIŞ maddesi) | COMPLETED (2026-10-05) |
 | DEV-058 | `shafts/` — şaft / havalandırma / baca boşlukları modülü | COMPLETED (2026-10-05) |
 | DEV-059 | `spatial/` — ortak mekânsal sorgu katmanı (5 kopyanın tek sahibe taşınması; `DEV-048` Faz 1a önkoşulu) | COMPLETED (2026-10-09) |
-| DEV-060 | `reasoning/` — muhakeme çekirdeği (mercek/veçhe/bulgu modeli, kayıt, kapsam raporu, `doc_check` kapıları; `DEV-048` Faz 1b) | VALIDATION (sıra 2/12) |
+| DEV-060 | `reasoning/` — muhakeme çekirdeği (mercek/veçhe/bulgu modeli, kayıt, kapsam raporu, `doc_check` kapıları; `DEV-048` Faz 1b) | COMPLETED (2026-10-09) |
 | DEV-061 | `reasoning/` — mahremiyet mercek paketi (mevcut kuralların kaydı + yeni veçheler; Faz 2) | PLANNED (sıra 3/12) |
 | DEV-064 | `reasoning/`+operatör talimatı — diyalog sözleşmesi + açıklama motoru + kök-neden kümeleme (Faz 2) | PLANNED (sıra 4/12) |
 | DEV-065 | Şema + `reasoning/` — tasarım kararı kaydı (`design_decisions[]`), kanıta bağlı kabul (Faz 4) | PLANNED (sıra 5/12) |
@@ -718,41 +718,6 @@ belirleyeceksin ... her birini sıralama olarak birbirine bağla"):**
 > **mevcut `validate.py` çıktısını ve golden referansları bozmamak** ortak kabul şartıdır (`DEV-065`in şema
 > sürümü uyarısı satırı bilinen tek istisnadır). Bölünmesi önerilen maddelerde parçalar **sayısal** yeni DEV
 > kimlikleri olur (`doc_check` `### DEV-\d+` ister; `DEV-063A` gibi kimlikler görünmez kalır).
-
-### DEV-060 — `reasoning/` — muhakeme çekirdeği
-
-- **Durum:** VALIDATION
-- **Kapsam (plan §3, §7):** `scripts/reasoning/` — `model.py` (Lens, Facet, Provenance,
-  Thresholds, Finding, Smell, Tension, Profile), `registry.py` (`register_lens`/
-  `register_facet`, noktalı referansı TEMBEL çözme), `findings.py` (kararlı anahtar, şiddet
-  eğrisi, regresyon farkı: yeni/çözülen/değişmeyen, kök-neden kümeleme), `coverage.py`
-  (koştu / koşamadı+neden / uygulanmaz), `explain.py` (şablon çözümleme + rakam lint'i),
-  `smells.py`, `profiles.py`, `cases/` (vaka formatı + koşucu; `golden/`den bilinçli ayrı),
-  `selftest.py`, `CLAUDE.md`, `CONTRACT_VERSION`. **Bilgi İÇERMEZ** (mercek paketleri
-  `DEV-061`+).
-- **Mekanik kapılar:** `doc_check.py` #10–#15 (plan §7.2: her modül `reasoning.py` ya da
-  gerekçeli `REASONING_EXEMPT`; `check_ref` AST ile çözülür; `shadow`+ veçhenin vakası var;
-  şablonda rakam yok; `kesin` kaynaksız olamaz; bayat `reviewed` listelenir);
-  `collision/scene.py::COLLISION_EXEMPT` gerekçeli kayıt (çekirdek geometri üretmez);
-  `version.CONTRACT_MODULES`.
-- **Strangler:** mevcut `check_*` DEĞİŞMEZ; adaptör `list[str]` → `Finding`. `validate.py`
-  çıktısı DEĞİŞMEZ; muhakeme raporu ek bir çıktıdır (komut adı açık karar).
-- **Şema:** değişmez.
-- **Kabul ölçütü:** selftest elle hesaplanabilir; her kapı **kasıtlı bozmayla** gerçekten
-  hata verir (bozuk `check_ref`, rakamlı şablon, kaynaksız `kesin`, vakasız `shadow`) ve
-  yanlış-pozitif tarafı da sınanır; mevcut `validate` çıktısı bire bir aynı; muhakeme raporu
-  tek bir deneme merceğiyle §4 adım 3–6'yı uçtan uca koşar.
-- **Önkoşul:** `DEV-059`. **Açık kararlar:** plan §11 #1, #2.
-- **Sıra:** 2/12 — plan §10.1; geliştirici yorumu ve netleştirme soruları 2026-10-09 kod denetimine dayanır (iki bağımsız ajan; `DEV-070` yalnız bir denetim).
-- **Geliştirici yorumu:** Çekirdek yönü ve `collision/` aynası sağlam; ama metin kendi kabulünü karşılayamıyor. (1) Kapı #10 23 pakette ilk gün kırmızı — üç durumlu kayıt (sağlayıcı / gerekçeli muaf / `PENDING` "henüz değerlendirilmedi", yalnız küçülür, bilgi kanalı) şart, bloklayıcılık `DEV-067` sonunda. (2) Veçhe sahipliği planın içinde çelişiyor (lens paketi mi, sahibi modül mü); iki denetim zıt öneri verdi — bu bir mimari karar. (3) `list[str] → Finding` adaptörü yazılamaz haliyle: 8 çağrı imzası, 33 fonksiyonun 3'ü toplayıcı, bir kısmı `validate.py`nin HATA kanalında, ikisi hiç çağrılmıyor; v1 anahtarı `legacy.<modül>.<fonksiyon>|<kat>|<sıra>`, şiddet `None`. (4) `explain.py`/rakam lint'i/kümeleme `DEV-064`ündür; burada yalnız `Finding`, anahtar, kayıt, kapsam raporu. (5) Gate #11, planın kendi §3.1 örneğini reddediyor. (6) `DEV-066` denetimi: asgari terfi makinesi (konu başına ölçüm sözleşmesi, tetik oranı raporu, `legacy` bayrağı) buraya çekilmeli. Bu yüzden efor L ama bölünmemeli — iç aşama olarak 'a/b' yazılırsa `doc_check` bozulur (kimlik sayısal olmalı).
-- **Netleştirme soruları** (her biri önerilen varsayılanla; kullanıcı tek tek onaylayınca madde `READY` olur):
-  1. Plan §11 #1 (`scripts/reasoning/`) ve #2 (`validate.py` çıktısı değişmez, rapor ek) onayı ve görevin `READY`ye alınması (`AGENT_PERMISSIONS.json` READY görev ister).
-  2. Kapı #10 üç durumlu (sağlayıcı / gerekçeli muaf / PENDING, tek yönlü küçülen)? Öneri: evet.
-  3. Veçhe kaydı nerede yaşar? Öneri: **lens paketinde** (çok modüllü veçhe için tek ev, örn. ıslak hacim↔yatak odası ortak duvarı), modül `reasoning.py`si yalnız rol + ölçüm beyanı; plan §2.3-8/§8.4/§9 buna göre düzeltilir.
-  4. Rapor komutunun adı: öneri `scripts/reasoning_report.py [context.json] [--before ctx.json]` (talep akışında `validate` sonrası ek adım).
-- **Metin düzeltmeleri (onayla birlikte uygulanır):** `explain.py`, rakam lint'i, kümeleme kapsamdan çıkar (→ `DEV-064`); gate #11 'veçhe kaydı dizgesi AST ile çözülür' diye yeniden yazılır (örnek dizgeyi reddetmez); asgari terfi makinesi eklenir (subject_kind, konu başına ölçüm, `legacy` bayrağı, tetik oranı raporu); 'komut adı açık karar' → plan §11'e madde olarak eklenir.
-- **Kullanıcı kararları (2026-10-09, netleştirme tamam; başlamak için kullanıcı onayı bekleniyor):** (1) plan §11 #1 (`scripts/reasoning/`) ve #2 (`validate.py` çıktısı değişmez, rapor ek) — ONAY; (2) kapı #10 üç durumlu (sağlayıcı / gerekçeli muaf / `PENDING`, blokaj `DEV-067` sonunda) — ONAY; (3) veçhe kaydı **lens paketinde**, modül `reasoning.py` yalnız rol+ölçüm — ONAY (plan §2.3-8/§8.4/§9 düzeltilecek); (4) rapor komutu `scripts/reasoning_report.py` — ONAY. Önkoşul: `DEV-059` bitmeli (yumuşak), ardından görev `READY`.
-- **Uygulama sonucu (2026-10-09, kabul bekliyor):** `scripts/reasoning/` çekirdeği kuruldu (model, kayıt, bulgu anahtarı/farkı/kümeleme, `validate` stdout adaptörü, kapsam raporu, asgari terfi ölçeri, vaka koşucusu) + `scripts/reasoning_report.py` + `doc_check` kapıları #10 (üç durumlu, PENDING donuk/tek yönlü), #11, #12, #14, #15 (bilgi kanalı, `run_info`). Çekirdek bilgi taşımaz, çizim modülü import etmez; sağlayıcılar dosya yoluyla yüklenir, import yasağı AST ile denetlenir. **Kapsam notu:** `explain.py`/rakam lint'i/sunum kuyruğu `DEV-064`te (kapı #13 oradadır); `legacy` adaptör fonksiyon değil KATEGORİ düzeyindedir (`legacy.<kategori>`, stdout ayrıştırması parite'yi yapı gereği verir), fonksiyon düzeyi `CheckAdapter` kaydıyla `DEV-061`de. **Kanıt:** `validate.py`, şema ve `golden_report.py` DEĞİŞMEDİ (`git diff` boş; `validate.py`/`generate_dxf.py` içinde `reasoning` geçmiyor); kök context `validate` çıktısı taban çizgisiyle bire bir aynı; 15 mevcut selftest çıktısı aynı; `--golden-set` ve `validate_selftest` aynı; `reasoning/selftest.py` 14/14 — kapılar ENJEKTE edilen bozuk kayıtlarla sınanır (üretim kaydı bilerek boş, bu kanıt sayılmaz) ve üretim koduna üç kasıtlı bozma (imzada rakam, kapı #10 çoklu-yer, kapsam durumu karışması) selftest'i gerçekten kırdı; `reasoning_report` rev-28'de "hiçbir mercek kayıtlı değil" der ve 15 satırı 3 konuya indirir; `version.module_contracts()` `reasoning: 1.0`; `doc_check` temiz. **Bilinen kalan:** 13 golden context'in tek tek `validate` çıktısı için ayrı taban çizgisi alınmadı (yapısal olarak etkilenmez: `validate.py` değişmedi ve `reasoning` import etmez; `--golden-set` aynı). Plan §2.3-8/§7.1/§8.4/§10.4 veçhe sahipliği kararıyla düzeltildi.
 
 ### DEV-061 — `reasoning/` — mahremiyet mercek paketi
 
@@ -2096,4 +2061,9 @@ Bir görev için agent şunları yapmadan `COMPLETED` yazamaz:
 
 - **Durum:** COMPLETED (2026-10-09) — kullanıcı onayıyla (dört netleştirme kararı) uygulandı. Ayrıntılı kayıt: `HD-040`.
 - **Özet:** `scripts/spatial/` kuruldu; `architect`/`standards`/`shafts`/`rooms` kopyaları davranış korunarak taşındı (`spatial → collision.geometry`); doğruluk eski↔yeni diferansiyel selftest'le kanıtlandı çünkü `validate.py`/`--golden-set` bu yardımcılara kördür.
+
+### DEV-060 — `reasoning/` — muhakeme çekirdeği
+
+- **Durum:** COMPLETED (2026-10-09) — kullanıcı onayıyla (dört netleştirme kararı) uygulandı. Ayrıntılı kayıt: `HD-041`.
+- **Özet:** `scripts/reasoning/` çekirdeği + `scripts/reasoning_report.py` + `doc_check` kapıları #10–#12, #14, #15 kuruldu; `validate.py` çıktısı değişmedi; çekirdek bilgi taşımaz (mercek paketleri `DEV-061`+).
 
