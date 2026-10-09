@@ -789,6 +789,7 @@ belirleyeceksin ... her birini sıralama olarak birbirine bağla"):**
   2. Bir kayıt N bulguyu kapsasın mı (`covers[]`: her biri finding_key+evidence_hash+evidence, ortak gerekçe)? Öneri: evet.
   3. Kanıt düşme kuralı v1: herhangi bir değişimde düşsün ve operatör 'önce → şimdi' sayılarıyla yeniden sorsun (yön-duyarlı kural sonra, kalibrasyonla)? Öneri: evet.
   4. Kayda yalnız `Plain.numbers` ile adlandırılan ölçülen değerlerin anlık görüntüsü de yazılsın mı? Öneri: evet.
+- **Kullanıcı kararları (2026-10-09, netleştirme tamam; başlamak için kullanıcı onayı bekleniyor):** (1) kayıt `context.json` üst seviye `design_decisions[]` — EVET; (2) bir kayıt `covers[]` ile N bulguyu kapsar — EVET; (3) v1 kanıt düşme: herhangi bir değişimde (iyileşme dahil) kabul düşer, operatör 'önce → şimdi' ile yeniden sorar — EVET; (4) `Plain.numbers` ile adlandırılan ölçülen değerlerin anlık görüntüsü kayda yazılır — EVET.
 - **Metin düzeltmeleri (onayla birlikte uygulanır):** 'Tekil→dizi MAJOR kırılımdır' ve 'ekleme-yalnız denetlenemez' cümleleri yumuşatılır; kabul: kayıt şekli `covers[]`; 'validate çıktısı aynı' → 'sürüm uyarısı satırı hariç aynı'; yazıcı (`decisions.py`) ve `evidence` anlık görüntüsü kapsama alınır.
 
 ### DEV-070 — `docs/agents/` — bilgi mühendisi rolü ve büyütme protokolü
@@ -812,6 +813,7 @@ belirleyeceksin ... her birini sıralama olarak birbirine bağla"):**
   2. Soğukluk: proje kökü içinde silinen mühürlü paket; yalnız çıkarma tarifi (commit+kat+komut) commit'lenir. Öneri: evet.
   3. Geçme kuralı: vaka başına 3 koşu, ≥2/3 tüm rubrik maddeleri; rapor model kimliği + belge commit'ini taşır; MINOR çekirdek değişikliğinden sonra yeniden koşulur. Öneri: evet.
   4. Reviewer rapor yeri: `review_validation.write`a `docs/development/reviews/` (ekleme-yalnız) eklensin ve `REVIEWER_VALIDATOR_AGENT.md`ye 'Sistem sınavı' bölümü (`DEV-064` aynı dosyayı da düzenler — sıra önemli). Öneri: evet.
+- **Kullanıcı kararları (2026-10-09, netleştirme tamam; başlamak için kullanıcı onayı bekleniyor):** (1) soğuk başlangıç sınavı ayrı maddeye çıkarılır (öneri `DEV-071`, önkoşulsuz; kayıt `DEV-070` onayında açılır), `DEV-070` rol belgesi + izin + protokol — EVET; (2) soğukluk: proje içi mühürlü paket, yalnız çıkarma tarifi commit'lenir, cevap anahtarı pakette yok — EVET; (3) geçme: vaka başına 3 koşu, ≥2/3 tüm rubrik; rapor model kimliği + belge commit'i taşır; çekirdekte MINOR değişiklikten sonra yeniden koşulur — EVET; (4) reviewer raporu `docs/development/reviews/` (ekleme-yalnız), `review_validation.write`a eklenir, `REVIEWER_VALIDATOR_AGENT.md`ye 'Sistem sınavı' bölümü (`DEV-064` ile aynı dosya, sıra önemli) — EVET.
 - **Metin düzeltmeleri (onayla birlikte uygulanır):** Önkoşul satırı 'DEV-060 + DEV-061' korunur, 'paralel' gösterimi her yerde silinir; sınav tanımı ayrı madde olabilir.
 
 ### DEV-062 — `reasoning/` — ışık-hava-yönelim mercek paketi
@@ -839,6 +841,7 @@ belirleyeceksin ... her birini sıralama olarak birbirine bağla"):**
   2. `tesisat` türü şaft, ıslak hacim için havalandırma sayılır mı (gerçek projede yalnız `tesisat` var)? Öneri: evet, ≥300 mm ortak kenar (`shafts.check_shafts` ile aynı tanım, `DEV-059` sahibinden).
   3. Dış duvar/cephe tespiti: duvarın bir tarafında oda ve şaft dışında kalan bir prob noktası (kalınlık/2+10 mm). Çapraz havalandırma = ≥2 farklı dış normal yönünde pencere. Öneri: evet.
   4. Pencere yüksekliği: opt-in veri alanı (şema 1.4.0'a `DEV-065` ile birlikte). Öneri: evet; katalog varsayılanıyla uydurma YOK.
+- **Kullanıcı kararları (2026-10-09, netleştirme tamam; başlamak için kullanıcı onayı bekleniyor):** (1) yaşam mahalli/ıslak hacim kümeleri lens-yerel sabitler (`standards/`e değil), 'yaygın' statüsü — EVET; (2) `tesisat` türü şaft ıslak hacim havalandırması sayılır (≥300 mm ortak kenar, `DEV-059` tanımı) — EVET; (3) dış duvar/cephe tespiti prob noktasıyla, çapraz havalandırma ≥2 farklı dış normal yönünde pencere — EVET; (4) pencere yüksekliği opsiyonel opt-in alan (`DEV-065` ile aynı MINOR), katalog varsayılanıyla uydurma YOK — EVET.
 - **Metin düzeltmeleri (onayla birlikte uygulanır):** Kabul cümleleri üç profile (A/B/C) ayrılır; yaşam mahalli/ıslak hacim kümeleri yazılır; ıslak hacim havalandırma veçhesi için kabul eklenir ve `shafts.check_shafts` ilişkisi netleşir; 'room_type'sız oda kapsam raporunda 'ölçülemedi'.
 
 ### DEV-063 — `reasoning/`+`furniture/` — yaşanabilirlik mercek paketi + deneme yerleşimi
@@ -865,6 +868,7 @@ belirleyeceksin ... her birini sıralama olarak birbirine bağla"):**
   2. v1 yalnız `yatak_odasi` mı? Öneri: evet (mutfak `counters[]` çakışma sağlayıcısı yok; WC/banyo `DEV-049/050` net ölçümleriyle iç içe).
   3. Tipik küme ve kapasite merdiveni: K1 çift yatak+2 komodin+gardırop, K2 çift yatak+gardırop, K3 tek yatak+gardırop, K4 tek yatak — kütüphane verisi, context'e yazılmaz.
   4. Geçiş payı politikası: A katmanı (0) shadow, B katmanı değerlerini mimar verene dek draft. Öneri: evet.
+- **Kullanıcı kararları (2026-10-09, netleştirme tamam; başlamak için kullanıcı onayı bekleniyor):** (1) motor yeni modül `testfit/` (yalnız tüketir) — EVET; (2) v1 yalnız `yatak_odasi` — EVET; (3) tipik küme K1–K4 kapasite merdiveni (kütüphane verisi, context'e yazılmaz) — EVET; (4) A katmanı (pay=0) `shadow`, B katmanı mimar değer verene dek `draft` ve kodlanmaz — EVET.
 - **Metin düzeltmeleri (onayla birlikte uygulanır):** 'Katalog ölçüleri hazır' → 'tip ölçüleri hazır, küme yok'; pay cümlesi iki katmana bölünür; net/merkez çizgisi uyarısı eklenir; Önkoşul satırı preambulle uyumlu hale getirilir.
 
 ### DEV-066 — `reasoning/` — kalibrasyon, ayırt edicilik ve terfi protokolü
@@ -886,6 +890,7 @@ belirleyeceksin ... her birini sıralama olarak birbirine bağla"):**
   2. Sayma birimi: tekilleştirilmiş uygun özne (özdeş katlar bir sayılır; 'koşamadı' paydadan çıkar, 'ölçülemedi' diye raporlanır, %0 değildir). 'Her yerde öten' sınırı kullanıcı tercihi (kaynak yok).
   3. Asgari örneklem: otomatik sayısal kapı yok; araç N'yi yazar ('3 bağımsız birim, kanıt zayıf'), terfi açık kullanıcı kararı + `HD` kaydı. Öneri: evet.
   4. Mevcut 6 adaptör `active`+`legacy` ve #12/#16 kapılarından muaf (yalnız `validate.py`nin zaten çağırdıkları). Öneri: evet.
+- **Kullanıcı kararları (2026-10-09, netleştirme tamam; başlamak için kullanıcı onayı bekleniyor):** (1) asgari terfi makinesi `060`/`061`e çekilir, bu madde politikayı taşır — EVET; (2) sayma birimi tekilleştirilmiş özne ('koşamadı' paydadan çıkar, 'ölçülemedi' raporlanır) — EVET; (3) sayısal örneklem kapısı yok, araç N'yi yazar, terfi açık kullanıcı kararı + `HD` kaydı — EVET; (4) mevcut eski adaptörler `active`+`legacy`, #12/#16 kapılarından muaf — EVET.
 - **Metin düzeltmeleri (onayla birlikte uygulanır):** Önkoşul 'DEV-060 + DEV-061' → 'DEV-059 + DEV-060 + DEV-061'; 'doc_check #12 terfi kapısıdır' ifadesi düzeltilir (yalnız vaka varlığı); '≥2 paket' önkoşulu gerekçesiz olduğundan kaldırılır ya da 'tercih'e çekilir.
 
 ### DEV-069 — `brief/` — kullanıcı ihtiyaç beyanı ve mimari program toplama
@@ -911,6 +916,7 @@ belirleyeceksin ... her birini sıralama olarak birbirine bağla"):**
   2. v0 kayıt kuralı: ihtiyaç cümleleri ilk işleyen revizyonun request metnine aynen girer. Öneri: evet.
   3. Soru politikası: hepsi opsiyonel, 'bilmiyorum'/'sen karar ver' geçerli; yalnız birim programı ve kat ölçüsü bloklayıcı veri (`DEV-056` kararı).
   4. v1 yeri: üst seviye opsiyonel `brief` (emsal: `sections`), v0 koştuktan sonra; plan §2.3-6 buna göre düzeltilir.
+- **Kullanıcı kararları (2026-10-09, netleştirme tamam; başlamak için kullanıcı onayı bekleniyor):** (1) diyalog program + hane ihtiyaçlarını konuşur, v1 yalnız program düzeyini yapılandırır — EVET; (2) v0: ihtiyaç cümleleri ilk işleyen revizyonun request metnine aynen — EVET; (3) soru politikası **kullanıcı sözleriyle:** 'birçok modülün default değeri var, hepsini opsiyonel yapabiliriz; efektif seçim yapılabilir ya da default değerlerle devam edilebilir' → HİÇBİR soru zorunlu değil (öneriden farklı: `DEV-056`nın 'birim programı ve kat ölçüsü bloklayıcı' ayrımı da kalkar); **uygulama notu:** kullanılan her varsayılan sessiz geçilmez, 'şu varsayılanla devam ettim' diye adıyla bildirilir ve yalnız kaynaklı katalog/modül varsayılanı olabilir (anayasa 3/5: sayı uydurma yok); modül varsayılanı bulunmayan bir değer varsa o noktada üretim yine durup sorar (kök CLAUDE.md 'belirsizlikte durma') — başlamadan önce kullanıcıyla teyit edilecek; (4) v1 üst seviye opsiyonel `brief`, v0 koştuktan sonra — EVET.
 - **Metin düzeltmeleri (onayla birlikte uygulanır):** Kabul ölçütü ve önkoşul satırı yazılır (sert önkoşul yok: `DEV-056` tamam; v1 şema alanı `DEV-065` ile aynı MINOR'da gruplanabilir); 'Program study.py girdisi' → iki program düzeyi (oda: `study.py`, birim: `layout.py`).
 
 ### DEV-068 — `impact/` — revizyon etki analizi (minimal patch planlama)
@@ -937,6 +943,7 @@ belirleyeceksin ... her birini sıralama olarak birbirine bağla"):**
   2. Bağımlılık bilgisi: v1'de modül-yerel `impact.py` YOK; küçük açık-referans tablosu + mevcut collision ayak izleri; tablo şema alan adlarıyla tamlık kapısından geçer. Öneri: evet.
   3. Girdi: `blast_radius(context, dokunulan=[(kat,tür,id)])` ve `touched_from_diff(onceki, sonraki)`; patch grameri v1'de yok. Öneri: evet.
   4. Düğüm ayrıntısı: duvar-kenar parçası (span) + açıklık orta noktası; yeni tolerans sayısı eklenmez. Öneri: evet.
+- **Kullanıcı kararları (2026-10-09, netleştirme tamam; başlamak için kullanıcı onayı bekleniyor):** (1) madde bölünür: v1 yalnız salt-okunur etki alanı raporu, patch planı ayrı sayısal kimlikle (patch grameri tanımlanınca) — EVET; (2) bağımlılık: modül-yerel `impact.py` YOK, küçük açık-referans tablosu + mevcut collision ayak izleri, tablo şema alan adlarıyla tamlık kapısından geçer — EVET; (3) girdi `blast_radius(context, dokunulan=[(kat,tür,id)])` + `touched_from_diff(önceki, sonraki)`, patch grameri yok — EVET; (4) düğüm = duvar-kenar parçası (span) + açıklık orta noktası, yeni tolerans sayısı yok — EVET.
 - **Metin düzeltmeleri (onayla birlikte uygulanır):** 'Minimal patch planı' kapsamdan çıkar; `DEV-059` kapsamına duvar/oda-kenarı çakışma ailesi (`walls/thickness._on_edge`, `standards/measure.edge_wall_thicknesses`, `architect/layout._collinear_overlap`) eklenir; tamlık raporu kabule girer.
 
 ### DEV-067 — Tüm modüller — modül başına muhakeme katkısı (yaygınlaştırma)
@@ -957,6 +964,7 @@ belirleyeceksin ... her birini sıralama olarak birbirine bağla"):**
   2. Veçhe kaydı yalnız lens paketlerinde, modül `reasoning.py`si yalnız ROL+ÖLÇÜM beyanı (bkz. `DEV-060` soru 3). Öneri: evet.
   3. Muaf sözlüğü merkezi (`scripts/reasoning/providers.py`) ve `knowledge_engineering` yazma izni yalnız bu dosya. Öneri: evet.
   4. Defter tutma: dalga 1'i `061`/`062`/`063` emer; `067` yalnız kalan dalgalar. Öneri: evet.
+- **Kullanıcı kararları (2026-10-09, netleştirme tamam; başlamak için kullanıcı onayı bekleniyor):** (1) kapı #10 üç durumlu (sağlayıcı / `EXEMPT` / `PENDING`), liste yalnız küçülür — EVET; (2) veçhe kaydı yalnız lens paketlerinde, modül `reasoning.py`si ROL+ÖLÇÜM beyanı — EVET; (3) muaf sözlüğü merkezi `scripts/reasoning/providers.py`, `knowledge_engineering` yazma izni yalnız bu dosya — EVET; (4) dalga 1'i `061`/`062`/`063` üstlenir, `067` yalnız kalan dalgaları yürütür — EVET.
 - **Metin düzeltmeleri (onayla birlikte uygulanır):** Önkoşul 'DEV-060' → 'DEV-059 + DEV-060'; 'rolling' ifadesi silinir; `northarrow` sırası `DEV-062` ile çakışır (northarrow önce); 'şablona uyar' ve 'gerekçe yazılı' kabulleri deterministik hale getirilir (başlık+alan varlığı, boş olmayan gerekçe).
 
 ## COMPLETED
