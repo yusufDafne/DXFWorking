@@ -32,6 +32,10 @@ DECISION_DEVRET = ("Kararı devrettiğiniz için önerilen seçeneği uyguluyoru
                    "seçenekleri uyguladıktan sonra size bildireceğim.")
 SERIOUS_DEVRET_NOTE = "Bu bulgu ciddi olduğu için devir olsa bile önce sizin kararınızı alıyorum."
 NOTHING_TO_APPLY_NOTE = "Uygulanabilecek kayıtlı bir çözüm olmadığı için devir geçersiz; kararı size bırakıyorum."
+REOPEN_PREFIX = "Daha önce bilinçli olarak kabul etmiştiniz (gerekçeniz: “"
+REOPEN_MID = "”); ölçüm değişti: "
+REOPEN_SUFFIX = " Bu yüzden yeniden soruyorum."
+REOPEN_BEFORE, REOPEN_NOW, REOPEN_GONE = "önce", "şimdi", "ölçülemedi"
 UNSCORED_NOTE = "Bu konunun ne kadar ciddi olduğu ölçülemedi; önem sırası belirtilmiyor."
 # kategori -> (ne goruyoruz, neden onemli): `legacy.<kategori>` bulgulari icin (bu uyarilar validate.py'de zaten kullaniciya gorunur)
 CATEGORY_PLAIN = {
@@ -46,7 +50,8 @@ CATEGORY_PLAIN = {
 PLACEHOLDER = re.compile(r"\{(ad|olcum|sabit):([a-z_][a-z0-9_]*)\}")
 ANY_BRACE = re.compile(r"\{[^{}]*\}")
 ENUM_RE = re.compile(r"(?m)^[ \t]*\d+\.[ \t]")          # numaralandirma istisnasi: satir basi "1. "
-NUMBER_RE = re.compile(r"\d+(?:[.,]\d+)?")
+# harfe/alt cizgi/^ bitisik rakam birim ya da ad parcasidir (m2, uC_oda2, m^2), SAYI degildir
+NUMBER_RE = re.compile(r"(?<![A-Za-z_^])\d+(?:[.,]\d+)?")
 
 
 class ExplainError(ValueError):
@@ -86,9 +91,13 @@ def number_tokens(text: str) -> set[str]:
     return {t.replace(",", ".") for t in NUMBER_RE.findall(ENUM_RE.sub("", text))}
 
 
-def allowed_numbers_for(findings: list[Finding], facets: dict[str, Facet] | None = None) -> set[str]:
+def allowed_numbers_for(findings: list[Finding], facets: dict[str, Facet] | None = None,
+                        decisions: list[dict] | None = None) -> set[str]:
     """Bir anlatimda KULLANILABILECEK sayilar: bulgu mesajlari + kanit degerleri + (varsa) veche esikleri."""
     out: set[str] = set()
+    if decisions:
+        from .decisions import decision_numbers
+        out |= decision_numbers(decisions)
     for f in findings:
         out |= number_tokens(f.message)
         for v in f.evidence.values():
@@ -153,6 +162,7 @@ class Topic:
     severity: float | None
     side_effect: bool = False     # onceki durumda yoktu (yan etki)
     relevant: bool = False        # talebin dokundugu elemana bagli
+    reopened: tuple = ()          # kabulu DUSEN kararlar (decisions.Reopened): 'once -> simdi' sayilari
 
     @property
     def floors(self) -> tuple[str, ...]:
@@ -169,23 +179,36 @@ def is_presentable(finding: Finding, facets: dict[str, Facet]) -> bool:
     facet = facets.get(finding.facet_id)
     if facet is not None:
         return facet.status == "active"
-    return finding.facet_id.startswith("legacy.")
+    # 'legacy.surum' sistem/proje surum notudur (mimari bir bulgu degil): konu olarak sunulmaz
+    return finding.facet_id.startswith("legacy.") and finding.facet_id != "legacy.surum"
 
 
 def select_topics(findings: list[Finding], facets: dict[str, Facet], before: list[Finding] | None = None,
-                  intent_elements: tuple[str, ...] = (), limit: int = MAX_TOPICS) -> tuple[list[Topic], list[Topic]]:
+                  intent_elements: tuple[str, ...] = (), limit: int = MAX_TOPICS,
+                  decisions: list[dict] | None = None) -> tuple[list[Topic], list[Topic]]:
     """(ilk mesajdaki en cok `limit` konu, 'diger notlar'). Siralama: yan etki > niyetle ilgili > siddet (olculmeyen EN SONA)
     > ilk gorulme. Carpan/agirlik UYDURULMAZ (plan §4.1 formulu v1 taslaktir, `DEV-066` kalibre eder)."""
+    from .decisions import evaluate  # gec iceri aktarim: decisions -> explain dongusunu onler
     before_keys = {f.group_key for f in (before or [])}
+    verdict = evaluate(findings, decisions or [])
     topics: list[Topic] = []
-    for key, items in group_across_floors([f for f in findings if is_presentable(f, facets)]):
+    # kanita bagli kabul: kabul EDILMIS ve kaniti degismemis bulgu sunulmaz (yenilik = 0); kabulu dusen sunulur
+    pool = [f for f in findings if is_presentable(f, facets) and verdict.get(f.key, ("",))[0] != "kabul"]
+    for key, items in group_across_floors(pool):
+        reopened, seen_ids = [], set()
+        for f in items:
+            v = verdict.get(f.key)
+            if v and v[0] == "dustu" and v[1].decision_id not in seen_ids:
+                seen_ids.add(v[1].decision_id)
+                reopened.append(v[1])
         sevs = [f.severity for f in items if f.severity is not None]
         topics.append(Topic(key=key, findings=tuple(items), facet_id=items[0].facet_id,
                             severity=max(sevs) if sevs else None,
                             side_effect=before is not None and key not in before_keys,
-                            relevant=any(e in intent_elements for f in items for e in f.elements)))
+                            relevant=any(e in intent_elements for f in items for e in f.elements),
+                            reopened=tuple(reopened)))
     order = {t.key: i for i, t in enumerate(topics)}
-    topics.sort(key=lambda t: (not t.side_effect, not t.relevant, t.severity is None,
+    topics.sort(key=lambda t: (not (t.side_effect or bool(t.reopened)), not t.relevant, t.severity is None,
                                -(t.severity or 0.0), order[t.key]))
     return topics[:limit], topics[limit:]
 
@@ -252,6 +275,10 @@ def narrate(topic: Topic, facets: dict[str, Facet], remedies: dict[str, Remedy],
         see += " Bu durum özdeş katların hepsinde aynı biçimde görülüyor."
     if level == "mimar":
         see += f" ({topic.facet_id}; ölçüm: {first.message})"
+    for ro in topic.reopened:
+        shown_changes = [f"{REOPEN_BEFORE} {_format_number(b)} → {REOPEN_NOW} "
+                         f"{_format_number(a) if a is not None else REOPEN_GONE}" for _k, b, a in ro.changed]
+        notes.insert(0, REOPEN_PREFIX + ro.reason + REOPEN_MID + "; ".join(shown_changes) + "." + REOPEN_SUFFIX)
     options = [remedies[r].text_tr for r in remedy_ids if r in remedies][:MAX_OPTIONS - 1]
     if not options:
         notes.append(NO_REMEDY_NOTE)

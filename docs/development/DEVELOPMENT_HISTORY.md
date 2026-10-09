@@ -4,6 +4,15 @@ Aktif geçmiş kapasitesi: **50 kayıt**. En eski tamamlanmış kayıt, 51. kay�
 alınırken silinir. Ayrıntılı teknik değişiklikler git geçmişi ve ilgili proje
 provenance kayıtlarıyla ilişkilendirilir.
 
+## HD-043 — `reasoning/`: açıklama motoru, rakam lint'i, diyalog köprüsü (DEV-064)
+
+- **Durum:** COMPLETED
+- **Tamamlanma:** 2026-10-09
+- **Kapsam:** `scripts/reasoning/explain.py` (yeni), `scripts/reasoning_dialogue.py` (yeni), `scripts/reasoning/{model,registry,__init__,selftest}.py`, `lenses/mahremiyet.py` (çözüm yolları, `why_tr` temizliği), `scripts/doc_check.py` (#13), `docs/agents/*`, `docs/development/AGENT_PERMISSIONS.json`, kök `CLAUDE.md`, plan §5.3.
+- **Sonuç:** şablon rakam lint'i (3 yer-tutucu sınıfı, Unicode rakam, satır başı numaralandırma istisnası); uydurmayan `render`; sunum kuyruğu (yalnız `active` + görünen `legacy.*`, `shadow` asla); 5 parçalı anlatım, ≤3 seçenek, `sor`/`devret` (ciddi bulguda ya da çözüm yokken devir geçersiz); `dialogue.jsonl` ekleme-yalnız ve kaynaksız sayıyı reddeden `append`/`verify`. Kullanıcı kararları: anlatı `dialogue.jsonl`'de, köprü çekirdek dışında, 'konu' = kat atılmış kimlik birleştirme, katı lint, seviye bir kez sorulur ve context'e yazılmaz.
+- **Doğrulama:** `validate.py` değişmedi; rev-28 15 satır → 3 konu; `reasoning/selftest.py` 26/26 (6 kasıtlı bozma testleri kırdı); 16 selftest, `--golden-set`, `doc_check` temiz.
+- **Golden etkisi:** yok. **Sınır:** `legacy.*` anlatımı kategori düzeyinde; `{olcum:..}` kullanan gerçek veçhe henüz yok. **Sonraki direktif:** `DEV-065`.
+
 ## HD-042 — `reasoning/`: mahremiyet mercek paketi (DEV-061)
 
 - **Durum:** COMPLETED

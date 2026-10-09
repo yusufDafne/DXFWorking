@@ -199,7 +199,8 @@ geliştirme görevleri, tamamlanmış geçmiş, fikirler ve geliştirici notlar�
    kanıtlamaz — kontrol hiç çalışmasa da temiz dönerdi. Her test ayrıca
    **yanlış-pozitif** tarafını da sınar.
    **Diyalog köprüsü (DEV-064):** `python scripts/reasoning_dialogue.py guide|brief|append|verify` — kullanıcıya sunulan anlatı
-   şablondan üretilir, kaynaksız sayı reddedilir, `<proje>/dialogue.jsonl`e ekleme-yalnız kaydedilir.
+   şablondan üretilir, kaynaksız sayı reddedilir, `<proje>/dialogue.jsonl`e ekleme-yalnız kaydedilir. `decide` ile bilinçli kabul
+   `context.json::design_decisions[]`e gerekçesiyle yazılır (şema 1.4.0, opt-in; kanıt değişirse kabul düşer).
    **Muhakeme raporu (DEV-060, EK ve BLOKLAMAZ):** `python scripts/reasoning_report.py [context.json]
    [--before onceki.json]` — kapsam (hangi mercek koştu/koşamadı) + uyarıları kat-bağımsız tek konulara
    indirger; `validate.py` çıktısı DEĞİŞMEZ.

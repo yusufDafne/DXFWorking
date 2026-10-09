@@ -309,6 +309,8 @@ bunu açıkça yasaklar (`DEV-064`).
 
 ### 5.5 Karar kaydı ("bilinçli göz ardı")
 
+> **Uygulandı (DEV-065, şema 1.4.0):** kayıt `context.json` üst seviye `design_decisions[]`; bir kayıt `covers[]` ile N bulguyu kapsar; ölçülen sayıların anlık görüntüsü de yazılır; v1'de herhangi bir değişim (iyileşme dahil) kabulü düşürür. Ayrıntı: `scripts/reasoning/CLAUDE.md`.
+
 Kullanıcı bir bulguyu bilerek kabul ederse (`DEV-065`, şema değişikliği → mimar onayı):
 `design_decisions[]` ekleme-yalnız kaydı: `finding_key`, kullanıcı gerekçesi (zorunlu,
 boş olamaz), kanıt anlık görüntüsü (`evidence_hash`), tarih. **Kabul, kanıta bağlıdır:**

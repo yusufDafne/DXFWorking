@@ -471,6 +471,37 @@
           "summary": { "type": "string" }
         }
       }
+    },
+    "design_decisions": {
+      "type": "array",
+      "description": "Tasarim karari kaydi (DEV-065, OPT-IN; ekleme-yalnizlik KONVANSIYONDUR: yeni karar eskiyi `supersedes` ile ezer, kayit silinmez). Bir bulgunun bilincli goz ardi edilmesi gerekcesiyle birlikte buradadir. KANITA BAGLI: bir `covers[]` ogesinin `evidence_hash`i bulgunun guncel olcumuyle eslesmezse kabul DUSER ve bulgu yeniden sunulur. Kaydi bir dil modeli ELLE yazmaz: `scripts/reasoning_dialogue.py decide`. Gerekce bos olamaz (validate.py HATA).",
+      "items": {
+        "type": "object",
+        "required": ["id", "rev", "ts", "reason", "covers"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "minLength": 1, "description": "Karar kimligi (ornek: dd-0001)." },
+          "rev": { "type": "integer", "minimum": 0, "description": "Kararin verildigi revizyon (requests.jsonl rev ile ayni)." },
+          "ts": { "type": "string", "description": "ISO 8601 zaman damgasi." },
+          "reason": { "type": "string", "minLength": 1, "description": "Kullanicinin gerekcesi (ZORUNLU; yalniz bosluktan olusamaz - validate.py denetler)." },
+          "covers": {
+            "type": "array", "minItems": 1,
+            "description": "Kararin kapsadigi bulgular (ozdes katlardaki ayni bulgu icin kat basina bir oge).",
+            "items": {
+              "type": "object",
+              "required": ["finding_key", "evidence_hash", "evidence"],
+              "additionalProperties": false,
+              "properties": {
+                "finding_key": { "type": "string", "minLength": 1 },
+                "evidence_hash": { "type": "string", "description": "Kanit ozeti (16 haneli onaltilik)." },
+                "evidence": { "type": "object", "additionalProperties": { "type": "number" }, "description": "Olculen sayilarin anlik goruntusu ('once -> simdi' anlatimi icin)." }
+              }
+            }
+          },
+          "devredilmis": { "type": "boolean", "description": "Kullanici 'sen karar ver' diyerek devrettiyse true." },
+          "supersedes": { "type": "string", "description": "Bu kararin ezdigi onceki karar kimligi." }
+        }
+      }
     }
   }
 }

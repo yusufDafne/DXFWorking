@@ -16,6 +16,8 @@ from .cases import list_cases, load_case, run_case
 from .coverage import CoverageEntry, CoverageReport, build_coverage
 from .findings import (diff_findings, group_across_floors, make_key, message_signature, quoted_ids,
                        severity_band, severity_from_curve)
+from .decisions import (Reopened, check_decisions, decision_numbers, evaluate, evidence_hash, evidence_snapshot,
+                        make_decision)
 from .explain import (ExplainError, allowed_numbers_for, Narrative, Topic, append_dialogue, coverage_sentence, effective_mode,
                       is_presentable, lint_template, match_smells, narrate, read_dialogue, render,
                       select_topics, validate_record, verify_numbers)
@@ -25,9 +27,9 @@ from .promotion import TriggerReport, trigger_report
 from .registry import (REASONING_EXEMPT, REASONING_PENDING, REASONING_PROVIDERS, Registry,
                        load_registry, validate_registry)
 
-# Bu paketin context sozlesmesi: context.json'dan HICBIR alan okumaz (kapsam raporu yalniz veche
-# bildirimlerindeki yollara bakar); Finding/Facet DONUS SEKLI degisirse artar.
-CONTRACT_VERSION = "1.0"
+# Bu paketin context sozlesmesi: kapsam raporu veche bildirimlerindeki yollara bakar; ayrica YALNIZ ust seviye
+# `design_decisions[]` okunur (DEV-065); Finding/Facet DONUS SEKLI degisirse artar.
+CONTRACT_VERSION = "1.1"  # 1.1 (DEV-065): context.json ust seviye `design_decisions[]` OKUR
 
 __all__ = [
     "CONTRACT_VERSION", "CheckAdapter", "Facet", "Finding", "Lens", "Plain", "Profile", "Provenance",
@@ -36,6 +38,7 @@ __all__ = [
     "diff_findings", "group_across_floors", "make_key", "message_signature", "quoted_ids",
     "severity_band", "severity_from_curve", "TriggerReport", "trigger_report", "REASONING_EXEMPT",
     "REASONING_PENDING", "REASONING_PROVIDERS", "Registry", "load_registry", "validate_registry",
+    "Reopened", "check_decisions", "decision_numbers", "evaluate", "evidence_hash", "evidence_snapshot", "make_decision",
     "ExplainError", "allowed_numbers_for", "Narrative", "Topic", "Remedy", "append_dialogue", "coverage_sentence", "effective_mode",
     "is_presentable", "lint_template", "match_smells", "narrate", "read_dialogue", "render", "select_topics",
     "validate_record", "verify_numbers",

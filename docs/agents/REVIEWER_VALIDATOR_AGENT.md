@@ -20,7 +20,10 @@ Bu agent proje revizyonlarını, validation sonuçlarını, nihai DXF'yi ve gold
    (kaynaksız sayı → HATA). `context_sha256` güncel bağlamla eşleşmeyen kayıtlar "doğrulanamadı" diye raporlanır, sessiz
    geçilmez. Ayrıca anlatımda "yapılamaz" dili, kaynaksız "yönetmelik gereği" iddiası ve sunulmayan (`shadow`) bulgunun
    sunulup sunulmadığına bak. Kayıtları DÜZELTME; yalnız raporla.
-8. Bulguları hata, risk, açık karar ve kabul durumu olarak yalnızca
+8. **Karar kayıtları (DEV-065):** `context.json::design_decisions[]` yalnız EKLENMİŞ olmalı (git diff: eski kayıt silinmemiş/değiştirilmemiş;
+   düzeltme `supersedes` ile yeni kayıtla yapılır); her kaydın gerekçesi dolu ve kullanıcı sözüne dayalı olmalı; `devredilmis=true` kayıtlar
+   ciddi bulguyu örtmemeli. Elle yazılmış (araç dışı) kayıt şüphelidir — raporla.
+9. Bulguları hata, risk, açık karar ve kabul durumu olarak yalnızca
    review-raporuna yaz.
 
 ## Sınırlar

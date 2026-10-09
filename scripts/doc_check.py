@@ -547,7 +547,9 @@ def check_reasoning_digits(registry=None) -> list[str]:
              ("NO_REMEDY_NOTE", explain.NO_REMEDY_NOTE), ("DECISION_SOR", explain.DECISION_SOR),
              ("DECISION_DEVRET", explain.DECISION_DEVRET), ("SERIOUS_DEVRET_NOTE", explain.SERIOUS_DEVRET_NOTE),
              ("UNSCORED_NOTE", explain.UNSCORED_NOTE),
-             ("NOTHING_TO_APPLY_NOTE", explain.NOTHING_TO_APPLY_NOTE)]
+             ("NOTHING_TO_APPLY_NOTE", explain.NOTHING_TO_APPLY_NOTE),
+             ("REOPEN_PREFIX", explain.REOPEN_PREFIX), ("REOPEN_MID", explain.REOPEN_MID),
+             ("REOPEN_SUFFIX", explain.REOPEN_SUFFIX)]
     for cat, (see, why) in explain.CATEGORY_PLAIN.items():
         fixed += [(f"CATEGORY_PLAIN[{cat}].see", see), (f"CATEGORY_PLAIN[{cat}].why", why)]
     for name, text in fixed:

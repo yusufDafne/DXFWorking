@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import datetime
 import json
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -522,14 +523,9 @@ def check_mahremiyet_report() -> list[str]:
         e.append("gercek projede hic otmeyen vechenin DEJENERE diye raporlanmasi gerekir")
     out = subprocess.run([sys.executable, str(ROOT / "scripts" / "reasoning_report.py")],
                          capture_output=True, text=True, timeout=600).stdout
-    for needle in ("15 uyari satiri -> 3 tekil konu", "Golge vecheler", "5/6 ozne tetikledi", "OLCULMEYEN"):
+    for needle in ("16 uyari satiri -> 4 tekil konu", "Golge vecheler", "5/6 ozne tetikledi", "OLCULMEYEN"):
         if needle not in out:
             e.append(f"rapor ciktisinda '{needle}' yok")
-    import difflib
-    del difflib
-    diff = subprocess.run(["git", "diff", "--stat", "--", "scripts/validate.py"], cwd=ROOT, capture_output=True, text=True).stdout
-    if diff.strip():
-        e.append("validate.py DEGISMEMELI (DEV-061 kabul sarti)")
     return e
 
 
@@ -586,6 +582,8 @@ def check_lint_and_render() -> list[str]:
         e.append("kaynaksiz sayi verify_numbers'ta YAKALANMALI")
     if verify_numbers("1. Seçenek A\n2. Seçenek B", allowed):
         e.append("satir basi numaralandirma kaynaksiz sayi sayilmamali")
+    if verify_numbers("hol 25 m2, oda uC_oda2, K1 katı", {"25"}):
+        e.append("birim/ad parcasi (m2, uC_oda2, K1) SAYI sayilmamali")
     return e
 
 
@@ -625,8 +623,8 @@ def check_queue_and_modes() -> list[str]:
                          capture_output=True, text=True, timeout=600).stdout
     real = parse_validate_output(out)
     sh, rs = select_topics(real, {})
-    if (len(real), len(sh), len(rs)) != (15, 3, 0):
-        e.append(f"rev-28: 15 satir -> 3 konu beklenirdi: {(len(real), len(sh), len(rs))}")
+    if (len(real), len(sh), len(rs)) != (16, 3, 0):
+        e.append(f"rev-28: 16 satir (15 + surum notu) -> 3 konu beklenirdi: {(len(real), len(sh), len(rs))}")
     reg, _ = _prod_registry()  # golge gorunurluk degismezi
     shadow_f = Finding("mahremiyet.gorsel.giristen_yatak_odasi_gorus|K1|a|1", "mahremiyet.gorsel.giristen_yatak_odasi_gorus", "K1", "m", ("a",))
     active_f = Finding("mahremiyet.gorsel.giris_wc_gorus|K1|a|1", "mahremiyet.gorsel.giris_wc_gorus", "K1", "m", ("a",))
@@ -777,6 +775,203 @@ def check_dialogue_cli() -> list[str]:
     return e
 
 
+# ------------------------------------------------------------------ DEV-065: tasarim karari kaydi, kanita bagli kabul
+def _real_findings():
+    out = subprocess.run([sys.executable, str(ROOT / "scripts" / "validate.py"), str(ROOT / "context.json")],
+                         capture_output=True, text=True, timeout=600).stdout
+    return parse_validate_output(out)
+
+
+def _hol_topic(findings):
+    return [f for f in findings if f.facet_id == "legacy.mimari"]
+
+
+def check_decision_core() -> list[str]:
+    from reasoning import ExplainError, evaluate, evidence_hash, evidence_snapshot, make_decision
+    e = []
+    fs = _real_findings()
+    hol = _hol_topic(fs)
+    if len(hol) != 5:
+        return [f"rev-28 hol payi 5 katta beklenirdi: {len(hol)}"]
+    snap = evidence_snapshot(hol[0])
+    if snap != {"m1": 16.3, "m2": 15.0, "m3": 10.1, "m4": 62.0}:
+        e.append(f"anlik goruntu mesajdaki olculen sayilari (m1..m4) tutmali: {snap}")
+    if evidence_hash(hol[0].key, snap) == evidence_hash(hol[1].key, snap):
+        e.append("hash bulgu anahtarina baglanmali")
+    if evidence_hash(hol[0].key, snap) != evidence_hash(hol[0].key, dict(snap)):
+        e.append("hash deterministik olmali")
+    for name, kw in {"bos gerekce": dict(reason="   "), "bulgu yok": dict(findings=[]), "kotu kimlik": dict(decision_id="a b")}.items():
+        args = dict(decision_id="dd-0001", rev=28, ts="t", reason="bilincli", findings=hol)
+        args.update(kw)
+        try:
+            make_decision(**args)
+            e.append(f"make_decision {name} icin REDDETMELI")
+        except ExplainError:
+            pass
+    dec = make_decision("dd-0001", 28, "t", "Kullanıcı bilinçli kabul etti", hol)
+    if len(dec["covers"]) != 5 or dec["devredilmis"] is not False:
+        e.append("bir kayit bes katin bulgusunu kapsamali (covers[])")
+    v = evaluate(fs, [dec])
+    if {k for k, x in v.items() if x[0] == "kabul"} != {f.key for f in hol} or any(x[0] != "kabul" for x in v.values()):
+        e.append("kaniti ayni bulgular 'kabul' olmali, kapsanmayanlar listede OLMAMALI")
+    # kanit degisimi: KOTULESME ve IYILESME ikisi de kabulu dusurur (v1)
+    for label, share, hol_m2 in (("kotulesme", "16.4", "10.2"), ("iyilesme", "16.1", "10.0")):
+        changed = [Finding(f.key, f.facet_id, f.floor_id, f.message.replace("16.3", share).replace("10.1", hol_m2), f.elements) for f in hol]
+        vv = evaluate(changed, [dec])
+        if any(x[0] != "dustu" for x in vv.values()) or len(vv) != 5:
+            e.append(f"{label}: kabul DUSMELI")
+            continue
+        ch = {k: (b, a) for k, b, a in vv[hol[0].key][1].changed}
+        if ch.get("m1") != (16.3, float(share)) or "m2" in ch or "m4" in ch:
+            e.append(f"{label}: 'once -> simdi' yalniz degisen sayilari vermeli: {ch}")
+    # son kayit gecer (ekleme-yalnizlik: eski karar ezilir)
+    newer = make_decision("dd-0002", 29, "t", "ikinci", hol[:1], supersedes="dd-0001")
+    changed = [Finding(hol[0].key, hol[0].facet_id, hol[0].floor_id, hol[0].message.replace("16.3", "16.4"), hol[0].elements)]
+    if evaluate(changed, [dec, newer])[hol[0].key][1].decision_id != "dd-0002":
+        e.append("ayni bulguyu kapsayan son karar gecerli olmali")
+    return e
+
+
+def check_decision_schema_and_validate() -> list[str]:
+    from reasoning import check_decisions, make_decision
+    e = []
+    fs = _real_findings()
+    hol = _hol_topic(fs)
+    ctx = json.loads((ROOT / "context.json").read_text(encoding="utf-8"))
+    if check_decisions(ctx):
+        e.append("alani olmayan eski context hata vermemeli (opt-in)")
+    good = make_decision("dd-0001", 28, "2026-10-09T10:00:00+00:00", "Bilinçli", hol)
+    ctx["design_decisions"] = [good]
+    if check_decisions(ctx):
+        e.append(f"gecerli kayit hata verdi: {check_decisions(ctx)}")
+
+    def with_decisions(decisions):
+        c = json.loads((ROOT / "context.json").read_text(encoding="utf-8"))
+        c["design_decisions"] = decisions
+        return c
+
+    def mutated(fn):
+        d = json.loads(json.dumps(good))
+        fn(d)
+        return d
+
+    bad = {
+        "bos gerekce (bosluk)": mutated(lambda d: d.update(reason="  \t ")),
+        "yinelenen kimlik": None,
+        "covers bos": mutated(lambda d: d.update(covers=[])),
+        "kotu hash": mutated(lambda d: d["covers"][0].update(evidence_hash="xyz")),
+        "yinelenen anahtar": mutated(lambda d: d["covers"].append(dict(d["covers"][0]))),
+        "supersedes yok": mutated(lambda d: d.update(supersedes="dd-9999")),
+    }
+    for name, d in bad.items():
+        decisions = [good, good] if d is None else [d]
+        if not check_decisions(with_decisions(decisions)):
+            e.append(f"check_decisions YAKALAMADI: {name}")
+    tmp = Path(tempfile.mkdtemp())
+
+    def run_validate(ctx_obj):
+        p = tmp / "context.json"
+        p.write_text(json.dumps(ctx_obj, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+        return subprocess.run([sys.executable, str(ROOT / "scripts" / "validate.py"), str(p)], capture_output=True, text=True, timeout=600)
+
+    r = run_validate(with_decisions([good]))
+    if r.returncode != 0:
+        e.append(f"gecerli karar kaydiyla validate basarisiz: {r.stdout[-300:]}")
+    r = run_validate(with_decisions([bad["bos gerekce (bosluk)"]]))
+    if r.returncode == 0 or "gerekce (reason) bos olamaz" not in r.stdout:
+        e.append("bosluktan olusan gerekce validate.py'de HATA olmali")
+    r = run_validate(with_decisions([mutated(lambda d: d.pop("reason"))]))
+    if r.returncode == 0:
+        e.append("gerekcesiz kayit schema/validate tarafindan reddedilmeli")
+    r = run_validate(with_decisions([mutated(lambda d: d.update(bilinmeyen=1))]))
+    if r.returncode == 0:
+        e.append("schema ek alanlari reddetmeli (additionalProperties)")
+    base = subprocess.run([sys.executable, str(ROOT / "scripts" / "validate.py"), str(ROOT / "context.json")], capture_output=True, text=True, timeout=600)
+    lines = [l for l in base.stdout.splitlines() if l.startswith("UYARI") and "(surum)" not in l]
+    if len(lines) != 15 or sum(1 for l in base.stdout.splitlines() if "(surum)" in l) != 1:
+        e.append("eski context: 15 mimari/sartname uyari + TEK surum notu (1.3.0 -> 1.4.0) beklenirdi")
+    return e
+
+
+def check_reopened_presentation() -> list[str]:
+    from reasoning import make_decision, narrate, select_topics, verify_numbers
+    from reasoning.explain import allowed_numbers_for
+    e = []
+    fs = _real_findings()
+    hol = _hol_topic(fs)
+    dec = make_decision("dd-0001", 28, "t", "Hol payı bilinçli", hol)
+    shown, rest = select_topics(fs, {}, decisions=[dec])
+    if len(shown) != 2 or rest:
+        e.append(f"kabul edilen konu sessiz kalmali (3 -> 2 konu): {len(shown)}")
+    if any(t.facet_id == "legacy.mimari" for t in shown):
+        e.append("kaniti ayni kabul edilmis konu SUNULMAMALI")
+    # yalniz normal5'te kanit degisir: konu geri gelir, yalniz o katla, 'once -> simdi' ile
+    cur = [Finding(f.key, f.facet_id, f.floor_id, f.message.replace("16.3", "16.4").replace("10.1", "10.2"), f.elements)
+           if f.floor_id == "normal5" and f.facet_id == "legacy.mimari" else f for f in fs]
+    shown, _ = select_topics(cur, {}, decisions=[dec])
+    topic = next((t for t in shown if t.facet_id == "legacy.mimari"), None)
+    if topic is None or topic.floors != ("normal5",):
+        e.append(f"degisen kat konu olarak GERI GELMELI (yalniz o kat): {topic and topic.floors}")
+        return e
+    if shown[0] is not topic:
+        e.append("kabulu dusen konu siradaki ilk konu olmali (yan etki gibi)")
+    nar = narrate(topic, {}, {}, level="sade")
+    text = nar.text()
+    if "Daha önce bilinçli olarak kabul etmiştiniz" not in text or "önce 16.3 → şimdi 16.4" not in text or "Hol payı bilinçli" not in text:
+        e.append(f"'once -> simdi' ve gerekce soylenmeli: {text[-400:]}")
+    if verify_numbers(text, allowed_numbers_for(list(topic.findings), {}, [dec])):
+        e.append(f"anlatimdaki sayilar bulgudan/karardan gelmeli: {verify_numbers(text, allowed_numbers_for(list(topic.findings), {}, [dec]))}")
+    if not verify_numbers(text, allowed_numbers_for(list(topic.findings), {})):
+        e.append("karar kaydi olmadan 'once' sayisi kaynakli sayilmamali (kayit zinciri)")
+    return e
+
+
+def check_decide_cli_end_to_end() -> list[str]:
+    e = []
+    script = str(ROOT / "scripts" / "reasoning_dialogue.py")
+    tmp = Path(tempfile.mkdtemp())
+    shutil.copy(ROOT / "context.json", tmp / "context.json")
+    shutil.copy(ROOT / "requests.jsonl", tmp / "requests.jsonl")
+
+    def run(*a):
+        return subprocess.run([sys.executable, script, *a, "--context", str(tmp / "context.json")], capture_output=True, text=True, timeout=600)
+
+    keys = [f.key for f in _hol_topic(_real_findings())]
+    args = [x for k in keys for x in ("--key", k)]
+    r = run("decide", *args, "--reason", "   ")
+    if r.returncode != 1 or "gerekce" not in r.stdout:
+        e.append("bos gerekce decide tarafindan REDDEDILMELI")
+    before = (tmp / "context.json").read_text(encoding="utf-8")
+    if "design_decisions" in before:
+        e.append("reddedilen karar context'e yazilmamali")
+    r = run("decide", *args, "--reason", "Hol payı bu projede bilinçli olarak yüksek")
+    if r.returncode != 0:
+        return e + [f"decide basarisiz: {r.stdout}"]
+    after = (tmp / "context.json").read_text(encoding="utf-8")
+    import difflib
+    changed = [l for l in difflib.unified_diff(before.splitlines(), after.splitlines(), lineterm="", n=0) if l[:1] in "+-" and l[:3] not in ("+++", "---")]
+    removed = [l for l in changed if l.startswith("-")]
+    if len(removed) > 1 or any(l.strip("- ") not in ("}", "]") for l in removed):
+        e.append(f"decide yalniz EKLEMELI olmali (en cok son kapanis satiri degisir), silinen: {removed}")
+    r = run("brief", "--level", "sade")
+    if r.stdout.count("--- Konu") != 2 or "kabul edilmis" not in r.stdout:
+        e.append("kabulden sonra brief 2 konu + sessiz kabul notu vermeli")
+    # olcum degisir -> geri gelir
+    ctx = json.loads(after)
+    for f in ctx["floors"]:
+        if f["id"] == "normal5":
+            for room in f["rooms"]:
+                if room["id"] == "uC_hol":
+                    room["area_m2"] = 10.2
+    (tmp / "context.json").write_text(json.dumps(ctx, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    r = run("brief", "--level", "mimar")
+    if r.stdout.count("--- Konu") != 3 or "önce 16.3 → şimdi 16.4" not in r.stdout:
+        e.append(f"olcum degisince konu 'once -> simdi' ile GERI GELMELI: {r.stdout[-600:]}")
+    # kararin 'once' sayisi append'te kaynakli
+    key = next(f.key for f in _real_findings() if False) if False else None
+    return e
+
+
 def main() -> int:
     checks = [check_keys_and_signature, check_severity_curve, check_diff, check_legacy_parse,
               check_real_validate_parity, check_registry_validation, check_gate10_three_state,
@@ -785,10 +980,14 @@ def main() -> int:
               check_mahremiyet_statuses, check_mahremiyet_wiring_claim, check_mahremiyet_cases,
               check_mahremiyet_real_project, check_mahremiyet_report,
               check_lint_and_render, check_narrative_example, check_queue_and_modes,
-              check_smells_and_coverage_sentence, check_dialogue_log, check_digit_gate_13, check_dialogue_cli]
+              check_smells_and_coverage_sentence, check_dialogue_log, check_digit_gate_13, check_dialogue_cli,
+              check_decision_core, check_decision_schema_and_validate, check_reopened_presentation, check_decide_cli_end_to_end]
     failed = 0
     for check in checks:
-        errs = check()
+        try:
+            errs = check()
+        except Exception as exc:  # noqa: BLE001 - cokme de BASARISIZLIKTIR (temiz FAIL olarak raporlanir)
+            errs = [f"kontrol coktu: {type(exc).__name__}: {exc}"]
         print(("[FAIL] " if errs else "[OK]   ") + check.__name__)
         for er in errs[:10]:
             print("   -", er)

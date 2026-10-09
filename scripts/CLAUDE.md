@@ -76,7 +76,8 @@ kalanını bilmeye ihtiyaç duymadan o modül üzerinde derinlemesine/izole
   **`DEV-061`de ilk mercek paketi** (`reasoning/lenses/mahremiyet.py`, 14 veçhe) geldi; ölçüm sahibi `architect/`
   (`privacy.py`, `reasoning.py` = sağlayıcı).
   **`DEV-064`te açıklama motoru** (`reasoning/explain.py`: rakam lint'i, sunum kuyruğu, diyalog kaydı) ve köprü
-  `scripts/reasoning_dialogue.py` geldi; `doc_check` kapı #13.
+  `scripts/reasoning_dialogue.py` geldi; `doc_check` kapı #13. **`DEV-065`te** şema 1.4.0: opt-in `design_decisions[]` (kanıta bağlı
+  kabul, `reasoning/decisions.py`, `reasoning_dialogue.py decide`); `reasoning` `CONTRACT_VERSION` 1.1.
 - ✅ **`scripts/spatial/`** — `DEV-059` (2026-10-09): eleman-farkındalıklı mekânsal sorguların
   (kapı → orta nokta, değen odalar, ortak kenar, görüş hattı) TEK sahibi. `architect`/`standards`/
   `shafts`/`rooms` içindeki kopyalar buraya **davranış korunarak** taşındı; `spatial → collision.geometry`

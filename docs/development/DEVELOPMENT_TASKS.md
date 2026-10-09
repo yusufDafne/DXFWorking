@@ -62,7 +62,7 @@ Tamamlanan işlerin ayrıntılı gerekçesi, karar süreci ve ölçülen etkisi
 | DEV-059 | `spatial/` — ortak mekânsal sorgu katmanı (5 kopyanın tek sahibe taşınması; `DEV-048` Faz 1a önkoşulu) | COMPLETED (2026-10-09) |
 | DEV-060 | `reasoning/` — muhakeme çekirdeği (mercek/veçhe/bulgu modeli, kayıt, kapsam raporu, `doc_check` kapıları; `DEV-048` Faz 1b) | COMPLETED (2026-10-09) |
 | DEV-061 | `reasoning/` — mahremiyet mercek paketi (mevcut kuralların kaydı + yeni veçheler; Faz 2) | COMPLETED (2026-10-09) |
-| DEV-064 | `reasoning/`+operatör talimatı — diyalog sözleşmesi + açıklama motoru + kök-neden kümeleme (Faz 2) | PLANNED (sıra 4/12) |
+| DEV-064 | `reasoning/`+operatör talimatı — diyalog sözleşmesi + açıklama motoru + kök-neden kümeleme (Faz 2) | COMPLETED (2026-10-09) |
 | DEV-065 | Şema + `reasoning/` — tasarım kararı kaydı (`design_decisions[]`), kanıta bağlı kabul (Faz 4) | PLANNED (sıra 5/12) |
 | DEV-070 | `docs/agents/` — bilgi mühendisi rolü + büyütme protokolü (Faz 2) | PLANNED (sıra 6/12) |
 | DEV-062 | `reasoning/` — ışık-hava-yönelim mercek paketi (Faz 3) | PLANNED (sıra 7/12) |
@@ -719,37 +719,13 @@ belirleyeceksin ... her birini sıralama olarak birbirine bağla"):**
 > sürümü uyarısı satırı bilinen tek istisnadır). Bölünmesi önerilen maddelerde parçalar **sayısal** yeni DEV
 > kimlikleri olur (`doc_check` `### DEV-\d+` ister; `DEV-063A` gibi kimlikler görünmez kalır).
 
-### DEV-064 — `reasoning/`+operatör talimatı — diyalog sözleşmesi, açıklama motoru, kümeleme
-
-- **Durum:** PLANNED
-- **Kapsam (plan §4.1–4.2, §5):** `reasoning/explain.py` (şablon kataloğu: problem/sonuç/
-  seçenek; **rakam lint'i**), kök-neden kümeleme + sunum kuyruğu (≤3 konu), `sor`/`devret`
-  modu, kullanıcı seviyesi sorusu (sade/mimar) — **oturum bilgisidir, context'e yazılmaz**;
-  `docs/agents/PROJECT_OPERATOR_AGENT.md`ye "Kullanıcıyla konuşma" bölümü (sayı uydurma
-  yasağı, "yapılamaz" yasağı, 5 parçalı iskelet, kapsam raporunu söyleme);
-  `REVIEWER_VALIDATOR_AGENT.md`ye "anlatımın kanıta uygunluğu" denetimi.
-- **Kabul ölçütü:** şablonlar rakamsızdır (numaralandırma istisnasıyla) ve plan §5.6 örneğinin üretimi lint'ten geçer; rev-28
-  `validate` çıktısındaki 15 `UYARI` satırı 3 konuya iner; koşamayan mercek kullanıcıya
-  adıyla söylenir; rakamlı şablon lint'te **gerçekten** reddedilir (kasıtlı bozma).
-- **Önkoşul:** `DEV-060`; gerçek bulgu için `DEV-061` bittikten sonra (sıra 3→4).
-- **Sıra:** 4/12 — plan §10.1; geliştirici yorumu ve netleştirme soruları 2026-10-09 kod denetimine dayanır (iki bağımsız ajan; `DEV-070` yalnız bir denetim).
-- **Geliştirici yorumu:** Sınır `DEV-060` ile çakışıyordu; burada netleşir: açıklama motoru, rakam lint'i ve kümeleme yalnız bu maddedir. 15→3 kabulü gerçek ve tekrarlanabilir (rev-28: 15 satır/3 konu; rev-27: 10 satır/2 konu); veri kaynağı `validate.py` stdout'u, bu yüzden çekirdek dışında bir köprü gerekir ve `validate.py` değişmez. "Birim bazlı gruplama 2 verir" cümlesi kök-neden kümeleme değil (bağımsız iki bulguyu birleştirir) — çıkarılmalı. Rakam lint'i yalnız şablonları denetler, dil modelinin serbest metnini değil; gerçek koruma için anlatı `<proje>/dialogue.jsonl`'e yazılıp reviewer `verify_numbers` ile denetlemeli. Plan §5.3 örnek metni 'Önerim 1' gibi rakam içerir; lint'e açık bir numaralandırma istisnası yazılmalı. Sunum kuyruğu yalnız `status=active` bulguları alır (gölge görünürlük değişmezi). Operatör talimatı `docs/development/`i okuyamıyor: erişim ya da kopya sorunu çözülmeli.
-- **Netleştirme soruları** (her biri önerilen varsayılanla; kullanıcı tek tek onaylayınca madde `READY` olur):
-  1. Anlatı `<proje>/dialogue.jsonl`'e (ekleme-yalnız: rev, ts, context_sha256, finding_keys, metin, mod, seviye) yazılsın ve reviewer `verify_numbers` ile denetlesin; dosya kök CLAUDE.md `git add` listesine girsin mi? Öneri: evet.
-  2. Kümeleme verisi: `validate.py` stdout'unu çekirdek DIŞINDA bir köprüyle ayrıştır (`[normal1]`/`[K1]`/etiketsiz biçimleri tolere eder), `validate.py` dokunulmaz? Öneri: evet.
-  3. 'Konu' = kimlik birleştirme (kategori + kat öneki atılmış mesaj / veçhe anahtarı − kat) → rev-28 3 konu. Birim bazlı ikinci düzey kabule girmez. Öneri: evet.
-  4. Rakam lint politikası: 3 yer-tutucu sınıfı (adlar, ölçülen sayılar, kaynaklı sabit/şiddet), rakam = Unicode Nd/No/Nl, açık numaralandırma istisnası. Öneri: evet.
-- **Kullanıcı kararları (2026-10-09, netleştirme tamam; başlamak için kullanıcı onayı bekleniyor):** (1) anlatı `<proje>/dialogue.jsonl`'e ekleme-yalnız yazılır (rev, ts, context_sha256, finding_keys, metin, mod, seviye), reviewer `verify_numbers` ile denetler, dosya kök CLAUDE.md `git add` listesine girer — EVET; (2) 'konu' = yalnız kimlik birleştirme (kat atılmış), rev-28 = 3 konu, birim bazlı gruplama kabulün parçası DEĞİL — EVET; (3) katı rakam lint'i (3 yer-tutucu sınıfı: adlar, ölçülen sayılar, kaynaklı sabit/şiddet) + açık numaralandırma istisnası ('1. seçenek') — EVET; (4) sade/mimar seviyesi ilk bulguda bir kez sorulur, oturum bilgisi olarak tutulur, context.json'a yazılmaz — EVET. (`validate.py` dokunulmaz; köprü çekirdek dışındadır.)
-- **Uygulama sonucu (2026-10-09, kabul bekliyor):** `reasoning/explain.py` (rakam lint'i — 3 yer-tutucu sınıfı, Unicode rakam, numaralandırma istisnası; `render` uydurmaz; `verify_numbers`; sunum kuyruğu yalnız `active` + zaten görünen `legacy.*`, `shadow` ASLA; `narrate` 5 parça/≤3 seçenek/`sor`-`devret`; koku eşleme; kapsam cümlesi; `dialogue.jsonl` ekleme-yalnız kaydı), `scripts/reasoning_dialogue.py` (`guide`/`brief`/`append`/`verify`), `Remedy` modeli + mahremiyet paketine 6 çözüm yolu, `doc_check` kapı #13, `PROJECT_OPERATOR_AGENT.md` "Kullanıcıyla konuşma" yeniden yazıldı (sözleşme betikle de gelir: operatör `docs/`ı okuyamaz), `REVIEWER_VALIDATOR_AGENT.md` "anlatımın kanıta uygunluğu" denetimi, kök `CLAUDE.md` `git add` listesine `dialogue.jsonl`, `AGENT_PERMISSIONS.json` operatör okuma izni (`reasoning_dialogue.py`, `reasoning_report.py`). **Kanıt:** `validate.py` DEĞİŞMEDİ; rev-28: 15 satır → 3 konu → ilk mesajda 3 konu (sade seviyede serbest rakam yok); `reasoning/selftest.py` 26/26, 6 kasıtlı bozma (ASCII-dışı rakam, `verify_numbers` boşaltma, `shadow` filtresi, yazım anındaki sayı denetimi, ciddi bulguda devir, lint gövde taraması) ilgili testleri GERÇEKTEN kırdı; kaynaksız sayılı kayıt reddedilir ve dosyaya yazılmaz, elle bozulmuş kayıt `verify`da yakalanır, bağlamı değişmiş kayıt "doğrulanamadı" denir. **Değişen mevcut davranış:** `kapı #12` etkilenmez; mahremiyet paketinin `why_tr` metinlerinden rakam/atıflar temizlendi (anlatım alanı rakamsız olmak zorunda). **Bilinen kalan / kullanıcıya:** `legacy.*` bulgular kategori düzeyinde anlatılır (fonksiyon düzeyi anlatım için legacy kuralların `plain`i `evidence`la zenginleşmeli — DEV-062/063/066); `{olcum:..}` kullanan gerçek bir veçhe henüz yok (§5.6 örneği sentetik veçheyle sınanır); `AGENT_PERMISSIONS.json` değişikliği sistem mimarı onayı ister. Kilit bırakıldı.
-- **Metin düzeltmeleri (onayla birlikte uygulanır):** 'Birim bazlı gruplama 2 verir' cümlesi silinir; kabul 'plan §5.6 örneği şablonlardan üretilir' → 'şablon rakamsız, örnek üretimi lint'ten geçer, numaralandırma istisnasıyla'; gölge görünürlük değişmezi ve operatör kaynak erişimi maddeleri eklenir.
-
 ### DEV-065 — Şema + `reasoning/` — tasarım kararı kaydı
 
 - **Durum:** PLANNED
 - **Kapsam (plan §5.5; `DEV-040` Fikir 6):** `design_decisions[]` (üst seviye, opt-in,
   ekleme-yalnız): `id`, `finding_key`, `reason` (**zorunlu, boş olamaz**), `evidence_hash`,
   `ts`, `devredilmis`. **Kanıta bağlı kabul:** `evidence_hash` değişirse kabul düşer ve bulgu
-  yeniden sunulur. Şema MINOR artışı; `validate.py` boş gerekçeyi HATA sayar (veri kalitesi;
+  yeniden sunulur. Şema MINOR artışı (1.4.0); `validate.py` boş gerekçeyi HATA sayar (veri kalitesi;
   bulgunun kendisi yine UYARI); `rev_history` ile ilişki.
 - **Şema değişikliği = sistem mimarı kararı** (plan §11 #3). **Kabul ölçütü:** kabul sonrası
   kanıt kötüleşince bulgu geri gelir, aynıysa sessiz kalır; boş gerekçe reddedilir; alanı
@@ -763,7 +739,7 @@ belirleyeceksin ... her birini sıralama olarak birbirine bağla"):**
   3. Kanıt düşme kuralı v1: herhangi bir değişimde düşsün ve operatör 'önce → şimdi' sayılarıyla yeniden sorsun (yön-duyarlı kural sonra, kalibrasyonla)? Öneri: evet.
   4. Kayda yalnız `Plain.numbers` ile adlandırılan ölçülen değerlerin anlık görüntüsü de yazılsın mı? Öneri: evet.
 - **Kullanıcı kararları (2026-10-09, netleştirme tamam; başlamak için kullanıcı onayı bekleniyor):** (1) kayıt `context.json` üst seviye `design_decisions[]` — EVET; (2) bir kayıt `covers[]` ile N bulguyu kapsar — EVET; (3) v1 kanıt düşme: herhangi bir değişimde (iyileşme dahil) kabul düşer, operatör 'önce → şimdi' ile yeniden sorar — EVET; (4) `Plain.numbers` ile adlandırılan ölçülen değerlerin anlık görüntüsü kayda yazılır — EVET.
-- **Metin düzeltmeleri (onayla birlikte uygulanır):** 'Tekil→dizi MAJOR kırılımdır' ve 'ekleme-yalnız denetlenemez' cümleleri yumuşatılır; kabul: kayıt şekli `covers[]`; 'validate çıktısı aynı' → 'sürüm uyarısı satırı hariç aynı'; yazıcı (`decisions.py`) ve `evidence` anlık görüntüsü kapsama alınır.
+- **Uygulama sonucu (2026-10-09, kabul bekliyor):** şema 1.4.0 (`schema/design.schema.json` üst seviye opt-in `design_decisions[]`, `scripts/version.py`), `reasoning/decisions.py` (anlık görüntü + hash, `make_decision`, `check_decisions`, `evaluate`), `validate.py`ye YALNIZ `check_decisions` kancası (+3 satır; çıktı aynı), `select_topics(..., decisions=)` + `narrate` "önce → şimdi", `reasoning_dialogue.py decide` (ve brief/append/verify karar farkındalığı), `reasoning` `CONTRACT_VERSION` 1.1, operatör/reviewer talimatları, plan §5.5. **Kanıt:** kabulden sonra rev-28 hol payı konusu sessiz (3 → 2 konu, "5 bulgu kabul edilmiş" notu); yalnız normal5'te ölçüm değişince (kötüleşme VE iyileşme) konu yalnız o katla, ilk sırada, "önce 16.3 → şimdi 16.4" ve gerekçeyle GERİ GELİR, anlatımdaki sayılar karar kaydı + bulgudan kaynaklı (karar kaydı olmadan "önce" sayısı kaynaksız sayılır); boş/boşluktan oluşan gerekçe `make_decision`, `decide` ve `validate.py`de reddedilir; alanı olmayan context aynı çıktıyı verir; `decide` yalnız ekleme yapar (diff: en çok kapanış satırı). `reasoning/selftest.py` 30/30; 6 kasıtlı bozma (hash'i yok say, boş gerekçe, kabul edileni sun, validate kancası, validate gerekçe denetimi, boş anlık görüntü) yakalandı. **Mevcut davranış değişiklikleri (kabul şartı istisnası):** `validate` çıktısı "sürüm uyarısı satırı hariç aynı": proje 1.3.0 / sistem 1.4.0 → `UYARI (surum)` satırı (15 → 16); konu kümelemesi ve `brief` bunu sunmaz (`legacy.surum` dışlandı); `NUMBER_RE` artık harfe bitişik rakamı (m2, uC_oda2) sayı saymaz (doğrulama sıkılaşmadı, yanlış-pozitif azaldı); selftest bir kontrol çökerse temiz FAIL yazar. **Kullanıcıya:** gerçek projenin `meta.schema_version` değerini 1.4.0'a çekmek ayrı bir proje revizyonudur (sürüm notu o zaman kalkar); bugünkü üç canlı uyarı için `decide` hazır ama proje verisine karar YAZILMADI. Kilit bırakıldı.
 
 ### DEV-070 — `docs/agents/` — bilgi mühendisi rolü ve büyütme protokolü
 
@@ -2054,3 +2030,8 @@ Bir görev için agent şunları yapmadan `COMPLETED` yazamaz:
 
 - **Durum:** COMPLETED (2026-10-09) — kullanıcı onayıyla (dört netleştirme kararı) uygulandı. Ayrıntılı kayıt: `HD-042`.
 - **Özet:** `reasoning/lenses/mahremiyet.py` (14 veçhe, 3 koku) + `architect/privacy.py` + `architect/reasoning.py` + 22 sentetik vaka; `validate.py` çıktısı değişmedi; rev-28'de ölçüm #4/#5/#6 gölge olarak raporlanır.
+
+### DEV-064 — `reasoning/`+operatör talimatı — diyalog sözleşmesi, açıklama motoru, kümeleme
+
+- **Durum:** COMPLETED (2026-10-09) — kullanıcı onayıyla (dört netleştirme kararı) uygulandı. Ayrıntılı kayıt: `HD-043`.
+- **Özet:** `reasoning/explain.py` (rakam lint'i, sunum kuyruğu, anlatım, `dialogue.jsonl`) + `scripts/reasoning_dialogue.py` + `doc_check` #13 + operatör/reviewer talimatları; `validate.py` değişmedi; rev-28 15 satır → 3 konu.

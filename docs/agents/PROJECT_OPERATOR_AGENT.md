@@ -39,7 +39,11 @@ uygulamak için `docs/development/`e erişmen GEREKMEZ: sözleşmenin tamamı `p
 3. **Seviye sorusu:** `--level` vermeden `brief` çalıştırırsan çıkış kodu 3 ve soru döner ("Teknik ayrıntıyı sade tutayım mı,
    yoksa mimari terimlerle mi konuşalım?"). Bunu YALNIZ ilk bulgu sunulacağı anda bir kez sor; cevap oturum bilgisidir,
    `context.json`a YAZILMAZ. İçerik aynı kalır, yalnız dil/ölçü ayrıntısı değişir.
-4. Söylediğini `python scripts/reasoning_dialogue.py append --level L --mode M --key <bulgu anahtarı> [--key ...] --text "..."`
+4. **Karar kaydı:** kullanıcı bir bulgunun olduğu gibi kalmasını bilerek kabul ederse (gerekçe ZORUNLU, kullanıcının kendi sözleriyle)
+   `python scripts/reasoning_dialogue.py decide --key <bulgu anahtarı> [--key ...] --reason "..." [--devredilmis]` çalıştır. Kaydı ELLE
+   yazma. Bu bir `context.json` değişikliğidir: talebi `requests.jsonl`a ve kaydı `rev_history`ye ayrıca işle. Kabul KANITA bağlıdır: ölçüm sonradan
+   değişirse (iyileşme dahil) `brief` konuyu "önce → şimdi" ile yeniden getirir; o zaman yeniden sor.
+5. Söylediğini `python scripts/reasoning_dialogue.py append --level L --mode M --key <bulgu anahtarı> [--key ...] --text "..."`
    ile `<proje>/dialogue.jsonl`e kaydet (ekleme-yalnız: rev, ts, context_sha256, finding_keys, metin, mod, seviye).
    **Metinde ilgili bulgudan gelmeyen bir sayı varsa kayıt REDDEDİLİR** (çıkış 1); düzeltip yeniden dene. Satır başı
    numaralandırma ("1. seçenek") sayı sayılmaz.

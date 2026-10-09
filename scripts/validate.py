@@ -82,6 +82,7 @@ from version import (  # noqa: E402
     check_compatibility,
     project_schema_version,
 )
+from reasoning.decisions import check_decisions  # noqa: E402  (DEV-065; cekirdek cizim modulu import etmez)
 from shafts import check_shafts, check_shafts_across_floors  # noqa: E402
 from stairs import (  # noqa: E402
     StairFitError, exit_door_alignment_warning, resolve_stair, stair_access_warnings,
@@ -583,6 +584,8 @@ def run_validation(context_path: Path = DEFAULT_CONTEXT_PATH) -> bool:
     all_errors: list[str] = []
 
     all_errors += check_floor_codes(context["floors"])
+    # DEV-065: tasarim karari kaydi (opt-in). Bos gerekce vb. veri kalitesi HATASIDIR; bulgunun kendisi yine UYARI.
+    all_errors += check_decisions(context)
     # Aks etiketleme kurali (DEV-015): dusey numerik, yatay alfabetik, ara aks
     # kesme isaretiyle. '1A' yasaktir - yatay aks ailesiyle ve kolon
     # adlandirmasiyla (B2) carpisir.

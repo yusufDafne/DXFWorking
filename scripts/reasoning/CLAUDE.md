@@ -23,6 +23,7 @@ paketinde, ölçüm/kural sahibi modülde** (modül `reasoning.py`si yalnız rol
 | `promotion.py` | `trigger_report`: tetik oranı, dejenere (hep/hiç ötmeyen) uyarısı, ölçülemeyen paydadan çıkar; **kapı değil rapor** |
 | `cases.py` | vaka biçimi (`cases/<ad>/case.json` + `expected_findings.json`) ve koşucu; `golden/`den bilinçli ayrı |
 | `explain.py` | **DEV-064** — açıklama motoru: şablon **rakam lint'i** (`lint_template`; 3 yer-tutucu sınıfı `{ad:..}` eleman adı / `{olcum:..}` ölçülen sayı (`Plain.numbers`te bildirilmiş) / `{sabit:..}` kaynaklı eşik–şiddet; rakam = Unicode Nd/No/Nl; satır başı "1. " numaralandırma istisnası), `render` (veri yoksa `ExplainError`, uydurma yok), `verify_numbers`, **sunum kuyruğu** (`select_topics`: yalnız `active` + zaten kullanıcıya görünen `legacy.*`; `shadow` ASLA; sıra: yan etki > niyetle ilgili > şiddet (ölçülmeyen en sona) > ilk görülme; çarpan UYDURULMAZ), `match_smells` (≥2 bileşen + ortak eleman), `narrate` (5 parça, ≤3 seçenek, `sor`/`devret`; ciddi ya da uygulanacak çözüm yokken devir geçersiz), `coverage_sentence`, `dialogue.jsonl` kaydı (`append_dialogue` ekleme-yalnız, kaynaksız sayıyı reddeder) |
+| `decisions.py` | **DEV-065** — tasarım kararı kaydı (saf fonksiyonlar, dosya yazmaz): `evidence_snapshot` (ölçülen sayılar: `Finding.evidence` + mesajdaki sayılar `m1..`), `evidence_hash`, `make_decision` (boş gerekçe REDDEDİLİR), `check_decisions` (validate.py HATASI), `evaluate` (**kabul** / **düştü** + "önce → şimdi"; aynı bulguyu kapsayan SON kayıt geçerli), `decision_numbers`. Yazım yalnız `reasoning_dialogue.py decide` ile |
 | `lenses/mahremiyet.py` | **DEV-061 — ilk mercek paketi** (bilgi burada: 14 veçhe, 3 koku, mercek metni); yalnız `reasoning.*` import eder, `register(reg)` ile yüklenir. Ölçüm/kural sahibi: `architect/rules.py` + `architect/privacy.py`; `architect/reasoning.py` yalnız ROL + ölçüm beyanıdır |
 | `cases/` | **22 vaka** (11 veçhe × ihlal+temiz): ELLE yazılmış, uydurulmuş mini sahneler (`origin` alanı bunu söyler; gerçek geçmiş geometri değil — kullanıcı kararı) |
 
@@ -45,17 +46,29 @@ oranı** (`measure_ref` taşıyan veçheler: özne tekilleştirilir, katlar birl
 komşu giriş 2/3, ıslak ortak duvar 5/6, sandviç banyo 0/6 = dejenere/bilgi taşımıyor). Adaptör→çağrılabilir
 köprüsü (`facet_check`) çekirdekte değil bu betiktedir (çekirdek çizim modülü import etmez).
 
-## Diyalog köprüsü (`scripts/reasoning_dialogue.py`, DEV-064)
-`guide` (sözleşme metni; operatör `docs/`ı okuyamaz), `brief --level sade|mimar [--mode] [--before] [--intent]` (seviye
+## Diyalog köprüsü (`scripts/reasoning_dialogue.py`, DEV-064/065)
+`guide` (sözleşme metni; operatör `docs/`ı okuyamaz), `decide --key ... --reason` (karar kaydı; `context.json`a EKLEME, mevcut biçim korunur), `brief --level sade|mimar [--mode] [--before] [--intent]` (seviye
 verilmezse çıkış 3 + soru), `append` (`<proje>/dialogue.jsonl`, kaynaksız sayıda çıkış 1 ve YAZILMAZ), `verify` (reviewer;
 `context_sha256` eşleşmeyen kayıt "doğrulanamadı" diye raporlanır). Bulgular `validate.py` stdout'undan okunur
 (`validate.py` değişmez); köprü çekirdek DIŞINDADIR. rev-28: 15 satır → 3 konu → ilk mesajda 3 konu.
+
+## Tasarım kararı kaydı (DEV-065, şema 1.4.0)
+`context.json` üst seviye **opt-in** `design_decisions[]`: `id`, `rev`, `ts`, `reason` (zorunlu), `covers[]` (her biri `finding_key` +
+`evidence_hash` + `evidence` anlık görüntüsü; özdeş katlar için kat başına bir öge, TEK karar N bulguyu kapsar), `devredilmis`, `supersedes`.
+**Kanıta bağlı kabul (v1):** ölçülen sayılar HERHANGİ bir biçimde değişirse (kötüleşme de iyileşme de) kabul düşer, bulgu yeniden
+sunulur ve ilk sıraya girer (yan etki gibi); anlatım "önce → şimdi" der. Kaniti aynı kabul sessizdir ama brief "N bulgu gerekçesiyle
+kabul edilmiş" diye SAYIYI söyler (sessiz geçme yok). Bulgu anahtarı mesaj TÜRÜ değişince değişir: kabul sessizce değil bulgu yeniden
+görünerek düşer (güvenli yön). `validate.py` yalnız `check_decisions` HATALARINI ekler (boş gerekçe, yinelenen kimlik, boş `covers`,
+bozuk hash, olmayan `supersedes`); bulgunun kendisi UYARI kalır. Ekleme-yalnızlık KONVANSİYONDUR (denetim: reviewer git diff);
+yeni karar eskiyi `supersedes` ile ezer. **Şema MINOR 1.3.0 → 1.4.0:** alanı taşımayan projede `validate` bir `UYARI (surum)` satırı
+ekler (15 → 16 satır; konu sayısı etkilenmez: `legacy.surum` sunulmaz). Gerçek projenin `meta.schema_version` değeri henüz 1.3.0
+(güncellemek ayrı bir proje revizyonudur, kullanıcı kararı).
 
 ## Çakışma denetimi: EXEMPT
 `collision/scene.py::COLLISION_EXEMPT` içinde (geometri/ayak izi üretmez).
 
 ## Doğrulama
-`python scripts/reasoning/selftest.py` — 26 kontrol (14 çekirdek + 5 mahremiyet paketi + 7 DEV-064: lint/render, §5.6 örneği, kuyruk+modlar, koku+kapsam cümlesi, diyalog kaydı, kapı #13, CLI uçtan uca; 6 kasıtlı bozma ilgili testleri kırdı; mahremiyet: durum dağılımı, `validate.py` bağlama iddiasının koddan sabitlenmesi, 22 vaka + kasıtlı bozma, rev-28 ölçümleri, rapor); elle hesaplanan anahtar/eğri değerleri; üretim koduna
+`python scripts/reasoning/selftest.py` — 30 kontrol (DEV-065: karar çekirdeği, şema+validate, düşen kabulün sunumu, `decide` uçtan uca; 14 çekirdek + 5 mahremiyet paketi + 7 DEV-064: lint/render, §5.6 örneği, kuyruk+modlar, koku+kapsam cümlesi, diyalog kaydı, kapı #13, CLI uçtan uca; 6 kasıtlı bozma ilgili testleri kırdı; mahremiyet: durum dağılımı, `validate.py` bağlama iddiasının koddan sabitlenmesi, 22 vaka + kasıtlı bozma, rev-28 ölçümleri, rapor); elle hesaplanan anahtar/eğri değerleri; üretim koduna
 kasıtlı bozma (imzada rakam, kapı #10 çoklu-yer, kapsam durumu karışması) selftest'i GERÇEKTEN kırar.
 
 ## Muhakeme katkısı (DEV-048)

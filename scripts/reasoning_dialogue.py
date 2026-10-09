@@ -6,6 +6,9 @@
          [--mode sor|devret] [--before onceki.json] [--intent eleman,eleman] [--context context.json]
   append --level --mode --key <bulgu anahtari>... --text "..."|--stdin [--rev N]
                              <proje>/dialogue.jsonl'e EKLEME-YALNIZ kayit; metindeki KAYNAKSIZ sayi varsa REDDEDER
+  decide --key <bulgu anahtari>... --reason "..." [--devredilmis]
+                             KARAR KAYDI (DEV-065): bulgularin bilincli kabulunu gerekcesiyle context.json'daki `design_decisions[]`e
+                             yazar (kanita bagli: olcum degisirse kabul duser, brief yeniden sorar). Bos gerekce REDDEDILIR.
   verify [--dialogue yol]    reviewer: kayitlardaki her sayi ilgili bulgudan geliyor mu (context_sha256 eslesenler)
 
 `validate.py` DEGISMEZ; bulgular onun stdout'undan (`parse_validate_output`) okunur. Cikis: 0 tamam, 1 hata/kaynaksiz sayi,
@@ -24,7 +27,7 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 
 from reasoning import (ExplainError, allowed_numbers_for, append_dialogue, build_coverage,  # noqa: E402
-                       coverage_sentence, load_registry, match_smells, narrate, parse_validate_output, read_dialogue,
+                       coverage_sentence, evaluate, make_decision, load_registry, match_smells, narrate, parse_validate_output, read_dialogue,
                        select_topics, validate_record, verify_numbers)
 from reasoning import explain  # noqa: E402
 
@@ -38,8 +41,10 @@ GUIDE = """DIYALOG SOZLESMESI (DEV-048 / DEV-064)
 5. Bakilamayan bakis acisini (veri eksik) ve henuz olculmeyenleri ADIYLA soyle; "temiz" ile "bakilmadi" ayni sey degildir.
 6. Kullanici karari devredebilir ("sen karar ver" -> --mode devret): onerilen uygulanir, secim/bedel/reddedilenler sonradan
    bildirilir. Ciddi (siddet yuksek) bulguda devir olsa bile SOR.
-7. Soylediklerini `append` ile <proje>/dialogue.jsonl'e kaydet; reviewer `verify` ile sayilari denetler.
-8. Yeni bir ilke kesfedersen merkezi dokumana yazamazsin: kullaniciya bildir (vaka -> ilke -> veche, sistem gelistirme oturumunda).
+7. Kullanici bir bulgunun oldugu gibi kalmasini bilerek kabul ederse `decide --key ... --reason "..."` ile karar kaydi yaz (gerekce
+   ZORUNLU). Kabul KANITA baglidir: olcum sonradan degisirse (iyilesme dahil) brief yeniden sorar ve 'once -> simdi' soyler.
+8. Soylediklerini `append` ile <proje>/dialogue.jsonl'e kaydet; reviewer `verify` ile sayilari denetler.
+9. Yeni bir ilke kesfedersen merkezi dokumana yazamazsin: kullaniciya bildir (vaka -> ilke -> veche, sistem gelistirme oturumunda).
 """ % explain.LEVEL_QUESTION
 
 
@@ -65,7 +70,9 @@ def cmd_brief(args) -> int:
     findings = current_findings(context_path)
     before = current_findings(Path(args.before)) if args.before else None
     intent = tuple(x for x in (args.intent or "").split(",") if x)
-    shown, rest = select_topics(findings, registry.facets, before, intent)
+    decisions = context.get("design_decisions", [])
+    shown, rest = select_topics(findings, registry.facets, before, intent, decisions=decisions)
+    accepted = [k for k, v in evaluate(findings, decisions).items() if v[0] == "kabul"]
     print(f"[Seviye: {args.level}; mod: {args.mode}]")
     if not shown:
         print("Sunulacak bir konu yok (kayitli uyari bulunmuyor).")
@@ -77,6 +84,8 @@ def cmd_brief(args) -> int:
         keys_out.append(list(nar.finding_keys))
     for smell, parts in match_smells(shown, registry.smells):
         print(f"\n(Kok neden: '{smell.title_tr}' - {smell.root_cause_tr})")
+    if accepted:
+        print(f"\n({len(accepted)} bulgu daha once gerekcesiyle kabul edilmis ve kaniti degismedigi icin sessiz; karar kayitlari context.json'da.)")
     if rest:
         print(f"\nDiger notlar: {len(rest)} konu daha var - gormek ister misiniz?")
     cov = build_coverage(registry, context)
@@ -113,7 +122,8 @@ def cmd_append(args) -> int:
         print("HATA: guncel bulgular arasinda olmayan anahtar:", missing)
         return 1
     registry, _ = load_registry()
-    allowed = allowed_numbers_for([findings[k] for k in args.key], registry.facets)
+    ctx = json.loads(context_path.read_text(encoding="utf-8"))
+    allowed = allowed_numbers_for([findings[k] for k in args.key], registry.facets, ctx.get("design_decisions", []))
     rec = {"rev": rev, "ts": datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds"),
            "context_sha256": explain.context_sha256(context_path), "finding_keys": list(args.key),
            "text": text, "mode": args.mode, "level": args.level}
@@ -134,6 +144,7 @@ def cmd_verify(args) -> int:
         print("dialogue.jsonl yok ya da bos - denetlenecek anlati yok.")
         return 0
     sha = explain.context_sha256(context_path)
+    ctx_decisions = json.loads(context_path.read_text(encoding="utf-8")).get("design_decisions", [])
     findings = {f.key: f for f in current_findings(context_path)}
     registry, _ = load_registry()
     bad = unverifiable = 0
@@ -147,7 +158,7 @@ def cmd_verify(args) -> int:
             print(f"#{i} (rev-{rec['rev']}): DOGRULANAMADI - baglam sonradan degismis ya da bulgu artik yok")
             unverifiable += 1
             continue
-        offending = verify_numbers(rec["text"], allowed_numbers_for([findings[k] for k in rec["finding_keys"]], registry.facets))
+        offending = verify_numbers(rec["text"], allowed_numbers_for([findings[k] for k in rec["finding_keys"]], registry.facets, ctx_decisions))
         if offending:
             print(f"#{i} (rev-{rec['rev']}): KAYNAKSIZ SAYI {offending}")
             bad += 1
@@ -157,14 +168,48 @@ def cmd_verify(args) -> int:
     return 1 if bad else 0
 
 
+def cmd_decide(args) -> int:
+    context_path = Path(args.context)
+    project = context_path.parent
+    findings = {f.key: f for f in current_findings(context_path)}
+    missing = [k for k in args.key if k not in findings]
+    if missing:
+        print("HATA: guncel bulgular arasinda olmayan anahtar:", missing)
+        return 1
+    ctx = json.loads(context_path.read_text(encoding="utf-8"))
+    existing = ctx.get("design_decisions", [])
+    rev = args.rev if args.rev is not None else _default_rev(project)
+    if rev is None:
+        print("HATA: rev bilinmiyor (--rev ver ya da requests.jsonl olsun).")
+        return 2
+    new_id = f"dd-{len(existing) + 1:04d}"
+    ts = datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds")
+    try:
+        rec = make_decision(new_id, rev, ts, args.reason or "", [findings[k] for k in args.key], args.devredilmis)
+    except ExplainError as exc:
+        print("REDDEDILDI:", exc)
+        return 1
+    ctx["design_decisions"] = existing + [rec]
+    # context.json mevcut biciminde (indent=2, ensure_ascii=False) round-trip kanitlidir; sahte diff uretmez
+    context_path.write_text(json.dumps(ctx, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    print(f"Karar kaydedildi: {new_id} ({len(args.key)} bulgu, rev-{rev}). Not: bu bir context degisikligidir; "
+          f"requests.jsonl ve rev_history kaydini operator ayrica isler.")
+    return 0
+
+
 def main(argv: list[str]) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
     sub.add_parser("guide")
-    for name in ("brief", "append", "verify"):
+    for name in ("brief", "append", "decide", "verify"):
         p = sub.add_parser(name)
         p.add_argument("--context", default=str(DEFAULT_CONTEXT))
-        if name != "verify":
+        if name == "decide":
+            p.add_argument("--key", action="append", default=[], required=True)
+            p.add_argument("--reason")
+            p.add_argument("--devredilmis", action="store_true")
+            p.add_argument("--rev", type=int)
+        if name not in ("verify", "decide"):
             p.add_argument("--level", choices=explain.LEVELS)
             p.add_argument("--mode", choices=explain.MODES, default="sor")
         if name == "brief":
@@ -184,7 +229,7 @@ def main(argv: list[str]) -> int:
     if args.cmd == "append" and (not args.level or not (args.text or args.stdin)):
         print("HATA: append icin --level ve --text/--stdin gerekir.")
         return 2
-    return {"brief": cmd_brief, "append": cmd_append, "verify": cmd_verify}[args.cmd](args)
+    return {"brief": cmd_brief, "append": cmd_append, "decide": cmd_decide, "verify": cmd_verify}[args.cmd](args)
 
 
 if __name__ == "__main__":

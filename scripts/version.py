@@ -60,7 +60,9 @@ SCRIPTS_ROOT = Path(__file__).resolve().parent
 #           ve `kind` varsayilani `dog_leg` oldu (davranis: projeler kind'i acik yazar).
 #   1.3.0 - rev-27: `floors[].shafts[]` (saft/havalandirma/baca bosluklari;
 #           additif, bkz. scripts/shafts/).
-SCHEMA_VERSION = "1.3.0"
+#   1.4.0 - DEV-065: ust seviye `design_decisions[]` (tasarim karari kaydi; additif, OPT-IN).
+#           Alani tasimayan 1.3.0 projeleri gecerli kalir (yalniz minor surum notu).
+SCHEMA_VERSION = "1.4.0"
 
 # Alani tasimayan eski projeler icin varsayilan. Bugun tum projeler bu
 # surumden gelmektedir.
