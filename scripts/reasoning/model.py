@@ -78,6 +78,14 @@ class Lens:
 
 
 @dataclass(frozen=True)
+class Remedy:
+    """Adli cozum yolu (DEV-064): metin RAKAMSIZDIR; bedel yalniz nitel soylenir (sayi olcumden gelir)."""
+    id: str
+    text_tr: str
+    cost_tr: str = ""
+
+
+@dataclass(frozen=True)
 class Smell:
     id: str
     title_tr: str

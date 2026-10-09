@@ -518,6 +518,43 @@ def check_reasoning_provenance(registry=None) -> list[str]:
     return errors
 
 
+def check_reasoning_digits(registry=None) -> list[str]:
+    """#13: anlatim metinleri RAKAMSIZDIR (rakam yalniz {ad/olcum/sabit} yer-tutucusundan gelir): veche basligi/ilkesi/
+    nedeni, plain, cozum yollari, koku metinleri ve explain.py'nin sabit cumleleri. Sayi uydurmanin mekanik korumasi."""
+    reg_mod = _reasoning_registry_module()
+    from reasoning import explain
+    registry = registry if registry is not None else reg_mod.load_registry()[0]
+    errors: list[str] = []
+
+    def lint(where: str, text: str, numbers=()):
+        for err in explain.lint_template(text, frozenset(numbers)):
+            errors.append(f"{where}: {err}")
+
+    for f in registry.facets.values():
+        numbers = f.plain.numbers if f.plain is not None else ()
+        for label, text in (("title_tr", f.title_tr), ("principle_tr", f.principle_tr), ("why_tr", f.why_tr)):
+            lint(f"{f.id}.{label}", text, numbers)
+        if f.plain is not None:
+            lint(f"{f.id}.plain.problem", f.plain.problem, numbers)
+            lint(f"{f.id}.plain.consequence", f.plain.consequence, numbers)
+    for r in registry.remedies.values():
+        lint(f"cozum {r.id}.text_tr", r.text_tr)
+        lint(f"cozum {r.id}.cost_tr", r.cost_tr)
+    for s in registry.smells.values():
+        lint(f"koku {s.id}.title_tr", s.title_tr)
+        lint(f"koku {s.id}.root_cause_tr", s.root_cause_tr)
+    fixed = [("LEVEL_QUESTION", explain.LEVEL_QUESTION), ("LEAVE_OPTION", explain.LEAVE_OPTION),
+             ("NO_REMEDY_NOTE", explain.NO_REMEDY_NOTE), ("DECISION_SOR", explain.DECISION_SOR),
+             ("DECISION_DEVRET", explain.DECISION_DEVRET), ("SERIOUS_DEVRET_NOTE", explain.SERIOUS_DEVRET_NOTE),
+             ("UNSCORED_NOTE", explain.UNSCORED_NOTE),
+             ("NOTHING_TO_APPLY_NOTE", explain.NOTHING_TO_APPLY_NOTE)]
+    for cat, (see, why) in explain.CATEGORY_PLAIN.items():
+        fixed += [(f"CATEGORY_PLAIN[{cat}].see", see), (f"CATEGORY_PLAIN[{cat}].why", why)]
+    for name, text in fixed:
+        lint(f"explain.{name}", text)
+    return errors
+
+
 def check_reasoning_registry() -> list[str]:
     """Uretim kaydinin yuklenmesi ve ic tutarliligi (validate_registry + yukleme hatalari)."""
     reg_mod = _reasoning_registry_module()
@@ -550,7 +587,8 @@ def run() -> list[str]:
     return (check_tasks() + check_paths() + check_architecture_table()
             + check_collision_coverage() + check_contract_versions()
             + check_reasoning_coverage() + check_reasoning_registry()
-            + check_reasoning_refs() + check_reasoning_cases() + check_reasoning_provenance())
+            + check_reasoning_refs() + check_reasoning_cases() + check_reasoning_provenance()
+            + check_reasoning_digits())
 
 
 def main() -> int:

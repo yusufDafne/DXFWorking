@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from dataclasses import replace
 
-from reasoning.model import CheckAdapter, Facet, Lens, Plain, Provenance, Smell, Thresholds
+from reasoning.model import CheckAdapter, Facet, Lens, Plain, Provenance, Remedy, Smell, Thresholds
 
 LENS_ID = "mahremiyet"
 _RULES = "architect.rules"
@@ -72,14 +72,14 @@ FACETS = (
     Facet(id=f"{LENS_ID}.gorsel.giris_wc_kapi_yakin", lens=LENS_ID,
           title_tr="Giriş kapısının önünde/çaprazında ya da bitişiğinde WC/banyo kapısı var mı?",
           principle_tr="Giriş kapısı ile WC/banyo kapısı arasında yeterli temiz aralık olmalı ve WC kapısı giriş karşısına/çaprazına gelmemeli.",
-          why_tr="Dar koni (45°'ye kadar) `giris_wc_gorus`ta; burada çapraz bant (45°–60°) ve kapı çerçevesi arası aralık denetlenir (DEV-053).",
+          why_tr="Giriş karşısındaki dar koni `giris_wc_gorus`ta denetlenir; burada çapraz bant ve kapı çerçeveleri arası aralık denetlenir.",
           status="shadow", provenance=_PREFERENCE, adapter=CheckAdapter(f"{_RULES}:check_entry_wet_door_proximity", _ARGS),
           needs=_NEEDS_DOORS, applies_when="has_room_type:wc|banyo", subject_kind="unit",
           thresholds=Thresholds(warn_at=60.0, unit="derece", source="v1 pratik varsayilan (DEV-053; 250 mm aralık da aynı kaynak)")),
     Facet(id=f"{LENS_ID}.gorsel.islak_hacim_komsulugu", lens=LENS_ID,
           title_tr="WC ve banyo yan yana mı, kapıları aynı hatta mı?",
           principle_tr="WC ile banyo ortak duvar paylaşmalı, kapıları aynı hatta yan yana olmalı ve diğer oda kapılarından uzak durmalı.",
-          why_tr="Islak hacimlerin kümelenmesi tesisat ekonomisi ve kapı yerleşiminin düzeni içindir (DEV-052); mahremiyetle kısmi ilişkili.",
+          why_tr="Islak hacimlerin kümelenmesi tesisat ekonomisi ve kapı yerleşiminin düzeni içindir; mahremiyetle kısmi ilişkilidir.",
           status="shadow", provenance=_PREFERENCE, adapter=CheckAdapter(f"{_RULES}:check_wet_area_adjacency", _ARGS),
           needs=_NEEDS_DOORS, applies_when="has_room_type:wc|banyo", subject_kind="unit"),
     # ---- shadow: yeni olcumler (architect/privacy.py) ---------------------------------------------------------
@@ -102,7 +102,7 @@ FACETS = (
     Facet(id=f"{LENS_ID}.isitsel.islak_ortak_duvar_ayni_birim", lens=LENS_ID,
           title_tr="Islak hacim, yatak odası veya salonla ortak duvar paylaşıyor mu?",
           principle_tr="Aynı dairede WC/banyo, yatak odası ya da salonla ortak duvar paylaşıyorsa duvar bir ayırıcı olarak düşünülmeli.",
-          why_tr="Islak hacimden gelen ses ve koku komşu odaya geçer. Duvar türü ayırıcısı v1'de yok: gerçek projede duvar türü verisi yok.",
+          why_tr="Islak hacimden gelen ses ve koku komşu odaya geçer; duvarın türü ve kütlesi bu etkiyi azaltır ya da artırır.",
           status="shadow", provenance=_PREFERENCE, adapter=CheckAdapter(f"{_PRIV}:check_wet_shared_wall_same_unit", _ARGS),
           measure_ref=f"{_PRIV}:wet_shared_wall_same_unit_subjects", needs=("rooms[].unit_id", "rooms[].room_type"),
           applies_when="has_room_type:wc|banyo", subject_kind="wet_room"),
@@ -117,7 +117,7 @@ FACETS = (
     Facet(id=f"{LENS_ID}.isitsel.islak_ortak_duvar_birimler_arasi", lens=LENS_ID,
           title_tr="Islak hacim, komşu dairenin yatak odası/salonuyla duvar paylaşıyor mu?",
           principle_tr="Birimler arası ortak duvarda ıslak hacim ile komşu dairenin yatak odası/salonu karşı karşıya gelmemeli.",
-          why_tr="Aynı ses/koku gerekçesi, bu kez komşu dairenin mahremiyeti için. Örnek gözlem: uC_banyo ↔ uA_oda2 ortak duvarı.",
+          why_tr="Aynı ses ve koku gerekçesi, bu kez komşu dairenin mahremiyeti için.",
           status="draft", provenance=_PREFERENCE, needs=("rooms[].unit_id", "rooms[].room_type"),
           applies_when="has_room_type:wc|banyo", subject_kind="wet_room"),
     Facet(id=f"{LENS_ID}.kademelenme.derinlik", lens=LENS_ID,
@@ -129,7 +129,7 @@ FACETS = (
     Facet(id=f"{LENS_ID}.gecis.misafir_yolu", lens=LENS_ID,
           title_tr="Misafir, yatak odası kapıları önünden geçmeden WC'ye ulaşabiliyor mu?",
           principle_tr="Giriş → salon → misafir WC yolu, yatak odası kapılarının önünden geçmemeli.",
-          why_tr="'Misafir WC' kavramı mevcut veride yok; hangi WC'nin misafire açık olduğu bir kullanıcı kararıdır (plan §11 #9).",
+          why_tr="Hangi WC'nin misafire açık olduğu bir kullanıcı kararıdır; bu bilgi henüz projede tutulmuyor.",
           status="idea"),
 )
 
@@ -142,9 +142,33 @@ _CASE_NAMES = {
     "birimler_arasi.komsu_giris_yakinligi": "komsu_giris", "isitsel.islak_ortak_duvar_ayni_birim": "islak_ortak_duvar",
     "gecis.islak_iki_bolgeye_kapili": "sandvic_banyo",
 }
+# cozum yollari (DEV-064): metinler RAKAMSIZ, bedel nitel (sayi olcumden gelir)
+REMEDIES = (
+    Remedy("kapiyi_yana_kaydir", "Kapıyı, girişten bakınca görüş ekseninin dışına kaydırmak.",
+           "Duvarda kapı için başka bir yer gerekir; o yerdeki mobilya düzeni etkilenebilir."),
+    Remedy("hol_bukumu_ekle", "Girişte küçük bir hol ya da duvar dönüşü ekleyerek görüşü kesmek.",
+           "Hol biraz büyür, komşu oda biraz küçülür."),
+    Remedy("kapiyi_hole_ac", "Kapıyı salon ya da yatak odası yerine doğrudan hole açmak.",
+           "Hol sınırı değişir; hol payı biraz artabilir."),
+    Remedy("hol_uzat", "Holü, geçilmek zorunda kalınan odanın önüne kadar uzatmak.",
+           "Hol büyür, bitişik oda küçülür."),
+    Remedy("hol_uzerinden_ac", "Islak hacmi hol üzerinden açmak.",
+           "Holün bir kenarı ıslak hacme ayrılır."),
+    Remedy("islak_hacmi_tek_bolgeye_bagla", "Islak hacmin kapısını yalnız tek bölgeye (salona ya da özel alana) bağlamak.",
+           "Diğer bölgeden bu hacme erişim kalkar; kullanım alışkanlığı değişir."),
+)
+_FACET_REMEDIES = {
+    "gorsel.giris_wc_gorus": ("kapiyi_yana_kaydir", "hol_bukumu_ekle"),
+    "gorsel.giristen_yatak_odasi_gorus": ("kapiyi_yana_kaydir", "hol_bukumu_ekle"),
+    "gecis.yatak_salona_dogrudan": ("kapiyi_hole_ac",),
+    "gecis.islak_yatak_odasindan": ("hol_uzat", "kapiyi_hole_ac"),
+    "gecis.islak_iki_bolgeye_kapili": ("islak_hacmi_tek_bolgeye_bagla", "hol_uzerinden_ac"),
+}
 FACETS = tuple(
-    replace(f, cases=(f"{_CASE_NAMES[f.id.split('.', 1)[1]]}_ihlal", f"{_CASE_NAMES[f.id.split('.', 1)[1]]}_temiz"))
-    if f.id.split(".", 1)[1] in _CASE_NAMES else f for f in FACETS)
+    replace(f, cases=(f"{_CASE_NAMES[f.id.split('.', 1)[1]]}_ihlal", f"{_CASE_NAMES[f.id.split('.', 1)[1]]}_temiz")
+            if f.id.split(".", 1)[1] in _CASE_NAMES else f.cases,
+            remedies=_FACET_REMEDIES.get(f.id.split(".", 1)[1], f.remedies))
+    for f in FACETS)
 
 SMELLS = (
     Smell(id="sandvic_banyo", title_tr="Salon ile yatak odası arasına sıkışmış ıslak hacim",
@@ -171,6 +195,8 @@ LENS = Lens(
 
 def register(reg) -> None:
     reg.register_lens(LENS)
+    for remedy in REMEDIES:
+        reg.register_remedy(remedy)
     for facet in FACETS:
         reg.register_facet(facet)
     for smell in SMELLS:

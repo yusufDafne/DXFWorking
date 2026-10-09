@@ -75,6 +75,8 @@ kalanını bilmeye ihtiyaç duymadan o modül üzerinde derinlemesine/izole
   kapıları #10–#12, #14, #15. Rapor komutu `scripts/reasoning_report.py`. Bkz. `scripts/reasoning/CLAUDE.md`.
   **`DEV-061`de ilk mercek paketi** (`reasoning/lenses/mahremiyet.py`, 14 veçhe) geldi; ölçüm sahibi `architect/`
   (`privacy.py`, `reasoning.py` = sağlayıcı).
+  **`DEV-064`te açıklama motoru** (`reasoning/explain.py`: rakam lint'i, sunum kuyruğu, diyalog kaydı) ve köprü
+  `scripts/reasoning_dialogue.py` geldi; `doc_check` kapı #13.
 - ✅ **`scripts/spatial/`** — `DEV-059` (2026-10-09): eleman-farkındalıklı mekânsal sorguların
   (kapı → orta nokta, değen odalar, ortak kenar, görüş hattı) TEK sahibi. `architect`/`standards`/
   `shafts`/`rooms` içindeki kopyalar buraya **davranış korunarak** taşındı; `spatial → collision.geometry`

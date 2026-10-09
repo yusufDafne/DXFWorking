@@ -290,6 +290,8 @@ yazılmaz. `sade` → ürün dili ("misafir geldiğinde…"), terim ve ölçü a
 
 ### 5.3 Rakam kuralı (mekanik)
 
+> **Uygulandı (DEV-064):** üç yer-tutucu sınıfı — `{ad:..}` (eleman adı), `{olcum:..}` (`Plain.numbers`te bildirilmiş ölçülen sayı), `{sabit:..}` (kaynaklı eşik/şiddet); rakam = Unicode Nd/No/Nl; açık istisna yalnız **satır başı numaralandırma** ("1. seçenek"). Lint şablonu denetler; dil modelinin SERBEST metnini `scripts/reasoning_dialogue.py append/verify` + `dialogue.jsonl` denetler.
+
 Şablon metinleri **rakam içermez**; `{angle_deg}` gibi yer-tutucular yalnız
 `Finding.evidence`tan doldurulur. Çekirdeğin `explain` lint'i: (i) şablonda `[0-9]`
 yok, (ii) her yer-tutucu `Plain.numbers` içinde ve `evidence`ta var. Dil modelinin

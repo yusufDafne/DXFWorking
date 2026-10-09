@@ -198,6 +198,8 @@ geliştirme görevleri, tamamlanmış geçmiş, fikirler ve geliştirici notlar�
    **kasıtlı bozmayla** sınanır. "Temiz döndü" çıktısı tek başına hiçbir şey
    kanıtlamaz — kontrol hiç çalışmasa da temiz dönerdi. Her test ayrıca
    **yanlış-pozitif** tarafını da sınar.
+   **Diyalog köprüsü (DEV-064):** `python scripts/reasoning_dialogue.py guide|brief|append|verify` — kullanıcıya sunulan anlatı
+   şablondan üretilir, kaynaksız sayı reddedilir, `<proje>/dialogue.jsonl`e ekleme-yalnız kaydedilir.
    **Muhakeme raporu (DEV-060, EK ve BLOKLAMAZ):** `python scripts/reasoning_report.py [context.json]
    [--before onceki.json]` — kapsam (hangi mercek koştu/koşamadı) + uyarıları kat-bağımsız tek konulara
    indirger; `validate.py` çıktısı DEĞİŞMEZ.
@@ -780,7 +782,7 @@ guncellenir.
      `git add` veya `git commit` çalıştırılmaz. Onay gelmeden başka bir talebe
      geçilmez.
 3. Onay geldiğinde ilgili dosyalar (`context.json`, `output/plan.dxf`,
-   `output/preview.png`, `requests.jsonl`) `git add` ile stage edilip
+   `output/preview.png`, `requests.jsonl`, varsa `dialogue.jsonl`) `git add` ile stage edilip
    commit'lenir. **Git config (local/global) hiçbir zaman değiştirilmez** —
    kullanıcı izin verse bile bu kural geçerlidir. Commit kimliği sabit bir
    kişi veya agent adına zorlanmaz: hangi agent çalışıyorsa kendi beyan ettiği

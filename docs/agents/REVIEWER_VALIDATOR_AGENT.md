@@ -15,7 +15,12 @@ Bu agent proje revizyonlarını, validation sonuçlarını, nihai DXF'yi ve gold
    ile anlamsal karşılaştırma yap.
 6. Pafta taşma, katman, entity türü, çerçeve, ölçü ve kritik sembol
    kontrollerini yap.
-7. Bulguları hata, risk, açık karar ve kabul durumu olarak yalnızca
+7. **Anlatımın kanıta uygunluğu (DEV-064):** proje `dialogue.jsonl` varsa
+   `python scripts/reasoning_dialogue.py verify` çalıştır; her kayıttaki her sayı ilgili bulgunun ölçümünden gelmeli
+   (kaynaksız sayı → HATA). `context_sha256` güncel bağlamla eşleşmeyen kayıtlar "doğrulanamadı" diye raporlanır, sessiz
+   geçilmez. Ayrıca anlatımda "yapılamaz" dili, kaynaksız "yönetmelik gereği" iddiası ve sunulmayan (`shadow`) bulgunun
+   sunulup sunulmadığına bak. Kayıtları DÜZELTME; yalnız raporla.
+8. Bulguları hata, risk, açık karar ve kabul durumu olarak yalnızca
    review-raporuna yaz.
 
 ## Sınırlar

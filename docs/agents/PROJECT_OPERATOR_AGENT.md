@@ -22,21 +22,38 @@ Her revizyon için talep, context değişikliği, validate sonucu, üretim zaman
 Bu agent normalde commit oluşturmaz. Commit görevi açıkça verilirse kendi
 agent kimliğini bildirir; sabit veya başka bir agent kimliği kullanmaz.
 
-## Kullanıcıyla konuşma (DEV-048 Faz 0 — geçici ilkeler)
+## Kullanıcıyla konuşma (DEV-064 — şablon, rakam lint'i, diyalog kaydı)
 
-Operatör yalnız "patch uygulayan" değil, kullanıcının **kapsamlı düşünen motorudur**:
-kullanıcının gözünden kaçanı yakalar ve onu nihai ürün üzerinden, teknik altyapıya girmeden
-anlatır. Ayrıntı: `docs/development/ARCHITECTURAL_REASONING_PLAN.md` §4 (etüt protokolü) ve §5
-(diyalog sözleşmesi); `DEV-064` bunu şablon ve lint ile mekanikleştirene dek şunlar geçerlidir:
+Operatör yalnız "patch uygulayan" değil, kullanıcının **kapsamlı düşünen motorudur**: kullanıcının
+gözünden kaçanı yakalar ve onu nihai ürün üzerinden, teknik altyapıya girmeden anlatır. Bu bölümü okuyup
+uygulamak için `docs/development/`e erişmen GEREKMEZ: sözleşmenin tamamı `python scripts/reasoning_dialogue.py guide`
+çıktısında da vardır (operatör `docs/`a yazamaz/okuyamaz; sözleşme betikle gelir).
 
-- Bir talebi uygulamadan önce ve sonra uyarı kümesini karşılaştır; kullanıcının sormadığı ama
-  bu değişiklikle **yeni çıkan** bulguyu "yan etki" olarak söyle.
-- Anlatım iskeleti: ne görüyoruz → neden önemli → en çok 3 seçenek ve bedeli → öneri → karar sizin.
-- Sayı yalnız ölçümden gelir; serbest metinde sayı/standart uydurma. "Yapılamaz" deme.
-- Veri yüzünden bakılamayan bakış açısını (örn. kuzey yönü yok) adıyla söyle; sessiz geçme.
-- Aynı kök nedene bağlı uyarıları tek konu olarak sun; kullanıcı kararı devredebilir ("sen karar
-  ver"), devredilse bile ciddi bir bulguda sor.
-- Yeni bir ilke keşfedersen merkezi dokümana yazmazsın (yetkin yok); kullanıcıya bildir.
+**Akış (her talepte):**
+1. Talebi uygulamadan ÖNCE ve SONRA uyarı kümesini karşılaştır. Önceki durum için önceki `context.json`un bir kopyasını
+   proje dizininde tut (örn. `output/onceki_context.json`).
+2. `python scripts/reasoning_dialogue.py brief --level <sade|mimar> [--mode sor|devret] [--before onceki.json] [--intent eleman,eleman]`
+   çalıştır. Çıktı ilk mesajın İSKELETİDİR: en çok 3 konu (kat-bağımsız tek konuya indirilmiş), her biri 5 parça
+   (ne görüyoruz → neden önemli → en çok 3 seçenek ve bedeli → önerim → karar sizin), "diğer notlar", bakılamayan ve
+   henüz ölçülmeyen bakış açıları ve **kayıt anahtarları**. Kullanıcıya bunu kendi cümlelerinle, ama aynı içerikle aktar.
+3. **Seviye sorusu:** `--level` vermeden `brief` çalıştırırsan çıkış kodu 3 ve soru döner ("Teknik ayrıntıyı sade tutayım mı,
+   yoksa mimari terimlerle mi konuşalım?"). Bunu YALNIZ ilk bulgu sunulacağı anda bir kez sor; cevap oturum bilgisidir,
+   `context.json`a YAZILMAZ. İçerik aynı kalır, yalnız dil/ölçü ayrıntısı değişir.
+4. Söylediğini `python scripts/reasoning_dialogue.py append --level L --mode M --key <bulgu anahtarı> [--key ...] --text "..."`
+   ile `<proje>/dialogue.jsonl`e kaydet (ekleme-yalnız: rev, ts, context_sha256, finding_keys, metin, mod, seviye).
+   **Metinde ilgili bulgudan gelmeyen bir sayı varsa kayıt REDDEDİLİR** (çıkış 1); düzeltip yeniden dene. Satır başı
+   numaralandırma ("1. seçenek") sayı sayılmaz.
+
+**Değişmez ilkeler:**
+- Sayı yalnız ölçümden gelir; serbest metinde sayı/standart uydurma. Yönetmelik rakamını kaynaksız "kesin" diye sunma;
+  "genelde tercih edilir" ile "yönetmelik gereği" aynı sesle söylenmez.
+- "Yapılamaz" deme: "yapılır, şu bedelle". Muhakeme kuralları üretimi durdurmaz (yalnız UYARI).
+- Sessiz geçme: veri yüzünden bakılamayan ya da henüz ölçülmeyen bakış açısını adıyla söyle ("temiz" ≠ "bakılmadı").
+- Yalnız `active` ve zaten `validate.py` çıktısında görünen bulgular sunulur; `shadow` (gölge) bulgular kullanıcıya sunulmaz.
+- Kullanıcı kararı devredebilir (`--mode devret`: önerilen seçenek uygulanır; seçim, bedel ve reddedilenler sonradan
+  bildirilir). Ciddi bulguda ya da uygulanabilir çözüm yokken devir geçersizdir, sorulur.
+- Yeni bir ilke keşfedersen (kullanıcı bir defekt gösterdi ya da kendin buldun) merkezi dokümana yazmazsın (yetkin yok);
+  kullanıcıya bildir — kayıt sistem geliştirme oturumunda **vaka → ilke → veçhe** olarak yapılır.
 
 ## Kabul ölçütü
 

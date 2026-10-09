@@ -16,7 +16,10 @@ from .cases import list_cases, load_case, run_case
 from .coverage import CoverageEntry, CoverageReport, build_coverage
 from .findings import (diff_findings, group_across_floors, make_key, message_signature, quoted_ids,
                        severity_band, severity_from_curve)
-from .model import (CheckAdapter, Facet, Finding, Lens, Plain, Profile, Provenance, Smell, Tension,
+from .explain import (ExplainError, allowed_numbers_for, Narrative, Topic, append_dialogue, coverage_sentence, effective_mode,
+                      is_presentable, lint_template, match_smells, narrate, read_dialogue, render,
+                      select_topics, validate_record, verify_numbers)
+from .model import (CheckAdapter, Facet, Finding, Lens, Plain, Profile, Provenance, Remedy, Smell, Tension,
                     Thresholds, missing_for_status)
 from .promotion import TriggerReport, trigger_report
 from .registry import (REASONING_EXEMPT, REASONING_PENDING, REASONING_PROVIDERS, Registry,
@@ -33,4 +36,7 @@ __all__ = [
     "diff_findings", "group_across_floors", "make_key", "message_signature", "quoted_ids",
     "severity_band", "severity_from_curve", "TriggerReport", "trigger_report", "REASONING_EXEMPT",
     "REASONING_PENDING", "REASONING_PROVIDERS", "Registry", "load_registry", "validate_registry",
+    "ExplainError", "allowed_numbers_for", "Narrative", "Topic", "Remedy", "append_dialogue", "coverage_sentence", "effective_mode",
+    "is_presentable", "lint_template", "match_smells", "narrate", "read_dialogue", "render", "select_topics",
+    "validate_record", "verify_numbers",
 ]

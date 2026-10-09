@@ -169,8 +169,13 @@ def check_registry_validation() -> list[str]:
         e.append("yinelenen veche kimligi YAKALANMADI")
     full = idea(status="active", provenance=prov(), needs=("rooms[].unit_id",), check_ref="a:b",
                 plain=Plain("p", "c"), thresholds=Thresholds(45.0, 15.0, "derece", "k"), remedies=("r1",))
-    if validate_registry(reg_with(full)):
-        e.append(f"tam active veche hata verdi (yanlis-pozitif): {validate_registry(reg_with(full))}")
+    from reasoning import Remedy
+    rf = reg_with(full)
+    if not any("cozum basvurusu" in x for x in validate_registry(rf)):
+        e.append("kayitsiz cozum basvurusu YAKALANMADI")
+    rf.register_remedy(Remedy("r1", "Kapıyı kaydırmak.", ""))
+    if validate_registry(rf):
+        e.append(f"tam active veche hata verdi (yanlis-pozitif): {validate_registry(rf)}")
     return e
 
 
@@ -528,13 +533,259 @@ def check_mahremiyet_report() -> list[str]:
     return e
 
 
+# ------------------------------------------------------------------ DEV-064: aciklama motoru, rakam lint'i, kuyruk, diyalog
+def _salon_registry():
+    """Plan §5.6 'salonu buyutelim' ornegi icin SENTETIK yasanabilirlik vechesi (uretim kaydinda yok)."""
+    from reasoning import Remedy
+    r = Registry()
+    r.register_lens(Lens("yasanabilirlik", "Yasanabilirlik", "f"))
+    r.register_remedy(Remedy("salonu_az_buyut", "Salonu daha az büyütmek; yatak odası rahat kalır, salon yine büyür.", "Salon beklenenden az büyür."))
+    r.register_remedy(Remedy("tek_kisilik_dusun", "Büyütmeyi aynen yapıp yatak odasını tek kişilik düşünmek.", "Yatak odasında çift kişilik yatak olmaz."))
+    f = Facet(id="yasanabilirlik.yatak.kume_sigmasi", lens="yasanabilirlik", title_tr="t", principle_tr="p", why_tr="w",
+              status="active", provenance=prov(), needs=("rooms[].room_type",),
+              plain=Plain(problem="Bitişik yatak odası {olcum:kuculme} küçüldüğü için çift kişilik yatak artık rahat yerleşmiyor ({ad:eleman}).",
+                          consequence="Yatağın iki yanında geçiş kalmıyor.", numbers=("kuculme",)),
+              thresholds=Thresholds(warn_at=0.0, severe_at=10.0, unit="m2", source="s"),
+              remedies=("salonu_az_buyut", "tek_kisilik_dusun"))
+    r.register_facet(f)
+    return r, f
+
+
+def check_lint_and_render() -> list[str]:
+    from reasoning import ExplainError, lint_template, render, verify_numbers
+    from reasoning.explain import allowed_numbers_for
+    e = []
+    if lint_template("Salon beş metrekare büyür."):
+        e.append("rakamsiz sablon lint'e takildi (yanlis-pozitif)")
+    for name, text in {"ASCII rakam": "Salon 5 m2 küçülür", "yer-tutucu disinda rakam": "Hol {olcum:a} ve 3 oda",
+                       "Unicode Nd": "Salon ٣ oda", "ussu (No)": "Alan m²", "Roma (Nl)": "Ⅳ. kat",
+                       "bilinmeyen sinif": "Salon {sayi:a} olur", "Plain.numbers disi": "Hol {olcum:b}"}.items():
+        if not lint_template(text, ("a",)):
+            e.append(f"rakam lint'i YAKALAMADI: {name}")
+    if lint_template("1. Seçenek\n2. Seçenek\n{olcum:a} {ad:eleman} {sabit:warn_at}", ("a",)):
+        e.append("numaralandirma istisnasi + gecerli yer-tutucular reddedildi (yanlis-pozitif)")
+    if not lint_template("Üç seçenek var, 3 tane."):
+        e.append("numaralandirma istisnasi satir basi disinda GECERLI olmamali")
+    reg, facet = _salon_registry()
+    f = Finding("k|*|x|1", facet.id, "K1", "m", ("uB_oda",), evidence={"kuculme": 2.5}, severity=0.3)
+    if render(facet.plain.problem, f, facet) != "Bitişik yatak odası 2.5 küçüldüğü için çift kişilik yatak artık rahat yerleşmiyor (uB_oda).":
+        e.append("render: yer-tutucular kanittan dogru dolmadi")
+    for name, tpl, fnd, fct in (("olmayan olcum", "{olcum:yok}", f, facet),
+                                ("esiksiz sabit", "{sabit:severe_at}", Finding("k|*|x|1", "y", None, "m"), None),
+                                ("olmayan eleman", "{ad:eleman2}", f, facet),
+                                ("olculmemis siddet", "{sabit:siddet}", Finding("k|*|x|1", "y", None, "m"), None)):
+        try:
+            render(tpl, fnd, fct)
+            e.append(f"render: {name} icin HATA beklenirdi (uydurma yok)")
+        except ExplainError:
+            pass
+    allowed = allowed_numbers_for([f], reg.facets)
+    if verify_numbers("Yaklaşık 2.5 küçülüyor.", allowed):
+        e.append("kaynakli sayi verify_numbers'tan gecmeli")
+    if verify_numbers("Yaklaşık 3 küçülüyor.", allowed) != ["3"]:
+        e.append("kaynaksiz sayi verify_numbers'ta YAKALANMALI")
+    if verify_numbers("1. Seçenek A\n2. Seçenek B", allowed):
+        e.append("satir basi numaralandirma kaynaksiz sayi sayilmamali")
+    return e
+
+
+def check_narrative_example() -> list[str]:
+    """Plan §5.6: bes parca, en cok uc secenek; sayi yalniz kanittan."""
+    from reasoning import narrate, select_topics, verify_numbers
+    from reasoning.explain import allowed_numbers_for
+    reg, facet = _salon_registry()
+    f = Finding("yasanabilirlik.yatak.kume_sigmasi|K1|uB_oda|1", facet.id, "K1", "m", ("uB_oda",), evidence={"kuculme": 2.5}, severity=0.3)
+    shown, _rest = select_topics([f], reg.facets)
+    nar = narrate(shown[0], reg.facets, reg.remedies, level="sade")
+    text = nar.text()
+    e = []
+    if not (len(nar.options) == 3 and nar.options[-1].startswith("Olduğu gibi bırakmak")):
+        e.append(f"secenekler: iki cozum + 'birak' olmali: {nar.options}")
+    if "Önerim, ilk seçenek: Salonu daha az büyütmek" not in text:
+        e.append("oneri ilk secenek olmali")
+    i1, i2, i3, i4 = (text.index(x) for x in (nar.see, "Seçenekler:", nar.recommendation, "Karar sizin"))
+    if not i1 < i2 < i3 < i4:
+        e.append("bes parcali iskelet sirasi bozuk")
+    bad = verify_numbers(text, allowed_numbers_for([f], reg.facets))
+    if bad:
+        e.append(f"anlatimda kaynaksiz sayi: {bad}")
+    if "yapılamaz" in text.lower():
+        e.append("'yapilamaz' denmemeli")
+    return e
+
+
+def check_queue_and_modes() -> list[str]:
+    from reasoning import effective_mode, narrate, select_topics
+    e = []
+    extra = "UYARI (mimari): [normal1] Oda 'uZ' bir sey\nUYARI (mimari): [normal1] Oda 'uY' baska sey\n"
+    shown, rest = select_topics(parse_validate_output(SAMPLE + extra), {}, limit=3)
+    if (len(shown), len(rest)) != (3, 2):
+        e.append(f"5 konu (SAMPLE 3 + 2): 3 ilk mesaj + 2 diger not: {(len(shown), len(rest))}")
+    out = subprocess.run([sys.executable, str(ROOT / "scripts" / "validate.py"), str(ROOT / "context.json")],
+                         capture_output=True, text=True, timeout=600).stdout
+    real = parse_validate_output(out)
+    sh, rs = select_topics(real, {})
+    if (len(real), len(sh), len(rs)) != (15, 3, 0):
+        e.append(f"rev-28: 15 satir -> 3 konu beklenirdi: {(len(real), len(sh), len(rs))}")
+    reg, _ = _prod_registry()  # golge gorunurluk degismezi
+    shadow_f = Finding("mahremiyet.gorsel.giristen_yatak_odasi_gorus|K1|a|1", "mahremiyet.gorsel.giristen_yatak_odasi_gorus", "K1", "m", ("a",))
+    active_f = Finding("mahremiyet.gorsel.giris_wc_gorus|K1|a|1", "mahremiyet.gorsel.giris_wc_gorus", "K1", "m", ("a",))
+    sh, _ = select_topics([shadow_f, active_f], reg.facets)
+    if [t.facet_id for t in sh] != ["mahremiyet.gorsel.giris_wc_gorus"]:
+        e.append(f"shadow bulgu SUNULMAMALI (gorunurluk degismezi): {[t.facet_id for t in sh]}")
+    a = Finding("legacy.mimari|K1|a|1", "legacy.mimari", "K1", "a", ("a",), severity=0.2)
+    b = Finding("legacy.mimari|K1|b|2", "legacy.mimari", "K1", "b", ("b",), severity=0.9)
+    c = Finding("legacy.mimari|K1|c|3", "legacy.mimari", "K1", "c", ("c",))
+    d = Finding("legacy.mimari|K1|d|4", "legacy.mimari", "K1", "d", ("d",), severity=0.5)
+    sh, _ = select_topics([a, b, c, d], {}, before=[a, b, c], limit=4)
+    if [t.elements[0] for t in sh] != ["d", "b", "a", "c"]:
+        e.append(f"siralama: yan etki(d) > siddet(b>a) > olculmeyen(c): {[t.elements[0] for t in sh]}")
+    sh, _ = select_topics([a, b], {}, intent_elements=("a",), limit=2)
+    if sh[0].elements[0] != "a":
+        e.append("niyetle ilgili konu siddetten once gelmeli")
+    if (effective_mode("devret", 0.2), effective_mode("devret", 0.7), effective_mode("sor", 0.9), effective_mode("devret", None)) != ("devret", "sor", "sor", "devret"):
+        e.append("devret: ciddi (>0.6) bulguda SOR; digerlerinde devret")
+    rr, facet = _salon_registry()
+    f = Finding("k|K1|x|1", facet.id, "K1", "m", ("x",), evidence={"kuculme": 1.0}, severity=0.8)
+    nar = narrate(select_topics([f], rr.facets)[0][0], rr.facets, rr.remedies, level="sade", mode="devret")
+    if nar.mode != "sor" or "ciddi" not in nar.text():
+        e.append("ciddi bulguda devir olsa bile sorulmali ve nedeni soylenmeli")
+    f2 = Finding("k|K1|x|1", facet.id, "K1", "m", ("x",), evidence={"kuculme": 1.0}, severity=0.2)
+    nar = narrate(select_topics([f2], rr.facets)[0][0], rr.facets, rr.remedies, level="sade", mode="devret")
+    if nar.mode != "devret" or "devrettiğiniz" not in nar.text():
+        e.append("hafif bulguda devir: oneri uygulanir, sonradan bildirilir")
+    nar = narrate(select_topics(real, {})[0][0], {}, {}, level="sade", mode="devret")
+    if nar.mode != "sor":
+        e.append("uygulanacak cozum yokken devir gecersiz sayilmali")
+    return e
+
+
+def check_smells_and_coverage_sentence() -> list[str]:
+    from reasoning import coverage_sentence, match_smells, select_topics
+    reg, _ = _prod_registry()
+    e = []
+
+    def mk(fid, els):
+        return Finding(f"{fid}|K1|{','.join(els)}|1", fid, "K1", "m", els)
+
+    share = [mk("mahremiyet.gecis.islak_yatak_odasindan", ("oda", "ban")), mk("mahremiyet.gecis.yatak_salona_dogrudan", ("oda", "salon"))]
+    if [s.id for s, _p in match_smells(select_topics(share, reg.facets)[0], reg.smells)] != ["gecis_odasi_yatak"]:
+        e.append("ortak elemanli iki bilesen -> gecis_odasi_yatak kokusu")
+    apart = [mk("mahremiyet.gecis.islak_yatak_odasindan", ("oda1",)), mk("mahremiyet.gecis.yatak_salona_dogrudan", ("oda2",))]
+    if match_smells(select_topics(apart, reg.facets)[0], reg.smells):
+        e.append("ortak eleman yokken koku birlestirmesi YAPILMAMALI (yanlis-pozitif)")
+    s = coverage_sentence([("Yönelim", "meta.north_angle yok")], ["Kademelenme"])
+    if "Yönelim" not in s or "north_angle" not in s or "Kademelenme" not in s or "değildir" not in s:
+        e.append("bakilamayan ve olculmeyen bakis acilari ADIYLA soylenmeli")
+    if coverage_sentence([], []):
+        e.append("soylenecek bir sey yoksa bos donmeli")
+    return e
+
+
+def check_dialogue_log() -> list[str]:
+    from reasoning import ExplainError, append_dialogue, read_dialogue, validate_record
+    e = []
+    tmp = Path(tempfile.mkdtemp()) / "dialogue.jsonl"
+    rec = {"rev": 28, "ts": "2026-10-09T10:00:00+00:00", "context_sha256": "a" * 64, "finding_keys": ["k"],
+           "text": "Oda yaklaşık 2025 mm.", "mode": "sor", "level": "mimar"}
+    append_dialogue(tmp, rec, {"2025"})
+    for name, bad in (("kaynaksiz sayi", {**rec, "text": "Oda yaklaşık 2026 mm."}), ("geri giden rev", {**rec, "rev": 27})):
+        try:
+            append_dialogue(tmp, bad, {"2025"})
+            e.append(f"{name} REDDEDILMELI (ekleme-yalniz)")
+        except ExplainError:
+            pass
+    append_dialogue(tmp, {**rec, "text": "Aynı revizyonda ikinci not."}, set())
+    if len(read_dialogue(tmp)) != 2 or tmp.read_text(encoding="utf-8").count("\n") != 2:
+        e.append("kayitlar satir satir EKLENMELI (reddedilenler yazilmamali)")
+    for name, bad in {"alan eksik": {k: v for k, v in rec.items() if k != "level"}, "kotu sha": {**rec, "context_sha256": "x"},
+                      "bos metin": {**rec, "text": " "}, "kotu mod": {**rec, "mode": "belki"}, "kotu seviye": {**rec, "level": "usta"}}.items():
+        if not validate_record(bad):
+            e.append(f"kayit bicimi {name} YAKALANMADI")
+    return e
+
+
+def check_digit_gate_13() -> list[str]:
+    """#13: uretim kaydi temiz; enjekte edilen rakamli anlatim her alanda YAKALANMALI."""
+    from reasoning import Remedy
+    e = []
+    if dc.check_reasoning_digits():
+        e.append(f"uretim kaydinda rakamli anlatim: {dc.check_reasoning_digits()[:3]}")
+    base = dict(id="mahremiyet.gorsel.deneme", lens="mahremiyet", title_tr="t", principle_tr="p", why_tr="w")
+    for name, kw in {"title": dict(title_tr="3 oda"), "principle": dict(principle_tr="45 derece"), "why": dict(why_tr="1 sebep"),
+                     "plain.problem": dict(plain=Plain(problem="5 oda", consequence="x")),
+                     "plain.consequence": dict(plain=Plain(problem="x", consequence="2 kat")),
+                     "numbers disi yer-tutucu": dict(plain=Plain(problem="{olcum:a}", consequence="x"))}.items():
+        if not dc.check_reasoning_digits(reg_with(Facet(**{**base, **kw}))):
+            e.append(f"kapi #13 YAKALAMADI: {name}")
+    r = reg_with()
+    r.register_remedy(Remedy("kotu", "iki kapıyı 2 metre kaydır", "x"))
+    if not dc.check_reasoning_digits(r):
+        e.append("kapi #13 YAKALAMADI: cozum metni")
+    ok = Facet(**{**base, "plain": Plain(problem="{olcum:a} küçüldü", consequence="x", numbers=("a",))})
+    if dc.check_reasoning_digits(reg_with(ok)):
+        e.append("bildirilmis yer-tutucu hata verdi (yanlis-pozitif)")
+    return e
+
+
+def check_dialogue_cli() -> list[str]:
+    import re as _re
+    e = []
+    script = str(ROOT / "scripts" / "reasoning_dialogue.py")
+
+    def run(*a):
+        return subprocess.run([sys.executable, script, *a], capture_output=True, text=True, timeout=600)
+
+    r = run("brief")
+    if r.returncode != 3 or "sade tutayım" not in r.stdout:
+        e.append(f"seviye sorulmadan brief: cikis 3 ve soru beklenirdi: {r.returncode}")
+    r = run("brief", "--level", "sade")
+    if r.returncode != 0 or r.stdout.count("--- Konu") != 3 or "Diger notlar" in r.stdout:
+        e.append("rev-28 brief: tam 3 konu, diger not yok beklenirdi")
+    if "ölçülmüyor" not in r.stdout:
+        e.append("brief henuz olculmeyen bakis acilarini adiyla soylemeli")
+    body = _re.sub(r"(?m)^(\[Seviye.*|--- Konu .*|\d+\. .*)$", "", r.stdout.split("KAYIT ANAHTARLARI")[0])
+    if any(ch.isdigit() for ch in body):
+        e.append("sade seviyede serbest rakam olmamali")
+    tmp = Path(tempfile.mkdtemp())
+    d = tmp / "dialogue.jsonl"
+    keys = json.loads(r.stdout.split("KAYIT ANAHTARLARI (append --key icin):")[1].strip().splitlines()[0])
+    key = keys[0][0]
+    base = ["append", "--level", "mimar", "--mode", "sor", "--rev", "28", "--dialogue", str(d), "--key", key]
+    ok = run(*base, "--text", "uB salonunda en dar nokta 2225mm, 3000mm altında.")
+    if ok.returncode != 0:
+        e.append(f"kaynakli sayili kayit reddedildi: {ok.stdout}")
+    bad = run(*base, "--text", "uB salonunda en dar nokta 2300mm.")
+    if bad.returncode != 1 or "kaynaksiz" not in bad.stdout:
+        e.append("kaynaksiz sayili kayit REDDEDILMELI (cikis 1)")
+    if len(d.read_text(encoding="utf-8").splitlines()) != 1:
+        e.append("reddedilen kayit dosyaya yazilmamali")
+    v = run("verify", "--dialogue", str(d))
+    if v.returncode != 0 or "tamam" not in v.stdout:
+        e.append(f"verify temiz kaydi onaylamali: {v.stdout}")
+    rec = json.loads(d.read_text(encoding="utf-8").splitlines()[0])
+    rec["text"] = rec["text"].replace("2225", "2999")  # kasitli bozma: elle degistirilmis anlati
+    d.write_text(json.dumps(rec, ensure_ascii=False) + "\n", encoding="utf-8")
+    v = run("verify", "--dialogue", str(d))
+    if v.returncode != 1 or "KAYNAKSIZ" not in v.stdout:
+        e.append("elle bozulmus anlati verify tarafindan YAKALANMALI")
+    rec["context_sha256"] = "b" * 64
+    d.write_text(json.dumps(rec, ensure_ascii=False) + "\n", encoding="utf-8")
+    v = run("verify", "--dialogue", str(d))
+    if v.returncode != 0 or "DOGRULANAMADI" not in v.stdout:
+        e.append("baglami degismis kayit 'dogrulanamadi' diye raporlanmali (sessiz gecilmemeli)")
+    return e
+
+
 def main() -> int:
     checks = [check_keys_and_signature, check_severity_curve, check_diff, check_legacy_parse,
               check_real_validate_parity, check_registry_validation, check_gate10_three_state,
               check_gate11_refs, check_gate12_cases, check_case_runner, check_coverage,
               check_provenance_gate_and_info, check_promotion, check_production_loading_is_side_effect_free,
               check_mahremiyet_statuses, check_mahremiyet_wiring_claim, check_mahremiyet_cases,
-              check_mahremiyet_real_project, check_mahremiyet_report]
+              check_mahremiyet_real_project, check_mahremiyet_report,
+              check_lint_and_render, check_narrative_example, check_queue_and_modes,
+              check_smells_and_coverage_sentence, check_dialogue_log, check_digit_gate_13, check_dialogue_cli]
     failed = 0
     for check in checks:
         errs = check()

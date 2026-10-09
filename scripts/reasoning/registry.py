@@ -12,7 +12,7 @@ import sys
 from pathlib import Path
 
 from .model import (CONFIDENCES, FACET_ID_RE, KINDS, LENS_ID_RE, PLACEHOLDER_SOURCES, SCOPES, STATUSES,
-                    Facet, Lens, Profile, Smell, Tension, missing_for_status)
+                    Facet, Lens, Profile, Remedy, Smell, Tension, missing_for_status)
 
 ROOT_SCRIPTS = Path(__file__).resolve().parent.parent
 
@@ -44,6 +44,7 @@ class Registry:
         self.smells: dict[str, Smell] = {}
         self.tensions: list[Tension] = []
         self.profiles: dict[str, Profile] = {}
+        self.remedies: dict[str, Remedy] = {}
         self.duplicates: list[str] = []
 
     def register_lens(self, lens: Lens) -> None:
@@ -61,6 +62,11 @@ class Registry:
 
     def register_tension(self, tension: Tension) -> None:
         self.tensions.append(tension)
+
+    def register_remedy(self, remedy: Remedy) -> None:
+        if remedy.id in self.remedies:
+            self.duplicates.append(f"cozum:{remedy.id}")
+        self.remedies[remedy.id] = remedy
 
     def register_profile(self, profile: Profile) -> None:
         self.profiles[profile.id] = profile
@@ -93,6 +99,9 @@ def validate_registry(reg: Registry) -> list[str]:
             errors.append(f"{f.id}: adapter.scope {f.adapter.scope!r} gecersiz")
         if f.legacy and f.status != "active":
             errors.append(f"{f.id}: legacy bayragi yalniz 'active' veche icin (validate.py'nin zaten cagirdigi kural)")
+        for r in f.remedies:
+            if r not in reg.remedies:
+                errors.append(f"{f.id}: cozum basvurusu {r!r} kayitli degil")
         for t in f.tensions:
             if t not in reg.facets:
                 errors.append(f"{f.id}: gerilim basvurusu {t!r} kayitli degil")
@@ -100,6 +109,9 @@ def validate_registry(reg: Registry) -> list[str]:
         for fid in s.facet_ids:
             if fid not in reg.facets:
                 errors.append(f"koku {s.id}: bilesen veche {fid!r} kayitli degil")
+        for r in s.remedies:
+            if r not in reg.remedies:
+                errors.append(f"koku {s.id}: cozum basvurusu {r!r} kayitli degil")
     for t in reg.tensions:
         for fid in (t.a, t.b):
             if fid not in reg.facets:

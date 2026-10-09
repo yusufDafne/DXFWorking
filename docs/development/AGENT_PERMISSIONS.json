@@ -8,7 +8,7 @@
   },
   "project_operation": {
     "roles": ["project-operator"],
-    "read": ["assigned-project/", "scripts/approved-public-api/"],
+    "read": ["assigned-project/", "scripts/approved-public-api/", "scripts/reasoning_dialogue.py", "scripts/reasoning_report.py"],
     "write": ["assigned-project/"],
     "forbidden": ["scripts/", "schema/", "docs/", "other-projects/"],
     "requires": [
