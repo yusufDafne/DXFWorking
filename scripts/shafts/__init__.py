@@ -24,10 +24,12 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 try:
+    from ..spatial import shared_edge_length
     from ..collision.geometry import polygon_intersection_area, shoelace_area
     from ..palette import color_for
     from ..standards.measure import edge_wall_thicknesses, inset_polygon
 except ImportError:
+    from spatial import shared_edge_length
     from collision.geometry import polygon_intersection_area, shoelace_area
     from palette import color_for
     from standards.measure import edge_wall_thicknesses, inset_polygon
@@ -86,24 +88,6 @@ class Shaft:
         short, long_ = sorted((x1 - x0, y1 - y0))
         return float("inf") if short <= 0 else long_ / short
 
-
-def shared_edge_length(poly_a, poly_b, tol: float = _TOL) -> float:
-    """Iki poligonun (eksen-hizali kenarli) ORTAK kenar uzunlugu toplami (mm)."""
-    def edges(poly):
-        n = len(poly)
-        for k in range(n):
-            a, b = poly[k], poly[(k + 1) % n]
-            yield a, b
-    total = 0.0
-    for a1, a2 in edges(poly_a):
-        for b1, b2 in edges(poly_b):
-            if abs(a1[0] - a2[0]) < tol and abs(b1[0] - b2[0]) < tol and abs(a1[0] - b1[0]) < tol:
-                lo = max(min(a1[1], a2[1]), min(b1[1], b2[1])); hi = min(max(a1[1], a2[1]), max(b1[1], b2[1]))
-                total += max(0.0, hi - lo)
-            elif abs(a1[1] - a2[1]) < tol and abs(b1[1] - b2[1]) < tol and abs(a1[1] - b1[1]) < tol:
-                lo = max(min(a1[0], a2[0]), min(b1[0], b2[0])); hi = min(max(a1[0], a2[0]), max(b1[0], b2[0]))
-                total += max(0.0, hi - lo)
-    return total
 
 
 def check_shafts(floor: dict, units: str = "mm") -> tuple[list[str], list[str]]:

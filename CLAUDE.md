@@ -189,6 +189,7 @@ geliştirme görevleri, tamamlanmış geçmiş, fikirler ve geliştirici notlar�
    python scripts/importer/selftest.py
    python scripts/sections/selftest.py
    python scripts/northarrow/selftest.py
+   python scripts/spatial/selftest.py  # DEV-059 (eski<->yeni diferansiyel)
    python scripts/shafts/selftest.py   # rev-27 (stairs/standards/templates/architect de kendi selftest'leriyle)
    ```
 

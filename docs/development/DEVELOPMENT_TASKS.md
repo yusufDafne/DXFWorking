@@ -59,7 +59,7 @@ Tamamlanan işlerin ayrıntılı gerekçesi, karar süreci ve ölçülen etkisi
 | DEV-056 | `architect/study.py` — etüt modülünün 2D yerleşim optimizasyonuna genişletilmesi | COMPLETED (2026-10-05) |
 | DEV-057 | Kümülatif mini düzeltmeler (DEV-049…056 sırasında çıkanlar; seansın KAPANIŞ maddesi) | COMPLETED (2026-10-05) |
 | DEV-058 | `shafts/` — şaft / havalandırma / baca boşlukları modülü | COMPLETED (2026-10-05) |
-| DEV-059 | `spatial/` — ortak mekânsal sorgu katmanı (5 kopyanın tek sahibe taşınması; `DEV-048` Faz 1a önkoşulu) | PLANNED (sıra 1/12) |
+| DEV-059 | `spatial/` — ortak mekânsal sorgu katmanı (5 kopyanın tek sahibe taşınması; `DEV-048` Faz 1a önkoşulu) | VALIDATION (sıra 1/12) |
 | DEV-060 | `reasoning/` — muhakeme çekirdeği (mercek/veçhe/bulgu modeli, kayıt, kapsam raporu, `doc_check` kapıları; `DEV-048` Faz 1b) | PLANNED (sıra 2/12) |
 | DEV-061 | `reasoning/` — mahremiyet mercek paketi (mevcut kuralların kaydı + yeni veçheler; Faz 2) | PLANNED (sıra 3/12) |
 | DEV-064 | `reasoning/`+operatör talimatı — diyalog sözleşmesi + açıklama motoru + kök-neden kümeleme (Faz 2) | PLANNED (sıra 4/12) |
@@ -721,7 +721,7 @@ belirleyeceksin ... her birini sıralama olarak birbirine bağla"):**
 
 ### DEV-059 — `spatial/` — ortak mekânsal sorgu katmanı
 
-- **Durum:** PLANNED
+- **Durum:** VALIDATION
 - **Neden (ölçüm, plan §1.1 #9):** eleman-farkındalıklı mekânsal sorgular — kapı → orta
   nokta, bir noktaya değen odalar, iki poligonun ortak kenarı, doğru parçası kesişimi/
   görüş hattı — **5 yerde ayrı yazılı**: `architect/rules.py` (`_door_midpoint`,
@@ -756,6 +756,7 @@ belirleyeceksin ... her birini sıralama olarak birbirine bağla"):**
   4. Sıfır uzunluklu duvar: iki davranış korunur (`door_midpoint` başlangıç noktası, `door_frame` `None`). Öneri: evet; birleştirmek ayrı, açık bir değişikliktir.
 - **Metin düzeltmeleri (onayla birlikte uygulanır):** Kabul (i)–(iv) yerine: diferansiyel selftest; 'validate/golden bu taşımaya kördür' notu; `doc_check` şartlarının TAMAMI (`CLAUDE.md`, `scripts/CLAUDE.md` anması, `CONTRACT_VERSION`, `version.CONTRACT_MODULES`, `COLLISION_EXEMPT`). 'Yaprak' sözcüğünü çıkar; '5 kopya' → 'en az 5'; `_centroid` → `vertex_mean`; `shafts.shared_edge_length` genel API'dir, yeniden dışa aktarım korunur.
 - **Kullanıcı kararları (2026-10-09, netleştirme tamam; başlamak için kullanıcı onayı bekleniyor):** (1) `spatial/`, tek yönlü `spatial → collision.geometry` — EVET; (2) `shared_edge_length` tek anlam = mimari sürüm, dört sınır farkı selftest'te sabitlenir — EVET; (3) `rooms.PolygonOps._point_in_polygon` delege + takma ad — EVET; (4) sıfır uzunluklu duvarda iki davranış korunur — EVET. Metin düzeltmeleri bu kararlarla kesinleşti.
+- **Uygulama sonucu (2026-10-09, kabul bekliyor):** `scripts/spatial/` kuruldu (10 genel ad, `CONTRACT_VERSION 1.0`); `architect/rules.py` (6 yardımcı), `standards/nuances.py` (4), `shafts` (`shared_edge_length`), `rooms` (`_point_in_polygon`) artık buna takma adla bağlı — 40'tan fazla çağrı noktası değişmedi. **Kanıt:** `validate.py` çıktısı bire bir aynı (taban çizgisi diff'i boş); 15 mevcut selftest çıktısı bayt düzeyinde aynı; `validate_selftest` ve `--golden-set` (13 referans) aynı; yeni `spatial/selftest.py` 6/6 (eski kodun commit `9f97553`ten donmuş kopyalarıyla gerçek context'te açıklık×oda, oda çiftleri, görüş hatları ve sentetik girdilerde diferansiyel; dört sınır farkı ölçülüp sabitlendi; kasıtlı bozulmuş `door_midpoint` testi gerçekten kırdı). `doc_check` temiz. Kayıtlar: `version.CONTRACT_MODULES`, `COLLISION_EXEMPT`, `scripts/CLAUDE.md` (madde + tablo), kök `CLAUDE.md` selftest listesi. **Bilinen kalan:** `validate.py`/`architect/layout.py` içindeki üç kopya taşınmadı (modül `CLAUDE.md` 'Bilinen sınırlamalar'). Kilit (`ACTIVE_TASK.lock`) kabul sonrası bırakılır.
 
 ### DEV-060 — `reasoning/` — muhakeme çekirdeği
 

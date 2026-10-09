@@ -35,8 +35,27 @@ import math
 
 try:
     from ..collision.geometry import point_in_polygon, point_on_boundary
+    from ..spatial import (
+        TOUCH_TOLERANCE_MM,
+        clear_line_of_sight as _clear_line_of_sight,
+        door_midpoint as _door_midpoint,
+        rooms_touching_point as _rooms_touching_point,
+        segments_intersect as _segments_intersect,
+        shared_edge_length as _shared_wall_length,
+        vertex_mean as _centroid,
+    )
 except ImportError:
     from collision.geometry import point_in_polygon, point_on_boundary
+    from spatial import (
+        TOUCH_TOLERANCE_MM,
+        clear_line_of_sight as _clear_line_of_sight,
+        door_midpoint as _door_midpoint,
+        rooms_touching_point as _rooms_touching_point,
+        segments_intersect as _segments_intersect,
+        shared_edge_length as _shared_wall_length,
+        vertex_mean as _centroid,
+    )
+# DEV-059: mekansal sorgular `spatial/` modulune tasindi (ayni ozel adlarla takma ad).
 
 # v1 pratik varsayilanlar (standards.STANDARDS ile AYNI disiplin - katalog
 # SABITI, proje verisi DEGIL). Her check_* fonksiyonu bunu bir parametre
@@ -76,61 +95,8 @@ BEDROOM_ROOM_TYPES = frozenset({"yatak_odasi"})
 # kalinligi 200mm ve oda poligonlari cogunlukla duvar MERKEZ cizgisiyle
 # ayni koordinatta tanimlanir (bkz. templates::generate_circulation_core);
 # 300mm hem merkez-hizali hem ic-yuz-hizali odalari guvenle yakalar.
-_TOUCH_TOLERANCE_MM = 300.0
+_TOUCH_TOLERANCE_MM = TOUCH_TOLERANCE_MM
 
-
-def _door_midpoint(door: dict, walls_by_id: dict) -> tuple[float, float] | None:
-    wall = walls_by_id.get(door.get("wall_id"))
-    if wall is None:
-        return None
-    sx, sy = wall["start"]
-    ex, ey = wall["end"]
-    length = ((ex - sx) ** 2 + (ey - sy) ** 2) ** 0.5
-    if length == 0:
-        return (sx, sy)
-    t = door["position_from_start"] / length
-    return (sx + t * (ex - sx), sy + t * (ey - sy))
-
-
-def _rooms_touching_point(point: tuple[float, float], rooms: list[dict],
-                          tolerance: float = _TOUCH_TOLERANCE_MM) -> list[dict]:
-    return [r for r in rooms if point_on_boundary(point, r["polygon"], tolerance)]
-
-
-def _centroid(polygon: list[list[float]]) -> tuple[float, float]:
-    xs = [p[0] for p in polygon]
-    ys = [p[1] for p in polygon]
-    return (sum(xs) / len(xs), sum(ys) / len(ys))
-
-
-def _segments_intersect(p1, p2, p3, p4) -> bool:
-    """Iki dogru parcasi GERCEKTEN (uc noktalarda DEGIL) kesisiyor mu -
-    standart yon (cross-product) testi. Uc noktalarda dokunma KASITLI
-    olarak KESISIM SAYILMAZ: goru hattinin kendi baslangic/bitis
-    noktalari zaten bir duvarin UZERINDEDIR (kapinin oturdugu duvar),
-    bu durum bir ENGEL degildir."""
-    def cross(o, a, b):
-        return (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])
-
-    d1 = cross(p3, p4, p1)
-    d2 = cross(p3, p4, p2)
-    d3 = cross(p1, p2, p3)
-    d4 = cross(p1, p2, p4)
-    return ((d1 > 0 > d2 or d1 < 0 < d2)
-            and (d3 > 0 > d4 or d3 < 0 < d4))
-
-
-def _clear_line_of_sight(a: tuple[float, float], b: tuple[float, float],
-                          walls: list[dict], exclude_wall_ids: set[str]) -> bool:
-    """`a`-`b` dogru parcasi, `exclude_wall_ids` DISINDAKI herhangi bir
-    duvarin MERKEZ CIZGISINI kesiyor mu? (duvar ayak izi merkez cizgidir -
-    `collision/CLAUDE.md`deki AYNI bilinen basitlestirme)."""
-    for wall in walls:
-        if wall["id"] in exclude_wall_ids:
-            continue
-        if _segments_intersect(a, b, tuple(wall["start"]), tuple(wall["end"])):
-            return False
-    return True
 
 
 def check_circulation_area_share(
@@ -502,31 +468,6 @@ def check_wet_area_reachable_without_bedroom(
             )
     return warnings
 
-
-def _shared_wall_length(poly_a: list[list[float]], poly_b: list[list[float]]) -> float:
-    """Iki oda poligonunun ORTAK KENARININ (esdogrusal + ortusen) toplam
-    uzunlugu. Koseden TEGET temas 0 sayilir; asgari ortak uzunluk sarti YOKTUR
-    (kullanici karari) - herhangi bir gercek kenar paylasimi ortak duvardir."""
-    total = 0.0
-    na, nb = len(poly_a), len(poly_b)
-    for i in range(na):
-        a0, a1 = poly_a[i], poly_a[(i + 1) % na]
-        ex, ey = a1[0] - a0[0], a1[1] - a0[1]
-        elen = (ex * ex + ey * ey) ** 0.5
-        if elen < 1e-9:
-            continue
-        for j in range(nb):
-            b0, b1 = poly_b[j], poly_b[(j + 1) % nb]
-            d0 = abs(ex * (b0[1] - a0[1]) - ey * (b0[0] - a0[0])) / elen
-            d1 = abs(ex * (b1[1] - a0[1]) - ey * (b1[0] - a0[0])) / elen
-            if d0 > 1.0 or d1 > 1.0:
-                continue
-            t0 = ((b0[0] - a0[0]) * ex + (b0[1] - a0[1]) * ey) / elen
-            t1 = ((b1[0] - a0[0]) * ex + (b1[1] - a0[1]) * ey) / elen
-            overlap = min(max(t0, t1), elen) - max(min(t0, t1), 0.0)
-            if overlap > 1.0:
-                total += overlap
-    return total
 
 
 def _same_line(wall_a: dict, wall_b: dict, tol: float = 1.0) -> bool:
