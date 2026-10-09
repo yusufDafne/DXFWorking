@@ -4,6 +4,15 @@ Aktif geçmiş kapasitesi: **50 kayıt**. En eski tamamlanmış kayıt, 51. kay�
 alınırken silinir. Ayrıntılı teknik değişiklikler git geçmişi ve ilgili proje
 provenance kayıtlarıyla ilişkilendirilir.
 
+## HD-042 — `reasoning/`: mahremiyet mercek paketi (DEV-061)
+
+- **Durum:** COMPLETED
+- **Tamamlanma:** 2026-10-09
+- **Kapsam:** `scripts/reasoning/lenses/mahremiyet.py`, `scripts/reasoning/cases/` (22 vaka), `scripts/architect/privacy.py`, `scripts/architect/reasoning.py`, `scripts/reasoning/{registry,coverage,selftest}.py`, `scripts/reasoning_report.py`, `scripts/doc_check.py`, modül/`scripts` `CLAUDE.md`'leri.
+- **Sonuç:** 14 veçhe: 5 `active`+`legacy` (`validate.py`nin çağırdığı; iddia selftest'te koddan sabit), 6 `shadow` (DEV-052/053 + 4 yeni ölçüm), 2 `draft`, 1 `idea`; 3 koku; `architect` PENDING'den sağlayıcıya geçti. Kullanıcı kararları: legacy/shadow ayrımı, komşu giriş eşiği 3000 mm (tercih, kaynaksız), ıslak ortak duvar iki veçhe (duvar türü ayırıcısı yok), vakalar git geçmişinden değil elle yazılmış sentetik. Kapsam raporu `idea`/`draft`i "ölçülmeyen" diye söyler; `doc_check` #12 `legacy`yi muaf tutar.
+- **Doğrulama:** `validate.py`/`rules.py` değişmedi; rev-28 normal1: #4 uC 16°/1978, uB 20°/2025; #5 uB–uC 1485 mm; #6 5/6; sandviç banyo 0/6 (dejenere); `reasoning/selftest.py` 19/19 (4 kasıtlı bozma testleri kırdı); 16 selftest, `--golden-set`, `doc_check` temiz.
+- **Golden etkisi:** yok. **Sınır:** çapraz-mercek gerilimleri kayıtsız; misafir WC `idea`; DEV-052/053 `validate.py`ye bağlı değil (ayrı karar). **Sonraki direktif:** `DEV-064`.
+
 ## HD-041 — `reasoning/`: mimari muhakeme çekirdeği (DEV-060)
 
 - **Durum:** COMPLETED

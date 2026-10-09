@@ -61,7 +61,7 @@ Tamamlanan işlerin ayrıntılı gerekçesi, karar süreci ve ölçülen etkisi
 | DEV-058 | `shafts/` — şaft / havalandırma / baca boşlukları modülü | COMPLETED (2026-10-05) |
 | DEV-059 | `spatial/` — ortak mekânsal sorgu katmanı (5 kopyanın tek sahibe taşınması; `DEV-048` Faz 1a önkoşulu) | COMPLETED (2026-10-09) |
 | DEV-060 | `reasoning/` — muhakeme çekirdeği (mercek/veçhe/bulgu modeli, kayıt, kapsam raporu, `doc_check` kapıları; `DEV-048` Faz 1b) | COMPLETED (2026-10-09) |
-| DEV-061 | `reasoning/` — mahremiyet mercek paketi (mevcut kuralların kaydı + yeni veçheler; Faz 2) | PLANNED (sıra 3/12) |
+| DEV-061 | `reasoning/` — mahremiyet mercek paketi (mevcut kuralların kaydı + yeni veçheler; Faz 2) | COMPLETED (2026-10-09) |
 | DEV-064 | `reasoning/`+operatör talimatı — diyalog sözleşmesi + açıklama motoru + kök-neden kümeleme (Faz 2) | PLANNED (sıra 4/12) |
 | DEV-065 | Şema + `reasoning/` — tasarım kararı kaydı (`design_decisions[]`), kanıta bağlı kabul (Faz 4) | PLANNED (sıra 5/12) |
 | DEV-070 | `docs/agents/` — bilgi mühendisi rolü + büyütme protokolü (Faz 2) | PLANNED (sıra 6/12) |
@@ -718,35 +718,6 @@ belirleyeceksin ... her birini sıralama olarak birbirine bağla"):**
 > **mevcut `validate.py` çıktısını ve golden referansları bozmamak** ortak kabul şartıdır (`DEV-065`in şema
 > sürümü uyarısı satırı bilinen tek istisnadır). Bölünmesi önerilen maddelerde parçalar **sayısal** yeni DEV
 > kimlikleri olur (`doc_check` `### DEV-\d+` ister; `DEV-063A` gibi kimlikler görünmez kalır).
-
-### DEV-061 — `reasoning/` — mahremiyet mercek paketi
-
-- **Durum:** PLANNED
-- **Kapsam (plan §6.1):** `lenses/mahremiyet.py` — (1) mevcut kuralları adaptörle **KAYDET**
-  (`check_entry_sightlines`, `check_entry_wet_door_proximity`,
-  `check_kitchen_wet_door_opposite`, `check_wet_door_swing_inward`,
-  `check_bedroom_via_corridor`, `check_wet_area_reachable_without_bedroom`); (2) yeni
-  veçheler **`shadow`**: girişten yatak odası kapısı görünürlüğü (ölçüm #4), komşu birim
-  giriş kapısı yakınlığı (#5), ıslak hacim ↔ yatak odası/salon ortak duvarı (#6 — ayırıcılı:
-  duvar türü + WC≠banyo), kademelenme derinliği; (3) kokular `sandvic_banyo`,
-  `gecis_odasi_yatak`, `dikizli_giris`; (4) gerilimler; (5) vakalar (geçmiş geometriden).
-- **Şema:** değişmez. **Kullanıcıya görünür yeni bulgu YOKTUR** (yeni veçheler `shadow`).
-- **Kabul ölçütü:** `validate` çıktısı aynı; muhakeme raporu rev-28'de #4 (`uC`, 16.1°) ve
-  #5 (`uB`–`uC`, 1485 mm) bulgusunu üretir; `sandvic_banyo` kokusu `727405f` geometrisinde
-  (`uC_banyo` hem salona hem yatak odasına kapılı — doğrulandı) bulunur, `7d32a2d`de
-  (yalnız hole) bulunmaz; #6 `shadow`da kalır ve ayırt edicilik raporu "6/6" bildirir.
-- **Önkoşul:** `DEV-060`. **Açık kararlar:** plan §11 #9 (misafir WC); #10 (komşu giriş kapısı
-  bulgusunun gerçek projede ele alınması — plan değişikliği DEĞİL, bilgidir).
-- **Sıra:** 3/12 — plan §10.1; geliştirici yorumu ve netleştirme soruları 2026-10-09 kod denetimine dayanır (iki bağımsız ajan; `DEV-070` yalnız bir denetim).
-- **Geliştirici yorumu:** Tasarım sağlam, geçmiş vakalar gerçek (iki commit çözülüyor, geometri iddiaları tutuyor). Kabul metni üç yerde yanlış/döngüsel: ölçüm #4 yalnız `uC` değil `uB`de de ateşliyor (20,2°/2025 mm ve 16,1°/1978 mm); #6 "6/6" aynı birimde 5/6 (6/6 tanım seçimine bağlı); "ayırt edicilik raporu" `DEV-066` çıktısı iken burada önkoşul — asgari ölçer `060`/`061` içine çekilir. `sandvic_banyo` kokusunun bileşen veçhesi yok (ıslak hacmin iki bölgeye kapılı olması eklenmeli). Önemli yan bulgu: `check_entry_wet_door_proximity` (`DEV-053`) ve `check_wet_area_adjacency` (`DEV-052`) tamamlanmış sayılıyor ama `validate.py` onları hiç çağırmıyor; bunlar `shadow` kaydedilir, bağlamak kullanıcı kararıdır (çıktıyı değiştirir). Kod yeri de yazılı değil: yeni ölçümler (`door_sightline_angle` vb.) nerede yaşar? `rules.py`ye yalnız ekleme denmişti ama `DEV-059` sonrası `spatial/` üzerinden kurulmalı.
-- **Netleştirme soruları** (her biri önerilen varsayılanla; kullanıcı tek tek onaylayınca madde `READY` olur):
-  1. Eski kurallar nasıl kaydedilir? Öneri: `validate.py`nin gerçekten çağırdığı beşi `active`+`legacy`, çağrılmayanlar (`DEV-052`/`053`) `shadow`.
-  2. Komşu birim giriş kapısı yakınlığı eşiği (ölçüm #5, 1485 mm): öneri `warn_at=3000 mm` (`DEFAULT_ENTRY_FRONT_MAX_DISTANCE_MM`den ödünç), 'tercih / v1 pratik varsayılan', yalnız `shadow`, kaynak yok.
-  3. Islak hacim ↔ yatak odası/salon: iki veçhe — aynı birim (`shadow`, 5/6) ve birimler arası (`draft`; örn. `uC_banyo↔uA_oda2` 1050 mm). Duvar türü ayırıcısı v1'de YOK (gerçek projede duvar türü verisi yok).
-  4. Geçmiş geometriden vaka parçaları `scripts/reasoning/cases/` altında donmuş JSON olarak tutulabilir mi (kök CLAUDE.md 'golden = uydurma' kuralına yazılı istisna; `origin: git <hash>` alanı, test zamanında git çağrılmaz)? Öneri: evet.
-- **Metin düzeltmeleri (onayla birlikte uygulanır):** Kabul: #4 → 'uC (16,1°/1978) ve uB (20,2°/2025)'; #6 → 'aynı birimde 5/6'; 'ayırt edicilik raporu' ifadesi → 'asgari tetik oranı raporu (060)'; ölçümlerin yaşadığı modül yazılır; `check_entry_wet_door_proximity` 'mevcut kural' listesinden `shadow` listesine alınır.
-- **Kullanıcı kararları (2026-10-09, netleştirme tamam; başlamak için kullanıcı onayı bekleniyor):** (1) eski kurallar: `validate.py`nin çağırdığı beşi `active`+`legacy`, `DEV-052`/`DEV-053` kuralları yalnız `shadow` (validate'e bağlamak ayrı karar) — EVET; (2) komşu giriş kapısı yakınlığı eşiği 3000 mm, 'tercih / v1 pratik varsayılan', yalnız `shadow` — EVET; (3) ıslak hacim↔yatak odası/salon: iki veçhe (aynı birim `shadow`, birimler arası `draft`), duvar türü ayırıcısı YOK — EVET; (4) vaka parçaları git geçmişinden DEĞİL: **elle yazılmış, uydurulmuş mini vakalar** (kök CLAUDE.md 'golden = uydurulmuş mini context' kuralına istisna GEREKMEZ). **Sonuç:** gerçek geçmiş geometriyle (`727405f`/`7d32a2d`) birebir kanıt vaka kütüphanesinde YOKTUR; sandviç banyo/girişten görünen yatak odası vakaları sentetik mini sahnelerdir ve kabul ölçütündeki '`727405f` geometrisinde bulunur' cümlesi vakadan ÇIKARILIR (gerçek rev-28 üzerindeki ölçüm #4/#5 `reasoning_report` ile ayrıca doğrulanır, vaka değil).
-- **Uygulama sonucu (2026-10-09, kabul bekliyor):** `scripts/reasoning/lenses/mahremiyet.py` (14 veçhe: 5 `active`+`legacy` — `validate.py`nin çağırdığı beşi, bu iddia selftest'te koddan sabitlenir; 6 `shadow` — DEV-052/053 kuralları + 4 yeni ölçüm; 2 `draft`; 1 `idea`; 3 koku) + `architect/privacy.py` (4 ölçüm + `*_subjects` ikizleri) + `architect/reasoning.py` (sağlayıcı; `architect` PENDING'den çıktı) + 22 sentetik vaka. **Kanıt:** `validate.py` ve `architect/rules.py` DEĞİŞMEDİ (git diff boş), `validate` çıktısı aynı (15 UYARI→3 konu); rev-28 normal1: #4 uC 16°/1978 mm ve uB 20°/2025 mm, #5 uB–uC 1485 mm, #6 ıslak ortak duvar 5/6 (asgari tetik oranı raporu: giriş→yatak 2/3, komşu giriş 2/3, sandviç banyo 0/6 = dejenere ve bu dürüstçe yazılır); `reasoning/selftest.py` 19/19 (kasıtlı bozma: koni karşılaştırması, ortak duvar eşiği, komşu mesafe eşiği ve `validate.py`ye kuralın bağlanması — her biri ilgili testi GERÇEKTEN kırdı); 16 modül selftest'i, `--golden-set` ve `doc_check` temiz. **Değişen/eklenen davranış:** kapsam raporu artık `idea`/`draft` veçheyi `kostu` saymaz, "henüz ölçülmeyen" diye adıyla söyler ve `uygulanmaz`ı yalnız sayar; `doc_check` #12 `legacy` veçheyi terfi kapısından muaf tutar (model belgesindeki niyet; vakaları yine de var); `load_registry` `scripts/`i `sys.path`e ekler. **Bilinen kalan / kullanıcıya:** çapraz-mercek gerilimleri kaydedilmedi (karşı veçhe başka paketlerde); misafir WC (#9) `idea`; DEV-052/053'ü `validate.py`ye bağlamak ayrı karar; `kademelenme.derinlik` ve birimler arası ıslak ortak duvar ölçüm kodu yok (`draft`). **Metin düzeltmeleri kabulde uygulanır.** Kilit iş doğrulandıktan sonra bırakıldı.
 
 ### DEV-064 — `reasoning/`+operatör talimatı — diyalog sözleşmesi, açıklama motoru, kümeleme
 
@@ -2078,3 +2049,7 @@ Bir görev için agent şunları yapmadan `COMPLETED` yazamaz:
 - **Durum:** COMPLETED (2026-10-09) — kullanıcı onayıyla (dört netleştirme kararı) uygulandı. Ayrıntılı kayıt: `HD-041`.
 - **Özet:** `scripts/reasoning/` çekirdeği + `scripts/reasoning_report.py` + `doc_check` kapıları #10–#12, #14, #15 kuruldu; `validate.py` çıktısı değişmedi; çekirdek bilgi taşımaz (mercek paketleri `DEV-061`+).
 
+### DEV-061 — `reasoning/` — mahremiyet mercek paketi
+
+- **Durum:** COMPLETED (2026-10-09) — kullanıcı onayıyla (dört netleştirme kararı) uygulandı. Ayrıntılı kayıt: `HD-042`.
+- **Özet:** `reasoning/lenses/mahremiyet.py` (14 veçhe, 3 koku) + `architect/privacy.py` + `architect/reasoning.py` + 22 sentetik vaka; `validate.py` çıktısı değişmedi; rev-28'de ölçüm #4/#5/#6 gölge olarak raporlanır.
