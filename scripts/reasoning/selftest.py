@@ -218,10 +218,11 @@ def check_gate10_three_state() -> list[str]:
         e.append(f"URETIM kaydi kirmizi: {dc.check_reasoning_coverage()}")
     if set(REASONING_PENDING) - dc._PENDING_FROZEN:
         e.append("uretim PENDING kumesi donuk kumenin disina cikmis")
-    if tuple(REASONING_PROVIDERS) != ("architect",):
-        e.append(f"DEV-061 sonrasi tek saglayici 'architect' beklenir: {REASONING_PROVIDERS}")
-    if "architect" in REASONING_PENDING or "architect" in dc._PENDING_FROZEN:
-        e.append("architect saglayici oldu: PENDING ve donuk listeden CIKMALI (kume yalniz kuculur)")
+    if tuple(REASONING_PROVIDERS) != ("architect", "openings", "shafts"):
+        e.append(f"saglayicilar architect, openings, shafts beklenir: {REASONING_PROVIDERS}")
+    for name in REASONING_PROVIDERS:
+        if name in REASONING_PENDING or name in dc._PENDING_FROZEN:
+            e.append(f"{name} saglayici oldu: PENDING ve donuk listeden CIKMALI (kume yalniz kuculur)")
     return e
 
 
@@ -368,8 +369,8 @@ def check_production_loading_is_side_effect_free() -> list[str]:
     from reasoning import load_registry
     reg, errs = load_registry()
     e = []
-    if errs or set(reg.lenses) != {"mahremiyet"} or len(reg.facets) != 14:
-        e.append(f"uretim kaydi: yalniz 'mahremiyet' merceginin 14 vechesi, hatasiz olmali: {errs} {sorted(reg.lenses)} {len(reg.facets)}")
+    if errs or set(reg.lenses) != {"mahremiyet", "isik_hava_yonelim"} or len(reg.facets) != 19:
+        e.append(f"uretim kaydi: iki mercek (mahremiyet, isik_hava_yonelim), 19 veche, hatasiz olmali: {errs} {sorted(reg.lenses)} {len(reg.facets)}")
     from reasoning import validate_registry as _vr
     if _vr(reg):
         e.append(f"uretim kaydi ic tutarlilik hatasi: {_vr(reg)}")
@@ -445,8 +446,8 @@ def check_mahremiyet_cases() -> list[str]:
     reg, _ = _prod_registry()
     e = []
     cases = list_cases()
-    if len(cases) != 22:
-        e.append(f"22 vaka beklenirdi (11 vechenin ihlal+temiz): {len(cases)}")
+    if len(cases) != 30:
+        e.append(f"30 vaka beklenirdi (mahremiyet 11 + isik 4 vechenin ihlal+temiz): {len(cases)}")
     for path in cases:
         case, _x = load_case(path)
         facet = reg.facets.get(case["facet"])
@@ -510,7 +511,7 @@ def check_mahremiyet_report() -> list[str]:
     ctx = json.loads((ROOT / "context.json").read_text(encoding="utf-8"))
     e = []
     sh = rr.shadow_findings(reg, ctx)
-    got = {k: len(v) for k, v in sh.items()}
+    got = {k: len(v) for k, v in sh.items() if k.startswith("mahremiyet.")}
     want = {"mahremiyet.gorsel.giris_wc_kapi_yakin": 0, "mahremiyet.gorsel.islak_hacim_komsulugu": 0,
             "mahremiyet.gorsel.giristen_yatak_odasi_gorus": 10, "mahremiyet.birimler_arasi.komsu_giris_yakinligi": 5,
             "mahremiyet.isitsel.islak_ortak_duvar_ayni_birim": 30, "mahremiyet.gecis.islak_iki_bolgeye_kapili": 0}
@@ -1007,6 +1008,169 @@ def check_knowledge_engineer_role() -> list[str]:
     return e
 
 
+# ------------------------------------------------------------------ DEV-062: isik-hava-yonelim paketi
+def check_isik_pack_registry_and_cases() -> list[str]:
+    import reasoning_report as rr
+    from collections import Counter
+    from reasoning import list_cases, load_case, run_case
+    reg, errs = _prod_registry()
+    e = list(errs)
+    got = Counter(f.status for f in reg.facets.values() if f.lens == "isik_hava_yonelim")
+    if dict(got) != {"shadow": 4, "draft": 1}:
+        e.append(f"isik paketi: 4 shadow + 1 draft beklenirdi (active YOK: terfi kullanici karari): {dict(got)}")
+    if len(reg.facets) != 19 or set(reg.lenses) != {"mahremiyet", "isik_hava_yonelim"}:
+        e.append(f"uretim kaydi: iki mercek, 19 veche: {sorted(reg.lenses)} {len(reg.facets)}")
+    want = {f"{n}_{r}" for n in ("pencere_yasam", "capraz_hava", "islak_hava", "salon_yonelim") for r in ("ihlal", "temiz")}
+    cases = [p for p in list_cases() if p.name in want]
+    if {p.name for p in cases} != want:
+        e.append(f"8 vaka beklenirdi: {sorted({p.name for p in cases} ^ want)}")
+    for path in cases:
+        case, _x = load_case(path)
+        e += run_case(path, rr.facet_check(reg.facets[case["facet"]]))
+    # kasitli bozma: yonelim ihlalinde kuzey acisini cevirirsek / capraz havalandirmada ikinci pencereyi ayni cepheye alirsak kosucu YAKALAMALI
+    tmp = Path(tempfile.mkdtemp())
+    for name, mutate in (("salon_yonelim_ihlal", lambda f: f.update(north_angle=0.0)),
+                         ("capraz_hava_temiz", lambda f: [o.update(wall_id="w_alt") for o in f["openings"]]),
+                         ("pencere_yasam_temiz", lambda f: f.update(openings=[])),
+                         ("islak_hava_temiz", lambda f: f.update(shafts=[]))):
+        src = next(p for p in cases if p.name == name)
+        case, expected = load_case(src)
+        mutate(case["floor"])
+        d = tmp / name
+        d.mkdir()
+        (d / "case.json").write_text(json.dumps(case), encoding="utf-8")
+        (d / "expected_findings.json").write_text(json.dumps(expected), encoding="utf-8")
+        if not run_case(d, rr.facet_check(reg.facets[case["facet"]])):
+            e.append(f"kasitli bozma YAKALANMADI: {name}")
+    return e
+
+
+def check_facade_and_measurements() -> list[str]:
+    """Elle hesaplanan cephe/pencere/yonelim degerleri + gercek rev-28 (normal1)."""
+    import spatial as sp
+    from openings import daylight as dl
+    from shafts import ventilation as vt
+    e = []
+    P = lambda x0, y0, x1, y1: [[x0, y0], [x1, y0], [x1, y1], [x0, y1]]
+    W = lambda i, s, t: {"id": i, "start": s[0], "end": s[1], "thickness": t}
+    a = {"id": "a", "polygon": P(0, 0, 3000, 3000)}
+    b = {"id": "b", "polygon": P(3000, 0, 6000, 3000)}
+    alt = W("alt", ([0, 0], [6000, 0]), 200.0)
+    ort = W("ort", ([3000, 0], [3000, 3000]), 100.0)
+    ust = W("ust", ([6000, 3000], [0, 3000]), 200.0)
+    # alt duvar: icerisi +y (odalar), disi -y -> dis yon (0,-1); ust duvar (yonu -x): dis yon (0,+1)
+    n = sp.facade_normal((1500, 0), alt, [a, b])
+    if n is None or abs(n[0]) > 1e-9 or abs(n[1] + 1) > 1e-9:
+        e.append(f"alt duvar dis yonu (0,-1) olmali: {n}")
+    n = sp.facade_normal((1500, 3000), ust, [a, b])
+    if n is None or abs(n[0]) > 1e-9 or abs(n[1] - 1) > 1e-9:
+        e.append(f"ust duvar dis yonu (0,+1) olmali: {n}")
+    if sp.facade_normal((3000, 1500), ort, [a, b]) is not None:
+        e.append("ic duvar (iki yani da oda) dis cephe SAYILMAMALI (None)")
+    if sp.facade_normal((1500, 0), alt, []) is not None:
+        e.append("iki yani da bos: dis yon tayin edilemez -> None (yon uydurulmaz)")
+    shaft = {"id": "s", "polygon": P(1000, -650, 1650, 0)}
+    if sp.facade_normal((1300, 0), alt, [a, b], [shaft]) is not None:
+        e.append("disarisi saftle dolu duvar (iki yan da dolu) dis cephe sayilmamali")
+    # islak hacim havalandirmasi: tur ve esik sinirlari
+    wc = {"id": "wc", "room_type": "wc", "polygon": P(0, 0, 2000, 2000)}
+    mk = lambda kind, y1: [{"id": "s", "kind": kind, "polygon": P(2000, 0, 2650, y1)}]
+    def fires(shafts):
+        return vt.wet_ventilation_subjects([wc], [], [], shafts)["wc"]
+    if fires(mk("tesisat", 650)) or fires(mk("havalandirma", 650)):
+        e.append("650 mm ortak kenarli tesisat/havalandirma saftı havalandirma sayilmali")
+    if not fires(mk("baca", 650)):
+        e.append("'baca' islak hacim havalandirmasi SAYILMAZ (kullanici karari)")
+    if not fires(mk("tesisat", 299)) or fires(mk("tesisat", 300)) is not False:
+        e.append("ortak kenar esigi 300 mm (check_shafts ile ayni): 299 tetikler, 300 tetiklemez")
+    # ozne (subjects) ikizi uyarilarla TUTARLI: ihlal vakasinda en az bir True, temiz kardeste hicbiri True degil
+    import reasoning_report as rr
+    from reasoning import list_cases, load_case
+    reg, _ = _prod_registry()
+    for path in list_cases():
+        case, _x = load_case(path)
+        facet = reg.facets[case["facet"]]
+        if not case["facet"].startswith("isik_hava_yonelim.") or not facet.measure_ref:
+            continue
+        fl_case = case["floor"]
+        margs = [fl_case.get(n) if n == "north_angle" else fl_case.get(n, []) for n in rr.measure_inputs(facet)]
+        fired = any(v is True for v in rr._resolve(facet.measure_ref)(*margs).values())
+        if fired != (case["role"] == "ihlal"):
+            e.append(f"{path.name}: ozne ikizi uyarilarla tutarsiz (tetik={fired})")
+    # gercek proje, normal1 (elle dogrulanan degerler)
+    fl = next(f for f in json.loads((ROOT / "context.json").read_text(encoding="utf-8"))["floors"] if f["id"] == "normal1")
+    args = (fl["rooms"], fl["walls"], fl["openings"], fl["shafts"])
+    ext = sp.exterior_windows(*args)
+    if len(ext) != 14 or sorted({(round(w["normal"][0]), round(w["normal"][1])) for w in ext}) != [(-1, 0), (0, -1), (0, 1), (1, 0)]:
+        e.append("normal1: 14 pencerenin hepsinin dis yonu tayin edilmeli (4 cephe)")
+    win_by_id = {w["window"]["id"]: w for w in ext}
+    if [r["id"] for r in win_by_id["uA_win_salon"]["rooms"]] != ["uA_salon"]:
+        e.append("uA_win_salon yalniz uA_salon'a degmeli")
+    if any(dl.living_room_window_subjects(*args).values()) or len(dl.living_room_window_subjects(*args)) != 8:
+        e.append("normal1: 8 yasam mahalli, penceresiz 0 beklenirdi (olcum #8)")
+    if dl.cross_ventilation_subjects(*args) != {"uA": False, "uB": False, "uC": False}:
+        e.append(f"capraz havalandirma: uC bati+guney, uB bati+kuzey, uA dogu+guney+kuzey -> hepsi False: {dl.cross_ventilation_subjects(*args)}")
+    if any(vt.wet_ventilation_subjects(*args).values()) or len(vt.wet_ventilation_subjects(*args)) != 6:
+        e.append("normal1: 6 islak hacmin hepsi tesisat saftine bitisik -> 0 tetik")
+    if dl.salon_orientation_subjects(*args, None) != {} or dl.check_salon_orientation(*args, None):
+        e.append("north_angle yokken yonelim olcumu BOS donmeli (yon uydurulmaz)")
+    # north_angle=30: kuzey=(0.5,0.866); uA_salon yalniz dogu (1,0) -> dot 0.5>0 kuzey yarisi; uB_salon bati+kuzey -> bati guney yarisi
+    if dl.salon_orientation_subjects(*args, 30.0) != {"uA_salon": True, "uB_salon": False, "uC_salon": False}:
+        e.append(f"north_angle=30 yonelim: {dl.salon_orientation_subjects(*args, 30.0)}")
+    # north_angle=90: kuzey=(1,0): dogu pencere kuzey yarisi; uB salon bati(-1,0)+kuzey(0,1)->dot(0,1.x)=0 sinirda degil: bati dot=-1 -> guney yarisi
+    if dl.salon_orientation_subjects(*args, 90.0)["uA_salon"] is not True:
+        e.append("north_angle=90 iken dogu pencereli salon kuzey yarisinda")
+    return e
+
+
+def check_isik_report_and_coverage() -> list[str]:
+    import reasoning_report as rr
+    reg, _ = _prod_registry()
+    ctx = json.loads((ROOT / "context.json").read_text(encoding="utf-8"))
+    e = []
+    rep = rr.build_coverage(reg, ctx)
+    text = rep.text()
+    if "isik_hava_yonelim.yonelim.salon_kuzeye_bakiyor" not in text or "yönelim değerlendirilemedi: kuzey yönü verilmedi" not in text:
+        e.append("north_angle yokken kapsam raporu 'yonelim degerlendirilemedi: kuzey yonu verilmedi' demeli")
+    if text.count("salon_kuzeye_bakiyor") != 1:
+        e.append("ayni neden tek satirda toplanmali (kat listesiyle)")
+    if "pencere_alani_orani" not in text or "OLCULMEYEN" not in text.upper():
+        e.append("pencere/taban orani draft: 'olculmeyen' olarak adiyla soylenmeli")
+    sh = rr.shadow_findings(reg, ctx)
+    if sh.get("isik_hava_yonelim.yonelim.salon_kuzeye_bakiyor"):
+        e.append("north_angle yokken yonelim veçhesi KOSMAMALI")
+    for fid in ("isik_hava_yonelim.isik.yasam_mahalli_penceresi", "isik_hava_yonelim.hava.capraz_havalandirma",
+                "isik_hava_yonelim.hava.islak_hacim_havalandirma"):
+        if sh.get(fid) != []:
+            e.append(f"{fid}: rev-28'de bulgu OLMAMALI (olcum #8 ve havalandirma temiz)")
+    rates = {r.facet_id: (r.fired, r.eligible, r.degenerate) for r in rr.shadow_triggers(reg, ctx)}
+    if rates.get("isik_hava_yonelim.isik.yasam_mahalli_penceresi") != (0, 8, True):
+        e.append(f"penceresiz yasam mahalli 0/8 (dejenere) olmali: {rates}")
+    # north_angle verilen kopya: veche KOSAR
+    ctx2 = json.loads(json.dumps(ctx))
+    ctx2["meta"]["north_angle"] = 30.0
+    text2 = rr.build_coverage(reg, ctx2).text()
+    if "salon_kuzeye_bakiyor" in text2:
+        e.append("north_angle verilince yonelim veçhesi KOSMALI (yanlis-pozitif)")
+    sh2 = rr.shadow_findings(reg, ctx2)
+    n = len(sh2["isik_hava_yonelim.yonelim.salon_kuzeye_bakiyor"])
+    if n != 5:
+        e.append(f"north_angle=30: uA salonu 5 ozdes katta tetiklemeli: {n}")
+    if rates.get("isik_hava_yonelim.yonelim.salon_kuzeye_bakiyor", (0, 0, False))[1] != 0:
+        e.append("north_angle yokken yonelim veçhesinin olculebilir ozne sayisi 0 olmali (kosamadi)")
+    rates2 = {r.facet_id: (r.fired, r.eligible) for r in rr.shadow_triggers(reg, ctx2)}
+    if rates2.get("isik_hava_yonelim.yonelim.salon_kuzeye_bakiyor") != (1, 3):
+        e.append(f"north_angle=30 yonelim tetik orani 1/3: {rates2}")
+    # room_type'siz oda: sessiz gecilmez (kismi kapsam)
+    ctx3 = json.loads(json.dumps(ctx))
+    for r in ctx3["floors"][3]["rooms"][:4]:
+        r.pop("room_type", None)
+    part = [x for x in rr.build_coverage(reg, ctx3).entries if x.facet_id.endswith("yasam_mahalli_penceresi") and x.floor_id == ctx3["floors"][3]["id"]][0]
+    if part.state != "kostu" or "rooms[].room_type" not in part.reason:
+        e.append(f"room_type'siz oda 'kismi kapsam' diye soylenmeli: {part}")
+    return e
+
+
 def main() -> int:
     checks = [check_keys_and_signature, check_severity_curve, check_diff, check_legacy_parse,
               check_real_validate_parity, check_registry_validation, check_gate10_three_state,
@@ -1017,7 +1181,8 @@ def main() -> int:
               check_lint_and_render, check_narrative_example, check_queue_and_modes,
               check_smells_and_coverage_sentence, check_dialogue_log, check_digit_gate_13, check_dialogue_cli,
               check_decision_core, check_decision_schema_and_validate, check_reopened_presentation, check_decide_cli_end_to_end,
-              check_knowledge_engineer_role]
+              check_knowledge_engineer_role, check_isik_pack_registry_and_cases, check_facade_and_measurements,
+              check_isik_report_and_coverage]
     failed = 0
     for check in checks:
         try:

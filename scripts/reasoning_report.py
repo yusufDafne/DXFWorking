@@ -38,15 +38,28 @@ def describe_group(group_key: str, items: list) -> str:
     return f"- {items[0].facet_id}: {items[0].message}{where}"
 
 
+META_INPUTS = frozenset({"north_angle"})   # kat degil proje (`context.meta`) girdisi olan adaptor parametreleri
+
+
 def _resolve(ref: str):
     module, _, name = ref.partition(":")
     return getattr(importlib.import_module(module), name)
 
 
-def facet_check(facet):
-    """Veche adaptorunu `floor -> [Finding]` cagrilabilirine cevirir (kopru: cekirdek cizim modulu import etmez)."""
+def facet_check(facet, meta=None):
+    """Veche adaptorunu `floor -> [Finding]` cagrilabilirine cevirir (kopru: cekirdek cizim modulu import etmez).
+    Girdi adi katta yoksa `meta`da aranir (ornek `north_angle`); ikisinde de yoksa liste girdileri `[]`, digerleri `None`."""
     fn = _resolve(facet.adapter.ref)
-    return lambda floor: adapt_warnings(facet.id, floor.get("id"), fn(*[floor.get(i, []) for i in facet.adapter.inputs]))
+    meta = meta or {}
+
+    def arg(floor, name):
+        if name in floor:
+            return floor[name]
+        if name in meta:
+            return meta[name]
+        return None if name in META_INPUTS else []
+
+    return lambda floor: adapt_warnings(facet.id, floor.get("id"), fn(*[arg(floor, i) for i in facet.adapter.inputs]))
 
 
 def ran_floors(registry, context) -> dict:
@@ -65,9 +78,14 @@ def shadow_findings(registry, context) -> dict:
     for facet in registry.facets.values():
         if facet.status != "shadow" or facet.adapter is None:
             continue
-        check = facet_check(facet)
+        check = facet_check(facet, context.get("meta"))
         out[facet.id] = [x for fid in ran.get(facet.id, []) for x in check(floors[fid])]
     return out
+
+
+def measure_inputs(facet) -> tuple:
+    """`measure_ref` fonksiyonu ile adaptor AYNI girdi adlarini alir (kapi #11 adaptor parametrelerini denetler)."""
+    return facet.adapter.inputs if facet.adapter is not None else ("rooms", "walls", "openings")
 
 
 def shadow_triggers(registry, context) -> list:
@@ -81,7 +99,8 @@ def shadow_triggers(registry, context) -> list:
         measure, merged = _resolve(facet.measure_ref), {}
         for fid in ran.get(facet.id, []):
             fl = floors[fid]
-            for subject, result in measure(fl.get("rooms", []), fl.get("walls", []), fl.get("openings", [])).items():
+            margs = [fl.get(n, context.get("meta", {}).get(n) if n in META_INPUTS else []) for n in measure_inputs(facet)]
+            for subject, result in measure(*margs).items():
                 prev = merged.get(subject)
                 merged[subject] = result if prev is None else (prev or bool(result))
         reports.append(trigger_report(facet.id, merged))

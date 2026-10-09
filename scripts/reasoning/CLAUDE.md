@@ -19,13 +19,14 @@ paketinde, ölçüm/kural sahibi modülde** (modül `reasoning.py`si yalnız rol
 | `registry.py` | `REASONING_PROVIDERS` / `REASONING_EXEMPT` / `REASONING_PENDING`, `Registry`, `validate_registry`, `load_registry` (dosya yoluyla, AST import denetimiyle) |
 | `findings.py` | kararlı anahtar (`make_key`: rakamsızlaştırılmış mesaj özeti → kısmi çözüm anahtarı bozmaz), `severity_from_curve` (eğri yoksa **None/unscored**, sayı uydurulmaz), `diff_findings` (yeni/çözülen/değişmeyen), `group_across_floors` |
 | `adapters.py` | `parse_validate_output`: `validate.py` stdout'u → `Finding` (**parite yapı gereği**; sınır: yalnız kategori bilinir, veçhe kimliği `legacy.<kategori>`) |
-| `coverage.py` | `build_coverage`: **kostu / kosamadi (neden) / uygulanmaz**; kayıt boşsa bunu SÖYLER. `idea`/`draft` veçhe (ölçüm kodu yok) `kostu` SAYILMAZ, ayrıca **"henüz ölçülmeyen"** diye adıyla listelenir ("temiz" ≠ "bakılmadı"); `uygulanmaz` yalnız sayılır, `kosamadi` tek tek yazılır |
+| `coverage.py` | `build_coverage` (`Facet.needs_note_tr` ile yol yerine duz dil neden: "yönelim değerlendirilemedi: kuzey yönü verilmedi"; ayni neden tek satırda kat listesiyle toplanır): **kostu / kosamadi (neden) / uygulanmaz**; kayıt boşsa bunu SÖYLER. `idea`/`draft` veçhe (ölçüm kodu yok) `kostu` SAYILMAZ, ayrıca **"henüz ölçülmeyen"** diye adıyla listelenir ("temiz" ≠ "bakılmadı"); `uygulanmaz` yalnız sayılır, `kosamadi` tek tek yazılır |
 | `promotion.py` | `trigger_report`: tetik oranı, dejenere (hep/hiç ötmeyen) uyarısı, ölçülemeyen paydadan çıkar; **kapı değil rapor** |
 | `cases.py` | vaka biçimi (`cases/<ad>/case.json` + `expected_findings.json`) ve koşucu; `golden/`den bilinçli ayrı |
 | `explain.py` | **DEV-064** — açıklama motoru: şablon **rakam lint'i** (`lint_template`; 3 yer-tutucu sınıfı `{ad:..}` eleman adı / `{olcum:..}` ölçülen sayı (`Plain.numbers`te bildirilmiş) / `{sabit:..}` kaynaklı eşik–şiddet; rakam = Unicode Nd/No/Nl; satır başı "1. " numaralandırma istisnası), `render` (veri yoksa `ExplainError`, uydurma yok), `verify_numbers`, **sunum kuyruğu** (`select_topics`: yalnız `active` + zaten kullanıcıya görünen `legacy.*`; `shadow` ASLA; sıra: yan etki > niyetle ilgili > şiddet (ölçülmeyen en sona) > ilk görülme; çarpan UYDURULMAZ), `match_smells` (≥2 bileşen + ortak eleman), `narrate` (5 parça, ≤3 seçenek, `sor`/`devret`; ciddi ya da uygulanacak çözüm yokken devir geçersiz), `coverage_sentence`, `dialogue.jsonl` kaydı (`append_dialogue` ekleme-yalnız, kaynaksız sayıyı reddeder) |
 | `decisions.py` | **DEV-065** — tasarım kararı kaydı (saf fonksiyonlar, dosya yazmaz): `evidence_snapshot` (ölçülen sayılar: `Finding.evidence` + mesajdaki sayılar `m1..`), `evidence_hash`, `make_decision` (boş gerekçe REDDEDİLİR), `check_decisions` (validate.py HATASI), `evaluate` (**kabul** / **düştü** + "önce → şimdi"; aynı bulguyu kapsayan SON kayıt geçerli), `decision_numbers`. Yazım yalnız `reasoning_dialogue.py decide` ile |
+| `lenses/isik_hava_yonelim.py` | **DEV-062 — ikinci mercek paketi** (bilgi mühendisi protokolüyle yazıldı): 5 veçhe — 4 `shadow` (yaşam mahalli penceresi, çapraz havalandırma, ıslak hacim havalandırması, salon yönelimi [`meta.north_angle` ister]) + 1 `draft` (pencere/taban oranı: `openings[].height` ister). `active` YOK. Ölçüm sahipleri: `openings/daylight.py`, `shafts/ventilation.py` (+ `spatial` cephe sorguları); sağlayıcılar `openings/reasoning.py`, `shafts/reasoning.py` |
 | `lenses/mahremiyet.py` | **DEV-061 — ilk mercek paketi** (bilgi burada: 14 veçhe, 3 koku, mercek metni); yalnız `reasoning.*` import eder, `register(reg)` ile yüklenir. Ölçüm/kural sahibi: `architect/rules.py` + `architect/privacy.py`; `architect/reasoning.py` yalnız ROL + ölçüm beyanıdır |
-| `cases/` | **22 vaka** (11 veçhe × ihlal+temiz): ELLE yazılmış, uydurulmuş mini sahneler (`origin` alanı bunu söyler; gerçek geçmiş geometri değil — kullanıcı kararı) |
+| `cases/` | **30 vaka** (15 veçhe × ihlal+temiz; son 8'i DEV-062): ELLE yazılmış, uydurulmuş mini sahneler (`origin` alanı bunu söyler; gerçek geçmiş geometri değil — kullanıcı kararı) |
 
 ## Mekanik kapılar (`doc_check.py`)
 **#10** her paket tam BİR yerde (sağlayıcı / gerekçeli muaf / PENDING); PENDING **donuk** (`_PENDING_FROZEN`)
@@ -34,7 +35,7 @@ ve yalnız küçülür, `DEV-067` boşaltınca kapı bloklayıcı kalır; **#11*
 `status ≥ shadow` veçhe için `ihlal` + `temiz` vaka diskte (**`legacy` veçhe muaf**: `validate.py`nin zaten çağırdığı kural terfi kapısından geçmez, `model.Facet.legacy` belgesi; vakaları yine de var ve selftest'te koşar); **#14** kaynaksız `kesin` yasak; **#15**
 bayat `provenance.reviewed` BİLGİ satırı (`run_info`, çıkış kodunu etkilemez; `REVIEW_MAX_AGE_DAYS` bir
 politika parametresidir, onay bekler). **#13** (DEV-064) anlatım metinlerinin (veçhe başlık/ilke/neden/plain, çözüm, koku, `explain.py` sabit cümleleri) rakamsızlığı — rakam yalnız yer-tutucudan gelir. **Üretim kaydı artık DOLU**
-(`mahremiyet`, 14 veçhe): #11/#12/#14 gerçek kayıtta gerçekten koşar; yine de kapılar selftest'te enjekte edilen
+(`mahremiyet` 14 + `isik_hava_yonelim` 5 veçhe): #11/#12/#14 gerçek kayıtta gerçekten koşar; yine de kapılar selftest'te enjekte edilen
 bozuk sahte kayıtlarla da sınanır (her kapı için kasıtlı bozma + yanlış-pozitif).
 
 ## Rapor komutu
@@ -70,6 +71,14 @@ ekler (15 → 16 satır; konu sayısı etkilenmez: `legacy.surum` sunulmaz). Ger
 ## Doğrulama
 `python scripts/reasoning/selftest.py` — 30 kontrol (DEV-065: karar çekirdeği, şema+validate, düşen kabulün sunumu, `decide` uçtan uca; 14 çekirdek + 5 mahremiyet paketi + 7 DEV-064: lint/render, §5.6 örneği, kuyruk+modlar, koku+kapsam cümlesi, diyalog kaydı, kapı #13, CLI uçtan uca; 6 kasıtlı bozma ilgili testleri kırdı; mahremiyet: durum dağılımı, `validate.py` bağlama iddiasının koddan sabitlenmesi, 22 vaka + kasıtlı bozma, rev-28 ölçümleri, rapor); elle hesaplanan anahtar/eğri değerleri; üretim koduna
 kasıtlı bozma (imzada rakam, kapı #10 çoklu-yer, kapsam durumu karışması) selftest'i GERÇEKTEN kırar.
+
+## Işık-hava-yönelim paketi (DEV-062) — notlar
+Kullanıcı kararları: yaşam mahalli (salon + yatak odası) ve ıslak hacim (WC + banyo) kümeleri **lens-yerel sabit** ('yaygın'; `standards/` değişmedi, mutfak ayrı kayıt ve değerlendirilmez);
+`tesisat`/`havalandirma` şaftı ıslak hacim havalandırması sayılır (≥ 300 mm ortak kenar, `check_shafts` ile aynı tanım; `baca` sayılmaz); cephe = prob noktası, çapraz havalandırma =
+≥ 2 farklı dış normal yönünde pencere; pencere yüksekliği opsiyonel `openings[].height` (şema 1.4.0, additif; katalog varsayılanıyla UYDURMA YOK). **Yön uydurulmaz:** `meta.north_angle`
+yoksa `salon_kuzeye_bakiyor` KOSAMAZ ve bunu söyler; verilince koşar (`reasoning_report.facet_check` girdiyi katta bulamazsa `meta`da arar). rev-28: penceresiz yaşam mahalli 0/8, çapraz
+havalandırma yetersiz birim 0/3, havalandırmasız ıslak hacim 0/6 — hepsi dejenere (bilgi taşımıyor; vaka kanıtı sentetik). Salon yönelimi için eşik (kuzey yarısı = kuzeyden 90°'den az sapma)
+'tercih', kaynaksızdır. Çapraz-mercek gerilimi (ışık ↔ mahremiyet) karşı veçhe kayıtlı olmadığı için yazılmadı.
 
 ## Bilgi mühendisi
 Mercek/veçhe/vaka ekleme kuralları, izin sınırı ve terfi merdiveni: `docs/agents/KNOWLEDGE_ENGINEER_AGENT.md` (DEV-070). Çekirdeği (bu klasördeki `*.py`) bilgi mühendisi DEĞİŞTİRMEZ.

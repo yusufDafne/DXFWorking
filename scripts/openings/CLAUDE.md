@@ -171,3 +171,12 @@ ve `scripts/version.py::SCHEMA_VERSION` 1.1.0 oldu (kullanıcı kararı).
 ## Kabul
 
 Açıklık boşlukları duvar rails ile tutarlı, sembol stili enjekte edilebilir, schedule verisi deterministik ve mevcut plan çıktısı korunmuş olmalıdır.
+
+## Muhakeme katkısı (DEV-048)
+**Rol:** ölçüm sağlayıcı (`reasoning.py`: rol + ölçüm beyanı). **Ölçümler (`daylight.py`, DEV-062; `validate.py` ÇAĞIRMAZ):** `check_living_room_window`
+(yaşam mahalli = salon + yatak odası, dış cepheye açılan pencere şart), `check_cross_ventilation` (birimin dış pencereleri ≥ 2 farklı dış normal yönünde mi),
+`check_salon_orientation` (`meta.north_angle` ister; tüm pencereler kuzey yarısına bakıyorsa UYARI; yoksa BOŞ döner, yön uydurulmaz). Hepsinin `*_subjects`
+ikizi vardır. **Katıldığı veçheler:** `isik_hava_yonelim.isik.yasam_mahalli_penceresi`, `…hava.capraz_havalandirma`, `…yonelim.salon_kuzeye_bakiyor`,
+(`draft`) `…isik.pencere_alani_orani` — hepsi `shadow`. **Bilinen boşluk:** pencere/taban oranı için pencere yüksekliği (`openings[].height`, opt-in, şema 1.4.0) ve
+doğrulanmış oran eşiği yok; derinlik ölçümü yok. **Bilgi mühendisi için not:** cephe tayini `spatial.facade_normal`dır (kopya yazma); tolerans 300 mm'dir —
+bölmeye çok yakın pencere iki odaya değebilir.

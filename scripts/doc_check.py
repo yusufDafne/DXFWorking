@@ -360,8 +360,8 @@ def check_contract_versions() -> list[str]:
 # girebilir. DEV-067 PENDING'i bosaltinca bu kume SILINIR ve kapi blokajci olur.
 _PENDING_FROZEN = frozenset({
     "axis", "ceiling", "collision", "columns", "dimensions", "elevations", "furniture",
-    "importer", "legend", "levels", "northarrow", "openings", "pafta", "palette", "rooms", "sections",
-    "shafts", "stairs", "standards", "templates", "typography", "walls",
+    "importer", "legend", "levels", "northarrow", "pafta", "palette", "rooms", "sections",
+    "stairs", "standards", "templates", "typography", "walls",
 })
 # Bayat sayilma yasi (gun). Bir POLITIKA parametresidir, olcum degil: sistem mimari karari bekliyor.
 REVIEW_MAX_AGE_DAYS = 365

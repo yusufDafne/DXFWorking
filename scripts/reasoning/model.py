@@ -68,6 +68,7 @@ class Facet:
     cases: tuple[str, ...] = ()
     legacy: bool = False               # validate.py'nin zaten cagirdigi kural (terfi kapisindan muaf)
     subject_kind: str = ""             # "unit" | "floor" | "building" (terfi olcerinin sayma birimi)
+    needs_note_tr: tuple = ()          # ((need_yolu, "kosamadi nedeni"), ...): kapsam raporunda yol yerine duz dil neden
 
 
 @dataclass(frozen=True)

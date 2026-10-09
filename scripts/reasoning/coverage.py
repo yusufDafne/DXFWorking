@@ -33,9 +33,12 @@ class CoverageReport:
         if self.unmeasured:
             lines.append(f"  Henuz OLCULMEYEN {len(self.unmeasured)} veche (idea/draft - olcum kodu yok, 'temiz' degil): "
                          + ", ".join(self.unmeasured))
-        for e in self.entries:  # 'uygulanmaz' bir eksiklik DEGIL (kat ilgisiz) - yalniz sayilir; 'kosamadi' tek tek soylenir
+        grouped: dict = {}
+        for e in self.entries:  # 'uygulanmaz' bir eksiklik DEGIL (kat ilgisiz) - yalniz sayilir; 'kosamadi' (veche, neden) basina bir satir
             if e.state == STATE_BLOCKED:
-                lines.append(f"  - {e.facet_id} [{e.floor_id or '*'}]: {e.state.upper()} - {e.reason}")
+                grouped.setdefault((e.facet_id, e.reason), []).append(e.floor_id or "*")
+        for (facet_id, reason), floors in grouped.items():
+            lines.append(f"  - {facet_id} [{', '.join(floors)}]: KOSAMADI - {reason}")
         return "\n".join(lines)
 
 
@@ -77,7 +80,7 @@ def build_coverage(registry: Registry, context: dict) -> CoverageReport:
             for need in facet.needs:
                 have, total = _count_path(need, floor, context)
                 if have == 0:
-                    absent.append(f"{need} hicbir elemanda yok")
+                    absent.append(dict(facet.needs_note_tr).get(need) or f"{need} hicbir elemanda yok")
             if absent:
                 entries.append(CoverageEntry(facet.id, fid, STATE_BLOCKED, "; ".join(absent)))
             else:

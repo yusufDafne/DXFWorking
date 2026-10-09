@@ -4,6 +4,15 @@ Aktif geçmiş kapasitesi: **50 kayıt**. En eski tamamlanmış kayıt, 51. kay�
 alınırken silinir. Ayrıntılı teknik değişiklikler git geçmişi ve ilgili proje
 provenance kayıtlarıyla ilişkilendirilir.
 
+## HD-045 — `docs/agents/`: bilgi mühendisi rolü ve büyütme protokolü (DEV-070)
+
+- **Durum:** COMPLETED
+- **Tamamlanma:** 2026-10-09
+- **Kapsam:** `docs/agents/KNOWLEDGE_ENGINEER_AGENT.md` (yeni), `docs/agents/{REVIEWER_VALIDATOR,SYSTEM_DEVELOPMENT}_AGENT.md`, `docs/development/AGENT_PERMISSIONS.json`, `docs/development/reviews/README.md`, kök `CLAUDE.md`, `scripts/reasoning/{CLAUDE.md,selftest.py}`.
+- **Sonuç:** rol, izin sınırı, Vaka→İlke→Veçhe, `DEV-061` paketinden damıtılmış kontrol listesi, terfi merdiveni (`active` yalnız kullanıcı kararı), yapmayacaklar; `knowledge_engineering` izni; `docs/development/reviews/` yalnız reviewer'ın (geliştirici ve bilgi mühendisi için yasak — reviewer bağımsızlığı); soğuk başlangıç sınavı `DEV-071`e ayrıldı. Kullanıcı kararları: sınav ayrı madde, mühürlü paket, 3 koşu ≥2/3, reviews yolu.
+- **Doğrulama:** rol/izin tutarlılığı `reasoning/selftest.py`de mekanik (31/31); `doc_check` temiz; kod ve `validate` çıktısı değişmedi.
+- **Golden etkisi:** yok. **Sınır:** belgenin yeterliliği henüz sınanmadı (`DEV-071`); "başka modülün mevcut kodunu değiştirme" kuralı mekanik zorlanamıyor (belge + reviewer). **Sonraki direktif:** `DEV-062`.
+
 ## HD-044 — Şema 1.4.0 + `reasoning/`: tasarım kararı kaydı (DEV-065)
 
 - **Durum:** COMPLETED

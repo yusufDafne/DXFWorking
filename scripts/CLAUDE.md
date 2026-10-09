@@ -74,7 +74,8 @@ kalanını bilmeye ihtiyaç duymadan o modül üzerinde derinlemesine/izole
   vaka koşucusu. **Bilgi taşımaz**, çizim modülü import etmez (`collision/` deseni); `doc_check`
   kapıları #10–#12, #14, #15. Rapor komutu `scripts/reasoning_report.py`. Bkz. `scripts/reasoning/CLAUDE.md`.
   **`DEV-061`de ilk mercek paketi** (`reasoning/lenses/mahremiyet.py`, 14 veçhe) geldi; ölçüm sahibi `architect/`
-  (`privacy.py`, `reasoning.py` = sağlayıcı).
+  (`privacy.py`, `reasoning.py` = sağlayıcı). **`DEV-062`de ikinci paket** `isik_hava_yonelim` (5 veçhe, hepsi `shadow`/`draft`); ölçüm sahipleri `openings/daylight.py`,
+  `shafts/ventilation.py`, cephe sorguları `spatial`de.
   **`DEV-064`te açıklama motoru** (`reasoning/explain.py`: rakam lint'i, sunum kuyruğu, diyalog kaydı) ve köprü
   `scripts/reasoning_dialogue.py` geldi; `doc_check` kapı #13. **`DEV-065`te** şema 1.4.0: opt-in `design_decisions[]` (kanıta bağlı
   kabul, `reasoning/decisions.py`, `reasoning_dialogue.py decide`); `reasoning` `CONTRACT_VERSION` 1.1.
@@ -329,7 +330,7 @@ Ortak desen (pafta + walls ile kanitlandi):
 | `standards/`  | `RoomStandard`, `STANDARDS`, `room_aspect_ratio`, `validate_standards`, `check_room_types`, `check_room_proportions` | UYGULANDI (DEV-036, 2026-09-28); sartname/oransal mahal kutuphanesi, ihlal HER ZAMAN UYARI |
 | `templates/`  | `CirculationCoreTemplate`, `DEFAULT_TEMPLATE`, `generate_circulation_core` | UYGULANDI (DEV-037, 2026-09-28; DEV-045 duzeltmesi, 2026-10-02); sirkulasyon cekirdegi sablon ureteci, v1 yalnizca cekirdek (birim ici bolme YOK), koridor artik israf eden L-sekli DEGIL |
 | `architect/`  | `check_circulation_area_share`, `check_common_circulation_share`, `check_bedroom_via_corridor`, `check_entry_sightlines`, `check_door_core_balance`, `check_wet_area_reachable_without_bedroom`, `check_wet_area_door_proximity`, `FeasibilityReport`, `check_fits`, `ZoneAssignment`, `ZoningPlan`, `resolve_unit_zoning`, `PlacementOption`, `options_for_core_placement`, `place_unit_entry_doors` | UYGULANDI (DEV-039, 2026-09-28; DEV-042/043/045, 2026-10-02); iliskisel (arity-2+) mimari mantik kurallari, DEV-038 absorbe edildi, `rooms[].unit_id` opt-in |
-| `spatial/`    | `door_midpoint`, `door_frame`, `rooms_touching_point`, `dist_point_segment`, `touches_within`, `vertex_mean`, `segments_intersect`, `clear_line_of_sight`, `shared_edge_length`, `point_in_polygon` | UYGULANDI (DEV-059, 2026-10-09); eleman-farkindali mekansal sorgularin TEK sahibi; davranis korunarak tasindi, `spatial -> collision.geometry` tek yonlu |
+| `spatial/`    | `door_midpoint`, `door_frame`, `rooms_touching_point`, `dist_point_segment`, `touches_within`, `vertex_mean`, `segments_intersect`, `clear_line_of_sight`, `shared_edge_length`, `point_in_polygon`, `facade_normal`, `window_rooms`, `exterior_windows` | UYGULANDI (DEV-059, 2026-10-09); eleman-farkindali mekansal sorgularin TEK sahibi; davranis korunarak tasindi, `spatial -> collision.geometry` tek yonlu |
 | `reasoning/`  | `Lens`, `Facet`, `Finding`, `Registry`, `CheckAdapter`, `Thresholds`, `Provenance`, `build_coverage`, `parse_validate_output`, `diff_findings`, `group_across_floors`, `trigger_report`, `load_registry`, `validate_registry` | UYGULANDI (DEV-060, 2026-10-09); muhakeme cekirdegi - bilgi tasimaz; ilk mercek paketi `lenses/mahremiyet.py` (DEV-061); isik/yasanabilirlik paketleri (DEV-062/063) ve aciklama motoru (DEV-064) sonraki maddeler |
 | `impact/`     | (yok) | PLANLANAN (DEV-068): revizyon etki analizi - bir patchin etki alani ve minimal patch plani |
 | `brief/`      | (yok) | PLANLANAN (DEV-069): kullanici ihtiyac beyani ve mimari program toplama |

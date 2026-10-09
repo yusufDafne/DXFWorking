@@ -1,0 +1,50 @@
+{
+ "id": "pencere_yasam_ihlal",
+ "facet": "isik_hava_yonelim.isik.yasam_mahalli_penceresi",
+ "role": "ihlal",
+ "origin": "elle yazilmis, uydurulmus mini sahne (DEV-062; gercek gecmis geometri DEGIL)",
+ "floor": {
+  "rooms": [
+   {
+    "id": "salon",
+    "room_type": "salon",
+    "unit_id": "uA",
+    "polygon": [
+     [
+      0,
+      0
+     ],
+     [
+      6000,
+      0
+     ],
+     [
+      6000,
+      4000
+     ],
+     [
+      0,
+      4000
+     ]
+    ]
+   }
+  ],
+  "walls": [
+   {
+    "id": "w_alt",
+    "start": [
+     0,
+     0
+    ],
+    "end": [
+     6000,
+     0
+    ],
+    "thickness": 200.0,
+    "layer": "D"
+   }
+  ],
+  "openings": [],
+  "shafts": []
+ }
+}

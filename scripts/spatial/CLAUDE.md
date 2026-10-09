@@ -40,11 +40,18 @@ olarak gömülüdür ve gerçek `context.json` (tüm katlar: açıklık × oda, 
 deterministik tohumlu sentetik girdiler üzerinde yeni sürümle karşılaştırılır; elle hesaplanan değerler;
 yanlış-pozitif kontrolleri; kasıtlı bozulmuş `door_midpoint`in karşılaştırmayı gerçekten kırdığı.
 
+## DEV-062 eklemeleri (cephe)
+`facade_normal(point, wall, rooms, shafts)` — duvarın o noktadaki DIŞ yüz yönü (birim vektör) ya da `None`: duvar merkezinden normal boyunca
+±(kalınlık/2 + `FACADE_PROBE_EXTRA_MM`=10 mm) iki prob; biri oda/şaft içinde diğeri hiçbirinde ise dış taraf budur; ikisi de içeride (iç duvar)
+ya da ikisi de dışarıda ise `None` (yön UYDURULMAZ). `window_rooms(pencere, walls_by_id, rooms)` (orta nokta → değen odalar, kapı komşuluğu
+tolerans/yöntemiyle aynı) ve `exterior_windows(rooms, walls, openings, shafts)` (dış yüzü tayin edilebilen pencereler: `window/mid/normal/rooms`).
+Sahip olduğu tüketiciler: `openings/daylight.py`, `shafts/ventilation.py`. Davranış değişikliği YOKTUR (yalnız ekleme).
+
 ## Çakışma denetimi: EXEMPT
 `collision/scene.py::COLLISION_EXEMPT` içinde: salt sorgu kütüphanesi, ayak izi üretmez.
 
 ## Muhakeme katkısı (DEV-048)
-**Rol:** ölçüm sağlayıcı. Mercek ölçümlerinin (görüş açısı, ortak duvar, pencere→oda, dış duvar) ortak
+**Rol:** ölçüm sağlayıcı (DEV-062: dış duvar/cephe tayini ve pencere→oda sorgusu artık burada). Mercek ölçümlerinin (görüş açısı, ortak duvar, pencere→oda, dış duvar) ortak
 zemini; bilgi mühendisi yeni ölçümü burada (kopya olarak değil) tanımlar. Bilinen boşluk: dış duvar/cephe
 tayini ve pencere→oda sorgusu `DEV-062`de, duvar/oda-kenarı çakışma ailesi (`walls/thickness._on_edge`,
 `standards/measure.edge_wall_thicknesses`, `architect/layout._collinear_overlap`) `DEV-068` için eklenecek.

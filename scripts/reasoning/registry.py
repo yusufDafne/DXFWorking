@@ -17,7 +17,7 @@ from .model import (CONFIDENCES, FACET_ID_RE, KINDS, LENS_ID_RE, PLACEHOLDER_SOU
 ROOT_SCRIPTS = Path(__file__).resolve().parent.parent
 
 # `<modul>/reasoning.py` saglayicilari (register(reg) fonksiyonu tasir). Veche kayitlari lens paketlerindedir.
-REASONING_PROVIDERS: tuple[str, ...] = ("architect",)  # DEV-061
+REASONING_PROVIDERS: tuple[str, ...] = ("architect", "openings", "shafts")  # DEV-061, DEV-062
 
 # Gerekceli muafiyet ("dusunuldu, bu modul olcum/kural vermez") - COLLISION_EXEMPT ile AYNI idiom.
 REASONING_EXEMPT: dict[str, str] = {
@@ -30,8 +30,8 @@ REASONING_EXEMPT: dict[str, str] = {
 # doc_check'teki _PENDING_FROZEN disinda hicbir ad girilemez.
 REASONING_PENDING: frozenset[str] = frozenset({
     "axis", "ceiling", "collision", "columns", "dimensions", "elevations", "furniture",
-    "importer", "legend", "levels", "northarrow", "openings", "pafta", "palette", "rooms", "sections",
-    "shafts", "stairs", "standards", "templates", "typography", "walls",
+    "importer", "legend", "levels", "northarrow", "pafta", "palette", "rooms", "sections",
+    "stairs", "standards", "templates", "typography", "walls",
 })
 
 

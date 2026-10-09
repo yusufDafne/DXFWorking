@@ -64,7 +64,7 @@ Tamamlanan işlerin ayrıntılı gerekçesi, karar süreci ve ölçülen etkisi
 | DEV-061 | `reasoning/` — mahremiyet mercek paketi (mevcut kuralların kaydı + yeni veçheler; Faz 2) | COMPLETED (2026-10-09) |
 | DEV-064 | `reasoning/`+operatör talimatı — diyalog sözleşmesi + açıklama motoru + kök-neden kümeleme (Faz 2) | COMPLETED (2026-10-09) |
 | DEV-065 | Şema + `reasoning/` — tasarım kararı kaydı (`design_decisions[]`), kanıta bağlı kabul (Faz 4) | COMPLETED (2026-10-09) |
-| DEV-070 | `docs/agents/` — bilgi mühendisi rolü + büyütme protokolü (Faz 2) | PLANNED (sıra 6/12) |
+| DEV-070 | `docs/agents/` — bilgi mühendisi rolü + büyütme protokolü (Faz 2) | COMPLETED (2026-10-09) |
 | DEV-062 | `reasoning/` — ışık-hava-yönelim mercek paketi (Faz 3) | PLANNED (sıra 7/12) |
 | DEV-063 | `reasoning/`+`furniture/` — yaşanabilirlik mercek paketi + deneme yerleşimi (Faz 3) | PLANNED (sıra 8/12) |
 | DEV-066 | `reasoning/` — kalibrasyon, ayırt edicilik ve terfi (shadow→active) protokolü (Faz 4) | PLANNED (sıra 9/12) |
@@ -720,30 +720,6 @@ belirleyeceksin ... her birini sıralama olarak birbirine bağla"):**
 > sürümü uyarısı satırı bilinen tek istisnadır). Bölünmesi önerilen maddelerde parçalar **sayısal** yeni DEV
 > kimlikleri olur (`doc_check` `### DEV-\d+` ister; `DEV-063A` gibi kimlikler görünmez kalır).
 
-### DEV-070 — `docs/agents/` — bilgi mühendisi rolü ve büyütme protokolü
-
-- **Durum:** PLANNED
-- **Kapsam (plan §8):** `docs/agents/KNOWLEDGE_ENGINEER_AGENT.md` (rol, izin sınırı, veçhe
-  ekleme kontrol listesi, Vaka → İlke → Veçhe akışı, terfi merdiveni, "yapmayacakların"
-  listesi); `AGENT_PERMISSIONS.json`a `knowledge_engineering` girişi (yazabilir:
-  `scripts/reasoning/lenses/`, `scripts/<modül>/reasoning.py`, `scripts/reasoning/cases/`,
-  modül `CLAUDE.md`sinin "Muhakeme katkısı" bölümü; yasak: şema, `validate.py`,
-  kaynaksız eşik, kaynaksız `kesin`, `context.json`, anayasa); `SYSTEM_DEVELOPMENT_AGENT.md`
-  ve kök `CLAUDE.md`ye işaretçi; **soğuk başlangıç sınavı** tanımı + sınav vaka seti.
-- **Kabul ölçütü:** sınavı **reviewer** (geliştirici dışı) yürütür: yeni bir ajan yalnız kök
-  `CLAUDE.md` + plan/çekirdek `CLAUDE.md` ile üç vakada doğru teşhisi koyar, sayı uydurmadan
-  anlatır ve `uC` kokusunu adıyla bulur. Geçmezse **bilgi eksiktir**, belge düzeltilir.
-- **Önkoşul:** `DEV-060` + `DEV-061` (gerçek bir paketten damıtılır; protokol soyut yazılmaz).
-- **Sıra:** 6/12 — plan §10.1; geliştirici yorumu ve netleştirme soruları 2026-10-09 kod denetimine dayanır (iki bağımsız ajan; `DEV-070` yalnız bir denetim).
-- **Geliştirici yorumu:** NOT: bu madde için ikinci (çürütücü) ajan koşamadı (kullanım limiti); yorum tek denetime dayanır. Önkoşul `060`+`061`dir; eski sıradaki 'paralel' gösterim yanlıştı. Sınav (soğuk başlangıç) önkoşulsuz ayrı bir iş olarak çıkarılabilir — bugünkü belgelerle bile bir taban koşusu yapılır (yeni sayısal kimlik, öneri `DEV-071`). Sınavın soğuk kalması için mühürlü paket proje kökü içinde (kök CLAUDE.md kapsam kuralı), cevap anahtarı pakette değil; kararlılık için vaka başına 3 bağımsız koşu, ≥2'si bütün rubrik maddelerini sağlarsa geçer. Reviewer'ın rapor yazma izni yalnız `assigned-project/review-reports/` olduğundan `docs/development/reviews/` (ekleme-yalnız) izni eklenmeli.
-- **Netleştirme soruları** (her biri önerilen varsayılanla; kullanıcı tek tek onaylayınca madde `READY` olur):
-  1. Sınav ayrı numaralı maddeye (öneri `DEV-071`, önkoşulsuz) çıkarılsın ve `DEV-070` rol belgesi + izin + protokol olarak kalsın mı?
-  2. Soğukluk: proje kökü içinde silinen mühürlü paket; yalnız çıkarma tarifi (commit+kat+komut) commit'lenir. Öneri: evet.
-  3. Geçme kuralı: vaka başına 3 koşu, ≥2/3 tüm rubrik maddeleri; rapor model kimliği + belge commit'ini taşır; MINOR çekirdek değişikliğinden sonra yeniden koşulur. Öneri: evet.
-  4. Reviewer rapor yeri: `review_validation.write`a `docs/development/reviews/` (ekleme-yalnız) eklensin ve `REVIEWER_VALIDATOR_AGENT.md`ye 'Sistem sınavı' bölümü (`DEV-064` aynı dosyayı da düzenler — sıra önemli). Öneri: evet.
-- **Kullanıcı kararları (2026-10-09, netleştirme tamam; başlamak için kullanıcı onayı bekleniyor):** (1) soğuk başlangıç sınavı ayrı maddeye çıkarılır (öneri `DEV-071`, önkoşulsuz; kayıt `DEV-070` onayında açılır), `DEV-070` rol belgesi + izin + protokol — EVET; (2) soğukluk: proje içi mühürlü paket, yalnız çıkarma tarifi commit'lenir, cevap anahtarı pakette yok — EVET; (3) geçme: vaka başına 3 koşu, ≥2/3 tüm rubrik; rapor model kimliği + belge commit'i taşır; çekirdekte MINOR değişiklikten sonra yeniden koşulur — EVET; (4) reviewer raporu `docs/development/reviews/` (ekleme-yalnız), `review_validation.write`a eklenir, `REVIEWER_VALIDATOR_AGENT.md`ye 'Sistem sınavı' bölümü (`DEV-064` ile aynı dosya, sıra önemli) — EVET.
-- **Uygulama sonucu (2026-10-09, kabul bekliyor):** `docs/agents/KNOWLEDGE_ENGINEER_AGENT.md` (rol, izin sınırı, Vaka→İlke→Veçhe, veçhe ekleme kontrol listesi — `DEV-061` paketinden damıtıldı, terfi merdiveni: `active` yalnız kullanıcı kararı, "yapmayacakların", standart "Muhakeme katkısı" bölümü), `AGENT_PERMISSIONS.json` `knowledge_engineering` girişi + `review_validation.write`a `docs/development/reviews/` (ekleme-yalnız; dizin + README), `REVIEWER_VALIDATOR_AGENT.md` "Sistem sınavı" bölümü, `SYSTEM_DEVELOPMENT_AGENT.md` ve kök `CLAUDE.md` işaretçileri; soğuk başlangıç sınavı `DEV-071` olarak ayrıldı (önkoşulsuz, PLANNED). **Kanıt:** izin girişi ve rol belgesi tutarlılığı `reasoning/selftest.py`de mekanik sınanır (yasak listesinde şema/`validate.py`/`context.json`/çekirdek, yazma listesinde lens/vaka/sağlayıcı, kabul kuralı); `doc_check` temiz; kod/`validate` çıktısı DEĞİŞMEDİ. **Kullanıcıya:** `AGENT_PERMISSIONS.json` değişiklikleri (DEV-064'teki operatör okuma izni + bu giriş) sistem mimarı onayı ister; sınavın kendisi (DEV-071) henüz KOŞULMADI — bilgi mühendisi belgesinin yeterliliği ancak o sınavla kanıtlanır. Kilit bırakıldı.
-
 ### DEV-062 — `reasoning/` — ışık-hava-yönelim mercek paketi
 
 - **Durum:** PLANNED
@@ -770,7 +746,7 @@ belirleyeceksin ... her birini sıralama olarak birbirine bağla"):**
   3. Dış duvar/cephe tespiti: duvarın bir tarafında oda ve şaft dışında kalan bir prob noktası (kalınlık/2+10 mm). Çapraz havalandırma = ≥2 farklı dış normal yönünde pencere. Öneri: evet.
   4. Pencere yüksekliği: opt-in veri alanı (şema 1.4.0'a `DEV-065` ile birlikte). Öneri: evet; katalog varsayılanıyla uydurma YOK.
 - **Kullanıcı kararları (2026-10-09, netleştirme tamam; başlamak için kullanıcı onayı bekleniyor):** (1) yaşam mahalli/ıslak hacim kümeleri lens-yerel sabitler (`standards/`e değil), 'yaygın' statüsü — EVET; (2) `tesisat` türü şaft ıslak hacim havalandırması sayılır (≥300 mm ortak kenar, `DEV-059` tanımı) — EVET; (3) dış duvar/cephe tespiti prob noktasıyla, çapraz havalandırma ≥2 farklı dış normal yönünde pencere — EVET; (4) pencere yüksekliği opsiyonel opt-in alan (`DEV-065` ile aynı MINOR), katalog varsayılanıyla uydurma YOK — EVET.
-- **Metin düzeltmeleri (onayla birlikte uygulanır):** Kabul cümleleri üç profile (A/B/C) ayrılır; yaşam mahalli/ıslak hacim kümeleri yazılır; ıslak hacim havalandırma veçhesi için kabul eklenir ve `shafts.check_shafts` ilişkisi netleşir; 'room_type'sız oda kapsam raporunda 'ölçülemedi'.
+- **Uygulama sonucu (2026-10-09, kabul bekliyor):** `reasoning/lenses/isik_hava_yonelim.py` (5 veçhe: 4 `shadow` — yaşam mahalli penceresi, çapraz havalandırma, ıslak hacim havalandırması, salon yönelimi; 1 `draft` — pencere/taban oranı; `active` YOK), ölçüm sahipleri `openings/daylight.py` + `shafts/ventilation.py` (sağlayıcılar `openings/reasoning.py`, `shafts/reasoning.py`; ikisi PENDING'den çıktı), `spatial`e cephe sorguları (`facade_normal`, `window_rooms`, `exterior_windows`; yalnız ekleme), şema: `openings[].height` (opsiyonel, opt-in; DEV-065 ile AYNI 1.4.0 MINOR), `Facet.needs_note_tr` + kapsam raporunda aynı nedenin tek satırda kat listesiyle toplanması, `reasoning_report` `meta.north_angle` girdisini bulur, 8 sentetik vaka, modül `CLAUDE.md` "Muhakeme katkısı" bölümleri. **Kanıt (rev-28 normal1, elle doğrulanan):** 14 pencerenin hepsinin dış yönü tayin edilir (4 cephe); penceresiz yaşam mahalli 0/8; çapraz havalandırma yetersiz birim 0/3 (uC batı+güney, uB batı+kuzey, uA doğu+güney+kuzey); havalandırmasız ıslak hacim 0/6 (hepsi tesisat şaftına bitişik) — üçü de dejenere olarak raporlanır (bilgi taşımıyor, vaka kanıtı sentetik); `north_angle` yokken kapsam raporu "yönelim değerlendirilemedi: kuzey yönü verilmedi (meta.north_angle)" der ve veçhe KOŞMAZ; `north_angle` verilince (30°) koşar (uA salonu yalnız doğuya baktığı için 1/3 tetikler); `room_type`'sız oda kapsamda "kısmi" diye söylenir (sessiz geçilmez); `baca` şaftı sayılmaz, 299 mm ortak kenar tetikler/300 mm tetiklemez. `reasoning/selftest.py` 34/34; 6 kasıtlı bozma (pencere koşulunu tersle, iç duvar probunu kapat, `baca`yı ekle, yönelim işaretini çevir, çapraz eşik, neden notunu sil) yakalandı — biri (çapraz eşik) ilk turda YAKALANMADI, özne ikizi–uyarı tutarlılık testi eklenerek kapatıldı. Tüm selftest'ler, `--golden-set`, `doc_check` temiz; `validate` çıktısı DEĞİŞMEDİ. **Karar gereken / bilinen:** salon yönelim eşiği (kuzey yarısı = kuzeyden 90°'den az sapma) 'tercih', kaynaksız; pencere/taban oranı için doğrulanmış oran eşiği ve yükseklik verisi yok (`draft`); şaft verisi olmayan projede ıslak hacim penceresizse veçhe öter; ışık ↔ mahremiyet gerilimi karşı veçhe kayıtlı olmadığından yazılmadı; gerçek projeye `north_angle` EKLENMEDİ (proje revizyonu, sizin bilgi vermeniz gerekir: kuzey nerede?). Kilit bırakıldı.
 
 ### DEV-063 — `reasoning/`+`furniture/` — yaşanabilirlik mercek paketi + deneme yerleşimi
 
@@ -894,6 +870,11 @@ belirleyeceksin ... her birini sıralama olarak birbirine bağla"):**
   4. Defter tutma: dalga 1'i `061`/`062`/`063` emer; `067` yalnız kalan dalgalar. Öneri: evet.
 - **Kullanıcı kararları (2026-10-09, netleştirme tamam; başlamak için kullanıcı onayı bekleniyor):** (1) kapı #10 üç durumlu (sağlayıcı / `EXEMPT` / `PENDING`), liste yalnız küçülür — EVET; (2) veçhe kaydı yalnız lens paketlerinde, modül `reasoning.py`si ROL+ÖLÇÜM beyanı — EVET; (3) muaf sözlüğü merkezi `scripts/reasoning/providers.py`, `knowledge_engineering` yazma izni yalnız bu dosya — EVET; (4) dalga 1'i `061`/`062`/`063` üstlenir, `067` yalnız kalan dalgaları yürütür — EVET.
 - **Metin düzeltmeleri (onayla birlikte uygulanır):** Önkoşul 'DEV-060' → 'DEV-059 + DEV-060'; 'rolling' ifadesi silinir; `northarrow` sırası `DEV-062` ile çakışır (northarrow önce); 'şablona uyar' ve 'gerekçe yazılı' kabulleri deterministik hale getirilir (başlık+alan varlığı, boş olmayan gerekçe).
+
+### DEV-070 — `docs/agents/` — bilgi mühendisi rolü ve büyütme protokolü
+
+- **Durum:** COMPLETED (2026-10-09) — kullanıcı onayıyla (dört netleştirme kararı) uygulandı. Ayrıntılı kayıt: `HD-045`.
+- **Özet:** `KNOWLEDGE_ENGINEER_AGENT.md` + `AGENT_PERMISSIONS.json` (`knowledge_engineering`, reviews/ yalnız reviewer) + reviewer "Sistem sınavı"; sınav `DEV-071`e ayrıldı (PLANNED).
 
 ### DEV-071 — `docs/development/reviews/` — soğuk başlangıç sınavı (reviewer)
 

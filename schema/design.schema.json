@@ -77,6 +77,7 @@
           "description": "Duvarin baslangic noktasindan itibaren acikligin ortasina olan mesafe"
         },
         "width": { "type": "number", "exclusiveMinimum": 0 },
+        "height": { "type": "number", "exclusiveMinimum": 0, "description": "Aciklik yuksekligi (mm) - OPSIYONEL, opt-in (DEV-062, sema 1.4.0). Verilmezse katalogdan VARSAYILAN uydurulmaz; pencere/taban orani vechesi 'pencere yuksekligi verilmedi' diye KOSAMAZ." },
         "layer": { "type": "string" },
         "variant": {
           "type": "string", "enum": ["single", "double", "sliding", "folding", "sliding_double"],

@@ -62,6 +62,7 @@ SCRIPTS_ROOT = Path(__file__).resolve().parent
 #           additif, bkz. scripts/shafts/).
 #   1.4.0 - DEV-065: ust seviye `design_decisions[]` (tasarim karari kaydi; additif, OPT-IN).
 #           Alani tasimayan 1.3.0 projeleri gecerli kalir (yalniz minor surum notu).
+#           DEV-062 (ayni MINOR, additif): `openings[].height` (opsiyonel pencere/aciklik yuksekligi, mm; varsayilan UYDURULMAZ).
 SCHEMA_VERSION = "1.4.0"
 
 # Alani tasimayan eski projeler icin varsayilan. Bugun tum projeler bu

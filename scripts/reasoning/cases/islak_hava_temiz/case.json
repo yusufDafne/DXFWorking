@@ -1,0 +1,74 @@
+{
+ "id": "islak_hava_temiz",
+ "facet": "isik_hava_yonelim.hava.islak_hacim_havalandirma",
+ "role": "temiz",
+ "origin": "elle yazilmis, uydurulmus mini sahne (DEV-062; gercek gecmis geometri DEGIL)",
+ "floor": {
+  "rooms": [
+   {
+    "id": "wc",
+    "room_type": "wc",
+    "unit_id": "uA",
+    "polygon": [
+     [
+      0,
+      0
+     ],
+     [
+      2000,
+      0
+     ],
+     [
+      2000,
+      2000
+     ],
+     [
+      0,
+      2000
+     ]
+    ]
+   }
+  ],
+  "walls": [
+   {
+    "id": "w_alt",
+    "start": [
+     0,
+     0
+    ],
+    "end": [
+     2000,
+     0
+    ],
+    "thickness": 200.0,
+    "layer": "D"
+   }
+  ],
+  "openings": [],
+  "shafts": [
+   {
+    "id": "saft",
+    "kind": "tesisat",
+    "polygon": [
+     [
+      2000,
+      500
+     ],
+     [
+      2650,
+      500
+     ],
+     [
+      2650,
+      1150
+     ],
+     [
+      2000,
+      1150
+     ]
+    ],
+    "unit_id": "uA"
+   }
+  ]
+ }
+}

@@ -161,10 +161,65 @@ def shared_edge_length(poly_a, poly_b, tol: float = SHARED_EDGE_TOLERANCE_MM) ->
     return total
 
 
+# DEV-062: cephe tayininde prob mesafesi = duvar kalinligi/2 + FACADE_PROBE_EXTRA_MM (duvarin iki yuzunun hemen otesi)
+FACADE_PROBE_EXTRA_MM = 10.0
+
+
+def _in_any(point, polygons) -> bool:
+    return any(point_in_polygon(point, poly) for poly in polygons)
+
+
+def facade_normal(point: tuple[float, float], wall: dict, rooms: list[dict], shafts: list[dict] | None = None):
+    """Duvarin `point`indaki DIS yuz yonu (birim vektor) ya da `None` (ic duvar / belirsiz).
+
+    Yontem: duvar merkezinden normal boyunca +/- (kalinlik/2 + 10 mm) iki prob; biri bir odanin ya da saftin ICINDE,
+    digeri HICBIRININ icinde degilse dis taraf budur. Ikisi de iceride (ic duvar) ya da ikisi de disaridaysa `None`.
+    Dis yon uydurulmaz: tayin edilemezse `None` doner ve cagiran 'olculemedi' der.
+    """
+    sx, sy = wall["start"]
+    ex, ey = wall["end"]
+    length = ((ex - sx) ** 2 + (ey - sy) ** 2) ** 0.5
+    if length == 0:
+        return None
+    nx, ny = -(ey - sy) / length, (ex - sx) / length
+    d = float(wall.get("thickness", 0.0)) / 2.0 + FACADE_PROBE_EXTRA_MM
+    polys = [r["polygon"] for r in rooms] + [s["polygon"] for s in (shafts or [])]
+    plus = (point[0] + nx * d, point[1] + ny * d)
+    minus = (point[0] - nx * d, point[1] - ny * d)
+    in_plus, in_minus = _in_any(plus, polys), _in_any(minus, polys)
+    if in_plus == in_minus:
+        return None
+    return (-nx, -ny) if in_plus else (nx, ny)
+
+
+def window_rooms(window: dict, walls_by_id: dict, rooms: list[dict]) -> list[dict]:
+    """Pencere orta noktasina degen odalar (kapi-oda komsulugu ile ayni yontem ve tolerans)."""
+    mid = door_midpoint(window, walls_by_id)
+    return [] if mid is None else rooms_touching_point(mid, rooms)
+
+
+def exterior_windows(rooms: list[dict], walls: list[dict], openings: list[dict], shafts: list[dict] | None = None) -> list[dict]:
+    """Dis cepheye acilan pencereler: `{'window','mid','normal','rooms'}`. Dis yuzu tayin EDILEMEYEN pencere listeye girmez."""
+    walls_by_id = {w["id"]: w for w in walls}
+    out = []
+    for o in openings:
+        if o.get("type") != "window":
+            continue
+        wall = walls_by_id.get(o.get("wall_id"))
+        mid = door_midpoint(o, walls_by_id)
+        if wall is None or mid is None:
+            continue
+        normal = facade_normal(mid, wall, rooms, shafts)
+        if normal is None:
+            continue
+        out.append({"window": o, "mid": mid, "normal": normal, "rooms": rooms_touching_point(mid, rooms)})
+    return out
+
+
 __all__ = [
     "CONTRACT_VERSION", "TOUCH_TOLERANCE_MM", "SHARED_EDGE_TOLERANCE_MM",
     "point_in_polygon", "point_on_boundary",
     "door_midpoint", "door_frame", "rooms_touching_point", "dist_point_segment",
     "touches_within", "vertex_mean", "segments_intersect", "clear_line_of_sight",
-    "shared_edge_length",
+    "shared_edge_length", "FACADE_PROBE_EXTRA_MM", "facade_normal", "window_rooms", "exterior_windows",
 ]

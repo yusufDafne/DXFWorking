@@ -1,0 +1,78 @@
+{
+ "id": "capraz_hava_temiz",
+ "facet": "isik_hava_yonelim.hava.capraz_havalandirma",
+ "role": "temiz",
+ "origin": "elle yazilmis, uydurulmus mini sahne (DEV-062; gercek gecmis geometri DEGIL)",
+ "floor": {
+  "rooms": [
+   {
+    "id": "salon",
+    "room_type": "salon",
+    "unit_id": "uA",
+    "polygon": [
+     [
+      0,
+      0
+     ],
+     [
+      6000,
+      0
+     ],
+     [
+      6000,
+      4000
+     ],
+     [
+      0,
+      4000
+     ]
+    ]
+   }
+  ],
+  "walls": [
+   {
+    "id": "w_alt",
+    "start": [
+     0,
+     0
+    ],
+    "end": [
+     6000,
+     0
+    ],
+    "thickness": 200.0,
+    "layer": "D"
+   },
+   {
+    "id": "w_ust",
+    "start": [
+     6000,
+     4000
+    ],
+    "end": [
+     0,
+     4000
+    ],
+    "thickness": 200.0,
+    "layer": "D"
+   }
+  ],
+  "openings": [
+   {
+    "id": "p1",
+    "type": "window",
+    "wall_id": "w_alt",
+    "position_from_start": 3000,
+    "width": 1500
+   },
+   {
+    "id": "p2",
+    "type": "window",
+    "wall_id": "w_ust",
+    "position_from_start": 3000,
+    "width": 1500
+   }
+  ],
+  "shafts": []
+ }
+}
