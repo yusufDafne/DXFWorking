@@ -74,7 +74,7 @@ Tamamlanan işlerin ayrıntılı gerekçesi, karar süreci ve ölçülen etkisi
 | DEV-072 | `openings/` — pencere yüksekliği + denizlik (katalog varsayılanı, kullanıcı geçersiz kılar) | COMPLETED (2026-10-12) |
 | DEV-073 | `elevations/` — cepheyi plan açıklıklarından türet | PLANNED |
 | DEV-074 | Kuzey sözleşmesi — kuzeye en yakın cephe üstte, `meta.north_angle` ∈ [−45°, +45°] | COMPLETED (2026-10-12) |
-| DEV-075 | `openings/` — normal pencere varsayılan denizliği 900 mm + pencere varsayılan konumu (iç duvarlar arasında ortala) + duvar birleşiminde pencere uyarısı | IN_PROGRESS |
+| DEV-075 | `openings/` — normal pencere varsayılan denizliği 900 mm + pencere varsayılan konumu (iç duvarlar arasında ortala) + duvar birleşiminde pencere uyarısı | PLANNED |
 | DEV-071 | `docs/development/reviews/` — soğuk başlangıç sınavı (reviewer; `DEV-070` ayrılan parça, önkoşulsuz) | PLANNED |
 
 ## READY
