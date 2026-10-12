@@ -103,6 +103,8 @@ COLLISION_EXEMPT: dict[str, str] = {
                  "SONRA, NORMAL pipeline (rooms/walls/openings.collision) "
                  "zaten kapsar - importer ile AYNI 'aday veri uretir, "
                  "denetimi KENDI yapmaz' gerekcesi.",
+    "testfit": "Deneme yerlestirme SINAVIDIR (DEV-063): furniture katalog olculerini ve collision motorunu TUKETIR, KENDI ayak izi "
+               "URETMEZ, context.json'a HIC YAZMAZ, DXF cizmez; sonuc turevdir. Son dogrulamayi collision motoru yapar.",
     "architect": "Iliskisel/mimari mantik kural kutuphanesidir (DEV-039); "
                  "standards ile AYNI 'salt kutuphane, sifir cizim' "
                  "gerekcesi - HIC ezdxf kullanmaz, YENI bir FIZIKSEL ayak "

@@ -191,6 +191,7 @@ geliştirme görevleri, tamamlanmış geçmiş, fikirler ve geliştirici notlar�
    python scripts/northarrow/selftest.py
    python scripts/spatial/selftest.py  # DEV-059 (eski<->yeni diferansiyel)
    python scripts/reasoning/selftest.py  # DEV-060 (kapilar enjekte edilen bozuk kayitla sinanir)
+   python scripts/testfit/selftest.py   # DEV-063 (deneme yerlestirme; collision ile tutarlilik)
    python scripts/shafts/selftest.py   # rev-27 (stairs/standards/templates/architect de kendi selftest'leriyle)
    ```
 

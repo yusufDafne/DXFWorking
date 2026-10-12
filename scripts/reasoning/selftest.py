@@ -218,8 +218,8 @@ def check_gate10_three_state() -> list[str]:
         e.append(f"URETIM kaydi kirmizi: {dc.check_reasoning_coverage()}")
     if set(REASONING_PENDING) - dc._PENDING_FROZEN:
         e.append("uretim PENDING kumesi donuk kumenin disina cikmis")
-    if tuple(REASONING_PROVIDERS) != ("architect", "openings", "shafts"):
-        e.append(f"saglayicilar architect, openings, shafts beklenir: {REASONING_PROVIDERS}")
+    if tuple(REASONING_PROVIDERS) != ("architect", "openings", "shafts", "testfit"):
+        e.append(f"saglayicilar architect, openings, shafts, testfit beklenir: {REASONING_PROVIDERS}")
     for name in REASONING_PROVIDERS:
         if name in REASONING_PENDING or name in dc._PENDING_FROZEN:
             e.append(f"{name} saglayici oldu: PENDING ve donuk listeden CIKMALI (kume yalniz kuculur)")
@@ -369,8 +369,8 @@ def check_production_loading_is_side_effect_free() -> list[str]:
     from reasoning import load_registry
     reg, errs = load_registry()
     e = []
-    if errs or set(reg.lenses) != {"mahremiyet", "isik_hava_yonelim"} or len(reg.facets) != 19:
-        e.append(f"uretim kaydi: iki mercek (mahremiyet, isik_hava_yonelim), 19 veche, hatasiz olmali: {errs} {sorted(reg.lenses)} {len(reg.facets)}")
+    if errs or set(reg.lenses) != {"mahremiyet", "isik_hava_yonelim", "yasanabilirlik"} or len(reg.facets) != 23:
+        e.append(f"uretim kaydi: uc mercek (mahremiyet, isik_hava_yonelim, yasanabilirlik), 23 veche, hatasiz olmali: {errs} {sorted(reg.lenses)} {len(reg.facets)}")
     from reasoning import validate_registry as _vr
     if _vr(reg):
         e.append(f"uretim kaydi ic tutarlilik hatasi: {_vr(reg)}")
@@ -446,8 +446,8 @@ def check_mahremiyet_cases() -> list[str]:
     reg, _ = _prod_registry()
     e = []
     cases = list_cases()
-    if len(cases) != 30:
-        e.append(f"30 vaka beklenirdi (mahremiyet 11 + isik 4 vechenin ihlal+temiz): {len(cases)}")
+    if len(cases) != 34:
+        e.append(f"34 vaka beklenirdi (mahremiyet 11 + isik 4 + yasanabilirlik 2 vechenin ihlal+temiz): {len(cases)}")
     for path in cases:
         case, _x = load_case(path)
         facet = reg.facets.get(case["facet"])
@@ -1018,8 +1018,8 @@ def check_isik_pack_registry_and_cases() -> list[str]:
     got = Counter(f.status for f in reg.facets.values() if f.lens == "isik_hava_yonelim")
     if dict(got) != {"shadow": 4, "draft": 1}:
         e.append(f"isik paketi: 4 shadow + 1 draft beklenirdi (active YOK: terfi kullanici karari): {dict(got)}")
-    if len(reg.facets) != 19 or set(reg.lenses) != {"mahremiyet", "isik_hava_yonelim"}:
-        e.append(f"uretim kaydi: iki mercek, 19 veche: {sorted(reg.lenses)} {len(reg.facets)}")
+    if len(reg.facets) != 23 or set(reg.lenses) != {"mahremiyet", "isik_hava_yonelim", "yasanabilirlik"}:
+        e.append(f"uretim kaydi: uc mercek, 23 veche: {sorted(reg.lenses)} {len(reg.facets)}")
     want = {f"{n}_{r}" for n in ("pencere_yasam", "capraz_hava", "islak_hava", "salon_yonelim") for r in ("ihlal", "temiz")}
     cases = [p for p in list_cases() if p.name in want]
     if {p.name for p in cases} != want:
@@ -1171,6 +1171,62 @@ def check_isik_report_and_coverage() -> list[str]:
     return e
 
 
+# ------------------------------------------------------------------ DEV-063: yasanabilirlik paketi (deneme yerlestirme)
+def check_yasanabilirlik_pack() -> list[str]:
+    import reasoning_report as rr
+    from collections import Counter
+    from reasoning import list_cases, load_case, run_case
+    reg, errs = _prod_registry()
+    e = list(errs)
+    got = Counter(f.status for f in reg.facets.values() if f.lens == "yasanabilirlik")
+    if dict(got) != {"shadow": 2, "draft": 1, "idea": 1}:
+        e.append(f"yasanabilirlik: 2 shadow + 1 draft (Katman B) + 1 idea beklenirdi, active YOK: {dict(got)}")
+    want = {f"{n}_{r}" for n in ("yatak_tek_sigar", "yatak_cift_sigar") for r in ("ihlal", "temiz")}
+    cases = [p for p in list_cases() if p.name in want]
+    if {p.name for p in cases} != want:
+        e.append(f"4 vaka beklenirdi: {sorted({p.name for p in cases} ^ want)}")
+    for path in cases:
+        case, _x = load_case(path)
+        e += run_case(path, rr.facet_check(reg.facets[case["facet"]]))
+    # kasitli bozma: ihlal odasini buyutursek / temiz odayi kucultursek kosucu YAKALAMALI
+    tmp = Path(tempfile.mkdtemp())
+    for name, scale in (("yatak_tek_sigar_ihlal", 2.0), ("yatak_cift_sigar_ihlal", 2.0), ("yatak_tek_sigar_temiz", 0.4), ("yatak_cift_sigar_temiz", 0.4)):
+        src = next(p for p in cases if p.name == name)
+        case, expected = load_case(src)
+        fl = case["floor"]
+        for w in fl["walls"]:
+            w["start"] = [w["start"][0] * scale, w["start"][1] * scale]
+            w["end"] = [w["end"][0] * scale, w["end"][1] * scale]
+        for r in fl["rooms"]:
+            r["polygon"] = [[x * scale, y * scale] for x, y in r["polygon"]]
+        d = tmp / name
+        d.mkdir()
+        (d / "case.json").write_text(json.dumps(case), encoding="utf-8")
+        (d / "expected_findings.json").write_text(json.dumps(expected), encoding="utf-8")
+        if not run_case(d, rr.facet_check(reg.facets[case["facet"]])):
+            e.append(f"kasitli bozma YAKALANMADI: {name}")
+    # gercek proje: tefrissiz rev-28, 5 yatak odasi icin cevap; hepsi K1 -> tetik 0/5 (dejenere, dürüstçe)
+    ctx = json.loads((ROOT / "context.json").read_text(encoding="utf-8"))
+    sh = rr.shadow_findings(reg, ctx)
+    for fid in ("yasanabilirlik.mobilya.yatak_odasi_tek_yatak_sigar", "yasanabilirlik.mobilya.yatak_odasi_cift_yatak_gardirop_sigar"):
+        if sh.get(fid) != []:
+            e.append(f"{fid}: rev-28'de bulgu OLMAMALI (hepsi K1 sigar)")
+    rates = {r.facet_id: (r.fired, r.eligible, r.degenerate) for r in rr.shadow_triggers(reg, ctx)}
+    if rates.get("yasanabilirlik.mobilya.yatak_odasi_tek_yatak_sigar") != (0, 5, True):
+        e.append(f"tek yatak tetik orani 0/5 (dejenere): {rates}")
+    # kucultulmus gercek oda: uC_oda'yi 1500x1500 yapinca yakalanir
+    ctx2 = json.loads(json.dumps(ctx))
+    for fl in ctx2["floors"]:
+        for r in fl["rooms"]:
+            if r["id"] == "uC_oda":
+                x0, y0 = r["polygon"][0]
+                r["polygon"] = [[x0, y0], [x0 + 1700, y0], [x0 + 1700, y0 + 1700], [x0, y0 + 1700]]
+    sh2 = rr.shadow_findings(reg, ctx2)
+    if len(sh2["yasanabilirlik.mobilya.yatak_odasi_tek_yatak_sigar"]) != 5:
+        e.append("kasitli kucultulmus uC_oda 5 ozdes katta yakalanmali")
+    return e
+
+
 def main() -> int:
     checks = [check_keys_and_signature, check_severity_curve, check_diff, check_legacy_parse,
               check_real_validate_parity, check_registry_validation, check_gate10_three_state,
@@ -1182,7 +1238,7 @@ def main() -> int:
               check_smells_and_coverage_sentence, check_dialogue_log, check_digit_gate_13, check_dialogue_cli,
               check_decision_core, check_decision_schema_and_validate, check_reopened_presentation, check_decide_cli_end_to_end,
               check_knowledge_engineer_role, check_isik_pack_registry_and_cases, check_facade_and_measurements,
-              check_isik_report_and_coverage]
+              check_isik_report_and_coverage, check_yasanabilirlik_pack]
     failed = 0
     for check in checks:
         try:

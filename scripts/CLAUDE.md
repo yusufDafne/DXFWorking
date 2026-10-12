@@ -79,6 +79,10 @@ kalanını bilmeye ihtiyaç duymadan o modül üzerinde derinlemesine/izole
   **`DEV-064`te açıklama motoru** (`reasoning/explain.py`: rakam lint'i, sunum kuyruğu, diyalog kaydı) ve köprü
   `scripts/reasoning_dialogue.py` geldi; `doc_check` kapı #13. **`DEV-065`te** şema 1.4.0: opt-in `design_decisions[]` (kanıta bağlı
   kabul, `reasoning/decisions.py`, `reasoning_dialogue.py decide`); `reasoning` `CONTRACT_VERSION` 1.1.
+- ✅ **`scripts/testfit/`** — `DEV-063` (2026-10-12): deneme yerleştirme SINAVI — tipik tefriş kümesinin (yatak odası: K1 çift yatak+2 komodin+gardırop … K4 tek yatak)
+  net odaya + kapı açılım sektörüne sığıp sığmadığını sınar. `furniture` (tip ölçüleri) ve `collision` (kapı sektörü + politika + son doğrulama) modüllerini
+  yalnız TÜKETİR; sonuç türevdir, `context.json`a yazılmaz; çözüm önerisi değil sınavdır. Geçiş payı = 0 (Katman A, `shadow`); rahat sığma payları (Katman B)
+  mimar değer verene dek kodlanmaz — bkz. `scripts/testfit/CLAUDE.md`.
 - ✅ **`scripts/spatial/`** — `DEV-059` (2026-10-09): eleman-farkındalıklı mekânsal sorguların
   (kapı → orta nokta, değen odalar, ortak kenar, görüş hattı) TEK sahibi. `architect`/`standards`/
   `shafts`/`rooms` içindeki kopyalar buraya **davranış korunarak** taşındı; `spatial → collision.geometry`
@@ -332,6 +336,7 @@ Ortak desen (pafta + walls ile kanitlandi):
 | `architect/`  | `check_circulation_area_share`, `check_common_circulation_share`, `check_bedroom_via_corridor`, `check_entry_sightlines`, `check_door_core_balance`, `check_wet_area_reachable_without_bedroom`, `check_wet_area_door_proximity`, `FeasibilityReport`, `check_fits`, `ZoneAssignment`, `ZoningPlan`, `resolve_unit_zoning`, `PlacementOption`, `options_for_core_placement`, `place_unit_entry_doors` | UYGULANDI (DEV-039, 2026-09-28; DEV-042/043/045, 2026-10-02); iliskisel (arity-2+) mimari mantik kurallari, DEV-038 absorbe edildi, `rooms[].unit_id` opt-in |
 | `spatial/`    | `door_midpoint`, `door_frame`, `rooms_touching_point`, `dist_point_segment`, `touches_within`, `vertex_mean`, `segments_intersect`, `clear_line_of_sight`, `shared_edge_length`, `point_in_polygon`, `facade_normal`, `window_rooms`, `exterior_windows` | UYGULANDI (DEV-059, 2026-10-09); eleman-farkindali mekansal sorgularin TEK sahibi; davranis korunarak tasindi, `spatial -> collision.geometry` tek yonlu |
 | `reasoning/`  | `Lens`, `Facet`, `Finding`, `Registry`, `CheckAdapter`, `Thresholds`, `Provenance`, `build_coverage`, `parse_validate_output`, `diff_findings`, `group_across_floors`, `trigger_report`, `load_registry`, `validate_registry` | UYGULANDI (DEV-060, 2026-10-09); muhakeme cekirdegi - bilgi tasimaz; ilk mercek paketi `lenses/mahremiyet.py` (DEV-061); isik/yasanabilirlik paketleri (DEV-062/063) ve aciklama motoru (DEV-064) sonraki maddeler |
+| `testfit/`    | `Cluster`, `BEDROOM_CLUSTERS`, `FitResult`, `Placement`, `try_fit`, `best_cluster`, `net_room_polygon`, `verify_with_collision`, `bedroom_capacity`, `check_bedroom_single_bed_fits`, `check_bedroom_double_bed_wardrobe_fits` | UYGULANDI (DEV-063, 2026-10-12); deneme yerlestirme sinavi - furniture + collision tuketir, context'e yazmaz, v1 yalniz yatak odasi |
 | `impact/`     | (yok) | PLANLANAN (DEV-068): revizyon etki analizi - bir patchin etki alani ve minimal patch plani |
 | `brief/`      | (yok) | PLANLANAN (DEV-069): kullanici ihtiyac beyani ve mimari program toplama |
 

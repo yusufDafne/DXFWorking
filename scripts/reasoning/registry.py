@@ -17,7 +17,7 @@ from .model import (CONFIDENCES, FACET_ID_RE, KINDS, LENS_ID_RE, PLACEHOLDER_SOU
 ROOT_SCRIPTS = Path(__file__).resolve().parent.parent
 
 # `<modul>/reasoning.py` saglayicilari (register(reg) fonksiyonu tasir). Veche kayitlari lens paketlerindedir.
-REASONING_PROVIDERS: tuple[str, ...] = ("architect", "openings", "shafts")  # DEV-061, DEV-062
+REASONING_PROVIDERS: tuple[str, ...] = ("architect", "openings", "shafts", "testfit")  # DEV-061, DEV-062, DEV-063
 
 # Gerekceli muafiyet ("dusunuldu, bu modul olcum/kural vermez") - COLLISION_EXEMPT ile AYNI idiom.
 REASONING_EXEMPT: dict[str, str] = {

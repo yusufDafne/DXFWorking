@@ -1,0 +1,96 @@
+{
+ "id": "yatak_tek_sigar_temiz",
+ "facet": "yasanabilirlik.mobilya.yatak_odasi_tek_yatak_sigar",
+ "role": "temiz",
+ "origin": "elle yazilmis, uydurulmus mini sahne (DEV-063; gercek gecmis geometri DEGIL)",
+ "floor": {
+  "rooms": [
+   {
+    "id": "oda",
+    "room_type": "yatak_odasi",
+    "unit_id": "uA",
+    "polygon": [
+     [
+      0,
+      0
+     ],
+     [
+      3200,
+      0
+     ],
+     [
+      3200,
+      3200
+     ],
+     [
+      0,
+      3200
+     ]
+    ]
+   }
+  ],
+  "walls": [
+   {
+    "id": "w_alt",
+    "start": [
+     0,
+     0
+    ],
+    "end": [
+     3200,
+     0
+    ],
+    "thickness": 200.0,
+    "layer": "DUVARLAR"
+   },
+   {
+    "id": "w_sag",
+    "start": [
+     3200,
+     0
+    ],
+    "end": [
+     3200,
+     3200
+    ],
+    "thickness": 200.0,
+    "layer": "DUVARLAR"
+   },
+   {
+    "id": "w_ust",
+    "start": [
+     3200,
+     3200
+    ],
+    "end": [
+     0,
+     3200
+    ],
+    "thickness": 200.0,
+    "layer": "DUVARLAR"
+   },
+   {
+    "id": "w_sol",
+    "start": [
+     0,
+     3200
+    ],
+    "end": [
+     0,
+     0
+    ],
+    "thickness": 200.0,
+    "layer": "DUVARLAR"
+   }
+  ],
+  "openings": [
+   {
+    "id": "kapi",
+    "type": "door",
+    "wall_id": "w_alt",
+    "position_from_start": 700,
+    "width": 900
+   }
+  ]
+ }
+}

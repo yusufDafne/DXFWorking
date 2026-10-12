@@ -39,6 +39,9 @@ kısıtlar.** Bu bir *doğrulama* konusudur, sahiplik konusu değildir. rev-12'd
 uygulandı: denetim `scripts/collision/` motoruna aittir; bu modülün tek
 sorumluluğu **kendi ayak izini** üretmektir — bkz. "Çakışma ayak izi".
 
+## Deneme yerleştirme `testfit/`te (DEV-063)
+Bu modül tip ÖLÇÜLERİNİ (katalog) sağlar; "bu oda tipik bir tefriş kümesini alır mı" sınavı (`testfit/`) bu modülü yalnız TÜKETİR, kümeyi burada TUTMAZ (katalog tip ölçüsüdür, küme değil). `furniture/` DEĞİŞMEDİ.
+
 ## Çakışma ayak izi (rev-12)
 
 `furniture/collision.py::footprints(floor, context)`, her yerleşim için

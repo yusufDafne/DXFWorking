@@ -95,6 +95,7 @@ CONTRACT_MODULES: tuple[str, ...] = (
     "stairs",
     "standards",
     "templates",
+    "testfit",
     "typography",
     "walls",
 )
