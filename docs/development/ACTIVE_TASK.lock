@@ -1,8 +1,0 @@
-{
-  "task_id": "DEV-069",
-  "role": "system-architect/developer",
-  "agent_id": "claude-sonnet-5-5",
-  "host": "vm",
-  "pid": 393,
-  "started_at": "2026-10-12T08:10:58.103214+00:00"
-}
