@@ -4,6 +4,24 @@ Aktif geçmiş kapasitesi: **50 kayıt**. En eski tamamlanmış kayıt, 51. kay�
 alınırken silinir. Ayrıntılı teknik değişiklikler git geçmişi ve ilgili proje
 provenance kayıtlarıyla ilişkilendirilir.
 
+## HD-054 — Kuzey sözleşmesi (DEV-074)
+
+- **Durum:** COMPLETED
+- **Tamamlanma:** 2026-10-12
+- **Kapsam:** `scripts/northarrow/{__init__,selftest}.py`+`CLAUDE.md` (`check_north_convention`, `normalize_north_angle`, `NORTH_HALF_RANGE_DEG`), `scripts/validate.py`, `schema/design.schema.json` (açıklama), kök `CLAUDE.md` "Kuzey oku", `docs/agents/PROJECT_OPERATOR_AGENT.md` ("Yön" satırı).
+- **Sonuç:** vaziyet planında kuzey daima yukarı; proje planının kuzeye en yakın cephesi paftanın üst kenarına paralel; `meta.north_angle` ∈ [−45°, +45°] (dik açılı binada cepheler 90° arayla → en yakın cephe ≤ 45°; eşdeğer açılar normalize: 350 = −10); aralık dışı açı `validate.py` HATASI ("proje sessizce döndürülmez", otomatik migrasyon yok); alan yoksa sessiz (ok çizilmez, yön uydurulmaz). Yerleşim planını analiz eden altyapı yok: yön yalnız açıyla. Kullanıcı kararları: önce kural + doğrulama, vaziyet paftası ayrı madde (`DEV-024`).
+- **Doğrulama:** sınır değerleri (±45 geçer, ±45,01 hata), normalize değerleri, veri yokken sessizlik; 5 kasıtlı bozma yakalandı (biri `KeyError` çökmesiyle); tüm selftest'ler, `--golden-set`, `doc_check` temiz; gerçek projede `validate` çıktısı ve DXF değişmedi.
+- **Golden etkisi:** yok. **Sınır:** örnek projeye `north_angle` yazılmadı (değer kullanıcıdan); aralık dışı açıda otomatik yeniden yerleştirme yok. **Sonraki direktif:** örnek proje revizyonu (rev-29).
+
+## HD-053 — Pencere yüksekliği ve denizlik (DEV-072)
+
+- **Durum:** COMPLETED
+- **Tamamlanma:** 2026-10-12
+- **Kapsam:** `scripts/openings/{heights,__init__,selftest}.py`+`CLAUDE.md`, `scripts/legend/__init__.py`+`CLAUDE.md`, `scripts/preview.py`, `scripts/validate.py`, `scripts/defaults_report.py`, `scripts/version.py` (şema 1.5.0), `schema/design.schema.json`, `scripts/reasoning/lenses/isik_hava_yonelim.py` (metin), 10 `golden/*/expected.json`, kök `CLAUDE.md`, operatör kataloğu.
+- **Sonuç:** katalog varsayılanları (normal pencere 1200 mm; boy pencere 2000 mm yükseklik, 40 mm denizlik — "kullanıcı kararı 2026-10-12"), `context.json`a yazılmaz; `openings[].height`/`sill_height` verilirse geçerli (ölçü ve düşey konum dinamik); normal pencere denizliği `verilmedi` ve hiçbir yerde 0 sayılmaz; boy pencere `window_class: "tall"` (yeni `type` açılmadı: `type == "window"` dallanan 6 yer); denizlik+yükseklik kat yüksekliğini aşarsa UYARI; cetvel YÜKSEKLİK/DENİZLİK sütunları (`PB120`, marka benzersizliği korumalı); kullanılan varsayılanlar adıyla `defaults_report.py`'de. Kullanıcı kararları: 4 cm yalnız boy pencere için; cephe plan açıklıklarından türetilecek (`DEV-073`, engelli); vaziyet/kuzey kuralı ayrı madde.
+- **Doğrulama:** elle hesaplanan değerler ve sınırlar; 10 kasıtlı bozma yakalandı (biri `ValueError` korumasıyla); tüm selftest'ler temiz; `validate` çıktısı yalnız sürüm numarası satırlarında farklı (1.4.0→1.5.0); 10 golden `expected.json` `--update` ile yenilendi (fark yalnız cetvel: TEXT +12, LINE +2); kapak damgası `SISTEM: 1.5.0`.
+- **Golden etkisi:** bilinçli (yalnız cetvel). **Sınır:** örnekte 76 pencere 1200 mm varsayılanıyla, denizlikleri `verilmedi`; `output/` yeniden üretilmedi; balkon kapısı `type: door`; pencere/taban oranı `draft` (eşik kaynaksız). **Sonraki direktif:** `DEV-073` (denizlik değeri gelince), örnek proje revizyonu.
+
 ## HD-052 — Genel kontrol: muhakeme programı kapanış doğrulaması (DEV-059…DEV-070)
 
 - **Durum:** COMPLETED
