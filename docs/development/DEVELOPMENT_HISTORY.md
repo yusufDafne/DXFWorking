@@ -4,6 +4,15 @@ Aktif geçmiş kapasitesi: **50 kayıt**. En eski tamamlanmış kayıt, 51. kay�
 alınırken silinir. Ayrıntılı teknik değişiklikler git geçmişi ve ilgili proje
 provenance kayıtlarıyla ilişkilendirilir.
 
+## HD-047 — `testfit/` + yaşanabilirlik mercek paketi (DEV-063)
+
+- **Durum:** COMPLETED
+- **Tamamlanma:** 2026-10-12
+- **Kapsam:** `scripts/testfit/` (yeni: `library/engine/measure/reasoning/selftest`, `CLAUDE.md`), `scripts/reasoning/lenses/yasanabilirlik.py`, 4 vaka, `scripts/collision/scene.py` (`COLLISION_EXEMPT`), `scripts/version.py`, `scripts/reasoning/{registry,selftest}.py`, `scripts/CLAUDE.md`, kök `CLAUDE.md`, `scripts/furniture/CLAUDE.md` (işaretçi).
+- **Sonuç:** deneme yerleştirme SINAVI (çözüm önerisi değil, `context.json`a yazılmaz): K1–K4 kapasite merdiveni, net oda + katalog ölçüsü + kapı açılım sektörü, son doğrulama `collision` motoruyla; arama bütçesi aşılırsa "ölçülemedi". 4 veçhe: 2 `shadow` (tek yatak / çift yatak+gardırop sığar mı; Katman A, pay 0), 1 `draft` (geçiş payı, Katman B kodlanmadı), 1 `idea`. Kullanıcı kararları: yeni modül `testfit/`, v1 yalnız yatak odası, K1–K4, Katman A/B ayrımı.
+- **Doğrulama:** elle hesaplanan sınırlar (K4 900×2000; K2 2195/2194 — 5 mm temas toleransı), kapı sektörü/sürme kapı, L oda, bütçe; rev-28 5 yatak odası K1 ve yerleşim `collision.check_context` ile çelişmez; kasıtlı küçültülmüş `uC_oda` yakalanır; `testfit` 5/5, `reasoning` 35/35, 7 kasıtlı bozma yakalandı; tüm selftest'ler, `--golden-set`, `doc_check` temiz; `validate` çıktısı ve şema değişmedi.
+- **Golden etkisi:** yok. **Sınır:** v1 yalnız yatak odası; tetik 0/5 (dejenere, kanıt sentetik); K2 beklentisi 'tercih'; Katman B payları mimardan; eksen-hizalı yerleşim. **Sonraki direktif:** `DEV-066`.
+
 ## HD-046 — `reasoning/`: ışık-hava-yönelim mercek paketi (DEV-062)
 
 - **Durum:** COMPLETED

@@ -66,7 +66,7 @@ Tamamlanan işlerin ayrıntılı gerekçesi, karar süreci ve ölçülen etkisi
 | DEV-065 | Şema + `reasoning/` — tasarım kararı kaydı (`design_decisions[]`), kanıta bağlı kabul (Faz 4) | COMPLETED (2026-10-09) |
 | DEV-070 | `docs/agents/` — bilgi mühendisi rolü + büyütme protokolü (Faz 2) | COMPLETED (2026-10-09) |
 | DEV-062 | `reasoning/` — ışık-hava-yönelim mercek paketi (Faz 3) | COMPLETED (2026-10-09) |
-| DEV-063 | `reasoning/`+`furniture/` — yaşanabilirlik mercek paketi + deneme yerleşimi (Faz 3) | PLANNED (sıra 8/12) |
+| DEV-063 | `reasoning/`+`furniture/` — yaşanabilirlik mercek paketi + deneme yerleşimi (Faz 3) | COMPLETED (2026-10-12) |
 | DEV-066 | `reasoning/` — kalibrasyon, ayırt edicilik ve terfi (shadow→active) protokolü (Faz 4) | PLANNED (sıra 9/12) |
 | DEV-069 | `brief/` — kullanıcı ihtiyaç beyanı ve mimari program toplama (Faz 6) | PLANNED (sıra 10/12) |
 | DEV-068 | `impact/` — revizyon etki analizi (minimal patch planlama; Faz 6) | PLANNED (sıra 11/12) |
@@ -719,33 +719,6 @@ belirleyeceksin ... her birini sıralama olarak birbirine bağla"):**
 > **mevcut `validate.py` çıktısını ve golden referansları bozmamak** ortak kabul şartıdır (`DEV-065`in şema
 > sürümü uyarısı satırı bilinen tek istisnadır). Bölünmesi önerilen maddelerde parçalar **sayısal** yeni DEV
 > kimlikleri olur (`doc_check` `### DEV-\d+` ister; `DEV-063A` gibi kimlikler görünmez kalır).
-
-### DEV-063 — `reasoning/`+`furniture/` — yaşanabilirlik mercek paketi + deneme yerleşimi
-
-- **Durum:** PLANNED
-- **Kapsam (plan §6.3):** `lenses/yasanabilirlik.py` + **deneme yerleşimi motoru**: oda
-  tipinin tipik tefriş kümesinin (katalog ölçüleri `furniture/`te hazır) kapı sektörü ve
-  kullanılabilir duvar uzunluğuyla birlikte **sığıp sığmadığını** sınar. Sonuç
-  **türetilmiştir, `context.json`a yazılmaz**; çözüm önerisi değil **sınavdır** ("sığdı /
-  sığmadı, hangi kapasitede"). Yerleşim kararı kullanıcınındır.
-- **Fikir 1 — motor `furniture/` içinde** (katalog yakın, yeni modül yok). **Fikir 2 — yeni
-  küçük `furnish/` modülü** (`furniture/` çizim/katalog sorumluluğu temiz kalır). **Açık
-  karar** (öneri Fikir 2, `collision` ayak izi disipliniyle aynı gerekçe: çizim ≠ muhakeme).
-- **Pay değerleri** (yatak çevresi, dolap önü) `yaygın` statüsündedir; doğrulanmadan
-  kodlanmaz, "v1 pratik varsayılan" işaretlenir.
-- **Şema:** değişmez. **Kabul ölçütü:** tefrişsiz rev-28'de her yatak odası için "sığar/
-  sığmaz" cevabı üretilir (yorumsuz rapor); kasıtlı küçültülmüş oda yakalanır; yeterli oda
-  yanlış-pozitif VERMEZ; tefrişi VAR projede `collision` ile çelişmez.
-- **Önkoşul:** `DEV-060` (+ `collision` kapı sektörünün yeniden kullanımı).
-- **Sıra:** 8/12 — plan §10.1; geliştirici yorumu ve netleştirme soruları 2026-10-09 kod denetimine dayanır (iki bağımsız ajan; `DEV-070` yalnız bir denetim).
-- **Geliştirici yorumu:** Tek parça olarak uygulanamaz: motorun merkezi girdisi 'tipik tefriş kümesi' `furniture/`te yok (yalnız tip ölçüleri); 'pay' aynı cümlede hem yasak hem şart; oda çokgenleri duvar merkez çizgisinde olduğundan net ölçü (uC_oda 2950×3175 mm) kullanılmalı; kabulün üçü deterministik değil. İyi haber: yatak grubu kataloğu eksiksiz (25 yatak odası, 5 tekil), `collision` kapı sektörü olduğu gibi yeniden kullanılabiliyor. Öneri: v1 yalnız yatak odası; Katman A (pay=0, yalnız katalog ölçüsü + collision kuralı) hemen `shadow`; Katman B (rahat sığma payları) mimar değer verene dek `draft`, kod yok. Modül adı `testfit/` (`furnish/` ile `furniture/` arasındaki üç harf yazım tuzağıdır). Bölme 'A/B' ise sayısal kimlikle olmalı.
-- **Netleştirme soruları** (her biri önerilen varsayılanla; kullanıcı tek tek onaylayınca madde `READY` olur):
-  1. Motor yeri/adı: öneri Fikir 2, yeni modül `testfit/` (yalnız tüketir; çizim≠muhakeme ayrımı).
-  2. v1 yalnız `yatak_odasi` mı? Öneri: evet (mutfak `counters[]` çakışma sağlayıcısı yok; WC/banyo `DEV-049/050` net ölçümleriyle iç içe).
-  3. Tipik küme ve kapasite merdiveni: K1 çift yatak+2 komodin+gardırop, K2 çift yatak+gardırop, K3 tek yatak+gardırop, K4 tek yatak — kütüphane verisi, context'e yazılmaz.
-  4. Geçiş payı politikası: A katmanı (0) shadow, B katmanı değerlerini mimar verene dek draft. Öneri: evet.
-- **Kullanıcı kararları (2026-10-09, netleştirme tamam; başlamak için kullanıcı onayı bekleniyor):** (1) motor yeni modül `testfit/` (yalnız tüketir) — EVET; (2) v1 yalnız `yatak_odasi` — EVET; (3) tipik küme K1–K4 kapasite merdiveni (kütüphane verisi, context'e yazılmaz) — EVET; (4) A katmanı (pay=0) `shadow`, B katmanı mimar değer verene dek `draft` ve kodlanmaz — EVET.
-- **Uygulama sonucu (2026-10-12, kabul bekliyor):** yeni modül `scripts/testfit/` (`library.py` K1–K4 kapasite merdiveni, `engine.py` deterministik geri izlemeli deneme yerleştirme + `collision` ile son doğrulama, `measure.py`, `reasoning.py`, `selftest.py`, `CLAUDE.md`; `furniture` ve `collision`ı yalnız TÜKETİR, değiştirmez; `COLLISION_EXEMPT`, `version.CONTRACT_MODULES`, `scripts/CLAUDE.md`, kök `CLAUDE.md` kayıtları) + `reasoning/lenses/yasanabilirlik.py` (4 veçhe: 2 `shadow` — yatak odasına tek yatak / çift yatak+gardırop sığar mı [Katman A, geçiş payı 0]; 1 `draft` — geçiş payı [Katman B, değerler mimardan, KODLANMADI]; 1 `idea` — kullanılabilir duvar uzunluğu; `active` YOK) + 4 sentetik vaka. **Kanıt:** elle hesaplanan sınırlar (K4 900×2000 tam sığar/1 mm eksik sığmaz; K2 net 2195×2000 sığar, 2194×2000 ve 2000×2000 sığmaz — `collision` 5 mm temas toleransıyla birebir; K1 2200×2000'e sığmaz, 3000×3000'e sığar); kapı açılım sektörü K2'yi engeller, sürme kapı engellemez, geniş odada K4'ü engellemez; L-şekli oda (900 kollu sığar, 850 kollu sığmaz); arama bütçesi aşılınca sonuç "ölçülemedi" ("sığmaz" DEĞİL); tefrişsiz rev-28 normal1: 5 yatak odasının hepsine K1 sığar (uC_oda net 2950×3175) ve dönen yerleşim `collision.check_context` ile ÇELİŞMEZ (blok ekleme noktası + 90° rotasyon sözleşmesi), kasıtlı 300 mm kaydırma collision tarafından yakalanır; kasıtlı küçültülmüş `uC_oda` 5 özdeş katta yakalanır; yeterli oda yanlış-pozitif vermez; tetik oranı 0/5 (dejenere, dürüstçe raporlanır). `testfit/selftest.py` 5/5; `reasoning/selftest.py` 35/35; 7 kasıtlı bozma (sektörü yok say, çakışmayı yok say, oda içinde kalmayı yok say, dönüş çıpası, bütçede "sığmaz", ham poligon [net değil], K2 merdiveni) hepsi YAKALANDI. Tüm selftest'ler, `--golden-set`, `doc_check` temiz; `validate` çıktısı DEĞİŞMEDİ (şema değişmedi). **Kullanıcıya / bilinen:** v1 yalnız yatak odası (mutfak/WC/salon yok); kümeler ve "K2 sığmalı" beklentisi 'tercih/yaygın', kaynaksız; rahat sığma payları için bir mimar değeri gerekir; yalnız eksen-hizalı yerleşim; sığma sınavı 5 mm temas toleransını taşır; çapraz-mercek gerilimi (yaşanabilirlik ↔ ışık) yazılmadı. Kilit bırakıldı.
 
 ### DEV-066 — `reasoning/` — kalibrasyon, ayırt edicilik ve terfi protokolü
 
@@ -1985,3 +1958,8 @@ Bir görev için agent şunları yapmadan `COMPLETED` yazamaz:
 
 - **Durum:** COMPLETED (2026-10-09) — kullanıcı onayıyla (dört netleştirme kararı) uygulandı. Ayrıntılı kayıt: `HD-046`.
 - **Özet:** `lenses/isik_hava_yonelim.py` (4 `shadow` + 1 `draft`, `active` yok) + `openings/daylight.py` + `shafts/ventilation.py` + `spatial` cephe sorguları + opsiyonel `openings[].height`; `north_angle` yokken yönelim "kuzey yönü verilmedi" diye koşamaz.
+
+### DEV-063 — `reasoning/`+`furniture/` — yaşanabilirlik mercek paketi + deneme yerleşimi
+
+- **Durum:** COMPLETED (2026-10-12) — kullanıcı onayıyla (dört netleştirme kararı) uygulandı. Ayrıntılı kayıt: `HD-047`.
+- **Özet:** yeni `scripts/testfit/` (K1–K4 deneme yerleştirme sınavı; `furniture` + `collision` yalnız tüketilir) + `lenses/yasanabilirlik.py` (2 `shadow`, 1 `draft`, 1 `idea`; `active` yok); rev-28 5 yatak odası K1.
