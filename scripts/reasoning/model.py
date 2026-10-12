@@ -47,6 +47,19 @@ class CheckAdapter:
 
 
 @dataclass(frozen=True)
+class Promotion:
+    """`shadow -> active` terfisinin IMZALI kaydi (DEV-066): terfi kullanicinin ACIK kararidir, arac yalniz kaniti yazar.
+    `eligible/fired/unmeasurable` terfi anindaki asgari tetik orani raporundan KOPYALANIR (ozne = tekillestirilmis)."""
+    hd_ref: str            # karari kaydeden DEVELOPMENT_HISTORY kaydi ("HD-0xx")
+    decided_on: str        # ISO tarih
+    decided_by: str        # "kullanici" (baska deger gecersiz: ajan kendi kendini terfi ettiremez)
+    eligible: int
+    fired: int
+    unmeasurable: int = 0
+    note_tr: str = ""
+
+
+@dataclass(frozen=True)
 class Facet:
     id: str
     lens: str
@@ -69,6 +82,7 @@ class Facet:
     legacy: bool = False               # validate.py'nin zaten cagirdigi kural (terfi kapisindan muaf)
     subject_kind: str = ""             # "unit" | "floor" | "building" (terfi olcerinin sayma birimi)
     needs_note_tr: tuple = ()          # ((need_yolu, "kosamadi nedeni"), ...): kapsam raporunda yol yerine duz dil neden
+    promotion: Promotion | None = None  # `active` (legacy olmayan) icin ZORUNLU: imzali terfi kaydi (DEV-066)
 
 
 @dataclass(frozen=True)
@@ -148,4 +162,6 @@ def missing_for_status(facet: Facet) -> list[str]:
             miss.append("thresholds")
         if not facet.legacy and not facet.remedies:
             miss.append("remedies")
+        if not facet.legacy and facet.promotion is None:
+            miss.append("promotion (imzali terfi kaydi)")
     return miss

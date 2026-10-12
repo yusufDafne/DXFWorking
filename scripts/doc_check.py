@@ -557,6 +557,37 @@ def check_reasoning_digits(registry=None) -> list[str]:
     return errors
 
 
+def check_reasoning_promotions(registry=None, history_text=None) -> list[str]:
+    """#16: `active` (legacy OLMAYAN) her veche imzali bir terfi kaydi tasir: karar kullanicidir (`decided_by='kullanici'`), karari
+    kaydeden HD kaydi DEVELOPMENT_HISTORY'de VARDIR, kayitli tetik orani DEJENERE degildir (0 < fired < eligible). Bu kapi terfi ETTIRMEZ;
+    yalnizca raporsuz/kararsiz/dejenere terfiyi engeller. `legacy` veche muaftir (validate.py'nin zaten cagirdigi kural)."""
+    import datetime
+    reg_mod = _reasoning_registry_module()
+    registry = registry if registry is not None else reg_mod.load_registry()[0]
+    history = history_text if history_text is not None else _read(HISTORY_PATH)
+    errors: list[str] = []
+    for f in registry.facets.values():
+        if f.status != "active" or f.legacy:
+            continue
+        pr = f.promotion
+        if pr is None:
+            errors.append(f"{f.id}: active ama terfi kaydi (promotion) yok - terfi ACIK kullanici karari + HD kaydidir.")
+            continue
+        if pr.decided_by != "kullanici":
+            errors.append(f"{f.id}: promotion.decided_by 'kullanici' olmali (ajan kendi kendini terfi ettiremez): {pr.decided_by!r}")
+        if not re.search(rf"^## {re.escape(pr.hd_ref)}\b", history, re.M):
+            errors.append(f"{f.id}: promotion.hd_ref '{pr.hd_ref}' DEVELOPMENT_HISTORY.md icinde yok.")
+        try:
+            datetime.date.fromisoformat(pr.decided_on)
+        except ValueError:
+            errors.append(f"{f.id}: promotion.decided_on gecerli ISO tarih degil: {pr.decided_on!r}")
+        if pr.eligible < 1 or not 0 <= pr.fired <= pr.eligible or pr.unmeasurable < 0:
+            errors.append(f"{f.id}: promotion sayilari tutarsiz (eligible={pr.eligible}, fired={pr.fired}).")
+        elif pr.fired in (0, pr.eligible):
+            errors.append(f"{f.id}: promotion tetik orani DEJENERE ({pr.fired}/{pr.eligible}) - her yerde/hic otmeyen veche bilgi tasimaz, shadow'da kalir.")
+    return errors
+
+
 def check_reasoning_registry() -> list[str]:
     """Uretim kaydinin yuklenmesi ve ic tutarliligi (validate_registry + yukleme hatalari)."""
     reg_mod = _reasoning_registry_module()
@@ -590,7 +621,7 @@ def run() -> list[str]:
             + check_collision_coverage() + check_contract_versions()
             + check_reasoning_coverage() + check_reasoning_registry()
             + check_reasoning_refs() + check_reasoning_cases() + check_reasoning_provenance()
-            + check_reasoning_digits())
+            + check_reasoning_digits() + check_reasoning_promotions())
 
 
 def main() -> int:

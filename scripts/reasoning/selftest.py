@@ -21,7 +21,7 @@ ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(ROOT / "scripts"))
 
 import doc_check as dc  # noqa: E402
-from reasoning import (CheckAdapter, Facet, Finding, Lens, Plain, Provenance, Registry, Thresholds,  # noqa: E402
+from reasoning import (CheckAdapter, Facet, Finding, Lens, Plain, Promotion, Provenance, Registry, Thresholds,  # noqa: E402
                        adapt_warnings, build_coverage, diff_findings, group_across_floors, make_key,
                        message_signature, parse_validate_output, run_case, severity_band,
                        severity_from_curve, trigger_report, validate_registry)
@@ -169,7 +169,8 @@ def check_registry_validation() -> list[str]:
     if not any("yinelenen" in x for x in validate_registry(r)):
         e.append("yinelenen veche kimligi YAKALANMADI")
     full = idea(status="active", provenance=prov(), needs=("rooms[].unit_id",), check_ref="a:b",
-                plain=Plain("p", "c"), thresholds=Thresholds(45.0, 15.0, "derece", "k"), remedies=("r1",))
+                plain=Plain("p", "c"), thresholds=Thresholds(45.0, 15.0, "derece", "k"), remedies=("r1",),
+                promotion=Promotion("HD-001", "2026-10-12", "kullanici", 10, 4))
     from reasoning import Remedy
     rf = reg_with(full)
     if not any("cozum basvurusu" in x for x in validate_registry(rf)):
@@ -1227,6 +1228,130 @@ def check_yasanabilirlik_pack() -> list[str]:
     return e
 
 
+# ------------------------------------------------------------------ DEV-066: terfi politikasi, ayirt edicilik, kapi #16
+def _active_facet(**kw):
+    base = dict(status="active", provenance=prov(), needs=("rooms[].room_type",), check_ref="a:b", plain=Plain("p", "c"),
+                thresholds=Thresholds(45.0, 15.0, "derece", "k"), remedies=("r1",),
+                promotion=Promotion("HD-042", "2026-10-12", "kullanici", 10, 4))
+    base.update(kw)
+    return idea("mahremiyet.gorsel.terfi", **base)
+
+
+def check_gate16_promotions() -> list[str]:
+    e = []
+    hist = "## HD-042 - kayit\n\n## HD-043 - baska\n"
+    if dc.check_reasoning_digits is None:
+        return ["on kosul"]
+    ok = dc.check_reasoning_promotions(reg_with(_active_facet()), hist)
+    if ok:
+        e.append(f"gecerli imzali terfi hata verdi (yanlis-pozitif): {ok}")
+    bad = {
+        "kayit yok": dict(promotion=None),
+        "ajan kendi kendini terfi ettirdi": dict(promotion=Promotion("HD-042", "2026-10-12", "ajan", 10, 4)),
+        "hd kaydi yok": dict(promotion=Promotion("HD-999", "2026-10-12", "kullanici", 10, 4)),
+        "gecersiz tarih": dict(promotion=Promotion("HD-042", "dun", "kullanici", 10, 4)),
+        "dejenere (her yerde oter)": dict(promotion=Promotion("HD-042", "2026-10-12", "kullanici", 6, 6)),
+        "dejenere (hic otmez)": dict(promotion=Promotion("HD-042", "2026-10-12", "kullanici", 6, 0)),
+        "tutarsiz sayi": dict(promotion=Promotion("HD-042", "2026-10-12", "kullanici", 3, 5)),
+        "olculebilir ozne yok": dict(promotion=Promotion("HD-042", "2026-10-12", "kullanici", 0, 0)),
+    }
+    for name, kw in bad.items():
+        if not dc.check_reasoning_promotions(reg_with(_active_facet(**kw)), hist):
+            e.append(f"kapi #16 YAKALAMADI: {name}")
+    legacy = _active_facet(promotion=None, legacy=True, thresholds=None, remedies=())
+    if dc.check_reasoning_promotions(reg_with(legacy), hist):
+        e.append("legacy veche #16'dan muaf olmali (yanlis-pozitif)")
+    shadow = idea(status="shadow", provenance=prov(), needs=("a.b",), check_ref="a:b")
+    if dc.check_reasoning_promotions(reg_with(shadow), hist):
+        e.append("shadow veche terfi kaydi istememeli (yanlis-pozitif)")
+    if dc.check_reasoning_promotions():
+        e.append(f"uretim kaydi #16'dan gecmeli: {dc.check_reasoning_promotions()}")
+    # model: active + legacy olmayan + terfi kaydi yok -> kayit tutarsiz
+    from reasoning import validate_registry
+    if not any("promotion" in x for x in validate_registry(reg_with(_active_facet(promotion=None)))):
+        e.append("registry dogrulamasi terfi kaydi eksikligini YAKALAMADI")
+    return e
+
+
+def check_promotion_readiness_and_lists() -> list[str]:
+    import datetime
+    from reasoning import per_unit_topic_counts, promotion_readiness, promotion_snippet, select_topics, stale_review_list, trigger_report
+    e = []
+    f = _active_facet(status="shadow", promotion=None, measure_ref="m:n")
+    full = {"ihlal", "temiz"}
+    rep_ok = trigger_report(f.id, {f"s{i}": i < 4 for i in range(10)})        # 4/10
+    items = {i.key: i for i in promotion_readiness(f, rep_ok, full)}
+    if not (items["vaka"].ok and items["tetik_orani"].ok and items["anlatim"].ok and items["cozum_yolu"].ok and items["esik"].ok):
+        e.append(f"hazir veche: teknik maddeler tamam olmali: {[(k, v.ok) for k, v in items.items()]}")
+    if items["kullanici_karari"].ok or not items["kullanici_karari"].pending_user:
+        e.append("kullanici karari maddesi ASLA otomatik tamam olmamali")
+    if "ZAYIF" in items["tetik_orani"].detail:
+        e.append("N=10 kanit zayif sayilmamali")
+    weak = {i.key: i for i in promotion_readiness(f, trigger_report(f.id, {"a": True, "b": False, "c": False}), full)}
+    if not weak["tetik_orani"].ok or "ZAYIF (N=3)" not in weak["tetik_orani"].detail:
+        e.append("N=3: terfi ENGELLENMEZ (sayisal kapi yok) ama kanit zayif diye SOYLENMELI")
+    allfire = {i.key: i for i in promotion_readiness(f, trigger_report(f.id, {f"s{i}": True for i in range(6)}), full)}
+    if allfire["tetik_orani"].ok or "DEJENERE" not in allfire["tetik_orani"].detail or "her ozne" not in allfire["tetik_orani"].detail:
+        e.append("her yerde oten veche DEJENERE diye engellenmeli ve nedeni yazilmali (olcum #6 dersi)")
+    nofire = {i.key: i for i in promotion_readiness(f, trigger_report(f.id, {f"s{i}": False for i in range(6)}), full)}
+    if nofire["tetik_orani"].ok or "hic ozne" not in nofire["tetik_orani"].detail:
+        e.append("hic otmeyen veche engellenmeli")
+    unmeas = {i.key: i for i in promotion_readiness(f, trigger_report(f.id, {"a": None, "b": None}), full)}
+    if unmeas["tetik_orani"].ok or "KANITLANAMAZ" not in unmeas["tetik_orani"].detail:
+        e.append("olculemeyen ozneler %0 sayilmamali: ayirt edicilik kanitlanamaz denmeli")
+    nomeasure = {i.key: i for i in promotion_readiness(replace_facet(f, measure_ref=""), None, full)}
+    if "measure_ref" not in nomeasure["tetik_orani"].detail:
+        e.append("measure_ref'siz veche icin neden acik yazilmali")
+    if promotion_readiness(f, rep_ok, {"ihlal"})[0].ok:
+        e.append("temiz vaka yokken vaka maddesi tamam olmamali")
+    snip = promotion_snippet(f.id, rep_ok)
+    if "eligible=10, fired=4" not in snip or 'decided_by="kullanici"' not in snip:
+        e.append(f"kayit taslagi rapordaki sayilari tasimali: {snip}")
+    # bayat gozden gecirme listesi
+    today = datetime.date(2026, 10, 12)
+    mk = lambda fid, rev: idea(fid, status="draft", provenance=Provenance("mimari_pratik", "tercih", "k", rev), needs=("a.b",))
+    stale = dict(stale_review_list([mk("mahremiyet.a.yeni", "2026-09-01"), mk("mahremiyet.a.eski", "2024-01-01"), mk("mahremiyet.a.bos", ""),
+                                    mk("mahremiyet.a.bozuk", "dun")], today, 365))
+    if set(stale) != {"mahremiyet.a.eski", "mahremiyet.a.bos", "mahremiyet.a.bozuk"} or "yeni" in str(stale):
+        e.append(f"bayat liste: eski + bos + bozuk, taze DEGIL: {stale}")
+    elif "hic gozden" not in stale["mahremiyet.a.bos"] or "gun once" not in stale["mahremiyet.a.eski"] or "gecerli tarih degil" not in stale["mahremiyet.a.bozuk"]:
+        e.append(f"bayat liste nedenleri ayirt edilmeli (bos / eski / bozuk): {stale}")
+    if stale_review_list([idea("mahremiyet.a.fikir")], today, 365):
+        e.append("idea veche bayat listesine girmemeli")
+    # yanlis-pozitif butcesi: birim basina sunulan konu
+    fs = [Finding("legacy.mimari|K1|a|1", "legacy.mimari", "K1", "m", ("uA_salon",)), Finding("legacy.mimari|K1|b|2", "legacy.mimari", "K1", "m", ("uA_oda",)),
+          Finding("legacy.mimari|K1|c|3", "legacy.mimari", "K1", "m", ("uB_oda",)), Finding("legacy.mimari|K1|d|4", "legacy.mimari", "K1", "m", ("yok",))]
+    shown, _ = select_topics(fs, {}, limit=10)
+    counts = per_unit_topic_counts(shown, {"uA_salon": "uA", "uA_oda": "uA", "uB_oda": "uB"})
+    if counts != {"uA": 2, "uB": 1, "birimsiz": 1}:
+        e.append(f"birim basina konu sayisi: {counts}")
+    return e
+
+
+def replace_facet(f, **kw):
+    from dataclasses import replace
+    return replace(f, **kw)
+
+
+def check_promotion_report_cli() -> list[str]:
+    e = []
+    script = str(ROOT / "scripts" / "reasoning_report.py")
+    out = subprocess.run([sys.executable, script, "--promotion", "--fp-budget", "0"], capture_output=True, text=True, timeout=600).stdout
+    for needle in ("Terfi / ayirt edicilik raporu (KAPI DEGIL", "DEJENERE (0/8)", "2/3 ozne tetikledi, dejenere degil; kanit ZAYIF (N=3)",
+                   "kullanici_karari: ACIK kullanici karari", "Gozden gecirme listesi", "esik 365 gun", "BUTCE ASILDI"):
+        if needle not in out:
+            e.append(f"terfi raporunda '{needle}' yok")
+    if "terfi icin TEKNIK engel yok" in out or "promotion=Promotion(" in out:
+        e.append("bugun teknik olarak terfie hazir veche YOK (hepsinin anlatim sablonu eksik): rapor aday gostermemeli")
+    run2 = subprocess.run([sys.executable, script, "--promotion"], capture_output=True, text=True, timeout=600)
+    out2 = run2.stdout
+    if run2.returncode != 0 or "Terfi / ayirt edicilik raporu" not in out2:
+        e.append(f"butcesiz terfi raporu calismali: {run2.stderr[-200:]}")
+    if "Yanlis-pozitif butcesi" in out2:
+        e.append("butce parametresi verilmeden butce hesaplanmamali/uydurulmamali (varsayilan YOK)")
+    return e
+
+
 def main() -> int:
     checks = [check_keys_and_signature, check_severity_curve, check_diff, check_legacy_parse,
               check_real_validate_parity, check_registry_validation, check_gate10_three_state,
@@ -1238,7 +1363,8 @@ def main() -> int:
               check_smells_and_coverage_sentence, check_dialogue_log, check_digit_gate_13, check_dialogue_cli,
               check_decision_core, check_decision_schema_and_validate, check_reopened_presentation, check_decide_cli_end_to_end,
               check_knowledge_engineer_role, check_isik_pack_registry_and_cases, check_facade_and_measurements,
-              check_isik_report_and_coverage, check_yasanabilirlik_pack]
+              check_isik_report_and_coverage, check_yasanabilirlik_pack, check_gate16_promotions,
+              check_promotion_readiness_and_lists, check_promotion_report_cli]
     failed = 0
     for check in checks:
         try:

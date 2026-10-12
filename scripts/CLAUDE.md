@@ -75,7 +75,7 @@ kalanını bilmeye ihtiyaç duymadan o modül üzerinde derinlemesine/izole
   kapıları #10–#12, #14, #15. Rapor komutu `scripts/reasoning_report.py`. Bkz. `scripts/reasoning/CLAUDE.md`.
   **`DEV-061`de ilk mercek paketi** (`reasoning/lenses/mahremiyet.py`, 14 veçhe) geldi; ölçüm sahibi `architect/`
   (`privacy.py`, `reasoning.py` = sağlayıcı). **`DEV-062`de ikinci paket** `isik_hava_yonelim` (5 veçhe, hepsi `shadow`/`draft`); ölçüm sahipleri `openings/daylight.py`,
-  `shafts/ventilation.py`, cephe sorguları `spatial`de.
+  `shafts/ventilation.py`, cephe sorguları `spatial`de. **`DEV-066`da terfi politikası:** `Promotion` kaydı + `doc_check` #16 + `reasoning_report.py --promotion` (terfi kullanıcı kararıdır).
   **`DEV-064`te açıklama motoru** (`reasoning/explain.py`: rakam lint'i, sunum kuyruğu, diyalog kaydı) ve köprü
   `scripts/reasoning_dialogue.py` geldi; `doc_check` kapı #13. **`DEV-065`te** şema 1.4.0: opt-in `design_decisions[]` (kanıta bağlı
   kabul, `reasoning/decisions.py`, `reasoning_dialogue.py decide`); `reasoning` `CONTRACT_VERSION` 1.1.

@@ -21,9 +21,10 @@ from .decisions import (Reopened, check_decisions, decision_numbers, evaluate, e
 from .explain import (ExplainError, allowed_numbers_for, Narrative, Topic, append_dialogue, coverage_sentence, effective_mode,
                       is_presentable, lint_template, match_smells, narrate, read_dialogue, render,
                       select_topics, validate_record, verify_numbers)
-from .model import (CheckAdapter, Facet, Finding, Lens, Plain, Profile, Provenance, Remedy, Smell, Tension,
+from .model import (CheckAdapter, Facet, Finding, Lens, Plain, Profile, Promotion, Provenance, Remedy, Smell, Tension,
                     Thresholds, missing_for_status)
-from .promotion import TriggerReport, trigger_report
+from .promotion import (ReadinessItem, TriggerReport, per_unit_topic_counts, promotion_readiness, promotion_snippet,
+                        stale_review_list, trigger_report)
 from .registry import (REASONING_EXEMPT, REASONING_PENDING, REASONING_PROVIDERS, Registry,
                        load_registry, validate_registry)
 
@@ -41,5 +42,6 @@ __all__ = [
     "Reopened", "check_decisions", "decision_numbers", "evaluate", "evidence_hash", "evidence_snapshot", "make_decision",
     "ExplainError", "allowed_numbers_for", "Narrative", "Topic", "Remedy", "append_dialogue", "coverage_sentence", "effective_mode",
     "is_presentable", "lint_template", "match_smells", "narrate", "read_dialogue", "render", "select_topics",
-    "validate_record", "verify_numbers",
+    "validate_record", "verify_numbers", "Promotion", "ReadinessItem", "per_unit_topic_counts", "promotion_readiness",
+    "promotion_snippet", "stale_review_list",
 ]

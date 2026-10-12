@@ -107,7 +107,56 @@ def shadow_triggers(registry, context) -> list:
     return reports
 
 
+def case_roles_of(facet) -> set:
+    from reasoning import load_case
+    from reasoning.cases import CASES_ROOT
+    roles = set()
+    for name in facet.cases:
+        if (CASES_ROOT / name / "case.json").exists():
+            roles.add(load_case(CASES_ROOT / name)[0].get("role"))
+    return roles
+
+
+def promotion_report(registry, context, fp_budget=None, today=None) -> list[str]:
+    """Terfi/ayirt edicilik raporu (DEV-066): KAPI DEGIL, rapor. Her `shadow` veche icin kontrol listesi + tetik orani (N yazilir, kanit
+    zayifsa soylenir); terfi ACIK kullanici karari + HD kaydidir. Ayrica bayat gozden gecirme listesi ve (parametre verilirse) yanlis-pozitif butcesi."""
+    import datetime
+    from reasoning import per_unit_topic_counts, promotion_readiness, promotion_snippet, select_topics, stale_review_list
+    import doc_check
+    lines = ["Terfi / ayirt edicilik raporu (KAPI DEGIL; terfi acik kullanici karari + HD kaydidir):"]
+    reports = {r.facet_id: r for r in shadow_triggers(registry, context)}
+    for facet in registry.facets.values():
+        if facet.status != "shadow":
+            continue
+        items = promotion_readiness(facet, reports.get(facet.id), case_roles_of(facet))
+        blockers = [i for i in items if not i.ok and not i.pending_user]
+        lines.append(f"- {facet.id}: " + ("terfi icin TEKNIK engel yok (karar kullanicinin)" if not blockers else f"{len(blockers)} engel"))
+        for i in items:
+            lines.append(f"    [{'x' if i.ok else ('?' if i.pending_user else ' ')}] {i.key}: {i.detail}")
+        rep = reports.get(facet.id)
+        if rep is not None and not blockers:
+            lines.append("    kayit taslagi (karardan sonra):\n      " + promotion_snippet(facet.id, rep).replace("\n", "\n      "))
+    stale = stale_review_list(list(registry.facets.values()), today or datetime.date.today(), doc_check.REVIEW_MAX_AGE_DAYS)
+    lines.append(f"Gozden gecirme listesi ({len(stale)}; esik {doc_check.REVIEW_MAX_AGE_DAYS} gun bir POLITIKA parametresidir, onay bekler):")
+    lines += [f"  - {fid}: {why}" for fid, why in stale]
+    if fp_budget is not None:
+        out = subprocess.run([sys.executable, str(HERE / "validate.py"), str(context.get("_path", DEFAULT_CONTEXT))], capture_output=True, text=True, timeout=600).stdout
+        shown, rest = select_topics(parse_validate_output(out), registry.facets, limit=10**6)
+        room_units = {r["id"]: r["unit_id"] for fl in context.get("floors", []) for r in fl.get("rooms", []) if r.get("unit_id")}
+        room_units.update({u: u for u in set(room_units.values())})   # bulgu elemani birimin kendisi olabilir (ornek: 'uC')
+        counts = per_unit_topic_counts(shown, room_units)
+        lines.append(f"Yanlis-pozitif butcesi (kullanici parametresi: birim basina en cok {fp_budget} sunulan konu; varsayilan YOK):")
+        for unit, n in sorted(counts.items()):
+            lines.append(f"  - {unit}: {n} konu" + ("  ** BUTCE ASILDI **" if n > fp_budget else ""))
+    return lines
+
+
 def main(argv: list[str]) -> int:
+    fp_budget = None
+    if "--fp-budget" in argv:
+        i = argv.index("--fp-budget")
+        fp_budget = int(argv[i + 1])
+        argv = argv[:i] + argv[i + 2:]
     args = [a for a in argv if not a.startswith("--")]
     before = None
     if "--before" in argv:
@@ -116,8 +165,12 @@ def main(argv: list[str]) -> int:
         args = [a for a in args if a != argv[i + 1]]
     context_path = Path(args[0]) if args else DEFAULT_CONTEXT
     context = json.loads(context_path.read_text(encoding="utf-8"))
+    context["_path"] = str(context_path)
 
     registry, load_errors = load_registry()
+    if "--promotion" in argv:
+        print("\n".join(promotion_report(registry, context, fp_budget)))
+        return 0
     for err in load_errors:
         print("UYARI (kayit):", err)
     print(build_coverage(registry, context).text())

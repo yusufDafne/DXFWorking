@@ -509,6 +509,7 @@ Mercek paketleri (`lenses/*.py`) yalnız **bildirir ve noktalı referans verir**
 | 13 | Anlatım şablonlarında rakam yok; yer-tutucular `Plain.numbers` ile uyumlu | §5.3 |
 | 14 | `kesin` statülü veçhenin `provenance.source`u boş/`"v1 pratik varsayılan"` olamaz | §3.3 |
 | 15 | `provenance.reviewed` N aydan eskiyse **bilgi** olarak listelenir (bloklamaz) | bayatlama |
+| 16 | **(DEV-066)** `active` (legacy olmayan) veçhe imzalı `Promotion` taşır: kullanıcı kararı + var olan HD kaydı + dejenere olmayan tetik oranı | terfi |
 
 ### 7.3 Terfi merdiveni (güvenli büyüme)
 

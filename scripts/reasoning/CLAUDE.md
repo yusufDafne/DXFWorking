@@ -20,7 +20,7 @@ paketinde, ölçüm/kural sahibi modülde** (modül `reasoning.py`si yalnız rol
 | `findings.py` | kararlı anahtar (`make_key`: rakamsızlaştırılmış mesaj özeti → kısmi çözüm anahtarı bozmaz), `severity_from_curve` (eğri yoksa **None/unscored**, sayı uydurulmaz), `diff_findings` (yeni/çözülen/değişmeyen), `group_across_floors` |
 | `adapters.py` | `parse_validate_output`: `validate.py` stdout'u → `Finding` (**parite yapı gereği**; sınır: yalnız kategori bilinir, veçhe kimliği `legacy.<kategori>`) |
 | `coverage.py` | `build_coverage` (`Facet.needs_note_tr` ile yol yerine duz dil neden: "yönelim değerlendirilemedi: kuzey yönü verilmedi"; ayni neden tek satırda kat listesiyle toplanır): **kostu / kosamadi (neden) / uygulanmaz**; kayıt boşsa bunu SÖYLER. `idea`/`draft` veçhe (ölçüm kodu yok) `kostu` SAYILMAZ, ayrıca **"henüz ölçülmeyen"** diye adıyla listelenir ("temiz" ≠ "bakılmadı"); `uygulanmaz` yalnız sayılır, `kosamadi` tek tek yazılır |
-| `promotion.py` | `trigger_report`: tetik oranı, dejenere (hep/hiç ötmeyen) uyarısı, ölçülemeyen paydadan çıkar; **kapı değil rapor** |
+| `promotion.py` | `trigger_report`: tetik oranı, dejenere (hep/hiç ötmeyen) uyarısı, ölçülemeyen paydadan çıkar; **kapı değil rapor**. **DEV-066:** `promotion_readiness` (terfi kontrol listesi; son madde "açık kullanıcı kararı" ASLA otomatik tamamlanmaz), `promotion_snippet` (karardan SONRA yapıştırılacak kayıt taslağı), `stale_review_list`, `per_unit_topic_counts` (yanlış-pozitif bütçesi) |
 | `cases.py` | vaka biçimi (`cases/<ad>/case.json` + `expected_findings.json`) ve koşucu; `golden/`den bilinçli ayrı |
 | `explain.py` | **DEV-064** — açıklama motoru: şablon **rakam lint'i** (`lint_template`; 3 yer-tutucu sınıfı `{ad:..}` eleman adı / `{olcum:..}` ölçülen sayı (`Plain.numbers`te bildirilmiş) / `{sabit:..}` kaynaklı eşik–şiddet; rakam = Unicode Nd/No/Nl; satır başı "1. " numaralandırma istisnası), `render` (veri yoksa `ExplainError`, uydurma yok), `verify_numbers`, **sunum kuyruğu** (`select_topics`: yalnız `active` + zaten kullanıcıya görünen `legacy.*`; `shadow` ASLA; sıra: yan etki > niyetle ilgili > şiddet (ölçülmeyen en sona) > ilk görülme; çarpan UYDURULMAZ), `match_smells` (≥2 bileşen + ortak eleman), `narrate` (5 parça, ≤3 seçenek, `sor`/`devret`; ciddi ya da uygulanacak çözüm yokken devir geçersiz), `coverage_sentence`, `dialogue.jsonl` kaydı (`append_dialogue` ekleme-yalnız, kaynaksız sayıyı reddeder) |
 | `decisions.py` | **DEV-065** — tasarım kararı kaydı (saf fonksiyonlar, dosya yazmaz): `evidence_snapshot` (ölçülen sayılar: `Finding.evidence` + mesajdaki sayılar `m1..`), `evidence_hash`, `make_decision` (boş gerekçe REDDEDİLİR), `check_decisions` (validate.py HATASI), `evaluate` (**kabul** / **düştü** + "önce → şimdi"; aynı bulguyu kapsayan SON kayıt geçerli), `decision_numbers`. Yazım yalnız `reasoning_dialogue.py decide` ile |
@@ -33,7 +33,7 @@ paketinde, ölçüm/kural sahibi modülde** (modül `reasoning.py`si yalnız rol
 **#10** her paket tam BİR yerde (sağlayıcı / gerekçeli muaf / PENDING); PENDING **donuk** (`_PENDING_FROZEN`)
 ve yalnız küçülür, `DEV-067` boşaltınca kapı bloklayıcı kalır; **#11** `status ≥ shadow` veçhenin
 `adapter/measure/check` başvuruları AST ile çözülür (adapter.inputs parametre adlarıyla örtüşür); **#12**
-`status ≥ shadow` veçhe için `ihlal` + `temiz` vaka diskte (**`legacy` veçhe muaf**: `validate.py`nin zaten çağırdığı kural terfi kapısından geçmez, `model.Facet.legacy` belgesi; vakaları yine de var ve selftest'te koşar); **#14** kaynaksız `kesin` yasak; **#15**
+`status ≥ shadow` veçhe için `ihlal` + `temiz` vaka diskte (**`legacy` veçhe muaf**: `validate.py`nin zaten çağırdığı kural terfi kapısından geçmez, `model.Facet.legacy` belgesi; vakaları yine de var ve selftest'te koşar); **#14** kaynaksız `kesin` yasak; **#16** (DEV-066) `active` (legacy olmayan) veçhe imzalı `Promotion` kaydı taşır: `decided_by='kullanici'`, `hd_ref` DEVELOPMENT_HISTORY'de var, sayılar tutarlı ve tetik oranı DEJENERE değil (0 < fired < eligible) — kapı terfi ETTİRMEZ, raporsuz/kararsız/dejenere terfiyi engeller; **#15**
 bayat `provenance.reviewed` BİLGİ satırı (`run_info`, çıkış kodunu etkilemez; `REVIEW_MAX_AGE_DAYS` bir
 politika parametresidir, onay bekler). **#13** (DEV-064) anlatım metinlerinin (veçhe başlık/ilke/neden/plain, çözüm, koku, `explain.py` sabit cümleleri) rakamsızlığı — rakam yalnız yer-tutucudan gelir. **Üretim kaydı artık DOLU**
 (`mahremiyet` 14 + `isik_hava_yonelim` 5 + `yasanabilirlik` 4 veçhe): #11/#12/#14 gerçek kayıtta gerçekten koşar; yine de kapılar selftest'te enjekte edilen
@@ -54,6 +54,17 @@ verilmezse çıkış 3 + soru), `append` (`<proje>/dialogue.jsonl`, kaynaksız s
 `context_sha256` eşleşmeyen kayıt "doğrulanamadı" diye raporlanır). Bulgular `validate.py` stdout'undan okunur
 (`validate.py` değişmez); köprü çekirdek DIŞINDADIR. rev-28: 15 satır → 3 konu → ilk mesajda 3 konu.
 
+## Terfi politikası (DEV-066)
+**Terfi (`shadow → active`) kullanıcının AÇIK kararıdır; araç kanıtı yazar, karar vermez.** `python scripts/reasoning_report.py --promotion [--fp-budget N]` her `shadow` veçhe için kontrol listesi
+(vaka, tetik oranı, anlatım, çözüm yolu, eşik, kaynak, **kullanıcı kararı = bekliyor**) yazar; tetik oranı N ile birlikte verilir ve **kanıt zayıfsa söylenir ama sayısal bir örneklem kapısı YOKTUR**
+(kullanıcı kararı). Her yerde (≈%100) ya da hiç (≈%0) ötmeyen veçhe **DEJENERE**'dir: bilgi taşımaz, `shadow`'da kalır, rapor nedenini yazar (ölçüm #6 dersi); ayırıcı (örn. duvar türü) eklenince oran düşer ve terfi edebilir.
+Ölçülemeyen özneler paydadan çıkar ve ayrı yazılır (%0 sayılmaz). Terfi yapılırsa lens paketine `Promotion(hd_ref, decided_on, decided_by="kullanici", eligible, fired, unmeasurable)` + `status="active"` yazılır
+(rapor kayıt taslağını verir), karar `DEVELOPMENT_HISTORY.md`ye işlenir; kapı #16 bunları denetler. `legacy` veçheler (validate.py'nin zaten çağırdıkları) #12/#16'dan muaftır.
+**Yanlış-pozitif bütçesi:** `--fp-budget N` kullanıcı parametresidir (birim başına sunulan en çok konu sayısı); **varsayılan YOKTUR** (plan §8.3'teki "≤3 / ≤5" taslak sayılar kullanıcı onaylamadığı için kodlanmadı).
+**Gözden geçirme listesi:** `provenance.reviewed` boş/bayat veçheler (idea ve legacy hariç); eşik (`REVIEW_MAX_AGE_DAYS`=365 gün) bir POLİTİKA parametresidir ve kullanıcı onayı bekler.
+**Eşik güncelleme sözleşmesi** (`standards/` ile aynı): bir eşiğin/ölçünün DEĞERİ değişimi sürüm artırmaz (`provenance.reviewed` güncellenir, HD kaydı düşülür); bir `Facet`/`Thresholds`/`Finding` ALAN ŞEKLİ değişimi `CONTRACT_VERSION` artırır.
+**Sunum kuyruğu ağırlıkları:** kuyrukta çarpan/ağırlık YOKTUR (sıralama kural tabanlı: yan etki > niyet > şiddet > ilk görülme); kalibre edilecek bir sayı olmadığı için kalibrasyon kodu yazılmadı — ağırlık gerekirse kullanıcı geri bildirimiyle ayrı bir karar.
+
 ## Tasarım kararı kaydı (DEV-065, şema 1.4.0)
 `context.json` üst seviye **opt-in** `design_decisions[]`: `id`, `rev`, `ts`, `reason` (zorunlu), `covers[]` (her biri `finding_key` +
 `evidence_hash` + `evidence` anlık görüntüsü; özdeş katlar için kat başına bir öge, TEK karar N bulguyu kapsar), `devredilmis`, `supersedes`.
@@ -70,7 +81,7 @@ ekler (15 → 16 satır; konu sayısı etkilenmez: `legacy.surum` sunulmaz). Ger
 `collision/scene.py::COLLISION_EXEMPT` içinde (geometri/ayak izi üretmez).
 
 ## Doğrulama
-`python scripts/reasoning/selftest.py` — 30 kontrol (DEV-065: karar çekirdeği, şema+validate, düşen kabulün sunumu, `decide` uçtan uca; 14 çekirdek + 5 mahremiyet paketi + 7 DEV-064: lint/render, §5.6 örneği, kuyruk+modlar, koku+kapsam cümlesi, diyalog kaydı, kapı #13, CLI uçtan uca; 6 kasıtlı bozma ilgili testleri kırdı; mahremiyet: durum dağılımı, `validate.py` bağlama iddiasının koddan sabitlenmesi, 22 vaka + kasıtlı bozma, rev-28 ölçümleri, rapor); elle hesaplanan anahtar/eğri değerleri; üretim koduna
+`python scripts/reasoning/selftest.py` — 38 kontrol (DEV-066: kapı #16, terfi kontrol listesi + bayat liste + bütçe, `--promotion` rapor CLI; DEV-063 yaşanabilirlik paketi, DEV-062 ışık paketi, DEV-065: karar çekirdeği, şema+validate, düşen kabulün sunumu, `decide` uçtan uca; 14 çekirdek + 5 mahremiyet paketi + 7 DEV-064: lint/render, §5.6 örneği, kuyruk+modlar, koku+kapsam cümlesi, diyalog kaydı, kapı #13, CLI uçtan uca; 6 kasıtlı bozma ilgili testleri kırdı; mahremiyet: durum dağılımı, `validate.py` bağlama iddiasının koddan sabitlenmesi, 22 vaka + kasıtlı bozma, rev-28 ölçümleri, rapor); elle hesaplanan anahtar/eğri değerleri; üretim koduna
 kasıtlı bozma (imzada rakam, kapı #10 çoklu-yer, kapsam durumu karışması) selftest'i GERÇEKTEN kırar.
 
 ## Işık-hava-yönelim paketi (DEV-062) — notlar

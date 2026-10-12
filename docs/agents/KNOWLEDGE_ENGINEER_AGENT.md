@@ -53,7 +53,7 @@ kaynaksız eşik, kaynaksız `kesin` güven düzeyi, `active` terfisi (aşağıy
 `idea` (yalnız ilke) → `draft` (provenance + veri gereksinimi) → `shadow` (ölçüm + vaka; **kullanıcıya gösterilmez**, yalnız
 `reasoning_report.py` "Gölge veçheler" bölümünde görünür) → `active` (kullanıcıya sunulur). **`active` terfisi bu agent'ın kararı değildir:**
 asgari tetik oranı raporu (`reasoning_report.py`) ve vakalar *kanıttır*, terfi **kullanıcının açık kararı + `DEVELOPMENT_HISTORY.md` kaydıdır**
-(`DEV-066` protokolü). Her projede ~%100 ya da ~%0 ötmeyen (dejenere) veçhe bilgi taşımaz — `shadow`da kal, ayırıcı ekle.
+(`DEV-066` protokolü). Terfi kaydı lens paketine `Promotion(hd_ref, decided_on, decided_by="kullanici", eligible, fired, unmeasurable)` olarak yazılır (kayıt taslağını `python scripts/reasoning_report.py --promotion` verir; kullanıcı kararı + HD kaydı OLMADAN yazma — `doc_check` #16 engeller). Her projede ~%100 ya da ~%0 ötmeyen (dejenere) veçhe bilgi taşımaz — `shadow`da kal, ayırıcı ekle.
 
 ## Yapmayacakların (özet)
 
