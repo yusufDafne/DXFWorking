@@ -129,7 +129,7 @@ def _draw_legend_preview(ax, rows, x0: float, y_top: float, width: float,
         ax.text((cx0 + cx1) / 2.0, (row_ys[0] + row_ys[1]) / 2.0, label,
                 fontsize=2.2, color="#111827", ha="center", va="center", zorder=5)
     for row_index, row in enumerate(rows, start=1):
-        values = (row.mark, row.type_label, row.variant_label, str(row.width_cm), str(row.count))
+        values = row.values()
         y_center = (row_ys[row_index] + row_ys[row_index + 1]) / 2.0
         for value, cx0, cx1 in zip(values, col_xs[:-1], col_xs[1:]):
             ax.text((cx0 + cx1) / 2.0, y_center, value, fontsize=2.0,

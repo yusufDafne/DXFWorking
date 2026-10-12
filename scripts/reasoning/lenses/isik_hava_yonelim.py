@@ -56,9 +56,8 @@ FACETS = (
     Facet(id=f"{LENS_ID}.isik.pencere_alani_orani", lens=LENS_ID,
           title_tr="Pencere alanı oda alanına yetiyor mu?",
           principle_tr="Pencere alanının oda alanına oranı yeterli olmalı; oran eşiği doğrulanmış bir kaynak gelmeden kodlanmaz.",
-          why_tr="Küçük pencere büyük odayı aydınlatamaz. Ölçüm için pencere yüksekliği gerekir; bu bilgi henüz projede tutulmuyor.",
-          status="draft", provenance=_PRACTICE, needs=("openings[].height", "rooms[].room_type"),
-          needs_note_tr=(("openings[].height", "pencere yüksekliği verilmedi (openings[].height)"),),
+          why_tr="Küçük pencere büyük odayı aydınlatamaz. Pencere yüksekliği artık bilinir (verilen değer ya da adıyla bildirilen katalog varsayılanı); oran eşiği ise kaynaklı değildir.",
+          status="draft", provenance=_PRACTICE, needs=("rooms[].room_type",),
           applies_when="has_room_type:salon|yatak_odasi", subject_kind="room"),
 )
 

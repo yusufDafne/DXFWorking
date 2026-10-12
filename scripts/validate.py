@@ -105,7 +105,8 @@ from architect import (  # noqa: E402
     check_wet_area_door_proximity,
     check_wet_area_reachable_without_bedroom,
 )
-from openings import check_elevator_door_insets, check_opening_nuances  # noqa: E402
+from openings import (check_elevator_door_insets, check_opening_nuances, check_window_class_errors,  # noqa: E402
+                      check_window_heights)
 from walls import Wall, WallCatalog, check_wall_thickness, gaps_for_wall  # noqa: E402
 
 AREA_TOLERANCE_RATIO = 0.03  # oda alani vs poligon alani icin tolerans
@@ -487,6 +488,7 @@ def check_floor(units: str, floor: dict) -> list[str]:
     errors += [prefix + e for e in check_rooms(units, floor["rooms"], floor["walls"])]
     errors += [prefix + e for e in check_walls(units, floor["walls"], floor["openings"])]
     errors += [prefix + e for e in check_openings(floor["openings"], floor["walls"])]
+    errors += [prefix + e for e in check_window_class_errors(floor["openings"])]      # DEV-072
     # DEV-036: room_type VERILMIS ama standards.STANDARDS'ta TANIMSIZ bir
     # deger YAZIM HATASIDIR (arity-1, walls.kind ile AYNI desen) - HATA.
     errors += [prefix + e for e in check_room_types(floor["rooms"])]
@@ -646,6 +648,7 @@ def run_validation(context_path: Path = DEFAULT_CONTEXT_PATH) -> bool:
                 + check_wall_thickness(walls, rooms, units)
             )
         ]
+        standards_warnings += [f"[{floor['id']}] " + w for w in check_window_heights(floor)]     # DEV-072
 
     for elevation in context["elevations"]:
         all_errors += check_elevation(elevation)

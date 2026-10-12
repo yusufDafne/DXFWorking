@@ -1,6 +1,6 @@
 {
   "source": "golden/hol_l_sekli",
-  "entity_count": 185,
+  "entity_count": 191,
   "entity_types": {
     "ARC": 1,
     "ATTRIB": 3,
@@ -8,18 +8,18 @@
     "DIMENSION": 5,
     "HATCH": 4,
     "INSERT": 1,
-    "LINE": 55,
+    "LINE": 57,
     "LWPOLYLINE": 29,
-    "TEXT": 67
+    "TEXT": 71
   },
   "layers": {
     "AKS": 55,
-    "CERCEVE": 35,
+    "CERCEVE": 37,
     "DUVARLAR": 21,
     "KAPI-PENCERE": 4,
     "KESIT": 10,
     "KOT": 12,
-    "METIN": 38,
+    "METIN": 42,
     "OLCU": 10
   },
   "modelspace_bbox": [

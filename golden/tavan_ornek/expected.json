@@ -1,6 +1,6 @@
 {
   "source": "golden/tavan_ornek",
-  "entity_count": 282,
+  "entity_count": 290,
   "entity_types": {
     "ARC": 2,
     "ATTRIB": 6,
@@ -8,18 +8,18 @@
     "DIMENSION": 15,
     "HATCH": 5,
     "INSERT": 2,
-    "LINE": 90,
+    "LINE": 92,
     "LWPOLYLINE": 33,
-    "TEXT": 93
+    "TEXT": 99
   },
   "layers": {
     "AKS": 105,
-    "CERCEVE": 40,
+    "CERCEVE": 42,
     "DUVARLAR": 42,
     "KAPI-PENCERE": 11,
     "KESIT": 10,
     "KOT": 12,
-    "METIN": 49,
+    "METIN": 55,
     "OLCU": 10,
     "TAVAN": 3
   },

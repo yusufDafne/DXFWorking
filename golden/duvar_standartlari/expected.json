@@ -1,6 +1,6 @@
 {
   "source": "golden/duvar_standartlari",
-  "entity_count": 256,
+  "entity_count": 264,
   "entity_types": {
     "ARC": 2,
     "ATTRIB": 9,
@@ -8,18 +8,18 @@
     "DIMENSION": 14,
     "HATCH": 8,
     "INSERT": 3,
-    "LINE": 73,
+    "LINE": 75,
     "LWPOLYLINE": 31,
-    "TEXT": 84
+    "TEXT": 90
   },
   "layers": {
     "AKS": 94,
-    "CERCEVE": 36,
+    "CERCEVE": 38,
     "DUVARLAR": 33,
     "KAPI-PENCERE": 10,
     "KESIT": 10,
     "KOT": 12,
-    "METIN": 51,
+    "METIN": 57,
     "OLCU": 10
   },
   "modelspace_bbox": [

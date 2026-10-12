@@ -63,7 +63,9 @@ SCRIPTS_ROOT = Path(__file__).resolve().parent
 #   1.4.0 - DEV-065: ust seviye `design_decisions[]` (tasarim karari kaydi; additif, OPT-IN).
 #           Alani tasimayan 1.3.0 projeleri gecerli kalir (yalniz minor surum notu).
 #           DEV-062 (ayni MINOR, additif): `openings[].height` (opsiyonel pencere/aciklik yuksekligi, mm; varsayilan UYDURULMAZ).
-SCHEMA_VERSION = "1.4.0"
+#   1.5.0 - DEV-072: `openings[].sill_height` (denizlik, mm) ve `openings[].window_class` ('standard'|'tall'; boy pencere/balkon kapisi);
+#           additif, OPT-IN. Varsayilan yukseklikler (1200 / boy 2000 + 40 mm denizlik) KATALOGDADIR (kullanici karari 2026-10-12), context'e yazilmaz.
+SCHEMA_VERSION = "1.5.0"
 
 # Alani tasimayan eski projeler icin varsayilan. Bugun tum projeler bu
 # surumden gelmektedir.

@@ -168,6 +168,19 @@ Asansör kapısının üç türü `golden/asansor_merkezi_cekirdek/` ile sınan�
 sürgülü, ikili sürgülü, kapı gibi açılan; beklenen ARC = 4). Şema additif genişledi
 ve `scripts/version.py::SCHEMA_VERSION` 1.1.0 oldu (kullanıcı kararı).
 
+## DEV-072: pencere yüksekliği ve denizlik (`heights.py`, şema 1.5.0)
+
+Kullanıcı kararı (2026-10-12): varsayılan pencere yüksekliği **1200 mm**; **boy pencere** (örn. balkon kapısı) varsayılan yüksekliği **2000 mm**, zeminden **40 mm**.
+Bunlar VARSAYILANDIR: `openings[].height` / `openings[].sill_height` verilirse o değer geçer (ölçü ve düşey konum dinamiktir; yatay konum zaten `position_from_start`).
+Normal pencerenin denizliği **VERİLMEDİ** ve uydurulmaz — `ResolvedHeights.sill` `None`, kaynak `verilmedi`; hiçbir yerde 0 sayılmaz (kat yüksekliği kontrolü yalnız yüksekliği karşılaştırır,
+cetvel `VERILMEDI` yazar, cephe türetimi `DEV-073` bu değere kadar bekler).
+Boy pencere `type: window` üzerinde opsiyonel `window_class: "tall"` ile işaretlenir (yeni `type` AÇILMADI: `type == "window"` dallanan 6 yer var). Balkon KAPISI `type: door` olarak kalır (kapı yüksekliği bu maddenin konusu değil).
+Sabitler katalogdadır (`DEFAULT_WINDOW_HEIGHT_MM`, `DEFAULT_TALL_WINDOW_HEIGHT_MM`, `DEFAULT_TALL_WINDOW_SILL_MM`), `context.json`a yazılmaz; kullanılan varsayılan ADIYLA bildirilir:
+`python scripts/defaults_report.py` (`defaults_used`). `validate.py`: `check_window_class_errors` (HATA: `window_class`/`sill_height` yalnız pencerede, geçersiz sınıf) ve `check_window_heights`
+(UYARI: denizlik + yükseklik kat yüksekliğini aşarsa; kat yüksekliği `stairs[].floor_to_floor_mm`den, yoksa kontrol ATLANIR). Cetvel (`legend/`): YÜKSEKLİK ve DENİZLİK sütunları
+(`PB120` = boy pencere; aynı genişlikte farklı yükseklik/denizlik markaya eklenir, benzersizlik `ValueError` ile korunur). `CONTRACT_VERSION` 1.3 → 1.4. Test: `selftest.py::check_window_heights_dev072`
+(elle değerler, 10 kasıtlı bozma yakalandı, biri `ValueError` koruması ile).
+
 ## Kabul
 
 Açıklık boşlukları duvar rails ile tutarlı, sembol stili enjekte edilebilir, schedule verisi deterministik ve mevcut plan çıktısı korunmuş olmalıdır.
@@ -177,6 +190,5 @@ Açıklık boşlukları duvar rails ile tutarlı, sembol stili enjekte edilebili
 (yaşam mahalli = salon + yatak odası, dış cepheye açılan pencere şart), `check_cross_ventilation` (birimin dış pencereleri ≥ 2 farklı dış normal yönünde mi),
 `check_salon_orientation` (`meta.north_angle` ister; tüm pencereler kuzey yarısına bakıyorsa UYARI; yoksa BOŞ döner, yön uydurulmaz). Hepsinin `*_subjects`
 ikizi vardır. **Katıldığı veçheler:** `isik_hava_yonelim.isik.yasam_mahalli_penceresi`, `…hava.capraz_havalandirma`, `…yonelim.salon_kuzeye_bakiyor`,
-(`draft`) `…isik.pencere_alani_orani` — hepsi `shadow`. **Bilinen boşluk:** pencere/taban oranı için pencere yüksekliği (`openings[].height`, opt-in, şema 1.4.0) ve
-doğrulanmış oran eşiği yok; derinlik ölçümü yok. **Bilgi mühendisi için not:** cephe tayini `spatial.facade_normal`dır (kopya yazma); tolerans 300 mm'dir —
+(`draft`) `…isik.pencere_alani_orani` — hepsi `shadow`. **Bilinen boşluk:** pencere/taban oranı için doğrulanmış oran eşiği yok (yükseklik artık DEV-072 ile bilinir); derinlik ölçümü yok. **Bilgi mühendisi için not:** cephe tayini `spatial.facade_normal`dır (kopya yazma); tolerans 300 mm'dir —
 bölmeye çok yakın pencere iki odaya değebilir.

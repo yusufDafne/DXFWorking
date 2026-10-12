@@ -71,6 +71,9 @@ Tamamlanan işlerin ayrıntılı gerekçesi, karar süreci ve ölçülen etkisi
 | DEV-069 | `brief/` — kullanıcı ihtiyaç beyanı ve mimari program toplama (Faz 6) | COMPLETED (2026-10-12; v0 — v1 şema alanı sonra) |
 | DEV-068 | `impact/` — revizyon etki analizi (minimal patch planlama; Faz 6) | COMPLETED (2026-10-12) |
 | DEV-067 | Tüm modüller — her modülün muhakeme katkısı (`reasoning.py` veya gerekçeli muafiyet; Faz 5) | COMPLETED (2026-10-12) |
+| DEV-072 | `openings/` — pencere yüksekliği + denizlik (katalog varsayılanı, kullanıcı geçersiz kılar) | PLANNED |
+| DEV-073 | `elevations/` — cepheyi plan açıklıklarından türet | **BLOCKED** — normal pencere denizliği değeri (kullanıcıdan) |
+| DEV-074 | Kuzey sözleşmesi — kuzeye en yakın cephe üstte, `meta.north_angle` ∈ [−45°, +45°] | PLANNED |
 | DEV-071 | `docs/development/reviews/` — soğuk başlangıç sınavı (reviewer; `DEV-070` ayrılan parça, önkoşulsuz) | PLANNED |
 
 ## READY
@@ -732,6 +735,33 @@ belirleyeceksin ... her birini sıralama olarak birbirine bağla"):**
 - **Geçme kuralı:** vaka başına 3 bağımsız koşu, ≥2/3'ü tüm rubrik maddelerini sağlar; rapor model kimliği + belge commit'ini taşır; çekirdekte MINOR değişiklikten sonra yeniden koşulur. Raporlar `docs/development/reviews/` (ekleme-yalnız). Geçmezse bilgi eksiktir, belge düzeltilir.
 - **Önkoşul:** yok (bugünkü belgelerle bir taban koşusu yapılabilir; `DEV-070` rol belgesi ve `DEV-064` anlatım yolu sınanan malzemedir).
 - **Kullanıcı kararları:** `DEV-070` netleştirmesinde (1)–(3) EVET (2026-10-09). Başlamak için kullanıcı onayı bekleniyor.
+
+### DEV-072 — `openings/` — pencere yüksekliği ve denizlik
+
+- **Durum:** PLANNED
+- **Kullanıcı talebi (2026-10-12):** *"default yükseklikler 1.2 metre ve boy pencereler için (örneğin balkon kapısı) 2m yükseklik olsun ve zeminden 4cm yüksekliği olsun. Bunlar default değerlerdir; kullanıcı farklı bir değer belirtirse ona göre planlanır; ölçüleri dinamik ve konumu dinamik belirlenebilmelidir."*
+- **Kullanıcı kararları:** (1) varsayılanlar: normal pencere yüksekliği 1200 mm; boy pencere yüksekliği 2000 mm, denizliği 40 mm — kaynak "kullanıcı kararı 2026-10-12", katalog sabiti, `context.json`a yazılmaz; (2) 4 cm yalnız boy pencere/balkon kapısı için; **normal pencerenin denizliği VERİLMEDİ ve uydurulmaz** (`verilmedi` kalır); (3) boy pencere işareti: tasarım gereği `type` listesi büyütülmez (altı yerde `type == "window"` dalı var) — `type: "window"` üzerinde opsiyonel `window_class: "tall"`; (4) kullanıcı değeri her zaman varsayılanı geçer (`height`, `sill_height`).
+- **Kapsam:** `openings/heights.py` (katalog sabitleri, `resolve_window_heights`, `defaults_used`, `check_window_heights`), şema MINOR 1.5.0 (`openings[].sill_height`, `openings[].window_class`), `validate.py` kancası (denizlik+yükseklik kat yüksekliğini aşarsa UYARI; kat yüksekliği verisi yoksa kontrol atlanır ve bu belgelenir), cetvel sütunları (YÜKSEKLİK, DENİZLİK; marka tutarlı ve benzersiz), `scripts/defaults_report.py` (kullanılan varsayılanlar adıyla), operatör talimatına satır.
+- **Kabul ölçütü:** elle hesaplanan değerler ve kasıtlı bozmalar; kullanıcı değeri varsayılanı ezer; denizliği verilmeyen normal pencere `verilmedi` döner ve hiçbir yerde 0/varsayım olarak kullanılmaz; `validate.py` çıktısı gerçek projede DEĞİŞMEZ; cetvelin DXF farkı bilinçli ve belgelenir; golden ve `doc_check` temiz.
+- **Önkoşul:** yok.
+- **Uygulama sonucu (2026-10-12, kabul bekliyor):** `openings/heights.py` (katalog: 1200 / boy 2000 / boy denizlik 40 mm, kaynak "kullanıcı kararı 2026-10-12"; `resolve_window_heights` kullanıcı değerini varsayılanın üstüne koyar; normal pencere denizliği `verilmedi`, 0 sayılmaz), şema **1.5.0** (`openings[].sill_height`, `openings[].window_class`), `validate.py` (HATA: sınıf/denizlik yalnız pencerede; UYARI: denizlik+yükseklik kat yüksekliğini aşarsa, kat yüksekliği yoksa atlanır), cetvel **YÜKSEKLİK/DENİZLİK** sütunları (`PB120`, marka benzersizliği korumalı), `scripts/defaults_report.py`, operatör kataloğu ve kök `CLAUDE.md`. **Tasarım değişikliği (planda `type: tall_window` demiştim):** `type == "window"` dallanan 6 yer olduğu için yeni `type` AÇILMADI; `window_class: "tall"` kullanıldı. **Kanıt:** elle hesaplanan değerler, sınır testleri (tam sınır uyarı yok, +1 mm var), 10 kasıtlı bozma yakalandı (biri `ValueError` korumasıyla); gerçek projede `validate` çıktısı YALNIZ sürüm numarası satırlarında farklı (1.4.0→1.5.0, bilinen istisna); tüm selftest'ler temiz. **Bilinçli DXF farkı:** cetvel 2 sütun büyüdü (her golden için TEXT +12, LINE +2; yalnız cetvel) → 10 golden `expected.json` `--update` ile yenilendi, diff yalnız bu iki kalem; kapak damgası `SISTEM: 1.5.0`. `output/` yeniden ÜRETİLMEDİ (örnek proje revizyonunda üretilecek). **Kullanıcıya:** (1) örnek projede 76 pencere varsayılan 1200 mm kullanıyor, denizlikleri `verilmedi`; (2) balkon KAPISI `type: door` kalır (kapı yüksekliği bu maddede yok); (3) pencere/taban oranı hâlâ `draft` (oran eşiği kaynaksız).
+
+
+### DEV-073 — `elevations/` — cepheyi plan açıklıklarından türet
+
+- **Durum:** BLOCKED — normal pencere denizliği değeri bekleniyor (kullanıcıdan); değer gelmeden cephe çizimi pencerenin düşey konumunu bilemez ve uydurmaz.
+- **Kullanıcı kararı (2026-10-12):** cephe görünüşleri plandaki pencerelerden türetilsin (genişlik, yükseklik, denizlik, konum aynı).
+- **Kapsam taslağı:** `spatial.facade_normal` ile pencere→cephe, `LevelStack` ile düşey yerleşim; cephe DXF'i ve golden referanslar **bilinçli olarak değişir** (fark raporu zorunlu); `window_count`/`window_size` genel istifi geri çekilir ya da yedek olarak kalır (açık karar).
+- **Önkoşul:** `DEV-072`; kullanıcıdan normal pencere denizliği.
+
+### DEV-074 — Kuzey sözleşmesi
+
+- **Durum:** PLANNED
+- **Kullanıcı talebi (2026-10-12):** vaziyet planında kuzey simgesi daima yukarı; proje kuzeye en yakın cephesi paftanın üst kenarına paralel yerleştirilir; kullanıcı yerleşim planı verirse analiz altyapımız yok, yön açıyla bildirilir; proje plan paftalarında kuzey, vaziyet planına göre projenin yönünü gösterir.
+- **Kullanıcı kararı:** önce kural + doğrulama; vaziyet paftası ayrı madde (`DEV-024`, arsa verisi gelince).
+- **Kapsam:** `meta.north_angle` sözleşmesi = planın "yukarı" yönünden kuzeye saat yönünde açı, kuzeye en yakın cephe üstte olduğundan **−45…+45°**; aralık dışı açıda `validate.py` HATA verir (proje sessizce döndürülmez, otomatik migrasyon yok); şema açıklaması, kök `CLAUDE.md` "Kuzey oku", `northarrow` ve `isik_hava_yonelim` belgeleri; operatör kataloğuna soru; ok çizimi ve yönelim hesabı DEĞİŞMEZ.
+- **Kabul ölçütü:** sınır değerler (−45, 45, ±45,01), eksik alan (kuzey oku çizilmez, yön uydurulmaz) ve kasıtlı bozmalar; gerçek proje `north_angle` taşımadığı için çıktısı değişmez; golden ve `doc_check` temiz.
+- **Önkoşul:** yok.
 
 ## COMPLETED
 

@@ -412,8 +412,78 @@ def check_elevator_doors_dev055() -> list[str]:
     return errors
 
 
+def check_window_heights_dev072() -> list[str]:
+    """DEV-072: elle hesaplanan yukseklik/denizlik; kullanici degeri varsayilani ezer; normal pencere denizligi UYDURULMAZ."""
+    from openings import heights as h
+    errors: list[str] = []
+
+    def eq(label, got, want):
+        if got != want:
+            errors.append(f"{label}: {got!r} != {want!r}")
+
+    win = {"id": "w1", "type": "window"}
+    r = h.resolve_window_heights(win)
+    eq("normal pencere yukseklik", (r.height, r.height_source), (1200.0, "varsayilan:DEFAULT_WINDOW_HEIGHT_MM"))
+    eq("normal pencere denizlik (verilmedi, 0 DEGIL)", (r.sill, r.sill_source), (None, "verilmedi"))
+    r = h.resolve_window_heights({**win, "window_class": "tall"})
+    eq("boy pencere", (r.height, r.sill), (2000.0, 40.0))
+    eq("boy pencere kaynaklar", (r.height_source, r.sill_source),
+       ("varsayilan:DEFAULT_TALL_WINDOW_HEIGHT_MM", "varsayilan:DEFAULT_TALL_WINDOW_SILL_MM"))
+    r = h.resolve_window_heights({**win, "height": 1500, "sill_height": 900})
+    eq("kullanici degeri (normal)", (r.height, r.sill, r.height_source, r.sill_source), (1500.0, 900.0, "verilen", "verilen"))
+    r = h.resolve_window_heights({**win, "window_class": "tall", "height": 2300})
+    eq("boy pencere: yalniz yukseklik verildi, denizlik varsayilan kalir", (r.height, r.sill, r.height_source, r.sill_source),
+       (2300.0, 40.0, "verilen", "varsayilan:DEFAULT_TALL_WINDOW_SILL_MM"))
+    r = h.resolve_window_heights({**win, "window_class": "tall", "sill_height": 0})
+    eq("denizlik 0 acikca verilebilir (varsayilani ezer)", (r.sill, r.sill_source), (0.0, "verilen"))
+    try:
+        h.resolve_window_heights({**win, "window_class": "dev"})
+        errors.append("gecersiz window_class reddedilmedi")
+    except ValueError:
+        pass
+
+    ctx = {"floors": [{"id": "f", "openings": [win, {"id": "w2", "type": "window", "window_class": "tall"},
+                                                  {"id": "d", "type": "door"}, {"id": "w3", "type": "window", "height": 1000, "sill_height": 900}]}]}
+    eq("defaults_used", h.defaults_used(ctx),
+       {"(denizlik verilmedi)": 1, "DEFAULT_TALL_WINDOW_HEIGHT_MM": 1, "DEFAULT_TALL_WINDOW_SILL_MM": 1, "DEFAULT_WINDOW_HEIGHT_MM": 1})
+    eq("kapi sayilmaz, verilen deger varsayilan sayilmaz", h.defaults_used({"floors": [{"openings": [{"id": "d", "type": "door"},
+       {"id": "x", "type": "window", "height": 1000, "sill_height": 900}]}]}), {})
+
+    # validate uyarilari: sinir tam esitse UYARI YOK (yanlis-pozitif), 1 mm fazlaysa VAR; kat yuksekligi yoksa kontrol atlanir
+    fl = lambda ops, stairs=True: {"id": "k", "openings": ops, "stairs": [{"floor_to_floor_mm": 3000.0}] if stairs else []}  # noqa: E731
+    eq("tam sinir (1200+1800=3000) uyari yok", h.check_window_heights(fl([{**win, "sill_height": 1800}])), [])
+    eq("1 mm fazla uyari", len(h.check_window_heights(fl([{**win, "sill_height": 1801}]))), 1)
+    eq("kat yuksekligi yoksa atlanir", h.check_window_heights(fl([{**win, "sill_height": 9000}], stairs=False)), [])
+    eq("denizligi bilinmeyen pencere: denizlik 0 SAYILMAZ, yalniz yukseklik", h.check_window_heights(fl([{**win, "height": 3000}])), [])
+    eq("denizligi bilinmeyen pencere yukseklik tek basina asarsa uyari", len(h.check_window_heights(fl([{**win, "height": 3001}]))), 1)
+    eq("kapi atlanir", h.check_window_heights(fl([{"id": "d", "type": "door", "height": 9000}])), [])
+    eq("boy pencere varsayilani 2040 < 3000", h.check_window_heights(fl([{**win, "window_class": "tall"}])), [])
+    # validate HATALARI
+    errs = h.check_window_class_errors([{"id": "d", "type": "door", "window_class": "tall"}, {"id": "e", "type": "door", "sill_height": 5},
+                                         {"id": "w", "type": "window", "window_class": "tall", "sill_height": 10}])
+    eq("window_class/sill_height yalniz pencerede (2 hata)", len(errs), 2)
+    # cetvel
+    from legend import COLUMN_WEIGHTS, COLUMNS, OpeningLegend
+    eq("sutun agirliklari toplami 1", round(sum(COLUMN_WEIGHTS), 9), 1.0)
+    eq("sutun sayisi", len(COLUMNS), len(COLUMN_WEIGHTS))
+    rows = OpeningLegend.rows([{"id": "f", "openings": [
+        {"id": "a", "type": "window", "wall_id": "w", "position_from_start": 1.0, "width": 1200.0},
+        {"id": "b", "type": "window", "wall_id": "w", "position_from_start": 1.0, "width": 1200.0, "window_class": "tall"},
+        {"id": "c", "type": "window", "wall_id": "w", "position_from_start": 1.0, "width": 1200.0, "height": 1500, "sill_height": 900},
+        {"id": "d", "type": "door", "wall_id": "w", "position_from_start": 1.0, "width": 900.0}]}])
+    vals = {r.mark: r.values() for r in rows}
+    eq("cetvel satir sayisi (3 pencere grubu + kapi)", len(rows), 4)
+    eq("marka benzersiz", len({r.mark for r in rows}), len(rows))
+    eq("tum satirlar sutun sayisinda", {len(r.values()) for r in rows}, {len(COLUMNS)})
+    eq("boy pencere satiri", vals.get("PB120"), ("PB120", "PENCERE", "-", "120", "200", "4", "1"))
+    eq("normal pencere satiri (denizlik VERILMEDI)", [v for k, v in vals.items() if k.startswith("P120")][0][4:6], ("120", "VERILMEDI"))
+    eq("kapi satiri yukseklik '-'", vals.get("K090")[4:6], ("-", "-"))
+    return errors
+
+
 def main() -> int:
     groups = (
+        ("pencere yuksekligi/denizlik + cetvel (DEV-072)", check_window_heights_dev072()),
         ("asansor kapisi: 3 tur, varsayilan surme, 250mm pay (DEV-055)", check_elevator_doors_dev055()),
         ("kanat boyunca duvar yakinligi (DEV-057 Grup A)", check_leaf_clearance_along_dev057()),
         ("cift kanat mentese DISTA (DEV-051)", check_double_door_hinges_outside()),
