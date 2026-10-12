@@ -319,6 +319,13 @@ geliştirme görevleri, tamamlanmış geçmiş, fikirler ve geliştirici notlar�
   bir **kuzey oku** sembolü çizilir. Veri `meta.north_angle` (derece, saat
   yönünde, paftanın "yukarı" yönünden gerçek kuzeye) ile gelir; **verilmezse
   ok HİÇ çizilmez** — yön uydurulmaz.
+- **Kuzey sözleşmesi (DEV-074, kullanıcı kararı 2026-10-12):** **vaziyet planında kuzey simgesi DAİMA yukarıyı gösterir**
+  (vaziyet paftası ayrı madde: `DEV-024`, arsa verisi gelince). Proje, paftaya **kuzeye en yakın cephesi üst kenara paralel**
+  olacak şekilde yerleştirilir ve **proje plan paftalarındaki ok, vaziyet planına göre projenin yönünü gösterir**. Dik açılı bir
+  binanın cepheleri 90° arayla durduğu için `meta.north_angle` bu yüzden **−45°…+45°** olmalıdır (eşdeğer açılar normalize
+  edilir: 350 = −10); aralık dışı açı `validate.py` **HATASI**dır — proje sessizce döndürülmez (otomatik migrasyon yok), karar
+  istenir. Kullanıcı bir yerleşim planı verirse bunu analiz edecek altyapı henüz yoktur: yön yalnız **açıyla** bildirilir.
+  Uygulama: `scripts/northarrow::check_north_convention`.
 - Kuzey okunun **NASIL çizildiği** (`NorthArrowStyle` Protocol'ü,
   `scripts/northarrow/`) standarttan ayrılmıştır — ileride farklı bir
   sembol tasarımına geçilmesi `NorthArrow(style=...)` ile enjekte edilir,

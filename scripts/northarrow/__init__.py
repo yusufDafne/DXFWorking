@@ -14,6 +14,13 @@ sozlesmesi DEGISMEZ, cagiran taraf (generate_dxf.py) tek satir degisir.
 Veri: `meta.north_angle` (derece, saat yonunde, +Y='yukari' referansindan
 GERCEK KUZEY'e). Verilmezse ok HIC cizilmez - yon uydurulmaz (schema'da
 opsiyonel).
+
+**Kuzey sozlesmesi (DEV-074, kullanici karari 2026-10-12):** vaziyet planinda kuzey simgesi DAIMA yukaridir; proje plan paftalarinda ise
+projenin KUZEYE EN YAKIN cephesi paftanin ust kenarina paraleldir ve ok, vaziyet planina gore projenin yonunu gosterir. Dik acili bir
+binanin cepheleri 90 derece arayla durdugu icin kuzeye en yakin cephe en cok 45 derece uzaktadir: `north_angle` bu yuzden [-45, +45]
+(esdeger acilar 360 modunda normalize edilir: 350 == -10). Aralik disi aci, projenin bu sozlesmeye gore yerlestirilmedigi anlamina gelir;
+proje SESSIZCE dondurulmez (otomatik migrasyon yok) - `validate.py` HATA verir ve karar ister. Kullanicinin yerlesim plani verdigi
+durumu ANALIZ edecek altyapi henuz yoktur: yon ancak aciyla bildirilir. Vaziyet paftasi ayri bir maddedir (`DEV-024`).
 """
 from __future__ import annotations
 
@@ -103,9 +110,35 @@ class NorthArrow:
 
 # Bu modulun CONTEXT SOZLESMESI surumu (DEV-020). KOD surumu DEGILDIR.
 # Bkz. scripts/version.py
-CONTRACT_VERSION = "1.0"
+CONTRACT_VERSION = "1.1"   # DEV-074: meta.north_angle [-45, +45] sozlesmesi (validate HATASI)
+
+# Dik acili binanin cepheleri 90 derece arayla: kuzeye en yakin cephe en cok 90/2 = 45 derece uzaktadir (geometri, olcum esigi degil).
+NORTH_HALF_RANGE_DEG = 45.0
+
+
+def normalize_north_angle(angle_deg: float) -> float:
+    """Esdeger aciyi (-180, +180] araligina getirir (350 -> -10). Cizim/olcum ham degeri kullanmaya devam eder (esdegerdir)."""
+    a = (float(angle_deg) + 180.0) % 360.0 - 180.0
+    return 180.0 if a == -180.0 else a
+
+
+def check_north_convention(meta: dict) -> list[str]:
+    """validate.py HATALARI: `meta.north_angle` verilmisse kuzeye en yakin cephe ustte olmali (|aci| <= 45). Verilmemisse bos
+    (ok cizilmez, yon uydurulmaz; yonelim veçhesi 'kuzey yonu verilmedi' der)."""
+    if "north_angle" not in meta:
+        return []
+    raw = meta["north_angle"]
+    a = normalize_north_angle(raw)
+    if abs(a) <= NORTH_HALF_RANGE_DEG:
+        return []
+    return [f"meta.north_angle={raw:g} (esdeger {a:g}): kuzey sozlesmesi proje planinin KUZEYE EN YAKIN cephesinin paftanin ust kenarina paralel "
+            f"olmasini ister (aci -{NORTH_HALF_RANGE_DEG:g}..+{NORTH_HALF_RANGE_DEG:g}). Bu aci icin proje farkli bir yonde yerlestirilmis; "
+            "proje sessizce dondurulmez - hangi cephe kuzeye en yakin, projeyi yeniden yerlestirmek mi yoksa aciyi duzeltmek mi istiyorsunuz?"]
 
 __all__ = [
+    "NORTH_HALF_RANGE_DEG",
+    "check_north_convention",
+    "normalize_north_angle",
     "NORTH_LABEL",
     "PRINTED_RADIUS_MM",
     "PRINTED_LABEL_MM",

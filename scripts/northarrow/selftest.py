@@ -89,8 +89,31 @@ def check_custom_style_is_injectable() -> list[str]:
     return []
 
 
+def check_north_convention_dev074() -> list[str]:
+    """DEV-074: |aci| <= 45 (esdeger acilar normalize); aralik disi HATA; veri yoksa sessiz (yon uydurulmaz)."""
+    from northarrow import check_north_convention, normalize_north_angle
+    errors: list[str] = []
+
+    def eq(label, got, want):
+        if got != want:
+            errors.append(f"{label}: {got!r} != {want!r}")
+
+    for a, want in ((0, 0), (45, 45), (-45, -45), (350, -10), (-350, 10), (360, 0), (405, 45), (180, 180), (-180, 180), (225, -135)):
+        eq(f"normalize({a})", normalize_north_angle(a), float(want))
+    eq("veri yok -> hata yok", check_north_convention({}), [])
+    for ok in (0, 25, 45, -45, 350, 315, 359.99, 405):
+        eq(f"gecerli {ok}", check_north_convention({"north_angle": ok}), [])
+    for bad in (45.01, -45.01, 46, 90, -90, 135, 180, 190, 225, 270, 314.99):
+        got = check_north_convention({"north_angle": bad})
+        if len(got) != 1 or "sessizce dondurulmez" not in got[0]:
+            errors.append(f"gecersiz {bad} tek hata vermeli: {got}")
+    eq("hata ham degeri soyler", "meta.north_angle=190" in check_north_convention({"north_angle": 190})[0], True)
+    return errors
+
+
 def main() -> int:
     groups = (
+        ("kuzey sozlesmesi [-45, +45] (DEV-074)", check_north_convention_dev074()),
         ("rotate_point (saat yonu, 4 kardinal nokta)", check_rotate_point_hand_computable()),
         ("NorthArrow yaricapi olcekle dogrusal turer", check_north_arrow_scales_with_denominator()),
         ("NorthArrow varsayilan varlik sayisi", check_north_arrow_draws_expected_entities()),
