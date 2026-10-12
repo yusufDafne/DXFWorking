@@ -26,8 +26,8 @@ pencere/kapı açıklıkları çizilir — aynı genişlik, yükseklik, denizlik
 - **Cephe seçimi `axis_source`tan** (mevcut `AxisGrid.draw_on_elevation` izdüşümüyle AYNI): `vertical` → ÖN cephe (planın alt kenarı, y en küçük dış duvar; yatay eksen = plan X, soldan sağa); `horizontal` → SAĞ cephe (x en büyük dış duvar; yatay eksen = plan Y).
 - **Kat↔seviye eşleşmesi SIRAYLA** (`sections` ile aynı sözleşme; sayılar eşit olmak zorunda — `validate.py` HATA verir).
 - Dış yüz `spatial.facade_normal` (`spatial.exterior_openings`) ile bulunur; iç açıklıklar cepheye girmez; eksen hizalı olmayan dış duvarlar ATLANIR ve notta söylenir.
-- Pencere yükseklik/denizliği `openings.heights` (verilen ya da adıyla bildirilen katalog varsayılanı: 1200/900; boy pencere 2000/40). **Dış KAPI** için yükseklik verisi yoktur; kullanıcı kararı gereği
-  (dükkân kapıları "boy pencere") **boy pencere varsayılanlarıyla (2000 mm / 40 mm)** çizilir, kapıda `height` verilmişse o geçer; kullanılan varsayılan `defaults_report.py`de adıyla bildirilir.
+- Pencere yükseklik/denizliği `openings.heights` (verilen ya da adıyla bildirilen katalog varsayılanı: 1200/900; boy pencere 2000/40). **Dış KAPI:** `door_class` (`main_entry` 2100/40, `shop` 2100/40; DEV-076) varsa SINIF varsayılanı geçer; sınıfsız dış kapıda yükseklik verisi yoktur ve kullanıcı kararı gereği
+  (dükkân kapıları "boy pencere") **boy pencere varsayılanlarıyla (2000 mm / 40 mm)** çizilir; kapıda `height` verilmişse o geçer; kullanılan varsayılan `defaults_report.py`de adıyla bildirilir. Pencere sınıfları (normal/boy/vitrin) `window_class`tan gelir.
 - Denizlik + yükseklik seviye yüksekliğini aşarsa ya da açıklık cephe genişliğinin dışına düşerse `validate.py` UYARI verir (KIRPMA YAPILMAZ).
 - `ElevationSheet.draw(..., context=...)` plan cephe için `context` ister (yoksa `ValueError`); `preview.py` AYNI `derive_level_openings` kaynağını kullanır (DXF ve önizleme ayrışmaz).
 - Çatı/makine dairesi seviyesi ve eşleşen katı olmayan seviye açıklık almaz. `CONTRACT_VERSION` 1.0 → 1.1; şema 1.6.0. Test: `selftest.py::check_plan_derived_dev073` (elle hesaplanan dikdörtgenler, 12 kasıtlı bozma yakalandı) + `golden/plandan_cephe`.

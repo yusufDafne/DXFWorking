@@ -120,3 +120,6 @@ veçhe kaydı lens paketinde) yazılır ve `REASONING_PROVIDERS`a girer — kura
 
 ## DEV-072: yükseklik ve denizlik sütunları
 Cetvel `COLUMNS` artık `YUKSEKLIK (cm)` ve `DENIZLIK (cm)` taşır (7 sütun, ağırlıklar toplamı 1). Değerler `openings.heights.resolve_window_heights`tan gelir (verilen ya da katalog varsayılanı); normal pencerenin denizliği varsayılan 90 cm (DEV-075; öncesi `VERILMEDI` idi), kapı/asansör `-`. Boy pencere markası `PB…`; aynı genişlikte farklı yükseklik/denizlik markaya eklenir. `ScheduleRow.values()` DXF ve önizlemenin TEK kaynağıdır. `CONTRACT_VERSION` 1.1. DXF çıktısı BİLİNÇLİ olarak değişir (cetvel).
+
+## DEV-076: sınıf etiketleri
+Sınıflı açıklık satırı sınıf etiketi ve markasını taşır (`BOY PENCERE`/`PB`, `VITRIN`/`PV`, `ANA GIRIS KAPISI`/`KG`, `DUKKAN KAPISI`/`KD`; sınıfsız kapı `KAPI`/`K`, normal pencere `PENCERE`/`P`). Sınıflı kapıda YÜKSEKLİK/DENİZLİK dolu, sınıfsız kapıda `-`. Sınıf bilgisi `openings.classes.OPENING_CLASSES`tan okunur (etiket/ön ek tek kaynak).

@@ -1,6 +1,6 @@
 {
   "source": "scripts/elevations/golden/plandan_cephe",
-  "entity_count": 290,
+  "entity_count": 313,
   "entity_types": {
     "ARC": 2,
     "ATTRIB": 6,
@@ -8,18 +8,18 @@
     "DIMENSION": 12,
     "HATCH": 5,
     "INSERT": 2,
-    "LINE": 88,
-    "LWPOLYLINE": 37,
-    "TEXT": 108
+    "LINE": 96,
+    "LWPOLYLINE": 38,
+    "TEXT": 122
   },
   "layers": {
     "AKS": 87,
-    "CERCEVE": 44,
-    "DUVARLAR": 37,
-    "KAPI-PENCERE": 14,
+    "CERCEVE": 46,
+    "DUVARLAR": 41,
+    "KAPI-PENCERE": 17,
     "KESIT": 10,
     "KOT": 16,
-    "METIN": 70,
+    "METIN": 84,
     "OLCU": 12
   },
   "modelspace_bbox": [

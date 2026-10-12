@@ -9,9 +9,9 @@ Kurallar (hicbiri uydurma degildir):
   * **Kat <-> seviye eslesmesi SIRAYLA** (`sections` ile ayni sozlesme; sayilar esit olmak zorunda, `validate.py` denetler).
   * Dis yuz `spatial.facade_normal` ile bulunur (ic acikliklar cepheye girmez). Normal cephe normaliyle ayni (nokta carpimi ~ 1) olmalidir;
     egik dis duvar ATLANIR ve `notes`ta soylenir.
-  * Pencere yukseklik/denizligi `openings.heights.resolve_window_heights` (verilen ya da adiyla bildirilen katalog varsayilani).
+  * Pencere yukseklik/denizligi `openings.heights.resolve_window_heights` (sinif: normal/boy/vitrin; verilen ya da adiyla bildirilen katalog varsayilani).
     DIS KAPI: yukseklik/denizlik verisi YOKTUR; kullanici karari geregi (dukkan kapilari "boy pencere") **boy pencere varsayilanlariyla**
-    (2000 mm / 40 mm) cizilir, `height` verilmisse o gecer. Bu varsayilanin kullanildigi `notes`ta yazilidir.
+    (2000 mm / 40 mm) cizilir, `height` verilmisse o gecer. DEV-076: kapida `door_class` (main_entry / shop) varsa kendi SINIF varsayilanlari gecer.
   * Denizlik + yukseklik seviye yuksekligini asiyorsa ya da aciklik cephe genisliginin disina dusuyorsa `notes`ta UYARI (kirpma YAPILMAZ).
 Salt okunur: context'e yazmaz.
 """
@@ -32,23 +32,31 @@ class FacadeRect:
     x1: float
     sill: float
     height: float
-    window_class: str    # 'standard' | 'tall'
+    class_key: str       # katalog anahtari ('window.tall', 'door.main_entry'); siniflandirilmamis dis kapi: ''
     height_source: str
     sill_source: str
 
 
 def _heights(op: dict):
+    """(tur, sinif anahtari, yukseklik, denizlik, yukseklik kaynagi, denizlik kaynagi). Pencere ve SINIFLI kapi katalogdan/verilenden
+    (`openings.heights`); SINIFSIZ dis kapi: yukseklik verisi yok -> boy pencere varsayilani (kullanici karari), `height` verilmisse o gecer."""
     try:
-        from ..openings.heights import (DEFAULT_TALL_WINDOW_HEIGHT_MM, DEFAULT_TALL_WINDOW_SILL_MM, resolve_window_heights)
+        from ..openings.heights import (DEFAULT_TALL_WINDOW_HEIGHT_MM, DEFAULT_TALL_WINDOW_SILL_MM, resolve_door_heights,
+                                        resolve_window_heights)
     except ImportError:
-        from openings.heights import DEFAULT_TALL_WINDOW_HEIGHT_MM, DEFAULT_TALL_WINDOW_SILL_MM, resolve_window_heights
+        from openings.heights import (DEFAULT_TALL_WINDOW_HEIGHT_MM, DEFAULT_TALL_WINDOW_SILL_MM, resolve_door_heights,
+                                      resolve_window_heights)
     if op.get("type") == "window":
         r = resolve_window_heights(op)
-        return "window", r.window_class, r.height, r.sill, r.height_source, r.sill_source
+        return "window", r.class_key, r.height, r.sill, r.height_source, r.sill_source
+    r = resolve_door_heights(op)
+    if r is not None:
+        return "door", r.class_key, r.height, r.sill, r.height_source, r.sill_source
+    ssrc = "varsayilan:DEFAULT_TALL_WINDOW_SILL_MM (" + ON_DOOR_SOURCE + ")"
     if "height" in op:
-        return "door", "tall", float(op["height"]), DEFAULT_TALL_WINDOW_SILL_MM, "verilen", "varsayilan:DEFAULT_TALL_WINDOW_SILL_MM (" + ON_DOOR_SOURCE + ")"
-    return ("door", "tall", DEFAULT_TALL_WINDOW_HEIGHT_MM, DEFAULT_TALL_WINDOW_SILL_MM,
-            "varsayilan:DEFAULT_TALL_WINDOW_HEIGHT_MM (" + ON_DOOR_SOURCE + ")", "varsayilan:DEFAULT_TALL_WINDOW_SILL_MM (" + ON_DOOR_SOURCE + ")")
+        return "door", "", float(op["height"]), DEFAULT_TALL_WINDOW_SILL_MM, "verilen", ssrc
+    return ("door", "", DEFAULT_TALL_WINDOW_HEIGHT_MM, DEFAULT_TALL_WINDOW_SILL_MM,
+            "varsayilan:DEFAULT_TALL_WINDOW_HEIGHT_MM (" + ON_DOOR_SOURCE + ")", ssrc)
 
 
 def derive_level_openings(context: dict, elevation: dict) -> tuple[dict[int, list[FacadeRect]], list[str]]:
@@ -86,8 +94,8 @@ def derive_level_openings(context: dict, elevation: dict) -> tuple[dict[int, lis
             mx, my = item["mid"]
             cx = mx if facade == "alt" else my
             half = float(op["width"]) / 2.0
-            kind, cls, h, sill, hsrc, ssrc = _heights(op)
-            rect = FacadeRect(op["id"], floor.get("id", str(i)), kind, cx - half, cx + half, sill, h, cls, hsrc, ssrc)
+            kind, ckey, h, sill, hsrc, ssrc = _heights(op)
+            rect = FacadeRect(op["id"], floor.get("id", str(i)), kind, cx - half, cx + half, sill, h, ckey, hsrc, ssrc)
             if rect.x0 < -1e-6 or rect.x1 > width + 1e-6:
                 notes.append(f"[{elevation['id']}] {floor.get('id')}/{op['id']}: aciklik cephe genisliginin ({width:g} mm) disina dusuyor.")
             if sill + h > float(level["height"]) + 1e-6:
@@ -101,11 +109,11 @@ def derive_level_openings(context: dict, elevation: dict) -> tuple[dict[int, lis
 
 
 def defaults_used_on_facades(context: dict) -> dict[str, int]:
-    """Plan modundaki cephelerde cizilen DIS KAPILAR boy pencere varsayilaniyla cizilir: {'dis kapi (boy pencere varsayilani)': adet}."""
+    """Plan modundaki cephelerde SINIFSIZ dis kapilar boy pencere varsayilaniyla cizilir (sinifli kapilar kendi sinif varsayilanlariyla)."""
     n = 0
     for el in context.get("elevations", []):
         if el.get("openings_from") != "plan":
             continue
         rects, _ = derive_level_openings(context, el)
-        n += sum(1 for rs in rects.values() for r in rs if r.kind == "door" and "varsayilan" in r.height_source)
+        n += sum(1 for rs in rects.values() for r in rs if r.kind == "door" and not r.class_key and "varsayilan" in r.height_source)
     return {"dis kapi cephede boy pencere varsayilaniyla cizildi (kapi yuksekligi verisi yok)": n} if n else {}

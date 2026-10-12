@@ -556,6 +556,10 @@ guncellenir.
   duvarların dış duvara bağlandığı yerler çıkarılır; iki oda arasında duvar yoksa pencere kendi odasının sınırında biter —
   `scripts/openings/placement.py`). **İç duvarın dış cepheye bağlandığı yerde (iç duvar kalınlığı kadar bölge) pencere olmamalıdır:**
   `validate.py` bunu UYARIR; mevcut pencereler için ortalanmış konum önerisi `python scripts/window_placement_report.py` (salt okunur).
+- **Açıklık sınıfları (DEV-076, kullanıcı kararı 2026-10-12):** boy pencere (`tall`) **1600 × 2000 mm**, denizlik 40 mm (taban); **vitrin** (`window_class: "shopfront"`) **2000 × 2200 mm**
+  (+400 genişlik / +200 yükseklik); **ana giriş** (`door_class: "main_entry"`) **1700 × 2100 mm** (+100 / +100); **dükkân kapısı** (`door_class: "shop"`) ana giriş ölçüleriyle başlar ama
+  AYRI sınıf ve ayrı sabitlerdir (gelecekte özelleştirilebilir). Kullanıcı değeri varsayılanı ezer; genişlik `context.json`da açık yazılır, sınıf genişliği yalnız yeni açıklık üretirken kullanılır
+  (`openings.new_opening` / `new_window`). Katalog: `python scripts/defaults_report.py --catalog`.
 - **Pafta modülü (`scripts/pafta/`, rev-4'te ilk modül olarak kuruldu):**
   Pafta çerçevesi, başlık kutusu, tasma kontrolü ve kağıt boyutu planlaması
   ARTIK `scripts/generate_dxf.py`'de DEĞİL, kendi izole modülünde

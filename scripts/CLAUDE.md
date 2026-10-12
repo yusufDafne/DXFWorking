@@ -318,7 +318,7 @@ Ortak desen (pafta + walls ile kanitlandi):
 | `pafta/`      | `Sheet`, `PaperSizePlanner`, `CoverBlock`, `PaftaOverflowError` | UYGULANDI; uniform template + keyplan bekliyor; `ScaleBar` rev-17'de eklendi, rev-18'de kullanici talebiyle KALDIRILDI |
 | `walls/`      | `Wall`, `WallNetwork`, `WallCatalog`, `RoomPolygonScanner`, `RailDrawingStandard`, `CatalogRailStandard` | UYGULANDI (rev-15); kind-farkindali rail standardi |
 | `axis/`       | `AxisGrid`, `AxisDrawingStandard`, `Axis`, `AxisCoverageReport`, `check_labels` | UYGULANDI; kismi/ara aks + etiket kurali (rev-13)          |
-| `openings/`   | `Opening`, `Door`, `Window`, `OpeningSymbolStyle`, `OpeningSchedule`, `SwingGeometry`, `swing_geometry`, `DOOR_SYMBOLS`, `ARCS_PER_VARIANT` | UYGULANDI; 4 varyant + swing/host_side (rev-13) |
+| `openings/`   | `Opening`, `Door`, `Window`, `OpeningSymbolStyle`, `OpeningSchedule`, `SwingGeometry`, `swing_geometry`, `DOOR_SYMBOLS`, `ARCS_PER_VARIANT`, `OpeningClassSpec`, `OPENING_CLASSES`, `class_of`, `new_opening`, `new_window` | UYGULANDI; 4 varyant + swing/host_side (rev-13); DEV-076: aciklik siniflari (ana giris, dukkan kapisi, vitrin, boy pencere) |
 | `rooms/`      | `Room`, `RoomLabeler`, `PolygonOps`, `RoomPolygonScanner`, `ensure_room_label_block` | UYGULANDI; 3 satirli mahal etiketi (rev-9), BLOK+ATTRIB (rev-14) |
 | `dimensions/` | `DimensionChain`, `LinearDim`, `ChainLayout`, `ChainStack`, `DimensionStyle`, `FloorOrdinates`, `FloorDimensionPlanner`, `DimensionSettings` | UYGULANDI; turetilen 3 kademeli olcu yigini (rev-13) |
 | `typography/` | `TextStyles`                                                                | UYGULANDI; proje fontu Arial Narrow (rev-9)                    |

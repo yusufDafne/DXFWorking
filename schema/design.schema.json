@@ -79,7 +79,8 @@
         "width": { "type": "number", "exclusiveMinimum": 0 },
         "height": { "type": "number", "exclusiveMinimum": 0, "description": "Aciklik yuksekligi (mm) - OPSIYONEL (DEV-062, sema 1.4.0). PENCERE icin verilmezse katalog varsayilani kullanilir ve ADIYLA bildirilir (DEV-072, sema 1.5.0): normal 1200 mm, boy pencere (window_class=tall) 2000 mm - kullanici karari 2026-10-12. Verilen deger varsayilani ezer." },
         "sill_height": { "type": "number", "minimum": 0, "description": "Pencere denizligi: zeminden pencere altina mesafe (mm) - OPSIYONEL (DEV-072, sema 1.5.0). Verilmezse yalniz boy pencere icin katalog varsayilani (40 mm) kullanilir; NORMAL pencerenin denizligi VERILMEDI ve uydurulmaz ('verilmedi')." },
-        "window_class": { "type": "string", "enum": ["standard", "tall"], "description": "Yalniz type=window icin (DEV-072, sema 1.5.0): 'tall' = boy pencere / balkon kapisi (varsayilan yukseklik 2000 mm, denizlik 40 mm). Varsayilan 'standard'." },
+        "window_class": { "type": "string", "enum": ["standard", "tall", "shopfront"], "description": "Yalniz type=window icin (DEV-072/076): 'standard' (varsayilan; 1200 mm yukseklik, 900 mm denizlik), 'tall' = boy pencere / balkon kapisi (1600x2000 mm, denizlik 40 mm), 'shopfront' = dukkan vitrini (2000x2200 mm, denizlik 40 mm). Varsayilanlar katalogdadir (scripts/openings/classes.py), kullanici degeri ezer." },
+        "door_class": { "type": "string", "enum": ["main_entry", "shop"], "description": "Yalniz type=door icin (DEV-076, sema 1.7.0), OPSIYONEL: 'main_entry' = apartman ana girisi (1700x2100 mm, esik 40 mm), 'shop' = dukkan kapisi (ana giris olculeriyle baslar, AYRI sinif). Cephe turetiminde (openings_from='plan') sinif yuksekligi/denizligi kullanilir; verilmezse dis kapi boy pencere varsayilaniyla cizilir." },
         "layer": { "type": "string" },
         "variant": {
           "type": "string", "enum": ["single", "double", "sliding", "folding", "sliding_double"],

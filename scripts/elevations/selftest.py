@@ -157,17 +157,17 @@ def check_plan_derived_dev073() -> list[str]:
             errors.append(f"{label}: {got!r} != {want!r}")
 
     r, notes = derive_level_openings(ctx, ctx["elevations"][0])
-    key = lambda x: (x.opening_id, x.x0, x.x1, x.sill, x.height, x.kind, x.window_class)  # noqa: E731
+    key = lambda x: (x.opening_id, x.x0, x.x1, x.sill, x.height, x.kind, x.class_key)  # noqa: E731
     eq("on cephe zemin: x0 sirali, 3 aciklik (ic kapi/sag/ust YOK)", [key(x) for x in r[0]],
-       [("pen", 900.0, 2100.0, 900.0, 1200.0, "window", "standard"),
-        ("kapi", 2550.5, 3450.5, 40.0, 2000.0, "door", "tall"),
-        ("boy", 3600.0, 5400.0, 40.0, 2000.0, "window", "tall")])
+       [("pen", 900.0, 2100.0, 900.0, 1200.0, "window", "window.standard"),
+        ("kapi", 2550.5, 3450.5, 40.0, 2000.0, "door", ""),
+        ("boy", 3600.0, 5400.0, 40.0, 2000.0, "window", "window.tall")])
     eq("on cephe K1: kullanici degeri (1500/700) varsayilani ezer", [key(x) for x in r[1]],
-       [("ozel", 2500.0, 3500.0, 700.0, 1500.0, "window", "standard")])
+       [("ozel", 2500.0, 3500.0, 700.0, 1500.0, "window", "window.standard")])
     eq("notlar bos (temiz)", notes, [])
     r2, _ = derive_level_openings(ctx, ctx["elevations"][1])
-    eq("sag cephe zemin: yatay eksen = plandaki Y", [key(x) for x in r2[0]], [("sag", 3500.0, 4500.0, 900.0, 1200.0, "window", "standard")])
-    eq("sag cephe K1", [key(x) for x in r2[1]], [("sag2", 1600.0, 2400.0, 900.0, 1200.0, "window", "standard")])
+    eq("sag cephe zemin: yatay eksen = plandaki Y", [key(x) for x in r2[0]], [("sag", 3500.0, 4500.0, 900.0, 1200.0, "window", "window.standard")])
+    eq("sag cephe K1", [key(x) for x in r2[1]], [("sag2", 1600.0, 2400.0, 900.0, 1200.0, "window", "window.standard")])
     # kaynaklar adiyla bildirilir
     door = r[0][1]
     eq("dis kapi kaynagi (boy pencere varsayilani) adiyla", ("boy pencere varsayilani" in door.height_source, "boy pencere varsayilani" in door.sill_source), (True, True))
@@ -178,6 +178,20 @@ def check_plan_derived_dev073() -> list[str]:
     rk, _ = derive_level_openings(kh, kh["elevations"][0])
     kapi = [x for x in rk[0] if x.opening_id == "kapi"][0]
     eq("dis kapi: verilen yukseklik gecer, denizlik varsayilan", (kapi.height, kapi.sill, kapi.height_source), (2400.0, 40.0, "verilen"))
+    # DEV-076: SINIFLI kapilar kendi sinif varsayilanlarini kullanir (siniflandirilmamis kapi boy pencere varsayilani)
+    cd = _plan_context()
+    cd["floors"][0]["openings"][2]["door_class"] = "main_entry"
+    cd["floors"][0]["openings"].append({"id": "dukkan", "type": "door", "wall_id": "w_alt", "position_from_start": 5000.0, "width": 800.0,
+                                        "door_class": "shop"})
+    cd["floors"][0]["openings"].append({"id": "vit", "type": "window", "wall_id": "w_sag", "position_from_start": 7000.0, "width": 800.0,
+                                        "window_class": "shopfront"})
+    rc, _ = derive_level_openings(cd, cd["elevations"][0])
+    by = {x.opening_id: x for x in rc[0]}
+    eq("ana giris kapisi: sinif yuksekligi 2100 / esik 40", (by["kapi"].height, by["kapi"].sill, by["kapi"].class_key), (2100.0, 40.0, "door.main_entry"))
+    eq("dukkan kapisi: sinif yuksekligi", (by["dukkan"].height, by["dukkan"].sill, by["dukkan"].class_key), (2100.0, 40.0, "door.shop"))
+    eq("ana giris kaynagi sinif sabiti", by["kapi"].height_source, "varsayilan:DEFAULT_MAIN_ENTRY_HEIGHT_MM")
+    rs, _ = derive_level_openings(cd, cd["elevations"][1])
+    eq("sag cephe vitrin: 2200 / 40", [(x.height, x.sill, x.class_key) for x in rs[0] if x.opening_id == "vit"], [(2200.0, 40.0, "window.shopfront")])
     # opt-in: generic cephe -> hicbir sey turetilmez
     g = {**ctx["elevations"][0]}
     del g["openings_from"]

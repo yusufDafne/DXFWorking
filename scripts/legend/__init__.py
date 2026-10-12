@@ -87,7 +87,7 @@ class OpeningLegend:
 
         base = []
         for key, count in sorted(counts.items()):
-            type_, variant, width, cls, h_text, s_text = key
+            type_, variant, width, class_key, h_text, s_text = key
             width_cm = round(width / 10.0)
             # `variant` SADECE kapida anlamlidir (bkz. openings/style.py -
             # pencere HER ZAMAN draw_window ile cizilir, varyanti yok sayar).
@@ -95,10 +95,11 @@ class OpeningLegend:
             # ayrimini uydururdu; bu yuzden pencerede varyant sutunu "-"dir.
             is_door = type_ in ("door", "elevator_door")
             mark_suffix = _VARIANT_MARK_SUFFIX.get(variant, "") if is_door else ""
-            prefix = _TYPE_PREFIX.get(type_, "?") + ("B" if cls == "tall" else "")      # boy pencere: PB120
+            spec = _class_spec(class_key)
+            prefix = spec.mark_prefix if spec is not None else _TYPE_PREFIX.get(type_, "?")        # DEV-076: PB/PV/KG/KD
+            label = spec.label_tr if spec is not None else _TYPE_LABELS.get(type_, type_.upper())
             variant_label = _VARIANT_LABELS.get(variant, variant.upper()) if is_door else "-"
-            base.append([f"{prefix}{width_cm:03d}{mark_suffix}", _TYPE_LABELS.get(type_, type_.upper()), variant_label,
-                         width_cm, count, h_text, s_text])
+            base.append([f"{prefix}{width_cm:03d}{mark_suffix}", label, variant_label, width_cm, count, h_text, s_text])
         # marka benzersizligi: ayni marka birden cok satirda ise (ayni genislik, farkli yukseklik/denizlik) yukseklik/denizlik eklenir
         seen = Counter(r[0] for r in base)
         result = []
@@ -117,16 +118,29 @@ def _cm_text(mm: float) -> str:
     return str(int(round(cm))) if abs(cm - round(cm)) < 1e-9 else f"{cm:.1f}"
 
 
+def _class_spec(class_key: str):
+    if not class_key:
+        return None
+    try:
+        from ..openings.classes import OPENING_CLASSES
+    except ImportError:
+        from openings.classes import OPENING_CLASSES
+    return OPENING_CLASSES[class_key]
+
+
 def _height_key(data: dict) -> tuple[str, str, str]:
-    """(pencere sinifi, yukseklik metni, denizlik metni). Pencere disi: ('', '-', '-'). Degerler `openings.heights`tan cozulur."""
-    if data.get("type") != "window":
+    """(sinif anahtari, yukseklik metni, denizlik metni). Pencere ve SINIFLANDIRILMIS kapi: katalogdan/verilenden cozulur; siniflandirilmamis kapi,
+    asansor kapisi, gecit: ('', '-', '-')."""
+    if data.get("type") not in ("window", "door"):
         return ("", NO_HEIGHT_TEXT, NO_HEIGHT_TEXT)
     try:
-        from ..openings.heights import resolve_window_heights
+        from ..openings.heights import resolve_door_heights, resolve_window_heights
     except ImportError:
-        from openings.heights import resolve_window_heights
-    r = resolve_window_heights(data)
-    return (r.window_class, _cm_text(r.height), _cm_text(r.sill))
+        from openings.heights import resolve_door_heights, resolve_window_heights
+    r = resolve_window_heights(data) if data["type"] == "window" else resolve_door_heights(data)
+    if r is None:
+        return ("", NO_HEIGHT_TEXT, NO_HEIGHT_TEXT)
+    return (r.class_key, _cm_text(r.height), _cm_text(r.sill))
 
 
 def _center_text(msp, text: str, cx: float, cy: float, height: float):

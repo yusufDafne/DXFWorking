@@ -191,6 +191,19 @@ Kullanıcı kararı (2026-10-12): **varsayılan konum = pencerenin odasının d�
 Rev-28'de 76 pencerenin 0'ı birleşime düşer (`validate` çıktısı değişmedi); önerilerde 10'a yakını 100 mm'den fazla sapar (örn. zemin kat dükkân vitrinleri ~3 m). `CONTRACT_VERSION` 1.4 → 1.5.
 Test: `selftest.py::check_window_placement_dev075` (elle hesaplanan birleşim/aralık/orta değerleri, sınırlar, açık plan, iç içe bölgeler; 10 kasıtlı bozma yakalandı).
 
+## DEV-076: açıklık sınıfları kataloğu (`classes.py`, şema 1.7.0)
+
+Kullanıcı kararı (2026-10-12): ana giriş, dükkân kapısı, vitrin ve boy pencere **ayrı sınıflardır**; her birinin varsayılan ölçüleri vardır ve kullanıcı değeri (`width`/`height`/`sill_height`) her zaman varsayılanı ezer.
+Taban **boy pencere 1600 × 2000 mm, denizlik 40 mm** (genişlik tabanı kullanıcı seçimi). Türevler: **vitrin** (`window.shopfront`) +400 mm genişlik / +200 mm yükseklik = **2000 × 2200**;
+**ana giriş** (`door.main_entry`) +100 mm / +100 mm = **1700 × 2100**; **dükkân kapısı** (`door.shop`) ana giriş ölçüleriyle başlar (1700 × 2100) ama **AYRI sınıf ve AYRI sabitler**
+(`DEFAULT_SHOP_DOOR_*`; biri değişince öteki değişmez — "gelecekte özelleştirilebilmeli"; test sabitlerin sayı olarak tanımlandığını ve ana girişe bağlanmadığını doğrular). Denizlik/eşik **40 mm** boy pencereden
+devralındı (kullanıcı belirtmedi; varsayım olarak raporlanır). Normal pencerenin GENİŞLİĞİ varsayılansızdır (proje verisi); yükseklik 1200, denizlik 900.
+Alanlar: pencere `window_class` (`standard`/`tall`/`shopfront`), kapı `door_class` (`main_entry`/`shop`, opsiyonel — verilmeyen kapı sınıfsızdır, yükseklik verisi yoktur). Kayıt AÇIKTIR (`OPENING_CLASSES`: yeni sınıf = bir sabit kümesi + bir kayıt).
+**Genişlik `context.json`da her zaman açık yazılıdır** (duvar boşlukları ona dayanır): sınıf genişliği yalnız YENİ açıklık üretirken kullanılır — `new_opening(class_key, id, wall_id, position, width=None)`; pencere için `new_window(class_key, id, host, room, walls)` ayrıca
+varsayılan KONUMU (`placement.default_window_position`, odanın serbest aralığının ortası) hesaplar ve sığmazsa `ValueError` verir (konum/genişlik uydurulmaz). Yükseklik/denizlik kullanım anında çözülür (`heights.resolve_window_heights`, `resolve_door_heights`).
+`validate.py`: `door_class` yalnız kapıda, `window_class` yalnız pencerede, geçersiz sınıf HATA; sınıflı kapı da kat yüksekliği kontrolüne girer. Cetvel: `PB`/`PV`/`KG`/`KD` markaları ve sınıf etiketleri (BOY PENCERE, VITRIN, ANA GIRIS KAPISI, DUKKAN KAPISI);
+sınıflı kapıda yükseklik/denizlik gösterilir. Katalog raporu: `python scripts/defaults_report.py --catalog`. `CONTRACT_VERSION` 1.5 → 1.6. Test: `selftest.py::check_opening_classes_dev076` (elle değerler, bağımsızlık, new_opening/new_window, doğrulama, cetvel; 14 kasıtlı bozma yakalandı).
+
 ## Kabul
 
 Açıklık boşlukları duvar rails ile tutarlı, sembol stili enjekte edilebilir, schedule verisi deterministik ve mevcut plan çıktısı korunmuş olmalıdır.
