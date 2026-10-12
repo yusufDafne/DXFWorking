@@ -695,6 +695,8 @@ sayısı 0, rev-23 düzeltmesi `7d32a2d`'de 1 — vaka gerçek eski geometridir)
 (iii) `DEV-041` kapı kaydırma → regresyon karşılaştırması yeni görüş hattını göstermeli;
 (iv) bugünkü rev-28 → ölçüm #4/#5 bulgusu. Dördü de yakalanmıyorsa bilgi modeli yetersizdir.
 
+**Sonuç (genel kontrol, 2026-10-12 — DÖRDÜ DE GEÇTİ):** (i) `727405f` bağlamında `isik.yasam_mahalli_penceresi` `uC_oda`yı yakalar (5 kat → 1 konu), `7d32a2d`de 0; (ii) `727405f`de `sandvic_banyo` kokusunun iki bileşeni (`islak_iki_bolgeye_kapili` 5 satır, `islak_ortak_duvar_ayni_birim` 10 satır) AYNI üç elemanda (`uC_banyo`, `uC_oda`, `uC_salon`) ateşler, `7d32a2d`de bileşen 0; (iii) rev-28'de `uA_d_entry`/`uA_d_wc_hol` kaydırılınca `--before` karşılaştırması yeni giriş↔WC görüş hattını `YENI` olarak gösterir (yan etkiler dahil: kapı genişliği, kapı yönü); (iv) rev-28: giriş→yatak odası `uC` 16°/1978 mm ve `uB` 20°/2025 mm, komşu giriş `uB`–`uC` 1485 mm. Not: `DEV-041` kayması için gerçek bir ara commit yoktur, (iii) rev-28 üzerinde üretilmiş bir kaydırmayla sınandı.
+
 ---
 
 ### 10.4 Kod denetiminin bulguları (2026-10-09) — plana geri yazılan düzeltmeler

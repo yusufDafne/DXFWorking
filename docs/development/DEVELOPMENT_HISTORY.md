@@ -4,6 +4,15 @@ Aktif geçmiş kapasitesi: **50 kayıt**. En eski tamamlanmış kayıt, 51. kay�
 alınırken silinir. Ayrıntılı teknik değişiklikler git geçmişi ve ilgili proje
 provenance kayıtlarıyla ilişkilendirilir.
 
+## HD-052 — Genel kontrol: muhakeme programı kapanış doğrulaması (DEV-059…DEV-070)
+
+- **Durum:** COMPLETED
+- **Tamamlanma:** 2026-10-12
+- **Kapsam:** salt doğrulama; kod değişmedi. Plan §10.3 sonucu plana işlendi.
+- **Sonuç:** tüm modül selftest'leri (collision, dimensions, axis, openings, rooms, elevations, walls, importer, sections, northarrow, spatial, reasoning, testfit, shafts, stairs, standards, templates, architect, impact) rc=0; `--golden-set` rc=0; `validate.py` rc=0 ve çıktısı DEV-059'dan beri BİREBİR aynı (17 satır); `doc_check` temiz. Plan §10.3 geriye dönük doğrulama dördü de geçti (bkz. plan §10.3 "Sonuç").
+- **Açık kalan:** `DEV-071` soğuk başlangıç sınavı (§8.5) — bağımsız reviewer koşusu gerektirir, kullanıcı onayı bekliyor; terfi (`shadow→active`) kararı hiçbir veçhe için verilmedi (tümü shadow/draft/idea; açık kullanıcı kararı); `REVIEW_MAX_AGE_DAYS=365` onayı; proje `meta.schema_version` 1.3.0→1.4.0 revizyonu; `meta.north_angle` değeri (kullanıcıdan); plan §11 kararları (#6 hangi yönetmelikler önce, #9 misafir WC).
+- **Golden etkisi:** yok. **Sonraki direktif:** kullanıcı kararı.
+
 ## HD-051 — Tüm modüller: muhakeme katkısı kapanışı (DEV-067)
 
 - **Durum:** COMPLETED
