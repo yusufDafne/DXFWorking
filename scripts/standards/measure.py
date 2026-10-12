@@ -89,27 +89,16 @@ def edge_wall_thicknesses(polygon: list[list[float]], walls: list[dict]) -> list
     """Her poligon kenari icin, ustunde uzanan (eşdogrusal + ortusen) en kalin
     duvarin kalinligi; duvar yoksa 0. Duvarlar ve poligon AYNI birimdedir.
     Bir kenar farkli kalinlikta birden cok duvara bolunuyorsa EN KALINI
-    alinir (korumaci: net aciklik daha dar cikar)."""
+    alinir (korumaci: net aciklik daha dar cikar). Ortusme hesabi `spatial`da (DEV-068)."""
+    from spatial import wall_edge_overlap
     result: list[float] = []
     n = len(polygon)
     for k in range(n):
         a, b = polygon[k], polygon[(k + 1) % n]
-        ex, ey = b[0] - a[0], b[1] - a[1]
-        elen = (ex * ex + ey * ey) ** 0.5
         best = 0.0
-        if elen > EPS:
-            for wall in walls:
-                ws, we = wall["start"], wall["end"]
-                # her iki duvar ucu kenar dogrusuna <=1mm yakin mi (esdogrusal)
-                d0 = abs(ex * (ws[1] - a[1]) - ey * (ws[0] - a[0])) / elen
-                d1 = abs(ex * (we[1] - a[1]) - ey * (we[0] - a[0])) / elen
-                if d0 > 1.0 or d1 > 1.0:
-                    continue
-                t0 = ((ws[0] - a[0]) * ex + (ws[1] - a[1]) * ey) / elen
-                t1 = ((we[0] - a[0]) * ex + (we[1] - a[1]) * ey) / elen
-                overlap = min(max(t0, t1), elen) - max(min(t0, t1), 0.0)
-                if overlap > 1.0:
-                    best = max(best, float(wall["thickness"]))
+        for wall in walls:
+            if wall_edge_overlap(wall["start"], wall["end"], a, b, 1.0) > 1.0:
+                best = max(best, float(wall["thickness"]))
         result.append(best)
     return result
 

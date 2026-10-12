@@ -46,6 +46,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+SCRIPTS = ROOT / "scripts"
 DEVELOPMENT_DIR = ROOT / "docs" / "development"
 TASKS_PATH = DEVELOPMENT_DIR / "DEVELOPMENT_TASKS.md"
 HISTORY_PATH = DEVELOPMENT_DIR / "DEVELOPMENT_HISTORY.md"
@@ -616,12 +617,60 @@ def run_info(today=None, registry=None) -> list[str]:
 
 
 
+def check_impact_completeness(schema=None, tables=None) -> list[str]:
+    """#17 (DEV-068): etki grafinin acik tablolari SEMA ile ortusur. (a) REFERENCE_FIELDS/UNIT_FIELDS'taki her alan semada var;
+    (b) semadaki kimlik gibi gorunen her alan (`*_id`) bir basvuru, birim alani ya da gerekceli IMPACT_IGNORED_FIELDS'ta;
+    (c) `floor` tanimindaki her LISTE bir dugum turu ya da gerekceli IMPACT_FLOOR_EXEMPT'te; (d) DERIVED_OUTPUTS modulleri dizinde var;
+    (e) EDGE_CLASSES her sinif icin (yayilir, aciklama) tasir. Yeni bir sema basvurusu eklenip etki grafina eklenmezse BURADA kirilir."""
+    import json
+    if schema is None:
+        schema = json.loads(_read(ROOT / "schema" / "design.schema.json"))
+    if tables is None:
+        sys.path.insert(0, str(SCRIPTS))
+        import impact
+        tables = impact
+    defs = schema.get("definitions", {})
+    errors: list[str] = []
+    refs = {(d, f) for d, f, _s, _t in tables.REFERENCE_FIELDS}
+    units = set(tables.UNIT_FIELDS)
+    ignored = tables.IMPACT_IGNORED_FIELDS
+    for d, f in sorted(refs | units):
+        if f not in defs.get(d, {}).get("properties", {}):
+            errors.append(f"impact: ({d}, {f}) semada yok - etki grafi olmayan bir alana baglanmis.")
+    for d, f in ignored:
+        if not str(ignored[(d, f)]).strip():
+            errors.append(f"impact: IMPACT_IGNORED_FIELDS ({d}, {f}) gerekcesiz.")
+    for d, v in sorted(defs.items()):
+        for f in v.get("properties", {}):
+            if f.endswith("_id") and (d, f) not in refs | units | set(ignored):
+                errors.append(f"impact: semadaki {d}.{f} kimlik basvurusu etki grafinda YOK - REFERENCE_FIELDS'a ekle ya da "
+                              "IMPACT_IGNORED_FIELDS'ta gerekcesiyle yaz.")
+    covered = set(tables.FLOOR_LIST_KEY.values()) | set(tables.IMPACT_FLOOR_EXEMPT)
+    for f, spec in sorted(defs.get("floor", {}).get("properties", {}).items()):
+        if spec.get("type") == "array" and f not in covered:
+            errors.append(f"impact: floors[].{f} bir liste ama ne dugum turu (FLOOR_LIST_KEY) ne gerekceli IMPACT_FLOOR_EXEMPT.")
+    for kind, outs in tables.DERIVED_OUTPUTS.items():
+        for mod, what in outs:
+            if not (SCRIPTS / mod / "__init__.py").exists():
+                errors.append(f"impact: DERIVED_OUTPUTS[{kind}] modulu '{mod}' scripts/ altinda yok.")
+            if not str(what).strip():
+                errors.append(f"impact: DERIVED_OUTPUTS[{kind}] '{mod}' aciklamasiz.")
+    for kind in tables.KINDS:
+        if kind not in tables.DERIVED_OUTPUTS:
+            errors.append(f"impact: tur '{kind}' DERIVED_OUTPUTS'ta yok (bos tuple de olsa bildirilmeli).")
+    for cls, spec in tables.EDGE_CLASSES.items():
+        if not (isinstance(spec, tuple) and len(spec) == 2 and isinstance(spec[0], bool) and str(spec[1]).strip()):
+            errors.append(f"impact: EDGE_CLASSES['{cls}'] (yayilir: bool, aciklama) olmali.")
+    return errors
+
+
 def run() -> list[str]:
     return (check_tasks() + check_paths() + check_architecture_table()
             + check_collision_coverage() + check_contract_versions()
             + check_reasoning_coverage() + check_reasoning_registry()
             + check_reasoning_refs() + check_reasoning_cases() + check_reasoning_provenance()
-            + check_reasoning_digits() + check_reasoning_promotions())
+            + check_reasoning_digits() + check_reasoning_promotions()
+            + check_impact_completeness())
 
 
 def main() -> int:

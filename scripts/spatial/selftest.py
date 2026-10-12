@@ -331,9 +331,86 @@ def check_mutation_is_detected() -> list[str]:
     return []
 
 
+# --- DEV-068: duvar-oda kenari ortusmesi (walls/thickness._on_edge + standards/measure.edge_wall_thicknesses kopyalari) ---
+def _o_on_edge(wall, polygon):
+    """DONMUS ESKI KOPYA (commit f84c1dd, walls/thickness._on_edge)."""
+    n = len(polygon)
+    ws, we = wall["start"], wall["end"]
+    for k in range(n):
+        a, b = polygon[k], polygon[(k + 1) % n]
+        ex, ey = b[0] - a[0], b[1] - a[1]
+        elen = (ex * ex + ey * ey) ** 0.5
+        if elen < 1e-9:
+            continue
+        d0 = abs(ex * (ws[1] - a[1]) - ey * (ws[0] - a[0])) / elen
+        d1 = abs(ex * (we[1] - a[1]) - ey * (we[0] - a[0])) / elen
+        if d0 > 1.0 or d1 > 1.0:
+            continue
+        t0 = ((ws[0] - a[0]) * ex + (ws[1] - a[1]) * ey) / elen
+        t1 = ((we[0] - a[0]) * ex + (we[1] - a[1]) * ey) / elen
+        if min(max(t0, t1), elen) - max(min(t0, t1), 0.0) > 1.0:
+            return True
+    return False
+
+
+def check_wall_edge_overlap() -> list[str]:
+    errors = []
+    # elle hesap: kenar (0,0)->(1000,0); duvar (200,0)->(700,0) => 500 ortusme; 0.5 mm kayik duvar da esdogrusal sayilir
+    if abs(sp.wall_edge_overlap((200, 0), (700, 0), (0, 0), (1000, 0)) - 500.0) > 1e-9:
+        errors.append("500 mm ortusme beklenirdi")
+    if abs(sp.wall_edge_overlap((-300, 0.5), (400, 0.5), (0, 0), (1000, 0)) - 400.0) > 1e-9:
+        errors.append("kenara kirpilmis 400 mm ortusme beklenirdi")
+    # yanlis-pozitif tarafi: 2 mm kayik (esdogrusal degil), kosede teget (0 ortusme), dik duvar, sifir uzunluklu kenar
+    if sp.wall_edge_overlap((200, 2), (700, 2), (0, 0), (1000, 0)) != 0.0:
+        errors.append("2 mm kayik duvar ortusmemeli")
+    if sp.wall_edge_overlap((1000, 0), (1500, 0), (0, 0), (1000, 0)) != 0.0:
+        errors.append("kosede teget temas 0 olmali")
+    if sp.wall_edge_overlap((500, 0), (500, 800), (0, 0), (1000, 0)) != 0.0:
+        errors.append("dik duvar ortusmemeli")
+    if sp.wall_edge_overlap((0, 0), (100, 0), (5, 5), (5, 5)) != 0.0:
+        errors.append("sifir uzunluklu kenar 0 olmali")
+    if not sp.wall_on_polygon_edge({"start": [0, 0], "end": [1000, 0]}, [[0, 0], [1000, 0], [1000, 500], [0, 500]]):
+        errors.append("duvar kenar ustunde sayilmali")
+    if sp.wall_on_polygon_edge({"start": [0, 0.0], "end": [1.0, 0.0]}, [[0, 0], [1000, 0], [1000, 500], [0, 500]]):
+        errors.append("tam 1 mm ortusme (esik) sayilmamali")
+    # eski<->yeni: gercek context, her duvar x her oda
+    ctx = _context()
+    n = 0
+    for fl in ctx["floors"]:
+        for r in fl["rooms"]:
+            for w in fl["walls"]:
+                n += 1
+                if sp.wall_on_polygon_edge(w, r["polygon"]) != _o_on_edge(w, r["polygon"]):
+                    errors.append(f"_on_edge ayrisiyor: {fl['id']}/{r['id']}/{w['id']}")
+    if n == 0:
+        errors.append("diferansiyel test bos calisti")
+    # tuketiciler spatial'a baglandi ve eski sonucu verir
+    from walls import thickness as th
+    from standards import measure as ms
+    for fl in ctx["floors"]:
+        for r in fl["rooms"]:
+            for w in fl["walls"]:
+                if th._on_edge(w, r["polygon"]) != _o_on_edge(w, r["polygon"]):
+                    errors.append(f"walls.thickness._on_edge ayrisiyor: {fl['id']}/{r['id']}/{w['id']}")
+            got = ms.edge_wall_thicknesses(r["polygon"], fl["walls"])
+            want = []
+            poly = r["polygon"]
+            for k in range(len(poly)):
+                best = 0.0
+                for w in fl["walls"]:
+                    if sp.wall_edge_overlap(w["start"], w["end"], poly[k], poly[(k + 1) % len(poly)], 1.0) > 1.0:
+                        best = max(best, float(w["thickness"]))
+                want.append(best)
+            if got != want:
+                errors.append(f"edge_wall_thicknesses ayrisiyor: {fl['id']}/{r['id']}")
+    return errors
+
+
+
 def main() -> int:
     checks = [check_hand_computed, check_boundary_deltas_pinned, check_differential_on_real_context,
-              check_differential_synthetic, check_known_semantic_differences, check_mutation_is_detected]
+              check_differential_synthetic, check_known_semantic_differences, check_mutation_is_detected,
+              check_wall_edge_overlap]
     failed = 0
     for check in checks:
         errs = check()

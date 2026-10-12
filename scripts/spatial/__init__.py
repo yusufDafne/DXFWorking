@@ -161,6 +161,31 @@ def shared_edge_length(poly_a, poly_b, tol: float = SHARED_EDGE_TOLERANCE_MM) ->
     return total
 
 
+def wall_edge_overlap(wall_start, wall_end, a, b, tol: float = SHARED_EDGE_TOLERANCE_MM) -> float:
+    """Duvar merkez parcasinin (wall_start->wall_end) bir poligon kenariyla (a->b) ortusme uzunlugu.
+    Duvarin IKI ucu da kenar dogrusuna <= `tol` yakin olmali (esdogrusal); ortusme kenar araligina kirpilir.
+    Esdogrusal degilse ya da kenar sifir uzunluklu ise 0. DEV-068: ayni hesap `walls/thickness._on_edge` ve
+    `standards/measure.edge_wall_thicknesses` icinde ikiser kopya idi; buraya toplandi (esik `tol`dan buyuk sayilir)."""
+    ex, ey = b[0] - a[0], b[1] - a[1]
+    elen = (ex * ex + ey * ey) ** 0.5
+    if elen < 1e-9:
+        return 0.0
+    d0 = abs(ex * (wall_start[1] - a[1]) - ey * (wall_start[0] - a[0])) / elen
+    d1 = abs(ex * (wall_end[1] - a[1]) - ey * (wall_end[0] - a[0])) / elen
+    if d0 > tol or d1 > tol:
+        return 0.0
+    t0 = ((wall_start[0] - a[0]) * ex + (wall_start[1] - a[1]) * ey) / elen
+    t1 = ((wall_end[0] - a[0]) * ex + (wall_end[1] - a[1]) * ey) / elen
+    return max(0.0, min(max(t0, t1), elen) - max(min(t0, t1), 0.0))
+
+
+def wall_on_polygon_edge(wall: dict, polygon, tol: float = SHARED_EDGE_TOLERANCE_MM) -> bool:
+    """Duvar, poligonun herhangi bir kenariyla esdogrusal VE `tol`dan fazla ortusuyor mu."""
+    n = len(polygon)
+    return any(wall_edge_overlap(wall["start"], wall["end"], polygon[k], polygon[(k + 1) % n], tol) > tol
+               for k in range(n))
+
+
 # DEV-062: cephe tayininde prob mesafesi = duvar kalinligi/2 + FACADE_PROBE_EXTRA_MM (duvarin iki yuzunun hemen otesi)
 FACADE_PROBE_EXTRA_MM = 10.0
 
@@ -221,5 +246,5 @@ __all__ = [
     "point_in_polygon", "point_on_boundary",
     "door_midpoint", "door_frame", "rooms_touching_point", "dist_point_segment",
     "touches_within", "vertex_mean", "segments_intersect", "clear_line_of_sight",
-    "shared_edge_length", "FACADE_PROBE_EXTRA_MM", "facade_normal", "window_rooms", "exterior_windows",
+    "shared_edge_length", "wall_edge_overlap", "wall_on_polygon_edge", "FACADE_PROBE_EXTRA_MM", "facade_normal", "window_rooms", "exterior_windows",
 ]

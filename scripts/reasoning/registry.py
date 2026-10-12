@@ -22,6 +22,8 @@ REASONING_PROVIDERS: tuple[str, ...] = ("architect", "openings", "shafts", "test
 # Gerekceli muafiyet ("dusunuldu, bu modul olcum/kural vermez") - COLLISION_EXEMPT ile AYNI idiom.
 REASONING_EXEMPT: dict[str, str] = {
     "reasoning": "Cekirdegin kendisi; bilgi tasimaz (bilgi lens paketlerinde ve saglayici modullerde yasar).",
+    "impact": "Revizyon etki alani raporu (DEV-068): hangi elemanlara bakilacagini soyler, kendisi veche/olcum saglamaz; ileride muhakemede mercek "
+              "secimi ve kor nokta taramasinin deterministik kaynagidir (DEV-048 plan adim 3 ve 5) ama bunu bir mercek paketi olarak degil tuketici olarak yapar.",
     "spatial": "Salt sorgu kutuphanesi (DEV-059); muhakemeye olcum SAGLAYABILIR ama kendi veche/kurali yoktur, "
                "sorgulari tuketen modullerin reasoning.py'si kullanir.",
 }

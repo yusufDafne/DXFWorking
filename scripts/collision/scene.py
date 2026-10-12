@@ -103,6 +103,8 @@ COLLISION_EXEMPT: dict[str, str] = {
                  "SONRA, NORMAL pipeline (rooms/walls/openings.collision) "
                  "zaten kapsar - importer ile AYNI 'aday veri uretir, "
                  "denetimi KENDI yapmaz' gerekcesi.",
+    "impact": "Revizyon ETKI ALANI raporudur (DEV-068): context ve collision ayak izlerini OKUR, KENDI ayak izi URETMEZ, context.json'a HIC YAZMAZ, "
+              "DXF cizmez; sonuc turevdir. Kapi acilimi/ayak izi kenarlarini collision sahnesinden alir, cakisma KARARI vermez.",
     "testfit": "Deneme yerlestirme SINAVIDIR (DEV-063): furniture katalog olculerini ve collision motorunu TUKETIR, KENDI ayak izi "
                "URETMEZ, context.json'a HIC YAZMAZ, DXF cizmez; sonuc turevdir. Son dogrulamayi collision motoru yapar.",
     "architect": "Iliskisel/mimari mantik kural kutuphanesidir (DEV-039); "

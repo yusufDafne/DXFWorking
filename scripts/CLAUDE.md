@@ -83,6 +83,9 @@ kalanını bilmeye ihtiyaç duymadan o modül üzerinde derinlemesine/izole
   net odaya + kapı açılım sektörüne sığıp sığmadığını sınar. `furniture` (tip ölçüleri) ve `collision` (kapı sektörü + politika + son doğrulama) modüllerini
   yalnız TÜKETİR; sonuç türevdir, `context.json`a yazılmaz; çözüm önerisi değil sınavdır. Geçiş payı = 0 (Katman A, `shadow`); rahat sığma payları (Katman B)
   mimar değer verene dek kodlanmaz — bkz. `scripts/testfit/CLAUDE.md`.
+- ✅ **`scripts/impact/`** — `DEV-068` (2026-10-12): revizyon ETKİ ALANI raporu — dokunulan elemanlardan (kat, tür, id) etkilenen eleman kümesi. Salt okunur, türevdir,
+  `context.json`a yazmaz; patch planı YOK. Açık kenar tabloları (şema alan adlarıyla `doc_check` #17 tamlık kapısı) + `spatial`/`collision` sorguları; duvara kenarla
+  varılınca etki yalnız ilgili duvar PARÇASINDAN (span) ilerler; aynı birim ve kat ikizi yayılmaz, "ilgili" diye listelenir — bkz. `scripts/impact/CLAUDE.md`.
 - ✅ **`scripts/spatial/`** — `DEV-059` (2026-10-09): eleman-farkındalıklı mekânsal sorguların
   (kapı → orta nokta, değen odalar, ortak kenar, görüş hattı) TEK sahibi. `architect`/`standards`/
   `shafts`/`rooms` içindeki kopyalar buraya **davranış korunarak** taşındı; `spatial → collision.geometry`
@@ -252,7 +255,7 @@ import etmez; bilgi (veçhe beyanı, ölçüm, kural) **sahibi modülde** yaşar
 `COLLISION_EXEMPT` gibi mekanik denetleyecek (her modül `reasoning.py` **ya da** gerekçeli
 `REASONING_EXEMPT`; `DEV-060`). Bu bir **plandır**, kod henüz yok; mevcut `check_*` fonksiyonları
 DEĞİŞMEZ (adaptörle kaydedilir) ve `validate.py` çıktısı bozulmaz. Aşağıdaki tabloda `reasoning/`,
-`spatial/`, `impact/`, `brief/` satırları `PLANLANAN` olarak durur.
+`spatial/`, `impact/`, `brief/` satırları durur (`impact/` DEV-068'de UYGULANDI).
 
 ### Sürüm sözleşmesi (UYGULANDI — rev-12, `DEV-020`)
 
@@ -334,10 +337,10 @@ Ortak desen (pafta + walls ile kanitlandi):
 | `standards/`  | `RoomStandard`, `STANDARDS`, `room_aspect_ratio`, `validate_standards`, `check_room_types`, `check_room_proportions` | UYGULANDI (DEV-036, 2026-09-28); sartname/oransal mahal kutuphanesi, ihlal HER ZAMAN UYARI |
 | `templates/`  | `CirculationCoreTemplate`, `DEFAULT_TEMPLATE`, `generate_circulation_core` | UYGULANDI (DEV-037, 2026-09-28; DEV-045 duzeltmesi, 2026-10-02); sirkulasyon cekirdegi sablon ureteci, v1 yalnizca cekirdek (birim ici bolme YOK), koridor artik israf eden L-sekli DEGIL |
 | `architect/`  | `check_circulation_area_share`, `check_common_circulation_share`, `check_bedroom_via_corridor`, `check_entry_sightlines`, `check_door_core_balance`, `check_wet_area_reachable_without_bedroom`, `check_wet_area_door_proximity`, `FeasibilityReport`, `check_fits`, `ZoneAssignment`, `ZoningPlan`, `resolve_unit_zoning`, `PlacementOption`, `options_for_core_placement`, `place_unit_entry_doors` | UYGULANDI (DEV-039, 2026-09-28; DEV-042/043/045, 2026-10-02); iliskisel (arity-2+) mimari mantik kurallari, DEV-038 absorbe edildi, `rooms[].unit_id` opt-in |
-| `spatial/`    | `door_midpoint`, `door_frame`, `rooms_touching_point`, `dist_point_segment`, `touches_within`, `vertex_mean`, `segments_intersect`, `clear_line_of_sight`, `shared_edge_length`, `point_in_polygon`, `facade_normal`, `window_rooms`, `exterior_windows` | UYGULANDI (DEV-059, 2026-10-09); eleman-farkindali mekansal sorgularin TEK sahibi; davranis korunarak tasindi, `spatial -> collision.geometry` tek yonlu |
+| `spatial/`    | `door_midpoint`, `door_frame`, `rooms_touching_point`, `dist_point_segment`, `touches_within`, `vertex_mean`, `segments_intersect`, `clear_line_of_sight`, `shared_edge_length`, `point_in_polygon`, `facade_normal`, `window_rooms`, `exterior_windows`, `wall_edge_overlap`, `wall_on_polygon_edge` | UYGULANDI (DEV-059, 2026-10-09); eleman-farkindali mekansal sorgularin TEK sahibi; davranis korunarak tasindi, `spatial -> collision.geometry` tek yonlu |
 | `reasoning/`  | `Lens`, `Facet`, `Finding`, `Registry`, `CheckAdapter`, `Thresholds`, `Provenance`, `build_coverage`, `parse_validate_output`, `diff_findings`, `group_across_floors`, `trigger_report`, `load_registry`, `validate_registry` | UYGULANDI (DEV-060, 2026-10-09); muhakeme cekirdegi - bilgi tasimaz; ilk mercek paketi `lenses/mahremiyet.py` (DEV-061); isik/yasanabilirlik paketleri (DEV-062/063) ve aciklama motoru (DEV-064) sonraki maddeler |
 | `testfit/`    | `Cluster`, `BEDROOM_CLUSTERS`, `FitResult`, `Placement`, `try_fit`, `best_cluster`, `net_room_polygon`, `verify_with_collision`, `bedroom_capacity`, `check_bedroom_single_bed_fits`, `check_bedroom_double_bed_wardrobe_fits` | UYGULANDI (DEV-063, 2026-10-12); deneme yerlestirme sinavi - furniture + collision tuketir, context'e yazmaz, v1 yalniz yatak odasi |
-| `impact/`     | (yok) | PLANLANAN (DEV-068): revizyon etki analizi - bir patchin etki alani ve minimal patch plani |
+| `impact/`     | `Node`, `Graph`, `ImpactReport`, `ImpactError`, `build_graph`, `blast_radius`, `touched_from_diff`, `diff_report`, `coverage`, `format_report` | UYGULANDI (DEV-068, 2026-10-12); salt-okunur etki alani raporu, span-duyarli yayilim, patch plani YOK, context'e yazmaz |
 | `brief/`      | (yok) | PLANLANAN (DEV-069): kullanici ihtiyac beyani ve mimari program toplama; v0 yalniz operator diyalogu (`docs/agents/PROJECT_OPERATOR_AGENT.md`), kod/sema v1'de |
 
 > Bu tablo `scripts/doc_check.py` tarafindan DENETLENIR: `UYGULANDI` isaretli bir

@@ -80,6 +80,7 @@ CONTRACT_MODULES: tuple[str, ...] = (
     "dimensions",
     "elevations",
     "furniture",
+    "impact",
     "importer",
     "legend",
     "levels",

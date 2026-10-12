@@ -15,7 +15,7 @@ okumaz (`CONTRACT_VERSION = "1.0"`).
 ## Public API
 `door_midpoint`, `door_frame`, `rooms_touching_point`, `dist_point_segment`, `touches_within`,
 `vertex_mean`, `segments_intersect`, `clear_line_of_sight`, `shared_edge_length`, `point_in_polygon`,
-`point_on_boundary`; sabitler `TOUCH_TOLERANCE_MM` (300), `SHARED_EDGE_TOLERANCE_MM` (1.0).
+`point_on_boundary`, `wall_edge_overlap`, `wall_on_polygon_edge` (DEV-068); sabitler `TOUCH_TOLERANCE_MM` (300), `SHARED_EDGE_TOLERANCE_MM` (1.0).
 
 ## Davranış korunarak taşındı — BİLİNÇLİ ayrılıklar (kullanıcı kararları 2026-10-09)
 - **Sıfır uzunluklu duvar:** `door_midpoint` duvar başlangıç noktasını verir (eski architect),
@@ -46,6 +46,12 @@ yanlış-pozitif kontrolleri; kasıtlı bozulmuş `door_midpoint`in karşılaşt
 ya da ikisi de dışarıda ise `None` (yön UYDURULMAZ). `window_rooms(pencere, walls_by_id, rooms)` (orta nokta → değen odalar, kapı komşuluğu
 tolerans/yöntemiyle aynı) ve `exterior_windows(rooms, walls, openings, shafts)` (dış yüzü tayin edilebilen pencereler: `window/mid/normal/rooms`).
 Sahip olduğu tüketiciler: `openings/daylight.py`, `shafts/ventilation.py`. Davranış değişikliği YOKTUR (yalnız ekleme).
+
+## DEV-068 eklemesi (duvar-oda kenarı ortüşmesi)
+`wall_edge_overlap(wall_start, wall_end, a, b, tol=1 mm)` (duvar merkez parçası ↔ poligon kenarı ortüşme uzunluğu, eşdoğrusal değilse 0) ve
+`wall_on_polygon_edge(wall, polygon, tol)`. `walls/thickness._on_edge` ve `standards/measure.edge_wall_thicknesses` içindeki ikişer kopya buraya taşındı
+(eski↔yeni diferansiyel: tüm duvar×oda çiftleri, `validate.py` çıktısı birebir aynı). `architect/layout._collinear_overlap` BİLİNÇLİ taşınmadı:
+farklı anlam (yalnız eksene hizalı iki doğru parçası, tolerans 1e-6, ortüşme > 0).
 
 ## Çakışma denetimi: EXEMPT
 `collision/scene.py::COLLISION_EXEMPT` içinde: salt sorgu kütüphanesi, ayak izi üretmez.
