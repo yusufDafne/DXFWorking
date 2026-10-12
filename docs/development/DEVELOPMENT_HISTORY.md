@@ -4,6 +4,15 @@ Aktif geçmiş kapasitesi: **50 kayıt**. En eski tamamlanmış kayıt, 51. kay�
 alınırken silinir. Ayrıntılı teknik değişiklikler git geçmişi ve ilgili proje
 provenance kayıtlarıyla ilişkilendirilir.
 
+## HD-050 — `impact/`: revizyon etki alanı raporu (DEV-068)
+
+- **Durum:** COMPLETED
+- **Tamamlanma:** 2026-10-12
+- **Kapsam:** `scripts/impact/` (yeni: `graph.py`, `report.py`, `selftest.py`, `CLAUDE.md`), `scripts/impact_report.py`, `scripts/spatial/{__init__,selftest,CLAUDE}` (`wall_edge_overlap`, `wall_on_polygon_edge`), `scripts/walls/thickness.py`, `scripts/standards/measure.py` (ortak hesaba bağlandı), `scripts/doc_check.py` (#17), `scripts/version.py`, `scripts/collision/scene.py`, `scripts/reasoning/registry.py` (muafiyet kayıtları), kök ve `scripts/CLAUDE.md`.
+- **Sonuç:** düğüm = (kat, tür, id); kenarlar açık tablolardan (şema alan adlarıyla) ve `spatial`/`collision` sorgularından; duvara kenarla varılınca etki yalnız ilgili duvar parçasından (span) ilerler (span olmadan `uC_banyo` halka-2 = 25 düğüm, span ile 4); aynı birim ve kat ikizi yayılmaz, "ilgili" listelenir; bilinmeyen eleman reddedilir; kapsam raporu bağsız elemanları ve kapsam dışı alanları adıyla söyler. Kullanıcı kararları: v1 yalnız rapor (patch planı ayrı), açık tablo + collision ayak izleri, `blast_radius` + `touched_from_diff` girdisi, span düğümü ve yeni tolerans yok.
+- **Doğrulama:** `impact/selftest.py` 10 kontrol (elle çıkarılan kümeler, yanlış-pozitifler, kasıtlı bozmalar; bir bozma ilk turda sızdı ve zincir testiyle kapatıldı); kapı #17 sahte tablolarla 8 bozmada kırılır; `spatial` selftest'i eski↔yeni örtüşme diferansiyeli ile genişledi; tüm selftest'ler, `--golden-set`, `doc_check` temiz; `validate` çıktısı birebir aynı.
+- **Golden etkisi:** yok. **Sınır:** düşey bağ yalnız kimlik eşleşmesi; pafta düzeyi bağlar (kolon↔aks, ölçü↔baloncuk, kesit) yalnız `DERIVED_OUTPUTS`ta adıyla; operatör akışına bağlanmadı; `depth` varsayılanı 2 bir sunum tercihi. **Sonraki direktif:** `DEV-067`.
+
 ## HD-049 — `brief/` v0: ihtiyaç toplama sözleşmesi (DEV-069)
 
 - **Durum:** COMPLETED

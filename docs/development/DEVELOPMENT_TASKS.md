@@ -69,7 +69,7 @@ Tamamlanan işlerin ayrıntılı gerekçesi, karar süreci ve ölçülen etkisi
 | DEV-063 | `reasoning/`+`furniture/` — yaşanabilirlik mercek paketi + deneme yerleşimi (Faz 3) | COMPLETED (2026-10-12) |
 | DEV-066 | `reasoning/` — kalibrasyon, ayırt edicilik ve terfi (shadow→active) protokolü (Faz 4) | COMPLETED (2026-10-12) |
 | DEV-069 | `brief/` — kullanıcı ihtiyaç beyanı ve mimari program toplama (Faz 6) | COMPLETED (2026-10-12; v0 — v1 şema alanı sonra) |
-| DEV-068 | `impact/` — revizyon etki analizi (minimal patch planlama; Faz 6) | PLANNED (sıra 11/12) |
+| DEV-068 | `impact/` — revizyon etki analizi (minimal patch planlama; Faz 6) | COMPLETED (2026-10-12) |
 | DEV-067 | Tüm modüller — her modülün muhakeme katkısı (`reasoning.py` veya gerekçeli muafiyet; Faz 5) | PLANNED (sıra 12/12) |
 | DEV-071 | `docs/development/reviews/` — soğuk başlangıç sınavı (reviewer; `DEV-070` ayrılan parça, önkoşulsuz) | PLANNED |
 
@@ -719,35 +719,6 @@ belirleyeceksin ... her birini sıralama olarak birbirine bağla"):**
 > **mevcut `validate.py` çıktısını ve golden referansları bozmamak** ortak kabul şartıdır (`DEV-065`in şema
 > sürümü uyarısı satırı bilinen tek istisnadır). Bölünmesi önerilen maddelerde parçalar **sayısal** yeni DEV
 > kimlikleri olur (`doc_check` `### DEV-\d+` ister; `DEV-063A` gibi kimlikler görünmez kalır).
-
-### DEV-068 — `impact/` — revizyon etki analizi (minimal patch planlama)
-
-- **Durum:** PLANNED
-- **Neden (plan çalışılırken KEŞFEDİLEN ek modül):** kullanıcı: *"revize gerektiği zaman
-  sadece ilgili noktalara revize yapabilen bir makine."* Bugün bir talep gelince hangi
-  elemanların etkilendiği ve hangi kuralların yeniden doğrulanacağı **ajanın tahminidir**;
-  `validate.py` her şeyi yeniden koşar (doğru ama bilgisiz). "Banyoyu büyüttüm — hangi duvar,
-  kapı, şaft, komşu oda oranı, mahal etiketi, ölçü zinciri, üst/alt kat şaftı etkilendi?"
-  sorusunun deterministik bir cevabı yok.
-- **Kapsam (kullanıcı kararıyla v1: yalnız etki alanı raporu; minimal patch planı kapsam DIŞI):** eleman bağımlılık grafı (duvar ↔ oda ↔ kapı/pencere ↔ şaft ↔ etiket ↔
-  ölçü) ve bir patchin dokunduğu eleman kümesinden **etki alanı** + **minimal patch planı**;
-  muhakemede §4 adım 3'ün (mercek seçimi) ve adım 5'in (kör nokta taraması) deterministik
-  kaynağıdır. Hesaplar, yazmaz.
-- **Açık kararlar:** bağımlılık bilgisi nerede yaşar — modül-yerel beyan (`collision` deseni,
-  önerilen) mi, merkezi graf mı? Kat arası etki (şaft/merdiven düşey) `DEV-040` Fikir 3 ile
-  kesişir.
-- **Önkoşul:** `DEV-059` (eleman ilişki sorguları); `DEV-060` tercihen. Bağımsız büyük iş.
-- **Sıra:** 11/12 — plan §10.1; geliştirici yorumu ve netleştirme soruları 2026-10-09 kod denetimine dayanır (iki bağımsız ajan; `DEV-070` yalnız bir denetim).
-- **Geliştirici yorumu:** İki iş tek başlıkta: (1) salt-okunur, deterministik **etki alanı raporu**, (2) 'minimal patch planı' — ikincisinin girdi/çıktısı yok (sistemde patch dili yok). Öneri: bu madde yalnız (1); (2) ayrı madde, patch grameri tanımlanınca. Düğüm = (kat, tür, id); duvar-id düğümü etki alanını bina düzeyine patlatır → duvar-kenar parçası ve açıklık orta noktası üzerinden bağ. Eksik kenar sınıfları: duvar-duvar T-bağlantı ve duvar-ucu↔açıklık-boşluğu (gerçek vakaların nedeni), kapı açılım sektörü, aynı birim, kat ikizi. Mutasyon denemesi: 62 mutasyondan 5'i doğrulama çıktısını değiştirdi (3 yalnız uyarı, 1 yalnız hata, 1 ikisi) ve hepsi 'kapının değen odaları' ailesinden; yeni sayı eklenmeyecek (tolerans `spatial/`ten). Kapsam/tamlık raporu şart (sessiz geçiş yasağı). Sıra: 059 sonrası, 10. adım; değer 'düşük' çünkü patch dili olmadan kullanıcıya doğrudan yansımaz.
-- **Netleştirme soruları** (her biri önerilen varsayılanla; kullanıcı tek tek onaylayınca madde `READY` olur):
-  1. Madde bölünsün mü (v1 salt-okunur etki alanı raporu; patch planı ayrı, patch grameri tanımlanınca)? Öneri: evet.
-  2. Bağımlılık bilgisi: v1'de modül-yerel `impact.py` YOK; küçük açık-referans tablosu + mevcut collision ayak izleri; tablo şema alan adlarıyla tamlık kapısından geçer. Öneri: evet.
-  3. Girdi: `blast_radius(context, dokunulan=[(kat,tür,id)])` ve `touched_from_diff(onceki, sonraki)`; patch grameri v1'de yok. Öneri: evet.
-  4. Düğüm ayrıntısı: duvar-kenar parçası (span) + açıklık orta noktası; yeni tolerans sayısı eklenmez. Öneri: evet.
-- **Kullanıcı kararları (2026-10-09, netleştirme tamam; başlamak için kullanıcı onayı bekleniyor):** (1) madde bölünür: v1 yalnız salt-okunur etki alanı raporu, patch planı ayrı sayısal kimlikle (patch grameri tanımlanınca) — EVET; (2) bağımlılık: modül-yerel `impact.py` YOK, küçük açık-referans tablosu + mevcut collision ayak izleri, tablo şema alan adlarıyla tamlık kapısından geçer — EVET; (3) girdi `blast_radius(context, dokunulan=[(kat,tür,id)])` + `touched_from_diff(önceki, sonraki)`, patch grameri yok — EVET; (4) düğüm = duvar-kenar parçası (span) + açıklık orta noktası, yeni tolerans sayısı yok — EVET.
-- **Metin düzeltmeleri (onayla birlikte uygulanır):** 'Minimal patch planı' kapsamdan çıkar; `DEV-059` kapsamına duvar/oda-kenarı çakışma ailesi (`walls/thickness._on_edge`, `standards/measure.edge_wall_thicknesses`, `architect/layout._collinear_overlap`) eklenir; tamlık raporu kabule girer.
-- **Kabul ölçütü (v1):** `scripts/impact/` salt okunur (context'e yazmaz, deterministik); düğüm = (kat, tür, id); kenarlar açık tablolardan (şema alan adlarıyla `doc_check` #17) ve `spatial`/`collision` sorgularından gelir, yeni tolerans sayısı yok; duvara kenarla varılınca etki yalnız ilgili parçadan (span) ilerler; aynı birim ve kat ikizi yayılmaz ama "ilgili" diye listelenir; bilinmeyen eleman reddedilir; kapsam raporu bağsız elemanları ve kapsam dışı alanları adıyla söyler; selftest elle çıkarılan kümelerle ve kasıtlı bozmalarla sınar; `validate.py` çıktısı ve golden referanslar değişmez; `doc_check` temiz.
-- **Uygulama sonucu (2026-10-12, kabul bekliyor):** yeni `scripts/impact/` (`graph.py`: açık tablolar `REFERENCE_FIELDS`/`EDGE_CLASSES`/`DERIVED_OUTPUTS`, `build_graph`; `report.py`: `blast_radius` [span-duyarlı yayılım], `touched_from_diff`, `diff_report`, `coverage`) + CLI `scripts/impact_report.py` + `doc_check` **#17**. `DEV-059` kapsamına eklenen duvar-oda kenarı ortüşmesi `spatial.wall_edge_overlap/wall_on_polygon_edge` oldu: `walls/thickness._on_edge` ve `standards/measure.edge_wall_thicknesses` ona bağlandı (eski↔yeni diferansiyel, `validate.py` çıktısı BİREBİR aynı); `architect/layout._collinear_overlap` anlamı farklı olduğu için taşınmadı. **Kanıt (rev-28):** 626 düğüm, tüm oda/duvar/açıklık/şaft/merdiven/tezgah bağlı; `uC_banyo` dokunulunca halka-1 = 8 duvar parçası + kapı + şaft, halka-2 = 4 komşu oda; uzak pencereler girmez; span olmadan aynı sorgu 25 düğüme patlıyordu. `impact/selftest.py` 10 kontrol; 5 üretim-dışı + 10 elle üretim kodu bozması yakalandı, BİR bozma (`_overlaps` hep yanlış) ilk turda sızdı ve sade bir duvar-zinciri testiyle kapatıldı. **Kullanıcıya:** (1) `depth` varsayılanı 2 bir sunum tercihidir; (2) düşey bağ yalnız kimlik eşleşmesi (şaft/merdiven hizası karşılaştırılmaz); (3) operatör akışına bağlanmadı (muhakeme adım 3/5 için hazır kaynak); (4) şema ve `validate.py` değişmedi. Kilit bırakılacak.
 
 ### DEV-067 — Tüm modüller — modül başına muhakeme katkısı (yaygınlaştırma)
 
@@ -1927,3 +1898,8 @@ Bir görev için agent şunları yapmadan `COMPLETED` yazamaz:
 
 - **Durum:** COMPLETED (2026-10-12) — kullanıcı onayıyla (soru politikası ve v0 biçimi) yalnız v0 uygulandı. Ayrıntılı kayıt: `HD-049`.
 - **Özet:** `PROJECT_OPERATOR_AGENT.md` "İhtiyaç toplama" bölümü + soru kataloğu (şemasız, kodsuz); sorular opsiyonel, varsayılan adıyla bildirilir, kaynaklı varsayılanı olmayan değerde üretim durur. **v1 (`brief` şema alanı) AÇIK:** v0 gerçek bir konuşmada koşulana dek başlamaz.
+
+### DEV-068 — `impact/` — revizyon etki analizi (v1: salt okunur etki alanı raporu)
+
+- **Durum:** COMPLETED (2026-10-12) — kullanıcı onayıyla (dört netleştirme kararı) uygulandı. Ayrıntılı kayıt: `HD-050`.
+- **Özet:** `scripts/impact/` (açık kenar tabloları, duvar-parça/span duyarlı yayılım, `touched_from_diff`, kapsam raporu) + `impact_report.py` + `doc_check` #17; duvar-oda kenarı örtüşmesi `spatial`a taşındı. Minimal patch planı kapsam dışı (patch grameri tanımlanınca ayrı sayısal kimlikle).
