@@ -69,7 +69,7 @@ kalanını bilmeye ihtiyaç duymadan o modül üzerinde derinlemesine/izole
   çizimi. Yerleşimi üretmez, doğrular — bkz. `scripts/shafts/CLAUDE.md`, `HD-038`.
 - ✅ **`scripts/reasoning/`** — `DEV-060` (2026-10-09): mimari muhakeme ÇEKİRDEĞİ (plan:
   `docs/development/ARCHITECTURAL_REASONING_PLAN.md`). Mercek → veçhe → bulgu modeli, kayıt defteri
-  (`REASONING_PROVIDERS`/`REASONING_EXEMPT`/`REASONING_PENDING`), kararlı bulgu anahtarı + regresyon
+  (`REASONING_PROVIDERS`/gerekçeli `REASONING_EXEMPT`; DEV-067'de PENDING kaldırıldı), kararlı bulgu anahtarı + regresyon
   farkı + kat-bağımsız kümeleme, `validate.py` stdout adaptörü, kapsam raporu, asgari terfi ölçeri,
   vaka koşucusu. **Bilgi taşımaz**, çizim modülü import etmez (`collision/` deseni); `doc_check`
   kapıları #10–#12, #14, #15. Rapor komutu `scripts/reasoning_report.py`. Bkz. `scripts/reasoning/CLAUDE.md`.

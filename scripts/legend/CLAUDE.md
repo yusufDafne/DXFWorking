@@ -112,3 +112,8 @@ alır.
   tanımsız tip `?` öneki ve büyük-harf tip adıyla düşer (sessizce atlanmaz).
 - **Tefriş/kolon cetveli YOK** — `FurnitureSchedule` zaten var ama bu
   modülde ÇİZİLMEZ; ayrı bir karar gerekir (bkz. `scripts/furniture/CLAUDE.md`).
+
+## Muhakeme katkısı (DEV-048)
+**Rol:** gerekçeli muaf (`reasoning/registry.py::REASONING_EXEMPT`, DEV-067). **Gerekçe (düşünüldü, ölçüm/kural vermez):** kapi/pencere cetveli ozet tablodur; plan Par.9 adayi ekonomi_verim.net_brut (alan cetveli) henuz yok.
+**Sağlayıcıya geçiş:** bu modül için bir veçhe doğarsa modül `REASONING_EXEMPT`ten çıkar, `scripts/legend/reasoning.py` (rol + ölçüm beyanı;
+veçhe kaydı lens paketinde) yazılır ve `REASONING_PROVIDERS`a girer — kural ve izinler: `docs/agents/KNOWLEDGE_ENGINEER_AGENT.md`.

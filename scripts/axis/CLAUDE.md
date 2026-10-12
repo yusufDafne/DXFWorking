@@ -128,3 +128,8 @@ kontrolü.
 - Aks sıklığı **otomatik belirlenmez**; kapsama raporu yalnızca eksik hizaları
   bildirir, aks önermez veya eklemez.
 - Ara aksın `extent`i ile ana aksların kesişip kesişmediği kontrol edilmez.
+
+## Muhakeme katkısı (DEV-048)
+**Rol:** gerekçeli muaf (`reasoning/registry.py::REASONING_EXEMPT`, DEV-067). **Gerekçe (düşünüldü, ölçüm/kural vermez):** aks izgarasi referans cizgisidir; cephe tayini (capraz havalandirma) aks verisiyle degil spatial.facade_normal ile cozuldu (DEV-062). Sonraki veche (plan Par.9): yok, aks verisi gerektiren bir veche tanimli degil.
+**Sağlayıcıya geçiş:** bu modül için bir veçhe doğarsa modül `REASONING_EXEMPT`ten çıkar, `scripts/axis/reasoning.py` (rol + ölçüm beyanı;
+veçhe kaydı lens paketinde) yazılır ve `REASONING_PROVIDERS`a girer — kural ve izinler: `docs/agents/KNOWLEDGE_ENGINEER_AGENT.md`.

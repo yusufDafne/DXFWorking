@@ -133,3 +133,8 @@ Politika: kolon ↔ tefriş, kolon ↔ kolon ve kolon ↔ kapı açılım sektö
 - Dairesel kolon taraması `add_arc` kenar yoluyla yapılır; çok küçük
   yarıçaplarda desen okunmayabilir.
 - `validate.py` kolon verisini geometrik olarak denetlemez (yalnızca schema).
+
+## Muhakeme katkısı (DEV-048)
+**Rol:** gerekçeli muaf (`reasoning/registry.py::REASONING_EXEMPT`, DEV-067). **Gerekçe (düşünüldü, ölçüm/kural vermez):** kolon cizimi ve aks hizasi; plan Par.9 sonraki veche yapisal.kolon.oda_ortasi henuz yok (yapisal bakis acisi mercegi kayitli degil).
+**Sağlayıcıya geçiş:** bu modül için bir veçhe doğarsa modül `REASONING_EXEMPT`ten çıkar, `scripts/columns/reasoning.py` (rol + ölçüm beyanı;
+veçhe kaydı lens paketinde) yazılır ve `REASONING_PROVIDERS`a girer — kural ve izinler: `docs/agents/KNOWLEDGE_ENGINEER_AGENT.md`.

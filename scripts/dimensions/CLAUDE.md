@@ -120,3 +120,8 @@ değiştirmez. Yalnızca okur ve ölçü üretir.
   modül müdahale etmez.
 - `counters[]` ve tefriş ölçülendirmeye girmez; yalnızca duvar/açıklık
   geometrisi ölçülür.
+
+## Muhakeme katkısı (DEV-048)
+**Rol:** gerekçeli muaf (`reasoning/registry.py::REASONING_EXEMPT`, DEV-067). **Gerekçe (düşünüldü, ölçüm/kural vermez):** olcu zinciri bir SUNUM karari (hangi olcu kime gosterilir); plan Par.9 adayi sade kullanici icin olcu gizleme profili henuz yok.
+**Sağlayıcıya geçiş:** bu modül için bir veçhe doğarsa modül `REASONING_EXEMPT`ten çıkar, `scripts/dimensions/reasoning.py` (rol + ölçüm beyanı;
+veçhe kaydı lens paketinde) yazılır ve `REASONING_PROVIDERS`a girer — kural ve izinler: `docs/agents/KNOWLEDGE_ENGINEER_AGENT.md`.

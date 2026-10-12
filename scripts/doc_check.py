@@ -31,7 +31,7 @@ Kontroller:
    `version.py::CONTRACT_MODULES` listesiyle BIREBIR ortusmelidir; aksi halde
    provenance kaydi eksik/bayat cikar.
 10-15. MUHAKEME KAPILARI (DEV-060, plan §7.2): #10 her paket tam BIR yerde: saglayici /
-   gerekceli muaf / PENDING (tek yonlu kuculen gecis kaydi); #11 shadow+ veche basvurulari
+   gerekceli muaf (DEV-067: PENDING gecis kaydi kaldirildi, kapi iki durumlu ve bloklayici); #11 shadow+ veche basvurulari
    AST ile cozulur; #12 shadow+ veche icin ihlal+temiz vaka; #14 kaynaksiz `kesin` yasak;
    #15 bayat `reviewed` BILGI satiri (bloklamaz). #13 (rakam lint'i) DEV-064'tedir.
 
@@ -357,13 +357,6 @@ def check_contract_versions() -> list[str]:
 
 
 # ---------------------------------------------------------------- muhakeme kapilari (DEV-060)
-# "Henuz degerlendirilmedi" gecis kaydinin DONUK ust siniri: bunun disinda hicbir ad PENDING'e
-# girebilir. DEV-067 PENDING'i bosaltinca bu kume SILINIR ve kapi blokajci olur.
-_PENDING_FROZEN = frozenset({
-    "axis", "ceiling", "collision", "columns", "dimensions", "elevations", "furniture",
-    "importer", "legend", "levels", "northarrow", "pafta", "palette", "rooms", "sections",
-    "stairs", "standards", "templates", "typography", "walls",
-})
 # Bayat sayilma yasi (gun). Bir POLITIKA parametresidir, olcum degil: sistem mimari karari bekliyor.
 REVIEW_MAX_AGE_DAYS = 365
 
@@ -374,14 +367,13 @@ def _reasoning_registry_module():
     return reg
 
 
-def check_reasoning_coverage(providers=None, exempt=None, pending=None, packages=None,
-                             scripts_root=None, frozen=None) -> list[str]:
-    """#10: her paket tam BIR yerde (saglayici / gerekceli muaf / PENDING)."""
+def check_reasoning_coverage(providers=None, exempt=None, packages=None, scripts_root=None) -> list[str]:
+    """#10 (DEV-067'den beri IKI durumlu ve BLOKLAYICI): her paket TAM BIR yerde - saglayici (`reasoning.py` + REASONING_PROVIDERS) ya da
+    gerekceli REASONING_EXEMPT. 'Henuz degerlendirilmedi' (PENDING) gecis kaydi kaldirildi: yeni bir modul dogarken
+    'bu modul hangi merceklere olcum/kural saglar?' sorusu cevapsiz birakilamaz."""
     reg = _reasoning_registry_module()
     providers = reg.REASONING_PROVIDERS if providers is None else providers
     exempt = reg.REASONING_EXEMPT if exempt is None else exempt
-    pending = reg.REASONING_PENDING if pending is None else pending
-    frozen = _PENDING_FROZEN if frozen is None else frozen
     root = Path(scripts_root) if scripts_root else ROOT / "scripts"
     names = packages if packages is not None else [m.name for m in _drawing_modules()]
     provider_pkgs = {p.split(".")[0] for p in providers}
@@ -393,25 +385,51 @@ def check_reasoning_coverage(providers=None, exempt=None, pending=None, packages
             errors.append(f"scripts/{name}/reasoning.py var ama REASONING_PROVIDERS'te listelenmemis - hic yuklenmiyor.")
         if is_provider and not has_file:
             errors.append(f"REASONING_PROVIDERS: '{name}' listelenmis ama scripts/{name}/reasoning.py yok.")
-        places = [label for label, ok in (("saglayici", is_provider and has_file),
-                                          ("muaf", name in exempt), ("PENDING", name in pending)) if ok]
+        places = [label for label, ok in (("saglayici", is_provider and has_file), ("muaf", name in exempt)) if ok]
         if not places:
-            errors.append(f"scripts/{name}/: ne reasoning.py ne REASONING_EXEMPT gerekcesi ne PENDING kaydi var. "
+            errors.append(f"scripts/{name}/: ne reasoning.py ne REASONING_EXEMPT gerekcesi var. "
                           f"'Bu modul hangi merceklere olcum/kural saglar?' sorusu yanitlanmamis (DEV-048).")
         elif len(places) > 1:
             errors.append(f"scripts/{name}/: birden fazla yerde kayitli ({', '.join(places)}) - tam biri olmali.")
     for name, why in exempt.items():
         if not str(why).strip():
             errors.append(f"REASONING_EXEMPT['{name}']: gerekce bos.")
-    for name in pending:
-        if name not in frozen:
-            errors.append(f"REASONING_PENDING: '{name}' donuk listede yok - PENDING'e yeni ad eklenemez "
-                          f"(yeni modul dogarken saglayici ya da gerekceli muaf olmali).")
     existing = set(names)
-    for label, group in (("REASONING_EXEMPT", exempt), ("REASONING_PENDING", pending)):
-        for name in group:
-            if name not in existing:
-                errors.append(f"{label}: '{name}' diye bir modul YOK (bayat kayit).")
+    for name in exempt:
+        if name not in existing:
+            errors.append(f"REASONING_EXEMPT: '{name}' diye bir modul YOK (bayat kayit).")
+    return errors
+
+
+EXEMPT_PREFIX = "dusunuldu, olcum/kural vermez:"
+
+
+def check_reasoning_exempt_form(exempt=None) -> list[str]:
+    """#10b: muaf gerekcesi 'Dusunuldu, olcum/kural vermez:' ile baslar (muafiyet 'dusunulmedi' degil 'dusunuldu' demektir) ve
+    esik/sayi iddiasi yerine bir neden tasir (en az 40 karakter)."""
+    reg = _reasoning_registry_module()
+    exempt = reg.REASONING_EXEMPT if exempt is None else exempt
+    errors: list[str] = []
+    for name, why in exempt.items():
+        text = str(why).strip()
+        if not text.lower().startswith(EXEMPT_PREFIX):
+            errors.append(f"REASONING_EXEMPT['{name}']: gerekce '{EXEMPT_PREFIX}' ile baslamali (plan Par.9 kurali).")
+        elif len(text) - len(EXEMPT_PREFIX) < 40:
+            errors.append(f"REASONING_EXEMPT['{name}']: gerekce cok kisa - neden ve (varsa) sonraki veche adi yazilmali.")
+    return errors
+
+
+def check_reasoning_sections(packages=None, scripts_root=None) -> list[str]:
+    """#10c: her modulun CLAUDE.md'si standart '## Muhakeme katkisi' bolumunu tasir (plan Par.8.4)."""
+    root = Path(scripts_root) if scripts_root else ROOT / "scripts"
+    names = packages if packages is not None else [m.name for m in _drawing_modules()]
+    errors: list[str] = []
+    for name in names:
+        path = root / name / "CLAUDE.md"
+        if not path.exists():
+            continue    # CLAUDE.md yoklugunu check_paths zaten bildirir
+        if not re.search(r"^## Muhakeme katk[ıi]s[ıi]\b", _read(path), re.M):
+            errors.append(f"scripts/{name}/CLAUDE.md: '## Muhakeme katkisi' bolumu yok (DEV-067 standart bolum).")
     return errors
 
 
@@ -597,12 +615,12 @@ def check_reasoning_registry() -> list[str]:
 
 
 def run_info(today=None, registry=None) -> list[str]:
-    """#15: BILGI satirlari (cikis kodunu ETKILEMEZ): PENDING sayisi, bayat provenance.reviewed."""
+    """#15: BILGI satirlari (cikis kodunu ETKILEMEZ): saglayici/muaf sayisi, bayat provenance.reviewed."""
     import datetime
     reg_mod = _reasoning_registry_module()
     registry = registry if registry is not None else reg_mod.load_registry()[0]
     today = today or datetime.date.today()
-    info = [f"muhakeme: {len(reg_mod.REASONING_PENDING)} paket 'henuz degerlendirilmedi' (REASONING_PENDING); "
+    info = [f"muhakeme: {len(reg_mod.REASONING_PROVIDERS)} saglayici, {len(reg_mod.REASONING_EXEMPT)} gerekceli muaf modul; "
             f"{len(registry.facets)} veche kayitli."]
     for f in registry.facets.values():
         if f.provenance is not None and f.provenance.reviewed:
@@ -667,7 +685,7 @@ def check_impact_completeness(schema=None, tables=None) -> list[str]:
 def run() -> list[str]:
     return (check_tasks() + check_paths() + check_architecture_table()
             + check_collision_coverage() + check_contract_versions()
-            + check_reasoning_coverage() + check_reasoning_registry()
+            + check_reasoning_coverage() + check_reasoning_exempt_form() + check_reasoning_sections() + check_reasoning_registry()
             + check_reasoning_refs() + check_reasoning_cases() + check_reasoning_provenance()
             + check_reasoning_digits() + check_reasoning_promotions()
             + check_impact_completeness())

@@ -194,3 +194,8 @@ TAM İÇİNDEKİ bir oda yanlış-pozitif ÜRETMEZ), `validate_standards`
   `None`) — alan sınırı özelliği KODda var ve test edilir, ama kullanıcı
   henüz bir alan eşiği istemedi; `min_short_edge_mm`/oran yeterli
   görüldü.
+
+## Muhakeme katkısı (DEV-048)
+**Rol:** gerekçeli muaf (`reasoning/registry.py::REASONING_EXEMPT`, DEV-067). **Gerekçe (düşünüldü, ölçüm/kural vermez):** oran/net olcu/kapi-koridor nuans kurallari validate.py'de calisir ve legacy.* kategorileri altinda gorunur, ancak BIREBIR veche olarak kayitli degildir (adaptor yok); plan Par.9 adayi yasanabilirlik.wc.kullanim_alani henuz yok. Kayit icin ayri karar gerekir.
+**Sağlayıcıya geçiş:** bu modül için bir veçhe doğarsa modül `REASONING_EXEMPT`ten çıkar, `scripts/standards/reasoning.py` (rol + ölçüm beyanı;
+veçhe kaydı lens paketinde) yazılır ve `REASONING_PROVIDERS`a girer — kural ve izinler: `docs/agents/KNOWLEDGE_ENGINEER_AGENT.md`.

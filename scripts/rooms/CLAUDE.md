@@ -206,3 +206,8 @@ testi nokta-içinde-çokgen ile yapılır, kırpma ile değil. Ayrıntı:
 ## Kabul
 
 Poligonlar kapalı, alanlar deterministik, etiketler pafta dışına taşmıyor ve mevcut oda çıktısı korunuyor olmalıdır.
+
+## Muhakeme katkısı (DEV-048)
+**Rol:** gerekçeli muaf (`reasoning/registry.py::REASONING_EXEMPT`, DEV-067). **Gerekçe (düşünüldü, ölçüm/kural vermez):** oda geometrisi ve mahal etiketi; oda komsulugu/ortak kenar sorgulari spatial'da, etkilenen oda kumesi impact'tadir, rooms kendi veche kaydi gerektirmez.
+**Sağlayıcıya geçiş:** bu modül için bir veçhe doğarsa modül `REASONING_EXEMPT`ten çıkar, `scripts/rooms/reasoning.py` (rol + ölçüm beyanı;
+veçhe kaydı lens paketinde) yazılır ve `REASONING_PROVIDERS`a girer — kural ve izinler: `docs/agents/KNOWLEDGE_ENGINEER_AGENT.md`.

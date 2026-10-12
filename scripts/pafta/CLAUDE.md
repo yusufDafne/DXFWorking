@@ -297,3 +297,8 @@ Pafta **genişliğinde** üst sınır yoktur (bkz. kök `CLAUDE.md`); yükseklik
 - Aks sıkıştırma (kağıda sığmadığında `AXIS_EXTENSION`/`CONTENT_PADDING`'i
   otomatik küçültme) mevzuata göre zaten YANLIŞ bir cozum (ölçek/aks
   küçültülemez) - bu fikir kaldırıldı, yerine pafta bölme+keyplan kondu.
+
+## Muhakeme katkısı (DEV-048)
+**Rol:** gerekçeli muaf (`reasoning/registry.py::REASONING_EXEMPT`, DEV-067). **Gerekçe (düşünüldü, ölçüm/kural vermez):** pafta/kagit/olcek mevzuat kontrolu validate/generate tarafindadir; plan Par.9 adayi mevzuat uyarisinin sonuc diliyle anlatimi sunum katmaninin (explain) isidir, olcum degil.
+**Sağlayıcıya geçiş:** bu modül için bir veçhe doğarsa modül `REASONING_EXEMPT`ten çıkar, `scripts/pafta/reasoning.py` (rol + ölçüm beyanı;
+veçhe kaydı lens paketinde) yazılır ve `REASONING_PROVIDERS`a girer — kural ve izinler: `docs/agents/KNOWLEDGE_ENGINEER_AGENT.md`.

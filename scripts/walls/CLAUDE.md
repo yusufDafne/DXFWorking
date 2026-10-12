@@ -158,3 +158,8 @@ kalınlığa bakar, görsel sunuma değil. Ayrıntı: `scripts/collision/CLAUDE.
   validate.py` artık gerçek projede BAŞARILI dönüyor.
   `validate_selftest.py::check_real_project_bug_was_fixed_rev23` artık
   TAM TERSİNİ (bu iki duvarın ARTIK yakalanmadığını) kanıtlar.
+
+## Muhakeme katkısı (DEV-048)
+**Rol:** gerekçeli muaf (`reasoning/registry.py::REASONING_EXEMPT`, DEV-067). **Gerekçe (düşünüldü, ölçüm/kural vermez):** duvar cizimi; duvar-oda kenari ortusmesi spatial'da. Plan Par.9 adayi mahremiyet.isitsel.ortak_duvar (tur ayiricili) icin gercek projede walls[].kind verisi yok.
+**Sağlayıcıya geçiş:** bu modül için bir veçhe doğarsa modül `REASONING_EXEMPT`ten çıkar, `scripts/walls/reasoning.py` (rol + ölçüm beyanı;
+veçhe kaydı lens paketinde) yazılır ve `REASONING_PROVIDERS`a girer — kural ve izinler: `docs/agents/KNOWLEDGE_ENGINEER_AGENT.md`.

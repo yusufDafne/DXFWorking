@@ -342,3 +342,8 @@ uçtan uca (schema+validate+generate+golden) SIFIR uyarı/hata ile geçer.
 `validate.py::check_stairs` (arity-1: `room_id` geçerli mi, `resolve_stair`
 hata/uyarı üretiyor mu) `resolve_stair`i ÇAĞIRIR — ayrı bir doğrulama
 mantığı YAZMAZ.
+
+## Muhakeme katkısı (DEV-048)
+**Rol:** gerekçeli muaf (`reasoning/registry.py::REASONING_EXEMPT`, DEV-067). **Gerekçe (düşünüldü, ölçüm/kural vermez):** merdiven cizimi ve cikis hizasi uyarisi validate.py'de; plan Par.9 adayi erisilebilirlik.merdiven.konfor (aday) henuz yok.
+**Sağlayıcıya geçiş:** bu modül için bir veçhe doğarsa modül `REASONING_EXEMPT`ten çıkar, `scripts/stairs/reasoning.py` (rol + ölçüm beyanı;
+veçhe kaydı lens paketinde) yazılır ve `REASONING_PROVIDERS`a girer — kural ve izinler: `docs/agents/KNOWLEDGE_ENGINEER_AGENT.md`.

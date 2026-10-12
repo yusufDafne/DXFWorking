@@ -123,3 +123,8 @@ otomatik EKLEMEZ.
   yüzden `axis` veya ölçü çizgileri de (yanlışlıkla) YAKIN VE PARALEL
   iseler aday üretebilir. Düşük confidence bunu kısmen telafi eder ama
   insan gözden geçirmesi HER ZAMAN gereklidir (bkz. "Invariant'lar").
+
+## Muhakeme katkısı (DEV-048)
+**Rol:** gerekçeli muaf (`reasoning/registry.py::REASONING_EXEMPT`, DEV-067). **Gerekçe (düşünüldü, ölçüm/kural vermez):** salt-okunur DXF duvar tarayicisi, context'i gormez; plan Par.9 adayi veri_guveni (belirsiz geometride kullaniciya sor) henuz tanimli degil.
+**Sağlayıcıya geçiş:** bu modül için bir veçhe doğarsa modül `REASONING_EXEMPT`ten çıkar, `scripts/importer/reasoning.py` (rol + ölçüm beyanı;
+veçhe kaydı lens paketinde) yazılır ve `REASONING_PROVIDERS`a girer — kural ve izinler: `docs/agents/KNOWLEDGE_ENGINEER_AGENT.md`.

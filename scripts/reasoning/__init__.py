@@ -25,7 +25,7 @@ from .model import (CheckAdapter, Facet, Finding, Lens, Plain, Profile, Promotio
                     Thresholds, missing_for_status)
 from .promotion import (ReadinessItem, TriggerReport, per_unit_topic_counts, promotion_readiness, promotion_snippet,
                         stale_review_list, trigger_report)
-from .registry import (REASONING_EXEMPT, REASONING_PENDING, REASONING_PROVIDERS, Registry,
+from .registry import (REASONING_EXEMPT, REASONING_PROVIDERS, Registry,
                        load_registry, validate_registry)
 
 # Bu paketin context sozlesmesi: kapsam raporu veche bildirimlerindeki yollara bakar; ayrica YALNIZ ust seviye
@@ -38,7 +38,7 @@ __all__ = [
     "list_cases", "load_case", "run_case", "CoverageEntry", "CoverageReport", "build_coverage",
     "diff_findings", "group_across_floors", "make_key", "message_signature", "quoted_ids",
     "severity_band", "severity_from_curve", "TriggerReport", "trigger_report", "REASONING_EXEMPT",
-    "REASONING_PENDING", "REASONING_PROVIDERS", "Registry", "load_registry", "validate_registry",
+    "REASONING_PROVIDERS", "Registry", "load_registry", "validate_registry",
     "Reopened", "check_decisions", "decision_numbers", "evaluate", "evidence_hash", "evidence_snapshot", "make_decision",
     "ExplainError", "allowed_numbers_for", "Narrative", "Topic", "Remedy", "append_dialogue", "coverage_sentence", "effective_mode",
     "is_presentable", "lint_template", "match_smells", "narrate", "read_dialogue", "render", "select_topics",

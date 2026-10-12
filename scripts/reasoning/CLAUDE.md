@@ -16,7 +16,7 @@ paketinde, ölçüm/kural sahibi modülde** (modül `reasoning.py`si yalnız rol
 | Dosya | Görev |
 |---|---|
 | `model.py` | `Provenance`, `Thresholds`, `Plain`, `CheckAdapter`, `Facet`, `Lens`, `Smell`, `Tension`, `Profile`, `Finding`; durum basamağı (`idea→draft→shadow→active`) zorunlu alanları |
-| `registry.py` | `REASONING_PROVIDERS` / `REASONING_EXEMPT` / `REASONING_PENDING`, `Registry`, `validate_registry`, `load_registry` (dosya yoluyla, AST import denetimiyle) |
+| `registry.py` | `REASONING_PROVIDERS` / `REASONING_EXEMPT` (DEV-067: PENDING geçiş kaydı KALDIRILDI), `Registry`, `validate_registry`, `load_registry` (dosya yoluyla, AST import denetimiyle) |
 | `findings.py` | kararlı anahtar (`make_key`: rakamsızlaştırılmış mesaj özeti → kısmi çözüm anahtarı bozmaz), `severity_from_curve` (eğri yoksa **None/unscored**, sayı uydurulmaz), `diff_findings` (yeni/çözülen/değişmeyen), `group_across_floors` |
 | `adapters.py` | `parse_validate_output`: `validate.py` stdout'u → `Finding` (**parite yapı gereği**; sınır: yalnız kategori bilinir, veçhe kimliği `legacy.<kategori>`) |
 | `coverage.py` | `build_coverage` (`Facet.needs_note_tr` ile yol yerine duz dil neden: "yönelim değerlendirilemedi: kuzey yönü verilmedi"; ayni neden tek satırda kat listesiyle toplanır): **kostu / kosamadi (neden) / uygulanmaz**; kayıt boşsa bunu SÖYLER. `idea`/`draft` veçhe (ölçüm kodu yok) `kostu` SAYILMAZ, ayrıca **"henüz ölçülmeyen"** diye adıyla listelenir ("temiz" ≠ "bakılmadı"); `uygulanmaz` yalnız sayılır, `kosamadi` tek tek yazılır |
@@ -30,8 +30,8 @@ paketinde, ölçüm/kural sahibi modülde** (modül `reasoning.py`si yalnız rol
 | `cases/` | **34 vaka** (17 veçhe × ihlal+temiz; 8'i DEV-062, 4'ü DEV-063): ELLE yazılmış, uydurulmuş mini sahneler (`origin` alanı bunu söyler; gerçek geçmiş geometri değil — kullanıcı kararı) |
 
 ## Mekanik kapılar (`doc_check.py`)
-**#10** her paket tam BİR yerde (sağlayıcı / gerekçeli muaf / PENDING); PENDING **donuk** (`_PENDING_FROZEN`)
-ve yalnız küçülür, `DEV-067` boşaltınca kapı bloklayıcı kalır; **#11** `status ≥ shadow` veçhenin
+**#10** (DEV-067'den beri İKİ durumlu ve bloklayıcı) her paket tam BİR yerde: sağlayıcı (`reasoning.py` + `REASONING_PROVIDERS`) ya da gerekçeli muaf (`REASONING_EXEMPT`); **#10b** muaf gerekçesi `Dusunuldu, olcum/kural vermez:` ile başlar ve neden + (varsa) plan §9'daki sonraki veçhe adını yazar — muafiyet "bu modül hiç katkı vermez" değil "bugün veçhe yok" demektir; **#10c** her modülün `CLAUDE.md`sinde standart `## Muhakeme katkısı` bölümü vardır. Yeni modül doğarken ikisinden biri zorunludur. Sağlayıcıya geçiş: veçhe doğunca modül `REASONING_EXEMPT`ten çıkar, `reasoning.py` yazılır. 
+**#11** `status ≥ shadow` veçhenin
 `adapter/measure/check` başvuruları AST ile çözülür (adapter.inputs parametre adlarıyla örtüşür); **#12**
 `status ≥ shadow` veçhe için `ihlal` + `temiz` vaka diskte (**`legacy` veçhe muaf**: `validate.py`nin zaten çağırdığı kural terfi kapısından geçmez, `model.Facet.legacy` belgesi; vakaları yine de var ve selftest'te koşar); **#14** kaynaksız `kesin` yasak; **#16** (DEV-066) `active` (legacy olmayan) veçhe imzalı `Promotion` kaydı taşır: `decided_by='kullanici'`, `hd_ref` DEVELOPMENT_HISTORY'de var, sayılar tutarlı ve tetik oranı DEJENERE değil (0 < fired < eligible) — kapı terfi ETTİRMEZ, raporsuz/kararsız/dejenere terfiyi engeller; **#15**
 bayat `provenance.reviewed` BİLGİ satırı (`run_info`, çıkış kodunu etkilemez; `REVIEW_MAX_AGE_DAYS` bir

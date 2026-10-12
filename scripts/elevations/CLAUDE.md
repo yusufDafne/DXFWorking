@@ -121,3 +121,8 @@ modülünü import ETMEZ, sadece bu sözleşmeyi bekler — duck typing).
 - **`below_ground` + `window_count`/`door` birlikte kullanılırsa** pencere/
   kapı de `DASHED` çizilir (tutarlılık için); bu proje verisinde bu
   kombinasyon HENÜZ yok, sadece `selftest.py`de sentetik olarak sınandı.
+
+## Muhakeme katkısı (DEV-048)
+**Rol:** gerekçeli muaf (`reasoning/registry.py::REASONING_EXEMPT`, DEV-067). **Gerekçe (düşünüldü, ölçüm/kural vermez):** cephe seviye istifi; plan Par.9 adayi isik.derinlik pencere yuksekligi (openings[].height) gercek projede gelince anlam kazanir, bugun veri yok.
+**Sağlayıcıya geçiş:** bu modül için bir veçhe doğarsa modül `REASONING_EXEMPT`ten çıkar, `scripts/elevations/reasoning.py` (rol + ölçüm beyanı;
+veçhe kaydı lens paketinde) yazılır ve `REASONING_PROVIDERS`a girer — kural ve izinler: `docs/agents/KNOWLEDGE_ENGINEER_AGENT.md`.

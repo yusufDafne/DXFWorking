@@ -489,7 +489,7 @@ scripts/
       mahremiyet.py   isik_hava_yonelim.py   yasanabilirlik.py
     cases/                      #   VAKALAR (golden DEĞİL — bkz. §8.2)
     selftest.py     CLAUDE.md
-  <modül>/reasoning.py          # saglayici modul: ROL + ÖLÇÜM beyanı (veçhe kaydı lens paketinde); yoksa REASONING_EXEMPT/PENDING
+  <modül>/reasoning.py          # saglayici modul: ROL + ÖLÇÜM beyanı (veçhe kaydı lens paketinde); yoksa gerekçeli REASONING_EXEMPT (PENDING DEV-067'de kaldırıldı)
   <modül>/CLAUDE.md             #   standart "## Muhakeme katkısı" bölümü (§8.4)
 ```
 

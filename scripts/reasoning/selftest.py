@@ -25,7 +25,7 @@ from reasoning import (CheckAdapter, Facet, Finding, Lens, Plain, Promotion, Pro
                        adapt_warnings, build_coverage, diff_findings, group_across_floors, make_key,
                        message_signature, parse_validate_output, run_case, severity_band,
                        severity_from_curve, trigger_report, validate_registry)
-from reasoning.registry import REASONING_EXEMPT, REASONING_PENDING, REASONING_PROVIDERS  # noqa: E402
+from reasoning.registry import REASONING_EXEMPT, REASONING_PROVIDERS  # noqa: E402
 
 
 def prov(conf="yaygin", src="mimari literatur"):
@@ -181,49 +181,59 @@ def check_registry_validation() -> list[str]:
     return e
 
 
-def check_gate10_three_state() -> list[str]:
+def check_gate10_two_state() -> list[str]:
+    """#10 (DEV-067): IKI durumlu ve bloklayici - saglayici ya da gerekceli muaf; PENDING gecis kaydi YOK."""
     e = []
     names = ["a", "b", "c"]
     tmp = Path(tempfile.mkdtemp())
     for n in names:
         (tmp / n).mkdir()
-    frozen = frozenset(names)
-    ok = dc.check_reasoning_coverage(providers=(), exempt={"a": "dusunuldu"}, pending=frozenset({"b", "c"}),
-                                     packages=names, scripts_root=tmp, frozen=frozen)
+    (tmp / "a" / "reasoning.py").write_text("def register(reg): pass\n")
+    ok = dc.check_reasoning_coverage(providers=("a.reasoning",), exempt={"b": "x", "c": "x"}, packages=names, scripts_root=tmp)
     if ok:
-        e.append(f"gecerli uc durumlu kayit hata verdi: {ok}")
+        e.append(f"gecerli iki durumlu kayit hata verdi (yanlis-pozitif): {ok}")
     cases = {
-        "hicbir yerde yok": dict(exempt={"a": "x"}, pending=frozenset({"b"})),
-        "iki yerde": dict(exempt={"a": "x", "b": "x"}, pending=frozenset({"b", "c"})),
-        "bos gerekce": dict(exempt={"a": " ", "b": "x"}, pending=frozenset({"c"})),
-        "donuk disi PENDING": dict(exempt={"a": "x", "b": "x"}, pending=frozenset({"c", "yeni"}), frozen=frozenset(names)),
-        "bayat kayit": dict(exempt={"a": "x", "b": "x", "hayalet": "x"}, pending=frozenset({"c"})),
+        "hicbir yerde yok (eski PENDING artik kabul EDILMEZ)": dict(providers=("a.reasoning",), exempt={"b": "x"}),
+        "iki yerde": dict(providers=("a.reasoning",), exempt={"a": "x", "b": "x", "c": "x"}),
+        "bos gerekce": dict(providers=("a.reasoning",), exempt={"b": " ", "c": "x"}),
+        "bayat kayit": dict(providers=("a.reasoning",), exempt={"b": "x", "c": "x", "hayalet": "x"}),
+        "dosya var ama PROVIDERS'te yok": dict(providers=(), exempt={"b": "x", "c": "x"}),
+        "PROVIDERS'te ama dosya yok": dict(providers=("a.reasoning", "b.reasoning"), exempt={"c": "x"}),
     }
     for name, kw in cases.items():
-        kw.setdefault("frozen", frozen)
-        errs = dc.check_reasoning_coverage(providers=(), packages=names, scripts_root=tmp, **kw)
-        if not errs:
+        if not dc.check_reasoning_coverage(packages=names, scripts_root=tmp, **kw):
             e.append(f"kapi #10 YAKALAMADI: {name}")
-    (tmp / "a" / "reasoning.py").write_text("def register(reg): pass\n")
-    if not dc.check_reasoning_coverage(providers=(), exempt={"a": "x", "b": "x"}, pending=frozenset({"c"}),
-                                       packages=names, scripts_root=tmp, frozen=frozen):
-        e.append("reasoning.py var ama PROVIDERS'te yok -> HATA olmali")
-    if dc.check_reasoning_coverage(providers=("a.reasoning",), exempt={"b": "x"}, pending=frozenset({"c"}),
-                                   packages=names, scripts_root=tmp, frozen=frozen):
-        e.append("gecerli saglayici hata verdi (yanlis-pozitif)")
-    if not dc.check_reasoning_coverage(providers=("c.reasoning",), exempt={"a": "x", "b": "x"}, pending=frozenset(),
-                                       packages=names, scripts_root=tmp, frozen=frozen):
-        e.append("PROVIDERS'te listeli ama dosyasi olmayan paket HATA olmali")
+    import inspect
+    if "pending" in inspect.signature(dc.check_reasoning_coverage).parameters or hasattr(dc, "_PENDING_FROZEN"):
+        e.append("PENDING gecis kaydi geri gelmis (kapi bloklayici kalmali)")
+    if hasattr(sys.modules["reasoning.registry"], "REASONING_PENDING"):
+        e.append("registry.REASONING_PENDING geri gelmis")
     # uretim kaydi: bugun temiz olmali ve her paket tam bir yerde
     if dc.check_reasoning_coverage():
         e.append(f"URETIM kaydi kirmizi: {dc.check_reasoning_coverage()}")
-    if set(REASONING_PENDING) - dc._PENDING_FROZEN:
-        e.append("uretim PENDING kumesi donuk kumenin disina cikmis")
     if tuple(REASONING_PROVIDERS) != ("architect", "openings", "shafts", "testfit"):
         e.append(f"saglayicilar architect, openings, shafts, testfit beklenir: {REASONING_PROVIDERS}")
-    for name in REASONING_PROVIDERS:
-        if name in REASONING_PENDING or name in dc._PENDING_FROZEN:
-            e.append(f"{name} saglayici oldu: PENDING ve donuk listeden CIKMALI (kume yalniz kuculur)")
+    if set(REASONING_PROVIDERS) & set(REASONING_EXEMPT):
+        e.append("bir modul hem saglayici hem muaf")
+    # #10b: muaf gerekce bicimi
+    good = {"m": "Dusunuldu, olcum/kural vermez: bu modul yalniz cizim yapar ve sonraki veche yoktur."}
+    if dc.check_reasoning_exempt_form(good):
+        e.append(f"gecerli muaf gerekcesi hata verdi: {dc.check_reasoning_exempt_form(good)}")
+    for label, bad in (("on ek yok", {"m": "Bu modul olcum vermez, yalniz cizim yapar ve baska hicbir sey yapmaz; bu gerekce yeterince uzundur ama on eki yoktur."}),
+                       ("cok kisa", {"m": "Dusunuldu, olcum/kural vermez: kisa."}),
+                       ("dusunulmedi", {"m": "Dusunulmedi henuz bu modul icin hicbir sey yazilmadi bile, bu gerekce de yeterince uzun ama yanlis bir ifade ile baslar."})):
+        if not dc.check_reasoning_exempt_form(bad):
+            e.append(f"kapi #10b YAKALAMADI: {label}")
+    if dc.check_reasoning_exempt_form():
+        e.append(f"URETIM muaf gerekceleri bicime uymuyor: {dc.check_reasoning_exempt_form()[:2]}")
+    # #10c: standart CLAUDE.md bolumu
+    (tmp / "a" / "CLAUDE.md").write_text("# a\n\n## Muhakeme katkısı (DEV-048)\nx\n", encoding="utf-8")
+    (tmp / "b" / "CLAUDE.md").write_text("# b\n\nMuhakeme katkisi diye bir bolum yok\n", encoding="utf-8")
+    errs = dc.check_reasoning_sections(packages=names, scripts_root=tmp)
+    if len(errs) != 1 or "scripts/b/" not in errs[0]:
+        e.append(f"kapi #10c yalniz b'yi yakalamali (a var, c'nin CLAUDE.md'si yok -> check_paths): {errs}")
+    if dc.check_reasoning_sections():
+        e.append(f"URETIM modul CLAUDE.md bolumleri eksik: {dc.check_reasoning_sections()[:3]}")
     return e
 
 
@@ -1354,7 +1364,7 @@ def check_promotion_report_cli() -> list[str]:
 
 def main() -> int:
     checks = [check_keys_and_signature, check_severity_curve, check_diff, check_legacy_parse,
-              check_real_validate_parity, check_registry_validation, check_gate10_three_state,
+              check_real_validate_parity, check_registry_validation, check_gate10_two_state,
               check_gate11_refs, check_gate12_cases, check_case_runner, check_coverage,
               check_provenance_gate_and_info, check_promotion, check_production_loading_is_side_effect_free,
               check_mahremiyet_statuses, check_mahremiyet_wiring_claim, check_mahremiyet_cases,

@@ -1,4 +1,4 @@
-"""Muhakeme kayit defteri (DEV-060): saglayici/muaf/PENDING kaydi + tembel yukleyici + dogrulama.
+"""Muhakeme kayit defteri (DEV-060): saglayici/gerekceli muaf kaydi + tembel yukleyici + dogrulama.
 
 Bagimlilik yonu `collision/` ile AYNI: cekirdek hicbir cizim modulunu import ETMEZ; bilgi
 (`lenses/*.py`, `<modul>/reasoning.py`) DOSYA YOLUYLA yuklenir ve yalnizca `reasoning.*`
@@ -19,22 +19,58 @@ ROOT_SCRIPTS = Path(__file__).resolve().parent.parent
 # `<modul>/reasoning.py` saglayicilari (register(reg) fonksiyonu tasir). Veche kayitlari lens paketlerindedir.
 REASONING_PROVIDERS: tuple[str, ...] = ("architect", "openings", "shafts", "testfit")  # DEV-061, DEV-062, DEV-063
 
-# Gerekceli muafiyet ("dusunuldu, bu modul olcum/kural vermez") - COLLISION_EXEMPT ile AYNI idiom.
+# Gerekceli muafiyet ("dusunuldu, bu modul olcum/kural vermez") - COLLISION_EXEMPT ile AYNI idiom. DEV-067: her gerekce
+# "Dusunuldu, olcum/kural vermez:" ile BASLAR (doc_check #10b mekanik denetler) ve plan Par.9'daki "sonraki en degerli veche"yi
+# adiyla soyler: muafiyet "bu modul hic katki vermeyecek" DEMEK DEGILDIR, "bugun veche yok" demektir; veche dogunca modul
+# buradan CIKAR, REASONING_PROVIDERS'a girer (ve scripts/<modul>/reasoning.py yazilir). PENDING gecis kaydi DEV-067 ile KALDIRILDI:
+# her paket ya saglayici ya gerekceli muaf olmak zorundadir.
 REASONING_EXEMPT: dict[str, str] = {
-    "reasoning": "Cekirdegin kendisi; bilgi tasimaz (bilgi lens paketlerinde ve saglayici modullerde yasar).",
-    "impact": "Revizyon etki alani raporu (DEV-068): hangi elemanlara bakilacagini soyler, kendisi veche/olcum saglamaz; ileride muhakemede mercek "
-              "secimi ve kor nokta taramasinin deterministik kaynagidir (DEV-048 plan adim 3 ve 5) ama bunu bir mercek paketi olarak degil tuketici olarak yapar.",
-    "spatial": "Salt sorgu kutuphanesi (DEV-059); muhakemeye olcum SAGLAYABILIR ama kendi veche/kurali yoktur, "
+    "reasoning": "Dusunuldu, olcum/kural vermez: cekirdegin kendisi; bilgi tasimaz (bilgi lens paketlerinde ve saglayici modullerde yasar).",
+    "spatial": "Dusunuldu, olcum/kural vermez: salt sorgu kutuphanesi (DEV-059); muhakemeye olcum SAGLAYABILIR ama kendi veche/kurali yoktur, "
                "sorgulari tuketen modullerin reasoning.py'si kullanir.",
+    "impact": "Dusunuldu, olcum/kural vermez: revizyon etki alani raporu (DEV-068) hangi elemanlara bakilacagini soyler, kendisi veche/olcum "
+              "saglamaz; muhakemede mercek secimi ve kor nokta taramasinin ileride tuketilecek kaynagidir (plan adim 3 ve 5).",
+    "axis": "Dusunuldu, olcum/kural vermez: aks izgarasi referans cizgisidir; cephe tayini (capraz havalandirma) aks verisiyle degil "
+            "spatial.facade_normal ile cozuldu (DEV-062). Sonraki veche (plan Par.9): yok, aks verisi gerektiren bir veche tanimli degil.",
+    "ceiling": "Dusunuldu, olcum/kural vermez: yansitilmis tavan plani oda tavan kotunu cizer; hacim/havalandirma veche adayi isik.hacim "
+               "(plan Par.9) henuz yok ve rooms[].ceiling_height_mm gercek projede verilmedikce olculemez.",
+    "collision": "Dusunuldu, olcum/kural vermez: fiziksel cakismanin sahibidir (FORBID alani) ve mimari muhakemenin SINIRINI cizer "
+                 "(anayasa: muhakeme yalniz UYARI); muhakeme ayak izlerini testfit/impact uzerinden TUKETIR, collision'a veche koymaz.",
+    "columns": "Dusunuldu, olcum/kural vermez: kolon cizimi ve aks hizasi; plan Par.9 sonraki veche yapisal.kolon.oda_ortasi henuz yok "
+               "(yapisal bakis acisi mercegi kayitli degil).",
+    "dimensions": "Dusunuldu, olcum/kural vermez: olcu zinciri bir SUNUM karari (hangi olcu kime gosterilir); plan Par.9 adayi sade kullanici "
+                  "icin olcu gizleme profili henuz yok.",
+    "elevations": "Dusunuldu, olcum/kural vermez: cephe seviye istifi; plan Par.9 adayi isik.derinlik pencere yuksekligi (openings[].height) "
+                  "gercek projede gelince anlam kazanir, bugun veri yok.",
+    "furniture": "Dusunuldu, olcum/kural vermez: katalog olculerinin sahibidir; deneme yerlestirme olcumunu testfit/ yapar (DEV-063) ve "
+                 "furniture katalogunu yalniz TUKETIR. Furniture kendi veche kaydi gerektirmez.",
+    "importer": "Dusunuldu, olcum/kural vermez: salt-okunur DXF duvar tarayicisi, context'i gormez; plan Par.9 adayi veri_guveni "
+                "(belirsiz geometride kullaniciya sor) henuz tanimli degil.",
+    "legend": "Dusunuldu, olcum/kural vermez: kapi/pencere cetveli ozet tablodur; plan Par.9 adayi ekonomi_verim.net_brut (alan cetveli) "
+              "henuz yok.",
+    "levels": "Dusunuldu, olcum/kural vermez: kot isareti bir anotasyondur; plan Par.9 adayi erisilebilirlik.esik gercek projede "
+              "level_marks verisi yokken olculemez.",
+    "northarrow": "Dusunuldu, olcum/kural vermez: yonelim merceginin girdisi meta.north_angle verisidir, bu modulun kodu degil "
+                  "(reasoning_report meta'dan okur); kuzey oku yalniz cizimdir.",
+    "pafta": "Dusunuldu, olcum/kural vermez: pafta/kagit/olcek mevzuat kontrolu validate/generate tarafindadir; plan Par.9 adayi "
+             "mevzuat uyarisinin sonuc diliyle anlatimi sunum katmaninin (explain) isidir, olcum degil.",
+    "palette": "Dusunuldu, olcum/kural vermez: katman renk kaydi; okunabilirlik/kontrast denetimi kendi validate_palette'indedir, "
+               "mimari muhakemeye konu degildir.",
+    "rooms": "Dusunuldu, olcum/kural vermez: oda geometrisi ve mahal etiketi; oda komsulugu/ortak kenar sorgulari spatial'da, "
+             "etkilenen oda kumesi impact'tadir, rooms kendi veche kaydi gerektirmez.",
+    "sections": "Dusunuldu, olcum/kural vermez: bina kesiti cizimi; plan Par.9 adayi kesitte bas yuksekligi (merdiven) henuz yok.",
+    "standards": "Dusunuldu, olcum/kural vermez: oran/net olcu/kapi-koridor nuans kurallari validate.py'de calisir ve legacy.* "
+                 "kategorileri altinda gorunur, ancak BIREBIR veche olarak kayitli degildir (adaptor yok); plan Par.9 adayi "
+                 "yasanabilirlik.wc.kullanim_alani henuz yok. Kayit icin ayri karar gerekir.",
+    "stairs": "Dusunuldu, olcum/kural vermez: merdiven cizimi ve cikis hizasi uyarisi validate.py'de; plan Par.9 adayi "
+              "erisilebilirlik.merdiven.konfor (aday) henuz yok.",
+    "templates": "Dusunuldu, olcum/kural vermez: sirkulasyon cekirdegi sablon uretecidir (hesaplar, cizmez); plan Par.9 adayi "
+                 "merkezi cekirdek adaylarini mercek puanlariyla siralamak henuz yok.",
+    "typography": "Dusunuldu, olcum/kural vermez: proje yazi tipi kaydi; asgari metin yuksekligi baskisi okunabilirlik meselesidir, "
+                  "mimari muhakemeye konu degildir.",
+    "walls": "Dusunuldu, olcum/kural vermez: duvar cizimi; duvar-oda kenari ortusmesi spatial'da. Plan Par.9 adayi "
+             "mahremiyet.isitsel.ortak_duvar (tur ayiricili) icin gercek projede walls[].kind verisi yok.",
 }
-
-# "Henuz degerlendirilmedi" gecis kaydi (DEV-067 bosaltir). TEK YONLU: kume yalniz kuculur;
-# doc_check'teki _PENDING_FROZEN disinda hicbir ad girilemez.
-REASONING_PENDING: frozenset[str] = frozenset({
-    "axis", "ceiling", "collision", "columns", "dimensions", "elevations", "furniture",
-    "importer", "legend", "levels", "northarrow", "pafta", "palette", "rooms", "sections",
-    "stairs", "standards", "templates", "typography", "walls",
-})
 
 
 class Registry:

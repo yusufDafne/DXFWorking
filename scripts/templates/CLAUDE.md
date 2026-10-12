@@ -236,3 +236,8 @@ NORMAL `validate.py` akışından geçer.
   — bkz. `scripts/stairs/CLAUDE.md` "Çift kollu merdiven geometrisi".
   `stair_width`in KENDİSİ (4000mm) hâlâ `templates/`in bir varsayımıdır,
   değişmedi.
+
+## Muhakeme katkısı (DEV-048)
+**Rol:** gerekçeli muaf (`reasoning/registry.py::REASONING_EXEMPT`, DEV-067). **Gerekçe (düşünüldü, ölçüm/kural vermez):** sirkulasyon cekirdegi sablon uretecidir (hesaplar, cizmez); plan Par.9 adayi merkezi cekirdek adaylarini mercek puanlariyla siralamak henuz yok.
+**Sağlayıcıya geçiş:** bu modül için bir veçhe doğarsa modül `REASONING_EXEMPT`ten çıkar, `scripts/templates/reasoning.py` (rol + ölçüm beyanı;
+veçhe kaydı lens paketinde) yazılır ve `REASONING_PROVIDERS`a girer — kural ve izinler: `docs/agents/KNOWLEDGE_ENGINEER_AGENT.md`.

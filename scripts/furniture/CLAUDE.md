@@ -141,3 +141,8 @@ bir karardır.
   180 yatak) için katalog sözlüğü değiştirilmelidir, context'ten ölçü
   verilemez.
 - Blok öznitelikleri (`ATTRIB`) kullanılmıyor; tefriş adı çizimde görünmez.
+
+## Muhakeme katkısı (DEV-048)
+**Rol:** gerekçeli muaf (`reasoning/registry.py::REASONING_EXEMPT`, DEV-067). **Gerekçe (düşünüldü, ölçüm/kural vermez):** katalog olculerinin sahibidir; deneme yerlestirme olcumunu testfit/ yapar (DEV-063) ve furniture katalogunu yalniz TUKETIR. Furniture kendi veche kaydi gerektirmez.
+**Sağlayıcıya geçiş:** bu modül için bir veçhe doğarsa modül `REASONING_EXEMPT`ten çıkar, `scripts/furniture/reasoning.py` (rol + ölçüm beyanı;
+veçhe kaydı lens paketinde) yazılır ve `REASONING_PROVIDERS`a girer — kural ve izinler: `docs/agents/KNOWLEDGE_ENGINEER_AGENT.md`.

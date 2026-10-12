@@ -85,3 +85,8 @@ edilebildiği (sahte stil test çiftiyle).
 - **Elevations/sections'a kuzey oku çizilmez** (kullanıcı isteği örtük
   kaldı, ama mantık açık: kuzey bir PLAN/vaziyet kavramıdır, düşey bir
   görünüşte/kesitte yönü göstermenin standart bir karşılığı yoktur).
+
+## Muhakeme katkısı (DEV-048)
+**Rol:** gerekçeli muaf (`reasoning/registry.py::REASONING_EXEMPT`, DEV-067). **Gerekçe (düşünüldü, ölçüm/kural vermez):** yonelim merceginin girdisi meta.north_angle verisidir, bu modulun kodu degil (reasoning_report meta'dan okur); kuzey oku yalniz cizimdir.
+**Sağlayıcıya geçiş:** bu modül için bir veçhe doğarsa modül `REASONING_EXEMPT`ten çıkar, `scripts/northarrow/reasoning.py` (rol + ölçüm beyanı;
+veçhe kaydı lens paketinde) yazılır ve `REASONING_PROVIDERS`a girer — kural ve izinler: `docs/agents/KNOWLEDGE_ENGINEER_AGENT.md`.
