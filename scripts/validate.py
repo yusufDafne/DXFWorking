@@ -105,6 +105,7 @@ from architect import (  # noqa: E402
     check_wet_area_door_proximity,
     check_wet_area_reachable_without_bedroom,
 )
+from elevations import derive_level_openings  # noqa: E402
 from northarrow import check_north_convention  # noqa: E402
 from openings import (check_elevator_door_insets, check_opening_nuances, check_window_class_errors,  # noqa: E402
                       check_window_heights, check_window_junctions)
@@ -510,6 +511,24 @@ def check_elevation(elevation: dict) -> list[str]:
     return errors
 
 
+def check_elevation_plan(context: dict, elevation: dict) -> tuple[list[str], list[str]]:
+    """DEV-073: `openings_from='plan'` cephe icin (HATALAR, UYARILAR). Eslesme/eksen sozlesmesi bozuksa HATA (cizim sessizce yanlis katlari
+    cizerdi); turetim notlari (seviye yuksekligini asan aciklik, cephe disina dusen aciklik, egik duvar) UYARI."""
+    if elevation.get("openings_from") != "plan":
+        return [], []
+    prefix = f"[{elevation['id']}] "
+    errors: list[str] = []
+    if elevation.get("axis_source") not in ("vertical", "horizontal"):
+        errors.append(prefix + "openings_from='plan' icin axis_source 'vertical' (on cephe) ya da 'horizontal' (sag cephe) olmali.")
+    if len(context["floors"]) != len(elevation["levels"]):
+        errors.append(prefix + f"openings_from='plan': kat sayisi ({len(context['floors'])}) ile seviye sayisi ({len(elevation['levels'])}) "
+                      "esit olmali - kat<->seviye eslesmesi SIRAYLA yapilir.")
+    if errors:
+        return errors, []
+    _rects, notes = derive_level_openings(context, elevation)
+    return [], notes
+
+
 def check_sections(context: dict) -> list[str]:
     """DEV-021. `context['sections']` HIC verilmemisse (anahtar yok) kontrol
     ATLANIR - o durumda `resolve_sections` sistem varsayilanini uretir ve
@@ -655,6 +674,9 @@ def run_validation(context_path: Path = DEFAULT_CONTEXT_PATH) -> bool:
 
     for elevation in context["elevations"]:
         all_errors += check_elevation(elevation)
+        plan_errors, plan_notes = check_elevation_plan(context, elevation)          # DEV-073
+        all_errors += plan_errors
+        standards_warnings += plan_notes
 
     all_errors += check_sections(context)
 

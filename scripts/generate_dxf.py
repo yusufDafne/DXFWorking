@@ -648,7 +648,7 @@ def generate(context_path: Path = DEFAULT_CONTEXT_PATH, output_path: Path = DEFA
 
     for elevation in elevations:
         content_start = len(msp)
-        ElevationSheet.draw(msp, elevation, cursor, text_height, axis_grid, elevation_label_height)
+        ElevationSheet.draw(msp, elevation, cursor, text_height, axis_grid, elevation_label_height, context=context)
         level_boundaries = level_boundaries_from_placements(LevelStack.from_context(elevation).placements())
         draw_level_marks(msp, level_mark, level_boundaries, cursor - level_mark_offset)
         y_bottom, y_top = elevation_vertical_extent(elevation)

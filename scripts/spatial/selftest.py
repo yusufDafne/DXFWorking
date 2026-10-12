@@ -407,10 +407,33 @@ def check_wall_edge_overlap() -> list[str]:
 
 
 
+def check_exterior_openings() -> list[str]:
+    """DEV-073: `exterior_openings(types)` genellemesi; `exterior_windows` DAVRANISI korunur (yalniz pencere)."""
+    errors = []
+    ctx = _context()
+    n_w = n_d = 0
+    for fl in ctx["floors"]:
+        args = (fl["rooms"], fl["walls"], fl["openings"], fl.get("shafts"))
+        win = sp.exterior_windows(*args)
+        if [x["window"]["id"] for x in win] != [x["window"]["id"] for x in sp.exterior_openings(*args, ("window",))]:
+            errors.append(f"exterior_windows davranisi degisti: {fl['id']}")
+        if any(x["window"]["type"] != "window" for x in win):
+            errors.append(f"exterior_windows pencere disi aciklik dondurdu: {fl['id']}")
+        both = sp.exterior_openings(*args, ("window", "door"))
+        doors = [x for x in both if x["window"]["type"] == "door"]
+        n_w += len(win)
+        n_d += len(doors)
+        if len(both) != len(win) + len(doors):
+            errors.append(f"tur filtresi tutarsiz: {fl['id']}")
+    if n_w == 0 or n_d == 0:
+        errors.append(f"diferansiyel test bos: pencere {n_w}, dis kapi {n_d} (gercek projede zemin katta dis kapi VAR)")
+    return errors
+
+
 def main() -> int:
     checks = [check_hand_computed, check_boundary_deltas_pinned, check_differential_on_real_context,
               check_differential_synthetic, check_known_semantic_differences, check_mutation_is_detected,
-              check_wall_edge_overlap]
+              check_wall_edge_overlap, check_exterior_openings]
     failed = 0
     for check in checks:
         errs = check()

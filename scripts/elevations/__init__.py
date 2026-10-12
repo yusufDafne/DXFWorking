@@ -11,6 +11,11 @@ from dataclasses import dataclass
 
 from ezdxf.enums import TextEntityAlignment
 
+try:
+    from .derive import FacadeRect, derive_level_openings
+except ImportError:  # dogrudan scripts/ uzerinden calistirildiginda
+    from elevations.derive import FacadeRect, derive_level_openings
+
 ELEVATION_LAYER = "DUVARLAR"
 OPENING_LAYER = "KAPI-PENCERE"
 DIM_LAYER = "OLCU"
@@ -126,6 +131,19 @@ class FacadeOpeningPlacer:
             entity.closed = True
 
     @staticmethod
+    def plan_openings(msp, rects, dx: float, y0: float, linetype: str | None = None) -> None:
+        """DEV-073: plan acikliklarindan turetilmis dikdortgenler (`derive.FacadeRect`): ayni genislik/yukseklik/denizlik/konum."""
+        attribs = {"layer": OPENING_LAYER}
+        if linetype:
+            attribs["linetype"] = linetype
+        for r in rects:
+            entity = msp.add_lwpolyline(
+                [(dx + r.x0, y0 + r.sill), (dx + r.x1, y0 + r.sill), (dx + r.x1, y0 + r.sill + r.height), (dx + r.x0, y0 + r.sill + r.height)],
+                dxfattribs=dict(attribs),
+            )
+            entity.closed = True
+
+    @staticmethod
     def door(msp, level: Level, dx: float, width: float, y0: float,
              linetype: str | None = None) -> None:
         if not level.door:
@@ -150,8 +168,14 @@ class ElevationSheet:
 
     @staticmethod
     def draw(msp, elevation: dict, dx: float, text_height: float, axis_grid,
-              label_text_height: float) -> None:
+              label_text_height: float, context: dict | None = None) -> None:
+        """`context` YALNIZ `openings_from='plan'` cepheler icin gerekir (DEV-073); verilmezse o cephe icin `ValueError`."""
         ensure_below_ground_linetype(msp.doc)
+        plan_rects: dict = {}
+        if elevation.get("openings_from") == "plan":
+            if context is None:
+                raise ValueError(f"Cephe '{elevation['id']}': openings_from='plan' icin ElevationSheet.draw(..., context=...) gerekir.")
+            plan_rects, _notes = derive_level_openings(context, elevation)
         width = elevation["width"]
         stack = LevelStack.from_context(elevation)
         placements = stack.placements()
@@ -161,7 +185,7 @@ class ElevationSheet:
         # Aks izgarasi HER ZAMAN en once (en altta) cizilir.
         axis_grid.draw_on_elevation(msp, dx, elevation.get("axis_source"), y_bottom, stack_top)
 
-        for level, y0, y1 in placements:
+        for index, (level, y0, y1) in enumerate(placements):
             linetype = BELOW_GROUND_LINETYPE if level.below_ground else None
             attribs = {"layer": ELEVATION_LAYER}
             if linetype:
@@ -172,8 +196,11 @@ class ElevationSheet:
             )
             outline.closed = True
 
-            FacadeOpeningPlacer.windows(msp, level, dx, width, y0, linetype)
-            FacadeOpeningPlacer.door(msp, level, dx, width, y0, linetype)
+            if elevation.get("openings_from") == "plan":
+                FacadeOpeningPlacer.plan_openings(msp, plan_rects.get(index, []), dx, y0, linetype)
+            else:
+                FacadeOpeningPlacer.windows(msp, level, dx, width, y0, linetype)
+                FacadeOpeningPlacer.door(msp, level, dx, width, y0, linetype)
 
             if level.machine_room:
                 mr_w, mr_h = width * 0.25, level.height * 0.8
@@ -205,9 +232,10 @@ def elevation_vertical_extent(elevation: dict) -> tuple[float, float]:
 
 # Bu modulun CONTEXT SOZLESMESI surumu (DEV-020). KOD surumu DEGILDIR.
 # Bkz. scripts/version.py
-CONTRACT_VERSION = "1.0"
+CONTRACT_VERSION = "1.1"   # DEV-073: elevations[].openings_from='plan' (plan acikliklarindan turetilen cephe)
 
 __all__ = [
+    "FacadeRect", "derive_level_openings",
     "Level", "LevelStack", "FacadeOpeningPlacer", "ElevationSheet",
     "ensure_below_ground_linetype", "elevation_vertical_extent",
     "BELOW_GROUND_LINETYPE", "DEFAULT_ELEVATION_WINDOW_SIZE", "ELEVATION_DOOR_SIZE",

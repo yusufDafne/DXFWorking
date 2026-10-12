@@ -388,7 +388,7 @@ geliştirme görevleri, tamamlanmış geçmiş, fikirler ve geliştirici notlar�
     kapilariyla), bodrum/catida YOK (acik gecis - rampa/teras).
 - **Mutfak tezgahi:** `floor.counters[]` icinde basit dikdortgen poligon
   olarak tanimlanir, `MOBILYA` katmaninda kapali polyline ciizilir.
-- **Cephe gorunusleri (elevations):** Gercek plan geometrisinden TURETILMEZ;
+- **Cephe gorunusleri (elevations) — DEV-073:** `elevations[].openings_from: "plan"` (opt-in) olan cephede pencere/kapilar planin dis duvarlarindaki GERCEK acikliklardan turetilir (ayni genislik, yukseklik, denizlik, konum; kat<->seviye siralamayla; dis kapi boy pencere varsayilaniyla 2000/40 mm). Asagidaki jenerik cizim varsayilandir: Gercek plan geometrisinden TURETILMEZ;
   kullanicinin acikca izin verdigi sekilde (bkz. rev-2 talebi) semantik/basit
   bir seviye istifi + esit araliklarla yerlestirilmis jenerik pencere
   dikdortgenleri olarak cizilir. Uygulamasi rev-14'ten (`DEV-011`) itibaren

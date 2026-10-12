@@ -223,12 +223,14 @@ def window_rooms(window: dict, walls_by_id: dict, rooms: list[dict]) -> list[dic
     return [] if mid is None else rooms_touching_point(mid, rooms)
 
 
-def exterior_windows(rooms: list[dict], walls: list[dict], openings: list[dict], shafts: list[dict] | None = None) -> list[dict]:
-    """Dis cepheye acilan pencereler: `{'window','mid','normal','rooms'}`. Dis yuzu tayin EDILEMEYEN pencere listeye girmez."""
+def exterior_openings(rooms: list[dict], walls: list[dict], openings: list[dict], shafts: list[dict] | None = None,
+                      types: tuple[str, ...] = ("window",)) -> list[dict]:
+    """Dis cepheye acilan aciklıklar (varsayilan yalniz pencere): `{'window','mid','normal','rooms'}` (anahtar 'window' = aciklik).
+    Dis yuzu tayin EDILEMEYEN aciklik listeye girmez. DEV-073: tur secilebilir (dis kapilar cephe turetimi icin)."""
     walls_by_id = {w["id"]: w for w in walls}
     out = []
     for o in openings:
-        if o.get("type") != "window":
+        if o.get("type") not in types:
             continue
         wall = walls_by_id.get(o.get("wall_id"))
         mid = door_midpoint(o, walls_by_id)
@@ -241,10 +243,15 @@ def exterior_windows(rooms: list[dict], walls: list[dict], openings: list[dict],
     return out
 
 
+def exterior_windows(rooms: list[dict], walls: list[dict], openings: list[dict], shafts: list[dict] | None = None) -> list[dict]:
+    """Dis cepheye acilan pencereler: `{'window','mid','normal','rooms'}`. Dis yuzu tayin EDILEMEYEN pencere listeye girmez."""
+    return exterior_openings(rooms, walls, openings, shafts, ("window",))
+
+
 __all__ = [
     "CONTRACT_VERSION", "TOUCH_TOLERANCE_MM", "SHARED_EDGE_TOLERANCE_MM",
     "point_in_polygon", "point_on_boundary",
     "door_midpoint", "door_frame", "rooms_touching_point", "dist_point_segment",
     "touches_within", "vertex_mean", "segments_intersect", "clear_line_of_sight",
-    "shared_edge_length", "wall_edge_overlap", "wall_on_polygon_edge", "FACADE_PROBE_EXTRA_MM", "facade_normal", "window_rooms", "exterior_windows",
+    "shared_edge_length", "wall_edge_overlap", "wall_on_polygon_edge", "FACADE_PROBE_EXTRA_MM", "facade_normal", "window_rooms", "exterior_windows", "exterior_openings",
 ]

@@ -15,7 +15,7 @@ okumaz (`CONTRACT_VERSION = "1.0"`).
 ## Public API
 `door_midpoint`, `door_frame`, `rooms_touching_point`, `dist_point_segment`, `touches_within`,
 `vertex_mean`, `segments_intersect`, `clear_line_of_sight`, `shared_edge_length`, `point_in_polygon`,
-`point_on_boundary`, `wall_edge_overlap`, `wall_on_polygon_edge` (DEV-068); sabitler `TOUCH_TOLERANCE_MM` (300), `SHARED_EDGE_TOLERANCE_MM` (1.0).
+`point_on_boundary`, `wall_edge_overlap`, `wall_on_polygon_edge` (DEV-068), `exterior_openings` (DEV-073: `exterior_windows`ın tür seçilebilir genellemesi; `exterior_windows` davranışı korunur); sabitler `TOUCH_TOLERANCE_MM` (300), `SHARED_EDGE_TOLERANCE_MM` (1.0).
 
 ## Davranış korunarak taşındı — BİLİNÇLİ ayrılıklar (kullanıcı kararları 2026-10-09)
 - **Sıfır uzunluklu duvar:** `door_midpoint` duvar başlangıç noktasını verir (eski architect),

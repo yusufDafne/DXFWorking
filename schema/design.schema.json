@@ -277,6 +277,10 @@
           "type": "array", "minItems": 1, "items": { "$ref": "#/definitions/elevation_level" },
           "description": "Zeminden yukariya (ve varsa asagiya) dogru seviye istifi, ciziliş sirasiyla"
         },
+        "openings_from": {
+          "type": "string", "enum": ["generic", "plan"],
+          "description": "DEV-073 (sema 1.6.0): 'plan' ise bu cephede jenerik window_count/window_size/door DEGIL, planin dis duvarlarindaki GERCEK pencere/kapi acikliklari cizilir (ayni genislik, yukseklik, denizlik, konum). Kat<->seviye eslesmesi SIRAYLA (kat sayisi = seviye sayisi); axis_source ('vertical' = on cephe, 'horizontal' = sag cephe) zorunlu. Varsayilan 'generic' = eski davranis."
+        },
         "axis_source": {
           "type": "string", "enum": ["vertical", "horizontal"],
           "description": "Bu cepheye plandan hangi aks ailesi izdusurulsun: 'vertical' (numerik akslar, on/arka cephe) veya 'horizontal' (alfabetik akslar, sag/sol cephe). Belirtilmezse aks cizilmez."
