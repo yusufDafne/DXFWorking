@@ -72,10 +72,10 @@ Tamamlanan işlerin ayrıntılı gerekçesi, karar süreci ve ölçülen etkisi
 | DEV-068 | `impact/` — revizyon etki analizi (minimal patch planlama; Faz 6) | COMPLETED (2026-10-12) |
 | DEV-067 | Tüm modüller — her modülün muhakeme katkısı (`reasoning.py` veya gerekçeli muafiyet; Faz 5) | COMPLETED (2026-10-12) |
 | DEV-072 | `openings/` — pencere yüksekliği + denizlik (katalog varsayılanı, kullanıcı geçersiz kılar) | COMPLETED (2026-10-12) |
-| DEV-073 | `elevations/` — cepheyi plan açıklıklarından türet | PLANNED |
+| DEV-073 | `elevations/` — cepheyi plan açıklıklarından türet | COMPLETED (2026-10-12) |
 | DEV-074 | Kuzey sözleşmesi — kuzeye en yakın cephe üstte, `meta.north_angle` ∈ [−45°, +45°] | COMPLETED (2026-10-12) |
-| DEV-075 | `openings/` — normal pencere varsayılan denizliği 900 mm + pencere varsayılan konumu (iç duvarlar arasında ortala) + duvar birleşiminde pencere uyarısı | PLANNED |
-| DEV-076 | `openings/` — açıklık sınıfları kataloğu (ana giriş, dükkân kapısı, vitrin, boy pencere; sınıf başına varsayılan ölçüler) | PLANNED |
+| DEV-075 | `openings/` — normal pencere varsayılan denizliği 900 mm + pencere varsayılan konumu (iç duvarlar arasında ortala) + duvar birleşiminde pencere uyarısı | COMPLETED (2026-10-12) |
+| DEV-076 | `openings/` — açıklık sınıfları kataloğu (ana giriş, dükkân kapısı, vitrin, boy pencere; sınıf başına varsayılan ölçüler) | COMPLETED (2026-10-12) |
 | DEV-071 | `docs/development/reviews/` — soğuk başlangıç sınavı (reviewer; `DEV-070` ayrılan parça, önkoşulsuz) | PLANNED |
 
 ## READY
@@ -730,26 +730,6 @@ belirleyeceksin ... her birini sıralama olarak birbirine bağla"):**
 - **Durum:** COMPLETED (2026-10-09) — kullanıcı onayıyla (dört netleştirme kararı) uygulandı. Ayrıntılı kayıt: `HD-045`.
 - **Özet:** `KNOWLEDGE_ENGINEER_AGENT.md` + `AGENT_PERMISSIONS.json` (`knowledge_engineering`, reviews/ yalnız reviewer) + reviewer "Sistem sınavı"; sınav `DEV-071`e ayrıldı (PLANNED).
 
-### DEV-075 — `openings/` — varsayılan denizlik 900 mm + pencere yerleşimi (iç duvarlara göre ortalama)
-
-- **Durum:** PLANNED
-- **Kullanıcı talebi (2026-10-12):** *"pencerenin zeminden başlangıç default yüksekliğini 90 cm yap. Pencerelerin default konumunu iç duvarlara göre ortala; yani duvarın dış cepheye çarptığı yerde pencere olmamalı, sistem buna dikkat etmeli."*
-- **Kullanıcı kararları:** (1) normal pencere varsayılan denizliği **900 mm** (`DEFAULT_WINDOW_SILL_MM`, "kullanıcı kararı 2026-10-12"); `verilmedi` durumu kalkar, boy pencere 40 mm kalır, kullanıcı değeri yine varsayılanı ezer; (2) varsayılan konum = pencerenin ait olduğu odanın dış duvar boyunca uzanan **serbest aralığının** (iç duvarların bağlandığı yerler çıkarıldıktan sonra) ortası; (3) iç duvarın dış duvara bağlandığı yere (iç duvar kalınlığı kadar bölge) düşen pencere UYARI (mimari sağduyu kuralı, üretimi durdurmaz).
-- **Kapsam:** `openings/heights.py` (denizlik 900), `openings/placement.py` (`host_junctions`, `free_spans`, `room_span`, `default_window_position`, `check_window_junctions`, `placement_suggestions`), `validate.py` kancası (UYARI), `scripts/window_placement_report.py` (salt okunur: mevcut pencerelerin ortalanmış konum önerisi), cetvel/operatör/kök `CLAUDE.md` güncellemesi.
-- **Kabul ölçütü:** elle hesaplanan serbest aralıklar ve ortalar; birleşim bölgesi sınırı (temas = uyarı yok, 1 mm içeri = uyarı); kasıtlı bozmalar; gerçek projede (76 pencere) birleşim uyarısı 0 ⇒ `validate` çıktısı DEĞİŞMEZ; golden temiz.
-- **Önkoşul:** `DEV-072`.
-- **Uygulama sonucu (2026-10-12, kabul bekliyor):** `DEFAULT_WINDOW_SILL_MM = 900` (normal pencere; `verilmedi` durumu kalktı, boy pencere 40 mm kaldı); `openings/placement.py` (`host_junctions`, `free_spans`, `room_span`, `default_window_position`, `check_window_junctions`, `placement_suggestions`) + `validate.py` UYARISI + `scripts/window_placement_report.py`; cetvel/operatör/kök `CLAUDE.md` güncellendi. **Kanıt:** elle hesaplanan birleşim/serbest aralık/orta değerleri (birleşim bölgeleri ±yarım kalınlık, iç içe geçen bölgeler birleşir, açık planda oda sınırına kırpma), temas/1 mm/2 mm sınırları, 10 kasıtlı bozma yakalandı (biri ilk turda sızdı, iç içe bölge testiyle kapatıldı); rev-28'de 76 pencerenin 0'ı birleşime düşer ⇒ `validate` çıktısı DEĞİŞMEDİ; golden değişmedi (yalnız metin içeriği: `VERILMEDI` → `90`, varlık sayısı aynı). **Kullanıcıya:** (1) `window_placement_report.py --min-delta 100`: 10 pencere 100 mm'den fazla sapıyor (zemin kat dükkân vitrinleri yaklaşık 3 m, `uB_win_salon_b` 1,7 m, `uB_win_salon_k` 0,6 m, `uB_win_mutfak` 0,5 m …) — yeniden konumlama rev-29'da sizin onayınızla; (2) birden çok pencereli oda/duvarda öneri tek pencere varsayar.
-
-### DEV-076 — `openings/` — açıklık sınıfları kataloğu (ana giriş, dükkân kapısı, vitrin)
-
-- **Durum:** PLANNED — uygulandı, kullanıcı kabulü bekleniyor
-- **Kullanıcı talebi (2026-10-12):** *"ana giriş yüksekliği ayrı tasarlanmalı, yüksekliği 10 cm daha yüksek, genişliği de 10 cm daha fazla; bunlar default değer. Dükkân vitrinleri de ayrı: normal boy pencereye oranla yüksekliği 20 cm fazla, genişliği ortalama 40 cm daha fazla. Dükkân kapıları ayrı, vitrin pencereleri ayrı. Dükkân kapıları için apartmanın ana giriş ölçülerini kullan ama sınıfları ayrı olsun, gelecekte özelleştirilebilmeli."*
-- **Kullanıcı kararları:** taban boy pencere (`tall`): **1600 × 2000 mm, denizlik 40 mm** (genişlik tabanı kullanıcı seçimi 2026-10-12); **ana giriş** (`main_entry`): boy pencereye göre +100 mm yükseklik (**2100**) ve +100 mm genişlik (**1700**); **vitrin** (`shopfront`): +200 mm yükseklik (**2200**) ve +400 mm genişlik (**2000**, mevcut 6 vitrinle uyumlu); **dükkân kapısı** (`shop`): ana giriş ölçüleri (1700 × 2100) ama AYRI sınıf ve AYRI sabitler (biri değişince öteki değişmez). Denizlik: boy pencereden devralınır (40 mm) — kullanıcı belirtmedi, varsayım olarak raporlanır.
-- **Kapsam:** `openings/classes.py` (`OpeningClassSpec`, `OPENING_CLASSES` açık kayıt, `class_of`, `resolve_dimensions`, `new_opening`), `window_class` enum'una `shopfront`, yeni `door_class` (`main_entry`/`shop`) — şema 1.7.0 (additif, opt-in); `validate.py` sınıf/tür tutarlılığı; cetvel (sınıf etiketleri, kapı yükseklik/denizliği); `elevations/derive.py` (kapı sınıfları); `defaults_report.py --catalog`; modül/kök/operatör belgeleri.
-- **Kabul ölçütü:** sınıf değerleri elle doğrulanır; kullanıcı değeri varsayılanı ezer; sınıfsız dış kapı eski davranışı (boy pencere varsayılanı) korur; sınıf sabitleri bağımsızdır (kasıtlı bozmayla); `validate` çıktısı gerçek projede DEĞİŞMEZ (alanlar yazılmadığı için); golden temiz.
-- **Önkoşul:** `DEV-072`, `DEV-073`.
-- **Uygulama sonucu (2026-10-12, kabul bekliyor):** `openings/classes.py` (`OpeningClassSpec`, `OPENING_CLASSES`, `class_of`, `values_for`, `new_opening`, `new_window`; her sınıfın sabitleri birbirinden BAĞIMSIZ literal sayı), `heights.py` sınıf kaydından çözer (kapılar dahil; kullanıcı değeri ezer), şema **1.7.0** (`window_class` += `shopfront`, yeni `door_class`), cetvel sınıf etiketli (P, PB, PV, KG, KD) ve YÜKSEKLİK/DENİZLİK sütunlu, `elevations/derive.py` kapı sınıfları, `defaults_report.py --catalog`; golden `plandan_cephe` ana giriş + vitrin ile genişletildi. **Kanıt:** elle hesaplanan değerler (1600/2000/40, 1700/2100/40, 2000/2200/40, dükkân kapısı bağımsız), 14 kasıtlı bozma yakalandı, tüm selftest/golden temiz, gerçek proje `validate` çıktısı DEĞİŞMEDİ. **Kullanıcıya:** denizlik/eşik 40 mm üç yeni sınıfta boy pencereden devralındı (belirtmediniz; varsayım) — onaylar mısınız.
-
 ### DEV-071 — `docs/development/reviews/` — soğuk başlangıç sınavı (reviewer)
 
 - **Durum:** PLANNED
@@ -757,15 +737,6 @@ belirleyeceksin ... her birini sıralama olarak birbirine bağla"):**
 - **Geçme kuralı:** vaka başına 3 bağımsız koşu, ≥2/3'ü tüm rubrik maddelerini sağlar; rapor model kimliği + belge commit'ini taşır; çekirdekte MINOR değişiklikten sonra yeniden koşulur. Raporlar `docs/development/reviews/` (ekleme-yalnız). Geçmezse bilgi eksiktir, belge düzeltilir.
 - **Önkoşul:** yok (bugünkü belgelerle bir taban koşusu yapılabilir; `DEV-070` rol belgesi ve `DEV-064` anlatım yolu sınanan malzemedir).
 - **Kullanıcı kararları:** `DEV-070` netleştirmesinde (1)–(3) EVET (2026-10-09). Başlamak için kullanıcı onayı bekleniyor.
-
-### DEV-073 — `elevations/` — cepheyi plan açıklıklarından türet
-
-- **Durum:** PLANNED — engel kalktı (kullanıcı 2026-10-12: normal pencere varsayılan denizliği 900 mm, `DEV-075`).
-- **Kullanıcı kararı (2026-10-12):** cephe görünüşleri plandaki pencerelerden türetilsin (genişlik, yükseklik, denizlik, konum aynı).
-- **Kapsam taslağı:** `spatial.facade_normal` ile pencere→cephe, `LevelStack` ile düşey yerleşim; cephe DXF'i ve golden referanslar **bilinçli olarak değişir** (fark raporu zorunlu); `window_count`/`window_size` genel istifi geri çekilir ya da yedek olarak kalır (açık karar).
-- **Önkoşul:** `DEV-072`; kullanıcıdan normal pencere denizliği.
-- **Uygulama sonucu (2026-10-12, kabul bekliyor):** `elevations/derive.py` (`derive_level_openings`, `FacadeRect`, `defaults_used_on_facades`), `ElevationSheet.draw(..., context=)` + `FacadeOpeningPlacer.plan_openings`, `spatial.exterior_openings`, `preview.py` (aynı kaynak), `generate_dxf.py`, `validate.py` (`check_elevation_plan`: HATA kat/seviye sayısı ve `axis_source`, UYARI seviye yüksekliğini aşan/cephe dışına düşen açıklık), şema **1.6.0** (`elevations[].openings_from`), `defaults_report.py` (dış kapı varsayılanı), yeni modül golden'ı `scripts/elevations/golden/plandan_cephe`. Cephe seçimi `axis_source`tan (vertical = ön/alt kenar, horizontal = sağ), kat↔seviye sıralamayla. **Dış kapı:** yükseklik verisi yok → kullanıcı kararı (dükkân kapıları boy pencere) gereği 2000/40 mm, adıyla bildirilir. **Kanıt:** elle hesaplanan dikdörtgenler (normal/boy/dış kapı/verilen değer, sağ cephe Y ekseni, iç kapı/üst duvar cepheye girmez, eğik duvar atlanır), 12 kasıtlı bozma yakalandı (biri ilk turda sızdı, test eklendi), DXF'te dikdörtgen sayısı ve alt kenarlar, jenerik cephe değişmedi; `spatial` diferansiyeli (`exterior_windows` davranışı korunur); **örnek proje çıktısı DEĞİŞMEDİ** (`openings_from` yazılmadı; yalnız sürüm numarası 1.6.0); mevcut 10 golden değişmedi. Önizleme görsel olarak doğrulandı (zemin katta dükkân kapıları + vitrin, normal katlarda 3 pencere). **Kullanıcıya:** (1) örnek projede açmak için rev-29'da iki cepheye `openings_from: "plan"` yazılır; bu durumda zemin kat ön cephede 3 DIŞ KAPI (door_d1, door_main_entry, door_d2) boy pencere varsayılanıyla çizilir — ana giriş kapısı da dahil, bunu onaylar mısınız; (2) dükkân vitrin pencereleri `type: window` (normal 1200/900 çizilir); boy pencere yapmak için `window_class: "tall"`; (3) arka (üst) ve sol cephe henüz desteklenmiyor (projede yalnız ön ve sağ cephe var).
-
 
 ## COMPLETED
 
@@ -1931,3 +1902,19 @@ Bir görev için agent şunları yapmadan `COMPLETED` yazamaz:
 
 - **Durum:** COMPLETED (2026-10-12) — kullanıcı onayıyla uygulandı. Ayrıntılı kayıt: `HD-054`.
 - **Özet:** `meta.north_angle` ∈ [−45°, +45°] (kuzeye en yakın cephe üstte), eşdeğer açılar normalize, aralık dışı `validate` HATASI; vaziyet planında kuzey daima yukarı (vaziyet paftası `DEV-024`).
+
+### DEV-073 — `elevations/` — cepheyi plan açıklıklarından türet
+
+- **Durum:** COMPLETED (2026-10-12) — kullanıcı kabulüyle. Ayrıntılı kayıt: `HD-055`.
+- **Özet:** `elevations[].openings_from: "plan"` (opt-in) ile cephe pencere/kapıları plandaki dış duvar açıklıklarından türetilir (`elevations/derive.py`); şema 1.6.0.
+
+### DEV-075 — `openings/` — varsayılan denizlik 900 mm + pencere yerleşimi
+
+- **Durum:** COMPLETED (2026-10-12) — kullanıcı kabulüyle. Ayrıntılı kayıt: `HD-056`.
+- **Özet:** normal pencere denizliği 900 mm; varsayılan konum iç duvarlar arasında ortalı; iç duvar–dış cephe birleşiminde pencere `validate` UYARISI; `window_placement_report.py`.
+
+### DEV-076 — `openings/` — açıklık sınıfları kataloğu
+
+- **Durum:** COMPLETED (2026-10-12) — kullanıcı kabulüyle. Ayrıntılı kayıt: `HD-057`.
+- **Özet:** boy pencere 1600×2000/40, vitrin 2000×2200/40, ana giriş 1700×2100/40, dükkân kapısı (ayrı sınıf) 1700×2100/40; şema 1.7.0 (`door_class`, `shopfront`).
+

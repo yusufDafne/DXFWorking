@@ -4,6 +4,31 @@ Aktif geçmiş kapasitesi: **50 kayıt**. En eski tamamlanmış kayıt, 51. kay�
 alınırken silinir. Ayrıntılı teknik değişiklikler git geçmişi ve ilgili proje
 provenance kayıtlarıyla ilişkilendirilir.
 
+## HD-057 — Açıklık sınıfları kataloğu (DEV-076)
+
+- **Durum:** COMPLETED
+- **Tamamlanma:** 2026-10-12
+- **Kapsam:** `scripts/openings/{classes,heights,__init__,selftest}.py`+`CLAUDE.md`, `scripts/legend`, `scripts/elevations/derive.py`, `scripts/defaults_report.py`, `schema/design.schema.json` (1.7.0), `scripts/version.py`, kök `CLAUDE.md`, operatör belgesi.
+- **Sonuç:** boy pencere 1600×2000/40, vitrin 2000×2200/40, ana giriş 1700×2100/40, dükkân kapısı 1700×2100/40 (ayrı sınıf, bağımsız sabitler); kullanıcı değeri varsayılanı ezer; denizlik/eşik 40 mm boy pencereden devralındı (kullanıcı onayı 2026-10-12).
+- **Doğrulama:** elle hesaplanan değerler, 14 kasıtlı bozma yakalandı, tüm selftest/golden temiz, gerçek proje `validate` çıktısı değişmedi.
+- **Sonraki direktif:** rev-29.
+
+## HD-056 — Varsayılan denizlik 900 mm ve pencere yerleşimi (DEV-075)
+
+- **Durum:** COMPLETED
+- **Tamamlanma:** 2026-10-12
+- **Kapsam:** `scripts/openings/{heights,placement,selftest}.py`, `scripts/validate.py`, `scripts/window_placement_report.py`, belgeler.
+- **Sonuç:** normal pencere denizliği 900 mm; varsayılan konum odanın dış duvar boyunca serbest aralığının ortası (iç duvar birleşimleri çıkarılır, açık planda oda aralığına kırpılır); birleşimde pencere UYARI.
+- **Doğrulama:** elle hesaplanan aralıklar, kasıtlı bozmalar; gerçek projede 76/76 pencere uyarısız.
+
+## HD-055 — Cephenin plan açıklıklarından türetilmesi (DEV-073)
+
+- **Durum:** COMPLETED
+- **Tamamlanma:** 2026-10-12
+- **Kapsam:** `scripts/elevations/{derive,__init__,selftest}.py`, `scripts/spatial`, `scripts/validate.py`, `scripts/preview.py`, şema 1.6.0, golden `plandan_cephe`.
+- **Sonuç:** `openings_from: "plan"` ile cephe açıklıkları planın dış duvar açıklıklarından (genişlik, yükseklik, denizlik, konum) türetilir; kat↔seviye sıralamayla; DXF ve önizleme aynı kaynaktan.
+- **Doğrulama:** elle hesaplanan dikdörtgenler, 12 kasıtlı bozma yakalandı; jenerik cephe değişmedi.
+
 ## HD-054 — Kuzey sözleşmesi (DEV-074)
 
 - **Durum:** COMPLETED
