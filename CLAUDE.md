@@ -548,11 +548,14 @@ guncellenir.
   **Kolon adı bugün çizilmez** — kullanıcı kolonları aks birleşim
   noktalarıyla ifade ediyor; altyapı (`Column.name`, `ColumnLabelStyle`)
   hazırdır ve `meta.column_label.enabled` ile kod değişmeden açılır.
-- **Pencere yüksekliği ve denizlik (DEV-072, kullanıcı kararı 2026-10-12):** varsayılan pencere yüksekliği **1200 mm**; **boy pencere**
-  (`window_class: "tall"`, örn. balkon kapısı) **2000 mm** yükseklik ve zeminden **40 mm** denizlik. Bunlar katalog varsayılanıdır
-  (`scripts/openings/heights.py`, `context.json`a yazılmaz); `openings[].height` / `sill_height` verilirse o değer geçer — ölçü ve konum
-  dinamiktir. **Normal pencerenin denizliği verilmedi ve uydurulmaz** (`verilmedi`). Kullanılan varsayılan adıyla bildirilir
-  (`python scripts/defaults_report.py`). Cetvel yükseklik/denizlik sütunlarını taşır.
+- **Pencere yüksekliği, denizlik ve konum (DEV-072/DEV-075, kullanıcı kararı 2026-10-12):** varsayılan pencere yüksekliği **1200 mm** ve zeminden
+  **900 mm** (denizlik); **boy pencere** (`window_class: "tall"`, örn. balkon kapısı, dükkân vitrini) **2000 mm** yükseklik ve zeminden **40 mm**.
+  Bunlar katalog varsayılanıdır (`scripts/openings/heights.py`, `context.json`a yazılmaz); `openings[].height` / `sill_height` verilirse o değer
+  geçer — ölçü ve düşey konum dinamiktir. Kullanılan varsayılan adıyla bildirilir (`python scripts/defaults_report.py`). Cetvel yükseklik/denizlik
+  sütunlarını taşır. **Varsayılan yatay konum:** pencere, ait olduğu odanın dış duvar boyunca uzanan **serbest aralığının ortasına** konur (iç
+  duvarların dış duvara bağlandığı yerler çıkarılır; iki oda arasında duvar yoksa pencere kendi odasının sınırında biter —
+  `scripts/openings/placement.py`). **İç duvarın dış cepheye bağlandığı yerde (iç duvar kalınlığı kadar bölge) pencere olmamalıdır:**
+  `validate.py` bunu UYARIR; mevcut pencereler için ortalanmış konum önerisi `python scripts/window_placement_report.py` (salt okunur).
 - **Pafta modülü (`scripts/pafta/`, rev-4'te ilk modül olarak kuruldu):**
   Pafta çerçevesi, başlık kutusu, tasma kontrolü ve kağıt boyutu planlaması
   ARTIK `scripts/generate_dxf.py`'de DEĞİL, kendi izole modülünde

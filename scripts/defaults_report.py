@@ -15,6 +15,7 @@ import openings  # noqa: E402
 
 DESCRIPTIONS = {
     "DEFAULT_WINDOW_HEIGHT_MM": "pencere yuksekligi (normal): {v} mm",
+    "DEFAULT_WINDOW_SILL_MM": "pencere denizligi (normal): zeminden {v} mm",
     "DEFAULT_TALL_WINDOW_HEIGHT_MM": "boy pencere yuksekligi: {v} mm",
     "DEFAULT_TALL_WINDOW_SILL_MM": "boy pencere denizligi: {v} mm",
 }
@@ -29,11 +30,8 @@ def main(argv=None) -> int:
         return 0
     print(f"Kullanilan katalog varsayilanlari ({openings.heights.DEFAULT_SOURCE}):")
     for name, n in used.items():
-        if name == "(denizlik verilmedi)":
-            print(f"  - {n} pencerede denizlik VERILMEDI (varsayilan yok, uydurulmaz; cephe/oran olcumu bu degere ihtiyac duyarsa durur ve sorar)")
-        else:
-            v = getattr(openings.heights, name)
-            print(f"  - {name} = {v:g}: {DESCRIPTIONS[name].format(v=f'{v:g}')} ({n} pencerede)")
+        v = getattr(openings.heights, name)
+        print(f"  - {name} = {v:g}: {DESCRIPTIONS[name].format(v=f'{v:g}')} ({n} pencerede)")
     return 0
 
 

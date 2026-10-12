@@ -28,7 +28,6 @@ LEGEND_TEXT_LAYER = "METIN"
 COLUMNS = ("MARKA", "TIP", "VARYANT", "GENISLIK (cm)", "YUKSEKLIK (cm)", "DENIZLIK (cm)", "ADET")
 COLUMN_WEIGHTS = (0.14, 0.18, 0.20, 0.14, 0.14, 0.12, 0.08)   # toplam 1.00 (DEV-072: yukseklik + denizlik sutunlari)
 NO_HEIGHT_TEXT = "-"              # kapi/asansor/gecit: yukseklik cetvelde yok
-UNKNOWN_SILL_TEXT = "VERILMEDI"   # normal pencere: denizlik verilmedi (uydurulmaz)
 
 # Modelspace VARSAYILANLARI: modul tek basina/selftest icinde kullanildiginda
 # gecerlidir. Gercek uretimde `generate_dxf.py`, kapak blogunun KENDI
@@ -62,7 +61,7 @@ class ScheduleRow:
     width_cm: int
     count: int
     height_text: str = NO_HEIGHT_TEXT      # DEV-072: pencere icin cm metni (varsayilan ya da verilen deger)
-    sill_text: str = NO_HEIGHT_TEXT        # pencere: cm metni ya da 'VERILMEDI'
+    sill_text: str = NO_HEIGHT_TEXT        # pencere: cm metni
 
     def values(self) -> tuple[str, ...]:
         """Cetvel hucre metinleri (COLUMNS sirasiyla) - DXF ve onizleme AYNI kaynaktan okur."""
@@ -105,7 +104,7 @@ class OpeningLegend:
         result = []
         for mark, tl, vl, w, c, h, sl in base:
             if seen[mark] > 1:
-                mark = f"{mark}-{h}" + (f"-{sl}" if sl not in (NO_HEIGHT_TEXT, UNKNOWN_SILL_TEXT) else "")
+                mark = f"{mark}-{h}" + (f"-{sl}" if sl != NO_HEIGHT_TEXT else "")
             result.append(ScheduleRow(mark=mark, type_label=tl, variant_label=vl, width_cm=w, count=c, height_text=h, sill_text=sl))
         marks = [r.mark for r in result]
         if len(set(marks)) != len(marks):      # son savunma: sessizce ayni markayi iki satirda birakma
@@ -127,7 +126,7 @@ def _height_key(data: dict) -> tuple[str, str, str]:
     except ImportError:
         from openings.heights import resolve_window_heights
     r = resolve_window_heights(data)
-    return (r.window_class, _cm_text(r.height), UNKNOWN_SILL_TEXT if r.sill is None else _cm_text(r.sill))
+    return (r.window_class, _cm_text(r.height), _cm_text(r.sill))
 
 
 def _center_text(msp, text: str, cx: float, cy: float, height: float):

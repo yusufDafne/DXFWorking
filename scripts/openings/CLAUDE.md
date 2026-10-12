@@ -172,14 +172,24 @@ ve `scripts/version.py::SCHEMA_VERSION` 1.1.0 oldu (kullanıcı kararı).
 
 Kullanıcı kararı (2026-10-12): varsayılan pencere yüksekliği **1200 mm**; **boy pencere** (örn. balkon kapısı) varsayılan yüksekliği **2000 mm**, zeminden **40 mm**.
 Bunlar VARSAYILANDIR: `openings[].height` / `openings[].sill_height` verilirse o değer geçer (ölçü ve düşey konum dinamiktir; yatay konum zaten `position_from_start`).
-Normal pencerenin denizliği **VERİLMEDİ** ve uydurulmaz — `ResolvedHeights.sill` `None`, kaynak `verilmedi`; hiçbir yerde 0 sayılmaz (kat yüksekliği kontrolü yalnız yüksekliği karşılaştırır,
-cetvel `VERILMEDI` yazar, cephe türetimi `DEV-073` bu değere kadar bekler).
+Normal pencerenin denizliği DEV-072'de "verilmedi" idi; **DEV-075'te kullanıcı 900 mm verdi** (`DEFAULT_WINDOW_SILL_MM`, "kullanıcı kararı 2026-10-12") — `ResolvedHeights.sill` artık her zaman bir sayıdır.
 Boy pencere `type: window` üzerinde opsiyonel `window_class: "tall"` ile işaretlenir (yeni `type` AÇILMADI: `type == "window"` dallanan 6 yer var). Balkon KAPISI `type: door` olarak kalır (kapı yüksekliği bu maddenin konusu değil).
 Sabitler katalogdadır (`DEFAULT_WINDOW_HEIGHT_MM`, `DEFAULT_TALL_WINDOW_HEIGHT_MM`, `DEFAULT_TALL_WINDOW_SILL_MM`), `context.json`a yazılmaz; kullanılan varsayılan ADIYLA bildirilir:
 `python scripts/defaults_report.py` (`defaults_used`). `validate.py`: `check_window_class_errors` (HATA: `window_class`/`sill_height` yalnız pencerede, geçersiz sınıf) ve `check_window_heights`
 (UYARI: denizlik + yükseklik kat yüksekliğini aşarsa; kat yüksekliği `stairs[].floor_to_floor_mm`den, yoksa kontrol ATLANIR). Cetvel (`legend/`): YÜKSEKLİK ve DENİZLİK sütunları
-(`PB120` = boy pencere; aynı genişlikte farklı yükseklik/denizlik markaya eklenir, benzersizlik `ValueError` ile korunur). `CONTRACT_VERSION` 1.3 → 1.4. Test: `selftest.py::check_window_heights_dev072`
+(`PB120` = boy pencere; normal pencere satırı yükseklik 120 / denizlik 90; aynı genişlikte farklı yükseklik/denizlik markaya eklenir, benzersizlik `ValueError` ile korunur). `CONTRACT_VERSION` 1.3 → 1.4. Test: `selftest.py::check_window_heights_dev072`
 (elle değerler, 10 kasıtlı bozma yakalandı, biri `ValueError` koruması ile).
+
+## DEV-075: pencere yerleşimi (`placement.py`)
+
+Kullanıcı kararı (2026-10-12): **varsayılan konum = pencerenin odasının dış duvar boyunca serbest aralığının ortası**; duvarın dış cepheye çarptığı yerde pencere olmamalı.
+**Birleşim** = başka bir duvarın UCU bu duvarın üzerinde ve duvarlar paralel değil (`spatial.dist_point_segment ≤ SHARED_EDGE_TOLERANCE_MM`; eş doğrusal devam duvarı birleşim DEĞİL).
+**Birleşim bölgesi** = iç duvar kalınlığının yarısı iki yana. `free_spans` bölgeleri çıkarır (iç içe geçen bölgeler birleştirilir); `room_span` odanın duvarla örtüşen gövdesine kırpılır
+(iki oda arasında duvar yoksa — açık plan salon|mutfak — pencere kendi odasının sınırında biter). `default_window_position(host, room, walls, width)` aralık pencereden darsa `None` verir
+(konum UYDURULMAZ). `check_window_junctions(floor)` → `validate.py` UYARISI (temas ve 1 mm'ye kadar örtüşme uyarı değildir; yeni sayı yok). `placement_suggestions(floor)` ve
+`python scripts/window_placement_report.py [--min-delta MM]` mevcut pencereler için ortalanmış konum ÖNERİR (salt okunur; uygulamak bir REVİZYONDUR; aynı odada/duvarda birden çok pencere varsa öneri tek pencere varsayar).
+Rev-28'de 76 pencerenin 0'ı birleşime düşer (`validate` çıktısı değişmedi); önerilerde 10'a yakını 100 mm'den fazla sapar (örn. zemin kat dükkân vitrinleri ~3 m). `CONTRACT_VERSION` 1.4 → 1.5.
+Test: `selftest.py::check_window_placement_dev075` (elle hesaplanan birleşim/aralık/orta değerleri, sınırlar, açık plan, iç içe bölgeler; 10 kasıtlı bozma yakalandı).
 
 ## Kabul
 

@@ -107,7 +107,7 @@ from architect import (  # noqa: E402
 )
 from northarrow import check_north_convention  # noqa: E402
 from openings import (check_elevator_door_insets, check_opening_nuances, check_window_class_errors,  # noqa: E402
-                      check_window_heights)
+                      check_window_heights, check_window_junctions)
 from walls import Wall, WallCatalog, check_wall_thickness, gaps_for_wall  # noqa: E402
 
 AREA_TOLERANCE_RATIO = 0.03  # oda alani vs poligon alani icin tolerans
@@ -651,6 +651,7 @@ def run_validation(context_path: Path = DEFAULT_CONTEXT_PATH) -> bool:
             )
         ]
         standards_warnings += [f"[{floor['id']}] " + w for w in check_window_heights(floor)]     # DEV-072
+        standards_warnings += [f"[{floor['id']}] " + w for w in check_window_junctions(floor)]   # DEV-075
 
     for elevation in context["elevations"]:
         all_errors += check_elevation(elevation)

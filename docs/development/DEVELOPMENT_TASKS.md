@@ -72,8 +72,9 @@ Tamamlanan işlerin ayrıntılı gerekçesi, karar süreci ve ölçülen etkisi
 | DEV-068 | `impact/` — revizyon etki analizi (minimal patch planlama; Faz 6) | COMPLETED (2026-10-12) |
 | DEV-067 | Tüm modüller — her modülün muhakeme katkısı (`reasoning.py` veya gerekçeli muafiyet; Faz 5) | COMPLETED (2026-10-12) |
 | DEV-072 | `openings/` — pencere yüksekliği + denizlik (katalog varsayılanı, kullanıcı geçersiz kılar) | COMPLETED (2026-10-12) |
-| DEV-073 | `elevations/` — cepheyi plan açıklıklarından türet | **BLOCKED** — normal pencere denizliği değeri (kullanıcıdan) |
+| DEV-073 | `elevations/` — cepheyi plan açıklıklarından türet | PLANNED |
 | DEV-074 | Kuzey sözleşmesi — kuzeye en yakın cephe üstte, `meta.north_angle` ∈ [−45°, +45°] | COMPLETED (2026-10-12) |
+| DEV-075 | `openings/` — normal pencere varsayılan denizliği 900 mm + pencere varsayılan konumu (iç duvarlar arasında ortala) + duvar birleşiminde pencere uyarısı | IN_PROGRESS |
 | DEV-071 | `docs/development/reviews/` — soğuk başlangıç sınavı (reviewer; `DEV-070` ayrılan parça, önkoşulsuz) | PLANNED |
 
 ## READY
@@ -728,6 +729,16 @@ belirleyeceksin ... her birini sıralama olarak birbirine bağla"):**
 - **Durum:** COMPLETED (2026-10-09) — kullanıcı onayıyla (dört netleştirme kararı) uygulandı. Ayrıntılı kayıt: `HD-045`.
 - **Özet:** `KNOWLEDGE_ENGINEER_AGENT.md` + `AGENT_PERMISSIONS.json` (`knowledge_engineering`, reviews/ yalnız reviewer) + reviewer "Sistem sınavı"; sınav `DEV-071`e ayrıldı (PLANNED).
 
+### DEV-075 — `openings/` — varsayılan denizlik 900 mm + pencere yerleşimi (iç duvarlara göre ortalama)
+
+- **Durum:** PLANNED
+- **Kullanıcı talebi (2026-10-12):** *"pencerenin zeminden başlangıç default yüksekliğini 90 cm yap. Pencerelerin default konumunu iç duvarlara göre ortala; yani duvarın dış cepheye çarptığı yerde pencere olmamalı, sistem buna dikkat etmeli."*
+- **Kullanıcı kararları:** (1) normal pencere varsayılan denizliği **900 mm** (`DEFAULT_WINDOW_SILL_MM`, "kullanıcı kararı 2026-10-12"); `verilmedi` durumu kalkar, boy pencere 40 mm kalır, kullanıcı değeri yine varsayılanı ezer; (2) varsayılan konum = pencerenin ait olduğu odanın dış duvar boyunca uzanan **serbest aralığının** (iç duvarların bağlandığı yerler çıkarıldıktan sonra) ortası; (3) iç duvarın dış duvara bağlandığı yere (iç duvar kalınlığı kadar bölge) düşen pencere UYARI (mimari sağduyu kuralı, üretimi durdurmaz).
+- **Kapsam:** `openings/heights.py` (denizlik 900), `openings/placement.py` (`host_junctions`, `free_spans`, `room_span`, `default_window_position`, `check_window_junctions`, `placement_suggestions`), `validate.py` kancası (UYARI), `scripts/window_placement_report.py` (salt okunur: mevcut pencerelerin ortalanmış konum önerisi), cetvel/operatör/kök `CLAUDE.md` güncellemesi.
+- **Kabul ölçütü:** elle hesaplanan serbest aralıklar ve ortalar; birleşim bölgesi sınırı (temas = uyarı yok, 1 mm içeri = uyarı); kasıtlı bozmalar; gerçek projede (76 pencere) birleşim uyarısı 0 ⇒ `validate` çıktısı DEĞİŞMEZ; golden temiz.
+- **Önkoşul:** `DEV-072`.
+- **Uygulama sonucu (2026-10-12, kabul bekliyor):** `DEFAULT_WINDOW_SILL_MM = 900` (normal pencere; `verilmedi` durumu kalktı, boy pencere 40 mm kaldı); `openings/placement.py` (`host_junctions`, `free_spans`, `room_span`, `default_window_position`, `check_window_junctions`, `placement_suggestions`) + `validate.py` UYARISI + `scripts/window_placement_report.py`; cetvel/operatör/kök `CLAUDE.md` güncellendi. **Kanıt:** elle hesaplanan birleşim/serbest aralık/orta değerleri (birleşim bölgeleri ±yarım kalınlık, iç içe geçen bölgeler birleşir, açık planda oda sınırına kırpma), temas/1 mm/2 mm sınırları, 10 kasıtlı bozma yakalandı (biri ilk turda sızdı, iç içe bölge testiyle kapatıldı); rev-28'de 76 pencerenin 0'ı birleşime düşer ⇒ `validate` çıktısı DEĞİŞMEDİ; golden değişmedi (yalnız metin içeriği: `VERILMEDI` → `90`, varlık sayısı aynı). **Kullanıcıya:** (1) `window_placement_report.py --min-delta 100`: 10 pencere 100 mm'den fazla sapıyor (zemin kat dükkân vitrinleri yaklaşık 3 m, `uB_win_salon_b` 1,7 m, `uB_win_salon_k` 0,6 m, `uB_win_mutfak` 0,5 m …) — yeniden konumlama rev-29'da sizin onayınızla; (2) birden çok pencereli oda/duvarda öneri tek pencere varsayar.
+
 ### DEV-071 — `docs/development/reviews/` — soğuk başlangıç sınavı (reviewer)
 
 - **Durum:** PLANNED
@@ -738,7 +749,7 @@ belirleyeceksin ... her birini sıralama olarak birbirine bağla"):**
 
 ### DEV-073 — `elevations/` — cepheyi plan açıklıklarından türet
 
-- **Durum:** BLOCKED — normal pencere denizliği değeri bekleniyor (kullanıcıdan); değer gelmeden cephe çizimi pencerenin düşey konumunu bilemez ve uydurmaz.
+- **Durum:** PLANNED — engel kalktı (kullanıcı 2026-10-12: normal pencere varsayılan denizliği 900 mm, `DEV-075`).
 - **Kullanıcı kararı (2026-10-12):** cephe görünüşleri plandaki pencerelerden türetilsin (genişlik, yükseklik, denizlik, konum aynı).
 - **Kapsam taslağı:** `spatial.facade_normal` ile pencere→cephe, `LevelStack` ile düşey yerleşim; cephe DXF'i ve golden referanslar **bilinçli olarak değişir** (fark raporu zorunlu); `window_count`/`window_size` genel istifi geri çekilir ya da yedek olarak kalır (açık karar).
 - **Önkoşul:** `DEV-072`; kullanıcıdan normal pencere denizliği.

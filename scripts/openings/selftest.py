@@ -424,7 +424,7 @@ def check_window_heights_dev072() -> list[str]:
     win = {"id": "w1", "type": "window"}
     r = h.resolve_window_heights(win)
     eq("normal pencere yukseklik", (r.height, r.height_source), (1200.0, "varsayilan:DEFAULT_WINDOW_HEIGHT_MM"))
-    eq("normal pencere denizlik (verilmedi, 0 DEGIL)", (r.sill, r.sill_source), (None, "verilmedi"))
+    eq("normal pencere denizlik (varsayilan 900)", (r.sill, r.sill_source), (900.0, "varsayilan:DEFAULT_WINDOW_SILL_MM"))
     r = h.resolve_window_heights({**win, "window_class": "tall"})
     eq("boy pencere", (r.height, r.sill), (2000.0, 40.0))
     eq("boy pencere kaynaklar", (r.height_source, r.sill_source),
@@ -445,7 +445,7 @@ def check_window_heights_dev072() -> list[str]:
     ctx = {"floors": [{"id": "f", "openings": [win, {"id": "w2", "type": "window", "window_class": "tall"},
                                                   {"id": "d", "type": "door"}, {"id": "w3", "type": "window", "height": 1000, "sill_height": 900}]}]}
     eq("defaults_used", h.defaults_used(ctx),
-       {"(denizlik verilmedi)": 1, "DEFAULT_TALL_WINDOW_HEIGHT_MM": 1, "DEFAULT_TALL_WINDOW_SILL_MM": 1, "DEFAULT_WINDOW_HEIGHT_MM": 1})
+       {"DEFAULT_WINDOW_SILL_MM": 1, "DEFAULT_TALL_WINDOW_HEIGHT_MM": 1, "DEFAULT_TALL_WINDOW_SILL_MM": 1, "DEFAULT_WINDOW_HEIGHT_MM": 1})
     eq("kapi sayilmaz, verilen deger varsayilan sayilmaz", h.defaults_used({"floors": [{"openings": [{"id": "d", "type": "door"},
        {"id": "x", "type": "window", "height": 1000, "sill_height": 900}]}]}), {})
 
@@ -454,8 +454,8 @@ def check_window_heights_dev072() -> list[str]:
     eq("tam sinir (1200+1800=3000) uyari yok", h.check_window_heights(fl([{**win, "sill_height": 1800}])), [])
     eq("1 mm fazla uyari", len(h.check_window_heights(fl([{**win, "sill_height": 1801}]))), 1)
     eq("kat yuksekligi yoksa atlanir", h.check_window_heights(fl([{**win, "sill_height": 9000}], stairs=False)), [])
-    eq("denizligi bilinmeyen pencere: denizlik 0 SAYILMAZ, yalniz yukseklik", h.check_window_heights(fl([{**win, "height": 3000}])), [])
-    eq("denizligi bilinmeyen pencere yukseklik tek basina asarsa uyari", len(h.check_window_heights(fl([{**win, "height": 3001}]))), 1)
+    eq("varsayilan denizlik (900) toplama girer: 2100+900 = 3000 uyari yok", h.check_window_heights(fl([{**win, "height": 2100}])), [])
+    eq("2101+900 = 3001 uyari", len(h.check_window_heights(fl([{**win, "height": 2101}]))), 1)
     eq("kapi atlanir", h.check_window_heights(fl([{"id": "d", "type": "door", "height": 9000}])), [])
     eq("boy pencere varsayilani 2040 < 3000", h.check_window_heights(fl([{**win, "window_class": "tall"}])), [])
     # validate HATALARI
@@ -476,13 +476,73 @@ def check_window_heights_dev072() -> list[str]:
     eq("marka benzersiz", len({r.mark for r in rows}), len(rows))
     eq("tum satirlar sutun sayisinda", {len(r.values()) for r in rows}, {len(COLUMNS)})
     eq("boy pencere satiri", vals.get("PB120"), ("PB120", "PENCERE", "-", "120", "200", "4", "1"))
-    eq("normal pencere satiri (denizlik VERILMEDI)", [v for k, v in vals.items() if k.startswith("P120")][0][4:6], ("120", "VERILMEDI"))
+    eq("normal pencere satiri (denizlik 90)", [v for k, v in vals.items() if k.startswith("P120")][0][4:6], ("120", "90"))
     eq("kapi satiri yukseklik '-'", vals.get("K090")[4:6], ("-", "-"))
+    return errors
+
+
+def check_window_placement_dev075() -> list[str]:
+    """DEV-075: ic duvar birlesimleri, serbest aralik, ortalanmis konum, birlesim uyarisi. Degerler ELLE hesaplanir."""
+    from openings import placement as pl
+    errors: list[str] = []
+
+    def eq(label, got, want):
+        if got != want:
+            errors.append(f"{label}: {got!r} != {want!r}")
+
+    wall = lambda i, a, b, t: {"id": i, "start": list(a), "end": list(b), "thickness": t}  # noqa: E731
+    host = wall("host", (0, 0), (10000, 0), 200.0)
+    walls = [host, wall("sol", (0, 4000), (0, 0), 200.0), wall("sag", (10000, 0), (10000, 4000), 200.0),
+             wall("p1", (3000, 0), (3000, 4000), 150.0), wall("p2", (7000, 0), (7000, 4000), 100.0),
+             wall("dev", (10000, 0), (15000, 0), 200.0)]                       # es dogrusal devam: birlesim DEGIL
+    rect = lambda i, x0, x1: {"id": i, "polygon": [[x0, 0], [x1, 0], [x1, 4000], [x0, 4000]]}  # noqa: E731
+    rooms = [rect("R1", 0, 3000), rect("R2", 3000, 7000), rect("R3", 7000, 10000)]
+
+    eq("birlesimler (es dogrusal devam sayilmaz)", [(t, th, w) for t, th, w in pl.host_junctions(host, walls)],
+       [(0.0, 200.0, "sol"), (3000.0, 150.0, "p1"), (7000.0, 100.0, "p2"), (10000.0, 200.0, "sag")])
+    eq("serbest araliklar", pl.free_spans(host, walls), [(100.0, 2925.0), (3075.0, 6950.0), (7050.0, 9900.0)])
+    eq("R2 serbest araligi", pl.room_span(host, rooms[1], walls), (3075.0, 6950.0))
+    eq("R2 ortalanmis konum (1800 genislik)", pl.default_window_position(host, rooms[1], walls, 1800.0), 5012.5)
+    eq("R1 ortalanmis konum", pl.default_window_position(host, rooms[0], walls, 1200.0), 1512.5)
+    eq("R3 ortalanmis konum", pl.default_window_position(host, rooms[2], walls, 1200.0), 8475.0)
+    eq("sigmayan pencere (3876 > 3875 aralik) konum UYDURULMAZ", pl.default_window_position(host, rooms[1], walls, 3876.0), None)
+    eq("sigan en genis (3875)", pl.default_window_position(host, rooms[1], walls, 3875.0), 5012.5)
+    eq("duvarla ortusmeyen oda", pl.room_span(host, {"id": "X", "polygon": [[0, 1000], [3000, 1000], [3000, 4000], [0, 4000]]}, walls), None)
+    nest = [host, wall("sol", (0, 4000), (0, 0), 200.0), wall("sag", (10000, 0), (10000, 4000), 200.0),
+            wall("kalin", (5000, 0), (5000, 4000), 400.0), wall("ince", (5100, 0), (5100, 4000), 100.0)]
+    eq("ic ice gecen birlesim bolgeleri: serbest aralik buyuk bolgenin ucundan baslar", pl.free_spans(host, nest),
+       [(100.0, 4800.0), (5200.0, 9900.0)])
+    # acik plan: p1 yok -> serbest aralik iki odayi kapsar ama pencere KENDI odasinin sinirinda biter
+    walls_open = [w for w in walls if w["id"] != "p1"]
+    eq("acik planda R1 sinira kirpilir", pl.room_span(host, rooms[0], walls_open), (100.0, 3000.0))
+    eq("acik planda R2 sinira kirpilir", pl.room_span(host, rooms[1], walls_open), (3000.0, 6950.0))
+
+    fl = lambda pos, w: {"walls": walls, "rooms": rooms, "openings": [{"id": "pn", "type": "window", "wall_id": "host",  # noqa: E731
+                                                                         "position_from_start": pos, "width": w}]}
+    eq("ortalanmis pencere uyari yok", pl.check_window_junctions(fl(5012.5, 1800.0)), [])
+    eq("p1 birlesimine dusen pencere UYARI", len(pl.check_window_junctions(fl(3000.0, 1200.0))), 1)
+    eq("tam temas (alt sinir 3075) uyari yok", pl.check_window_junctions(fl(3975.0, 1800.0)), [])
+    eq("1 mm ortusme (esik) uyari yok", pl.check_window_junctions(fl(3974.0, 1800.0)), [])
+    eq("2 mm ortusme uyari", len(pl.check_window_junctions(fl(3973.0, 1800.0))), 1)
+    eq("iki birlesimi birden kaplayan pencere iki uyari", len(pl.check_window_junctions(fl(5000.0, 4600.0))), 2)
+    eq("kapi atlanir", pl.check_window_junctions({"walls": walls, "rooms": rooms, "openings": [
+        {"id": "d", "type": "door", "wall_id": "host", "position_from_start": 3000.0, "width": 900.0}]}), [])
+    eq("olmayan duvar atlanir", pl.check_window_junctions({"walls": walls, "rooms": rooms, "openings": [
+        {"id": "w", "type": "window", "wall_id": "yok", "position_from_start": 3000.0, "width": 900.0}]}), [])
+
+    sug = pl.placement_suggestions(fl(3000.0, 1200.0))
+    eq("oneri: pencere iki oda siniri; ait oldugu oda secilir", [(s["window"], s["room"] is not None) for s in sug], [("pn", True)])
+    two = {"walls": walls, "rooms": rooms, "openings": [
+        {"id": "a", "type": "window", "wall_id": "host", "position_from_start": 4500.0, "width": 800.0},
+        {"id": "b", "type": "window", "wall_id": "host", "position_from_start": 6000.0, "width": 800.0}]}
+    eq("ayni odada iki pencere: shared=2", sorted(s["shared"] for s in pl.placement_suggestions(two)), [2, 2])
+    eq("oneri delta = onerilen - mevcut", [round(s["delta"], 3) for s in pl.placement_suggestions(fl(5000.0, 1800.0))], [12.5])
     return errors
 
 
 def main() -> int:
     groups = (
+        ("pencere yerlesimi: serbest aralik, ortalama, birlesim uyarisi (DEV-075)", check_window_placement_dev075()),
         ("pencere yuksekligi/denizlik + cetvel (DEV-072)", check_window_heights_dev072()),
         ("asansor kapisi: 3 tur, varsayilan surme, 250mm pay (DEV-055)", check_elevator_doors_dev055()),
         ("kanat boyunca duvar yakinligi (DEV-057 Grup A)", check_leaf_clearance_along_dev057()),

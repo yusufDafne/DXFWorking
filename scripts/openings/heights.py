@@ -1,8 +1,8 @@
 """Pencere yuksekligi ve denizlik (DEV-072).
 
-Kullanici karari (2026-10-12): varsayilan pencere yuksekligi 1200 mm; BOY pencere (ornegin balkon kapisi) yuksekligi 2000 mm ve
-zeminden 40 mm baslar. Bunlar VARSAYILANDIR: kullanici `openings[].height` / `openings[].sill_height` verirse o deger gecerlidir
-(olcu ve konum dinamik). Normal pencerenin denizligi VERILMEDI: hicbir yerde varsayilan/0 olarak kullanilmaz ("verilmedi").
+Kullanici karari (2026-10-12): varsayilan pencere yuksekligi 1200 mm ve zeminden 900 mm baslar (DEV-075; once "verilmedi" idi); BOY pencere
+(ornegin balkon kapisi / dukkan vitrini) yuksekligi 2000 mm ve zeminden 40 mm baslar. Bunlar VARSAYILANDIR: kullanici
+`openings[].height` / `openings[].sill_height` verirse o deger gecerlidir (olcu ve dusey konum dinamik).
 
 Katalog sabitleri `context.json`a yazilmaz (cizim sabiti sizmaz); kaynaklari buradadir. Kullanilan her varsayilan ADIYLA bildirilir
 (`defaults_used`, `scripts/defaults_report.py`) - sessiz varsayilan yoktur (DEV-069 ilkesi).
@@ -12,6 +12,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 DEFAULT_WINDOW_HEIGHT_MM = 1200.0          # kullanici karari 2026-10-12
+DEFAULT_WINDOW_SILL_MM = 900.0             # kullanici karari 2026-10-12 (DEV-075: zeminden 90 cm)
 DEFAULT_TALL_WINDOW_HEIGHT_MM = 2000.0     # kullanici karari 2026-10-12 (boy pencere / balkon kapisi)
 DEFAULT_TALL_WINDOW_SILL_MM = 40.0         # kullanici karari 2026-10-12 (zeminden 4 cm)
 DEFAULT_SOURCE = "kullanici karari 2026-10-12"
@@ -21,16 +22,14 @@ CLASS_TALL = "tall"
 WINDOW_CLASSES = (CLASS_STANDARD, CLASS_TALL)
 
 SRC_GIVEN = "verilen"
-SRC_UNKNOWN = "verilmedi"
 
 
 @dataclass(frozen=True)
 class ResolvedHeights:
-    """`height` her zaman bir sayidir (verilen ya da katalog varsayilani); `sill` verilmediyse None. Kaynak etiketleri:
-    'verilen' | 'varsayilan:<SABIT_ADI>' | 'verilmedi'."""
+    """`height` ve `sill` her zaman sayidir (verilen ya da katalog varsayilani). Kaynak etiketleri: 'verilen' | 'varsayilan:<SABIT_ADI>'."""
     window_class: str
     height: float
-    sill: float | None
+    sill: float
     height_source: str
     sill_source: str
 
@@ -55,12 +54,12 @@ def resolve_window_heights(opening: dict) -> ResolvedHeights:
     elif cls == CLASS_TALL:
         sill, ssrc = DEFAULT_TALL_WINDOW_SILL_MM, "varsayilan:DEFAULT_TALL_WINDOW_SILL_MM"
     else:
-        sill, ssrc = None, SRC_UNKNOWN          # kullanici normal pencere denizligini VERMEDI: uydurulmaz
+        sill, ssrc = DEFAULT_WINDOW_SILL_MM, "varsayilan:DEFAULT_WINDOW_SILL_MM"
     return ResolvedHeights(cls, height, sill, hsrc, ssrc)
 
 
 def defaults_used(context: dict) -> dict[str, int]:
-    """{varsayilan sabit adi: kac pencerede kullanildi} + 'denizlik verilmedi' sayaci (normal pencere). Salt okunur."""
+    """{varsayilan sabit adi: kac pencerede kullanildi}. Salt okunur."""
     out: dict[str, int] = {}
     for fl in context.get("floors", []):
         for op in fl.get("openings", []):
@@ -70,11 +69,7 @@ def defaults_used(context: dict) -> dict[str, int]:
             for src in (r.height_source, r.sill_source):
                 if src.startswith("varsayilan:"):
                     name = src.split(":", 1)[1]
-                elif src == SRC_UNKNOWN:
-                    name = "(denizlik verilmedi)"
-                else:
-                    continue
-                out[name] = out.get(name, 0) + 1
+                    out[name] = out.get(name, 0) + 1
     return dict(sorted(out.items()))
 
 
@@ -85,8 +80,7 @@ def floor_height_of(floor: dict) -> float | None:
 
 
 def check_window_heights(floor: dict) -> list[str]:
-    """validate.py UYARILARI: denizlik + yukseklik kat yuksekligini asarsa (kat yuksekligi verisi varsa). Denizligi bilinmeyen pencere
-    icin denizlik 0 alinmaz: yalniz yukseklik kat yuksekligiyle karsilastirilir. Kat yuksekligi verisi yoksa kontrol atlanir."""
+    """validate.py UYARILARI: denizlik + yukseklik kat yuksekligini asarsa (kat yuksekligi verisi varsa). Kat yuksekligi verisi yoksa kontrol atlanir."""
     limit = floor_height_of(floor)
     out: list[str] = []
     for op in floor.get("openings", []):
@@ -99,7 +93,7 @@ def check_window_heights(floor: dict) -> list[str]:
             continue
         if limit is None:
             continue
-        top = r.height + (r.sill if r.sill is not None else 0.0)
+        top = r.height + r.sill
         if top > limit:
             out.append(f"Pencere '{op['id']}': denizlik + yukseklik {top:.0f} mm kat yuksekligini ({limit:.0f} mm) asiyor.")
     return out
