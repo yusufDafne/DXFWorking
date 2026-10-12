@@ -59,6 +59,49 @@ uygulamak için `docs/development/`e erişmen GEREKMEZ: sözleşmenin tamamı `p
 - Yeni bir ilke keşfedersen (kullanıcı bir defekt gösterdi ya da kendin buldun) merkezi dokümana yazmazsın (yetkin yok);
   kullanıcıya bildir — kayıt sistem geliştirme oturumunda **vaka → ilke → veçhe** olarak yapılır.
 
+## İhtiyaç toplama (DEV-069 v0 — yalnız diyalog, şemasız)
+
+Kullanıcı mimar olmayabilir: sistem bugün **çözüm** talebini işler ("banyoyu şuraya koy"), **ihtiyaç** ("dört kişilik aile, evden
+çalışıyorum") kayıtlı değildir. Bu bölüm, ilk üretimden önce (ya da kullanıcı "hayalimdeki evi çizin" dediğinde) ihtiyacı sade
+dille toplama sözleşmesidir. **Yeni bir şema alanı, kod ya da `requests.jsonl` satırı YOKTUR** (v1 üst seviye opsiyonel `brief`
+alanı ancak bu akış en az bir gerçek konuşmada koşulduktan sonra, sistem geliştirme oturumunda eklenir).
+
+**Kurallar (kullanıcı kararı, 2026-10-12):**
+1. **Hiçbir soru zorunlu değildir.** "Bilmiyorum" ve "sen karar ver" geçerli yanıttır; ısrar edilmez, soru tekrar sorulmaz.
+2. **Varsayılan sessiz geçilmez.** Yanıtsız kalan her soruda kullanılan varsayılan **adıyla** bildirilir ("kat yüksekliği için
+   sistemin merdiven standardını (rıht/basamak) kullandım"). Varsayılan YALNIZ kaynaklı bir katalog/modül sabiti olabilir
+   (aşağıdaki tablonun "Varsayılan" sütunu); ölçü ya da değer uydurulmaz.
+3. **Varsayılanı olmayan değerde üretim durur ve sorar** (kök `CLAUDE.md` "Belirsizlikte durma"). "Sen karar ver" denmişse bile
+   kaynaklı varsayılan yoksa sayı üretilmez; operatör kullanıcıya somut seçenekleri (en çok 3) ve bedellerini sunar.
+4. **Kayıt:** kullanıcının ihtiyaç cümleleri **yeni `requests.jsonl` satırı açılmadan**, onları işleyen ilk revizyonun `request`
+   metnine **olduğu gibi** girer (rev sayacı commit ile 1:1). Yorum eklenmez, sayıya çevrilmez; çevrilen her şey `context.json`
+   patch'i ve `rev_history` ile ayrıca izlenir.
+5. **Dil:** kültürel/biçimsel varsayım içermeyen sorular ("kaç kişi yaşayacak?", "ev dışında çalışma/ders için ayrı bir oda
+   ister misiniz?"); "aile", "çocuk odası" gibi kalıp varsayma. Yalnız kullanıcının söylediği alınır.
+6. Bu bir **etüt değil sorudur:** yanıtlar bir bulguya dönüştürülmez, kullanıcıya hüküm verilmez; ihtiyaç ile karar arasındaki bağ
+   gerekçe metnindedir (`decide --reason`, `dialogue.jsonl`).
+
+**Soru kataloğu** (sorular sade dilde sorulur; sütunlar operatör içindir):
+
+| Konu | Soru (örnek) | Nereye bağlanır | Varsayılan (kaynaklı) | Varsayılan yoksa |
+|---|---|---|---|---|
+| Birim programı | Kaç bağımsız bölüm, her biri kaç odalı? | `architect/layout.py::study_floor(program=...)` | YOK (`CURRENT_PROJECT_PROGRAM` yalnız örnektir, başka projeye uygulanmaz) | üretim durur, sorulur |
+| Kat ölçüsü | Kat dış ölçüsü / arsa sınırı? | `meta.floor_width`, `meta.floor_depth` | YOK | üretim durur, sorulur |
+| Kat sayısı ve yüksekliği | Kaç kat, bodrum var mı? | `floors[]`, `elevations[].levels[]` | YOK (kat yüksekliği `stairs` hesabı için veridir, uydurulmaz) | üretim durur, sorulur |
+| Merdiven | — (kullanıcıya sorulmaz, ölçü katalogdur) | `stairs/`: rıht, basamak, sahanlık, `auto_flex` | `DEFAULT_RISER_MM`, `DEFAULT_GOING_MM`, `DEFAULT_LANDING_DEPTH_MM`, `DEFAULT_AUTO_FLEX` | — |
+| Şaft | — (katalog) | `shafts/`: net kenar, duvar | `DEFAULT_NET_SIDE_MM`, `DEFAULT_WALL_MM` | — |
+| Merkezi çekirdek | — (katalog) | `architect/core_hall.py` | `DEFAULT_ELEVATOR_WIDTH`, `DEFAULT_STAIR_WIDTH`, `DEFAULT_CORE_DEPTH`, `DEFAULT_IDEAL_HALL_SHARE` | — |
+| Yön | Binanın hangi yönü kuzeye bakıyor, biliyor musunuz? | `meta.north_angle` (DEV-062 yönelim veçhesinin girdisi) | **YOK — yön uydurulmaz** | alan boş kalır; kuzey oku çizilmez; yönelim veçhesi "kuzey yönü verilmedi" diye KOŞAMADI olarak raporlanır |
+| Pencere yüksekliği | Pencere denizlik/başlık yüksekliği belli mi? | `openings[].height` (opsiyonel, şema 1.4.0) | YOK (katalog varsayılanıyla doldurulmaz) | alan boş; pencere/taban oranı veçhesi koşamaz, söylenir |
+| Hane (misafir, ev ofisi, erişilebilirlik, araç, evcil hayvan) | Evi kimler, nasıl kullanacak? | bugün **hiçbir alana bağlanmaz**; yalnız talep metninde kalır | — | "kaydettim, henüz bir ölçüme bağlı değil" denir (sessiz geçilmez, vaat de edilmez) |
+| Ölçek / proje tipi | Ruhsat mı, uygulama mı? | `meta.scale`, `meta.project_type` (`pafta/` mevzuat kontrolü) | ölçek 1:100 (kök `CLAUDE.md` ofis standardı) | tip yoksa mevzuat kontrolü atlanır, söylenir |
+
+**Akış:** (1) kullanıcının ilk cümlesinden anlaşılanı geri söyle; (2) yalnız eksik ve işe yarayacak konuları, tek mesajda en çok
+3 soruyla sor; (3) yanıtsızlara kaynaklı varsayılanı adıyla bildir, varsayılanı olmayan değerde dur ve sor; (4) kullanıcının
+cümlelerini ilk işleyen revizyonun request metnine aynen koy; (5) normal yaşam döngüsüne (patch → validate → …) geç.
+Yeni bir ihtiyaç türü (tabloda olmayan) çıkarsa uydurma bir alana bağlama; kullanıcıya "kaydedildi, bir ölçüme bağlı değil" de ve
+sistem geliştirme oturumuna bildir.
+
 ## Kabul ölçütü
 
 Proje dizini dışına yazılmaz, varsayım üretilmez, `validate.py` geçer, çıktı pafta taşma ve golden-output kontrollerini karşılar. Kullanıcı veya sistem mimarı kabulü olmadan çıktı final sayılmaz.

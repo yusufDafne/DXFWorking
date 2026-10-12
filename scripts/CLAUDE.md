@@ -338,7 +338,7 @@ Ortak desen (pafta + walls ile kanitlandi):
 | `reasoning/`  | `Lens`, `Facet`, `Finding`, `Registry`, `CheckAdapter`, `Thresholds`, `Provenance`, `build_coverage`, `parse_validate_output`, `diff_findings`, `group_across_floors`, `trigger_report`, `load_registry`, `validate_registry` | UYGULANDI (DEV-060, 2026-10-09); muhakeme cekirdegi - bilgi tasimaz; ilk mercek paketi `lenses/mahremiyet.py` (DEV-061); isik/yasanabilirlik paketleri (DEV-062/063) ve aciklama motoru (DEV-064) sonraki maddeler |
 | `testfit/`    | `Cluster`, `BEDROOM_CLUSTERS`, `FitResult`, `Placement`, `try_fit`, `best_cluster`, `net_room_polygon`, `verify_with_collision`, `bedroom_capacity`, `check_bedroom_single_bed_fits`, `check_bedroom_double_bed_wardrobe_fits` | UYGULANDI (DEV-063, 2026-10-12); deneme yerlestirme sinavi - furniture + collision tuketir, context'e yazmaz, v1 yalniz yatak odasi |
 | `impact/`     | (yok) | PLANLANAN (DEV-068): revizyon etki analizi - bir patchin etki alani ve minimal patch plani |
-| `brief/`      | (yok) | PLANLANAN (DEV-069): kullanici ihtiyac beyani ve mimari program toplama |
+| `brief/`      | (yok) | PLANLANAN (DEV-069): kullanici ihtiyac beyani ve mimari program toplama; v0 yalniz operator diyalogu (`docs/agents/PROJECT_OPERATOR_AGENT.md`), kod/sema v1'de |
 
 > Bu tablo `scripts/doc_check.py` tarafindan DENETLENIR: `UYGULANDI` isaretli bir
 > satirda anilan her sinif adi, o modulde gercekten tanimli olmalidir. Yalnizca

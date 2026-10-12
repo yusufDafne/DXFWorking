@@ -68,7 +68,7 @@ Tamamlanan işlerin ayrıntılı gerekçesi, karar süreci ve ölçülen etkisi
 | DEV-062 | `reasoning/` — ışık-hava-yönelim mercek paketi (Faz 3) | COMPLETED (2026-10-09) |
 | DEV-063 | `reasoning/`+`furniture/` — yaşanabilirlik mercek paketi + deneme yerleşimi (Faz 3) | COMPLETED (2026-10-12) |
 | DEV-066 | `reasoning/` — kalibrasyon, ayırt edicilik ve terfi (shadow→active) protokolü (Faz 4) | COMPLETED (2026-10-12) |
-| DEV-069 | `brief/` — kullanıcı ihtiyaç beyanı ve mimari program toplama (Faz 6) | PLANNED (sıra 10/12) |
+| DEV-069 | `brief/` — kullanıcı ihtiyaç beyanı ve mimari program toplama (Faz 6) | IN_PROGRESS (v0 docs) |
 | DEV-068 | `impact/` — revizyon etki analizi (minimal patch planlama; Faz 6) | PLANNED (sıra 11/12) |
 | DEV-067 | Tüm modüller — her modülün muhakeme katkısı (`reasoning.py` veya gerekçeli muafiyet; Faz 5) | PLANNED (sıra 12/12) |
 | DEV-071 | `docs/development/reviews/` — soğuk başlangıç sınavı (reviewer; `DEV-070` ayrılan parça, önkoşulsuz) | PLANNED |
@@ -722,7 +722,7 @@ belirleyeceksin ... her birini sıralama olarak birbirine bağla"):**
 
 ### DEV-069 — `brief/` — kullanıcı ihtiyaç beyanı ve mimari program toplama
 
-- **Durum:** PLANNED
+- **Durum:** IN_PROGRESS (v0: yalnız diyalog/doküman; v1 şema alanı sonra)
 - **Neden (plan çalışılırken KEŞFEDİLEN ek modül):** kullanıcı: *"mimar olmayan ama
   hayalindeki çizimi ortaya koymak isteyen kullanıcılar"* ve *"anahtar teslim proje."* Sistem
   bugün **çözüm** talebini işler ("banyoyu şuraya koy"); **ihtiyaç** ("dört kişilik aile,
@@ -731,11 +731,11 @@ belirleyeceksin ... her birini sıralama olarak birbirine bağla"):**
 - **Kapsam taslağı:** sade dille ihtiyaç toplama akışı (kişi sayısı, misafir sıklığı, ev ofisi,
   erişilebilirlik ihtiyacı, araç sayısı, evcil hayvan …) → yapılandırılmış **ihtiyaç beyanı**
   (opt-in üst seviye alan; kullanıcı beyanı = gerçek proje verisi, UYDURULMAZ) → mimari
-  program (`study.py` girdisi) ve profil seçimi; ihtiyaç → karar izlenebilirliği (`DEV-065`
+  program (iki düzey: oda `study.py`, birim `layout.py` girdisi) ve profil seçimi; ihtiyaç → karar izlenebilirliği (`DEV-065`
   ile ilişkili).
 - **Şema değişikliği → sistem mimarı kararı.** **Açık kararlar:** alan adı/yapısı; profille
   ilişki; zorunlu/opsiyonel sorular; kültürel varsayım içermeyen soru dili.
-- **Önkoşul:** `DEV-060`, `DEV-064` (diyalog dili); `DEV-056` (etüt) girdisi.
+- **Önkoşul:** sert önkoşul yok — `DEV-060`, `DEV-064` (diyalog dili) ve `DEV-056` (etüt) tamam; v1 şema alanı `DEV-065` ile aynı MINOR'da gruplanabilir.
 - **Sıra:** 10/12 — plan §10.1; geliştirici yorumu ve netleştirme soruları 2026-10-09 kod denetimine dayanır (iki bağımsız ajan; `DEV-070` yalnız bir denetim).
 - **Geliştirici yorumu:** Önce v0, şemasız: yalnız diyalog/dokümantasyon. Gerekçe: tüketicisi olan tek yol program düzeyi (`study_floor`: birim karışımı, hedef alan, kat sayısı); hane ihtiyaçları (misafir, ev ofisi) bugün hiçbir şeye bağlanmıyor. Kayıt kuralı: ihtiyaç cümleleri **yeni `requests.jsonl` satırı açmadan**, onları işleyen ilk revizyonun request metnine olduğu gibi girer (rev sayacı commit ile 1:1, kök CLAUDE.md Git §3). Sorular hepsi opsiyonel, 'bilmiyorum' ve 'sen karar ver' geçerli yanıt, hiçbiri üretimi bloklamaz. v1 şema alanı (üst seviye opsiyonel `brief`) ancak v0 en az bir gerçek konuşmada koşulduktan sonra eklenir. Giriş kataloğu mevcut alanları (`meta.north_angle` — `DEV-062` yönelim veçhesinin girdisi) kapsamalı. Bölme (a docs/diyalog, b `brief/` + şema, c profil+izlenebilirlik) yapılacaksa sayısal kimlikle.
 - **Netleştirme soruları** (her biri önerilen varsayılanla; kullanıcı tek tek onaylayınca madde `READY` olur):
@@ -745,6 +745,7 @@ belirleyeceksin ... her birini sıralama olarak birbirine bağla"):**
   4. v1 yeri: üst seviye opsiyonel `brief` (emsal: `sections`), v0 koştuktan sonra; plan §2.3-6 buna göre düzeltilir.
 - **Kullanıcı kararları (2026-10-09, netleştirme tamam; başlamak için kullanıcı onayı bekleniyor):** (1) diyalog program + hane ihtiyaçlarını konuşur, v1 yalnız program düzeyini yapılandırır — EVET; (2) v0: ihtiyaç cümleleri ilk işleyen revizyonun request metnine aynen — EVET; (3) soru politikası **kullanıcı sözleriyle:** 'birçok modülün default değeri var, hepsini opsiyonel yapabiliriz; efektif seçim yapılabilir ya da default değerlerle devam edilebilir' → HİÇBİR soru zorunlu değil (öneriden farklı: `DEV-056`nın 'birim programı ve kat ölçüsü bloklayıcı' ayrımı da kalkar); **uygulama notu:** kullanılan her varsayılan sessiz geçilmez, 'şu varsayılanla devam ettim' diye adıyla bildirilir ve yalnız kaynaklı katalog/modül varsayılanı olabilir (anayasa 3/5: sayı uydurma yok); modül varsayılanı bulunmayan bir değer varsa o noktada üretim yine durup sorar (kök CLAUDE.md 'belirsizlikte durma') — başlamadan önce kullanıcıyla teyit edilecek; (4) v1 üst seviye opsiyonel `brief`, v0 koştuktan sonra — EVET.
 - **Metin düzeltmeleri (onayla birlikte uygulanır):** Kabul ölçütü ve önkoşul satırı yazılır (sert önkoşul yok: `DEV-056` tamam; v1 şema alanı `DEV-065` ile aynı MINOR'da gruplanabilir); 'Program study.py girdisi' → iki program düzeyi (oda: `study.py`, birim: `layout.py`).
+- **Kabul ölçütü (v0):** `docs/agents/PROJECT_OPERATOR_AGENT.md` "İhtiyaç toplama" bölümü: her soru opsiyonel, kullanılan varsayılan adıyla bildirilir ve yalnız kaynaklı katalog/modül sabitidir, kaynaklı varsayılanı olmayan değerde (birim programı, kat ölçüsü, kat yüksekliği, kuzey yönü) üretim durup sorar ve yön UYDURULMAZ; ihtiyaç cümleleri yeni `requests.jsonl` satırı açmadan ilk işleyen revizyonun request metnine aynen girer; tablodaki her varsayılan sabit kodda gerçekten vardır (kontrol: grep); `doc_check` temiz. v1 (`brief` şema alanı) bu akış gerçek bir konuşmada koşulana dek AÇILMAZ.
 
 ### DEV-068 — `impact/` — revizyon etki analizi (minimal patch planlama)
 
