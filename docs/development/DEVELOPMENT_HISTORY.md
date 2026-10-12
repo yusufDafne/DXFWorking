@@ -4,6 +4,15 @@ Aktif geçmiş kapasitesi: **50 kayıt**. En eski tamamlanmış kayıt, 51. kay�
 alınırken silinir. Ayrıntılı teknik değişiklikler git geçmişi ve ilgili proje
 provenance kayıtlarıyla ilişkilendirilir.
 
+## HD-051 — Tüm modüller: muhakeme katkısı kapanışı (DEV-067)
+
+- **Durum:** COMPLETED
+- **Tamamlanma:** 2026-10-12
+- **Kapsam:** `scripts/reasoning/registry.py` (PENDING kaldırıldı, 23 gerekçeli muaf), `scripts/reasoning/{__init__,selftest,CLAUDE}.py/md`, `scripts/doc_check.py` (#10 iki durumlu, #10b, #10c), 20 modülün `CLAUDE.md`si (standart bölüm), `scripts/CLAUDE.md`, plan §8.
+- **Sonuç:** her modül ya sağlayıcı (architect, openings, shafts, testfit) ya da gerekçeli muaf; gerekçe `Dusunuldu, olcum/kural vermez:` ile başlar ve plan §9'daki sonraki veçhe adını yazar. Hiçbir modül yeni sağlayıcı yapılmadı (veçhe bilgisi uydurulmadı). Kullanıcı kararları: kapı #10 üç durumlu → bu maddeyle iki durumlu bloklayıcı; veçhe kaydı yalnız lens paketlerinde; muaf sözlüğü merkezi (`registry.py`); dalga 1 `061/062/063` içinde kapanmıştı.
+- **Doğrulama:** `reasoning/selftest.py` 38/38 (kapı #10 altı kasıtlı bozma, #10b/#10c; bir bozma ilk turda sızdı ve kapatıldı); tüm selftest'ler, `--golden-set`, `doc_check` temiz; `validate` çıktısı ve şema değişmedi.
+- **Golden etkisi:** yok. **Sınır:** `standards` kuralları veçhe olarak kayıtlı değil (gerekçede yazılı); muaf kararları kullanıcı tarafından değiştirilebilir. **Sonraki direktif:** genel kontrol.
+
 ## HD-050 — `impact/`: revizyon etki alanı raporu (DEV-068)
 
 - **Durum:** COMPLETED

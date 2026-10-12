@@ -70,7 +70,7 @@ Tamamlanan işlerin ayrıntılı gerekçesi, karar süreci ve ölçülen etkisi
 | DEV-066 | `reasoning/` — kalibrasyon, ayırt edicilik ve terfi (shadow→active) protokolü (Faz 4) | COMPLETED (2026-10-12) |
 | DEV-069 | `brief/` — kullanıcı ihtiyaç beyanı ve mimari program toplama (Faz 6) | COMPLETED (2026-10-12; v0 — v1 şema alanı sonra) |
 | DEV-068 | `impact/` — revizyon etki analizi (minimal patch planlama; Faz 6) | COMPLETED (2026-10-12) |
-| DEV-067 | Tüm modüller — her modülün muhakeme katkısı (`reasoning.py` veya gerekçeli muafiyet; Faz 5) | PLANNED (sıra 12/12) |
+| DEV-067 | Tüm modüller — her modülün muhakeme katkısı (`reasoning.py` veya gerekçeli muafiyet; Faz 5) | COMPLETED (2026-10-12) |
 | DEV-071 | `docs/development/reviews/` — soğuk başlangıç sınavı (reviewer; `DEV-070` ayrılan parça, önkoşulsuz) | PLANNED |
 
 ## READY
@@ -719,28 +719,6 @@ belirleyeceksin ... her birini sıralama olarak birbirine bağla"):**
 > **mevcut `validate.py` çıktısını ve golden referansları bozmamak** ortak kabul şartıdır (`DEV-065`in şema
 > sürümü uyarısı satırı bilinen tek istisnadır). Bölünmesi önerilen maddelerde parçalar **sayısal** yeni DEV
 > kimlikleri olur (`doc_check` `### DEV-\d+` ister; `DEV-063A` gibi kimlikler görünmez kalır).
-
-### DEV-067 — Tüm modüller — modül başına muhakeme katkısı (yaygınlaştırma)
-
-- **Durum:** PLANNED
-- **Kapsam (plan §9):** her modül için `reasoning.py` (ölçümleri/veçheleri bildirir) **ya da**
-  gerekçeli `REASONING_EXEMPT`; her modülün `CLAUDE.md`sine standart "Muhakeme katkısı"
-  bölümü (plan §8.4). Modül başına küçük, bağımsız oturum; önerilen sıra (plan §9 "sonraki en
-  değerli veçhe" sütunu): `openings`, `walls`, `furniture`, `rooms`, `columns`, `axis`,
-  `stairs`, `shafts`, sonra kalanlar.
-- **Kabul ölçütü:** `doc_check` #10 temiz; her modülün bölümü şablona uyar; muaf modüllerin
-  gerekçesi "düşünüldü, ölçüm/kural vermez" biçiminde yazılı.
-- **Önkoşul:** `DEV-060`; paketler biriktikçe ilerler (tek seferde bitmez, rolling).
-- **Sıra:** 12/12 — plan §10.1; geliştirici yorumu ve netleştirme soruları 2026-10-09 kod denetimine dayanır (iki bağımsız ajan; `DEV-070` yalnız bir denetim).
-- **Geliştirici yorumu:** XL ve olduğu gibi planlanamaz: 'rolling, tek seferde bitmez' ifadesi tek-`IN_PROGRESS` kuralı ve tamamlanma kuralıyla çelişir. Çözüm: birinci dalga paketlere gömülür (architect, walls, openings, spatial → `061`; shafts → `062`; furniture, standards → `063`); bu madde yalnız dalga 2–3'ü (axis, stairs, columns, pafta, collision; sonra toplu muafiyet kararı) yürütür, `PENDING` listesini boşaltır ve kapı #10'u bloklayıcı yapar. Bugün 23 paketin 5'i sağlayıcı (collision.py), 18'i muaf adayı; muaf kaydı merkezi sözlük (`REASONING_EXEMPT`, `collision/scene.py::COLLISION_EXEMPT` idiomu) ve bu dosya `knowledge_engineering` yazma kapsamına girer. `reasoning.py` sözleşmesi tek biçimli olmalı (rol + ölçüm beyanı). Sıra, plan §9'da yazılı değil — bu dosyadaki sıra geçerli. En sona konmasının nedeni: bloklayıcı kapı ancak tüm modüller bitince açılabilir.
-- **Netleştirme soruları** (her biri önerilen varsayılanla; kullanıcı tek tek onaylayınca madde `READY` olur):
-  1. Kapı #10: üç durumlu (sağlayıcı / `EXEMPT[modül]=(rol, gerekçe)` / `PENDING`); `DEV-060` mevcut tüm paketleri bir kez PENDING tohumlar, liste yalnız küçülür, yeni paket doğarken (a) veya (b) olmak zorunda. Öneri: evet.
-  2. Veçhe kaydı yalnız lens paketlerinde, modül `reasoning.py`si yalnız ROL+ÖLÇÜM beyanı (bkz. `DEV-060` soru 3). Öneri: evet.
-  3. Muaf sözlüğü merkezi (`scripts/reasoning/providers.py`) ve `knowledge_engineering` yazma izni yalnız bu dosya. Öneri: evet.
-  4. Defter tutma: dalga 1'i `061`/`062`/`063` emer; `067` yalnız kalan dalgalar. Öneri: evet.
-- **Kullanıcı kararları (2026-10-09, netleştirme tamam; başlamak için kullanıcı onayı bekleniyor):** (1) kapı #10 üç durumlu (sağlayıcı / `EXEMPT` / `PENDING`), liste yalnız küçülür — EVET; (2) veçhe kaydı yalnız lens paketlerinde, modül `reasoning.py`si ROL+ÖLÇÜM beyanı — EVET; (3) muaf sözlüğü merkezi `scripts/reasoning/providers.py`, `knowledge_engineering` yazma izni yalnız bu dosya — EVET; (4) dalga 1'i `061`/`062`/`063` üstlenir, `067` yalnız kalan dalgaları yürütür — EVET.
-- **Metin düzeltmeleri (onayla birlikte uygulanır):** Önkoşul 'DEV-060' → 'DEV-059 + DEV-060'; 'rolling' ifadesi silinir; `northarrow` sırası `DEV-062` ile çakışır (northarrow önce); 'şablona uyar' ve 'gerekçe yazılı' kabulleri deterministik hale getirilir (başlık+alan varlığı, boş olmayan gerekçe).
-- **Uygulama sonucu (2026-10-12, kabul bekliyor):** kalan 20 modül tek seferde sınıflandırıldı: **hiçbiri sağlayıcı yapılmadı, 20'si gerekçeli muaf** (`reasoning/registry.py::REASONING_EXEMPT`; toplam 4 sağlayıcı + 23 muaf = 27 modül). PENDING geçiş kaydı ve `_PENDING_FROZEN` KALDIRILDI; kapı #10 iki durumlu ve bloklayıcı; **#10b** muaf gerekçesi `Dusunuldu, olcum/kural vermez:` ile başlar ve plan §9'daki sonraki veçhe adını yazar; **#10c** her modül `CLAUDE.md`si standart `## Muhakeme katkısı` bölümünü taşır (20 modüle eklendi). Gerekçeler "bugün veçhe yok" der, "hiç katkı vermez" demez. **Kanıt:** `reasoning/selftest.py` 38/38 (kapı #10 altı kasıtlı bozma + #10b/#10c; bir üretim bozması [önek kontrolü] ilk turda sızdı, test dizeleri uzatılarak kapatıldı); `validate` çıktısı ve şema değişmedi. **Kullanıcıya (karar sizin):** (1) 20 modülün hepsini "muaf" yazdım — sağlayıcı olmaları gereken modül varsa söyleyin; özellikle **`standards`** (kuralları `validate.py`'de çalışıyor ama veçhe olarak kayıtlı değil, gerekçede açıkça yazılı), `columns`, `stairs`, `walls` (duvar türü verisi yok); (2) "muaf" bir kilit değildir: veçhe doğunca modül listeden çıkar; (3) dalga 1 (architect, walls, openings, spatial, shafts, furniture, standards) `061/062/063` içinde sağlayıcı ya da muaf olarak kapanmıştı; bu madde yalnız kalan dalgaları kapattı. Kilit bırakılacak.
 
 ### DEV-070 — `docs/agents/` — bilgi mühendisi rolü ve büyütme protokolü
 
@@ -1904,3 +1882,8 @@ Bir görev için agent şunları yapmadan `COMPLETED` yazamaz:
 
 - **Durum:** COMPLETED (2026-10-12) — kullanıcı onayıyla (dört netleştirme kararı) uygulandı. Ayrıntılı kayıt: `HD-050`.
 - **Özet:** `scripts/impact/` (açık kenar tabloları, duvar-parça/span duyarlı yayılım, `touched_from_diff`, kapsam raporu) + `impact_report.py` + `doc_check` #17; duvar-oda kenarı örtüşmesi `spatial`a taşındı. Minimal patch planı kapsam dışı (patch grameri tanımlanınca ayrı sayısal kimlikle).
+
+### DEV-067 — Tüm modüller — modül başına muhakeme katkısı (yaygınlaştırma)
+
+- **Durum:** COMPLETED (2026-10-12) — kullanıcı onayıyla (dört netleştirme kararı) uygulandı. Ayrıntılı kayıt: `HD-051`.
+- **Özet:** PENDING geçiş kaydı kaldırıldı; kapı #10 iki durumlu ve bloklayıcı (+ #10b muaf gerekçe biçimi, #10c standart `## Muhakeme katkısı` bölümü); kalan 20 modül gerekçeli muaf (4 sağlayıcı + 23 muaf). Muafiyet "bugün veçhe yok" demektir; veçhe doğunca modül sağlayıcıya geçer.
