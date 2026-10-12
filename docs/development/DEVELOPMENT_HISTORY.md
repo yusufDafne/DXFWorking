@@ -4,6 +4,15 @@ Aktif geçmiş kapasitesi: **50 kayıt**. En eski tamamlanmış kayıt, 51. kay�
 alınırken silinir. Ayrıntılı teknik değişiklikler git geçmişi ve ilgili proje
 provenance kayıtlarıyla ilişkilendirilir.
 
+## HD-048 — `reasoning/`: terfi politikası ve ayırt edicilik raporu (DEV-066)
+
+- **Durum:** COMPLETED
+- **Tamamlanma:** 2026-10-12
+- **Kapsam:** `scripts/reasoning/{model,promotion,__init__,selftest}.py`, `scripts/doc_check.py` (#16), `scripts/reasoning_report.py` (`--promotion`, `--fp-budget`), `scripts/reasoning/CLAUDE.md`, `docs/agents/KNOWLEDGE_ENGINEER_AGENT.md`, plan §7.2, `scripts/CLAUDE.md`.
+- **Sonuç:** imzalı `Promotion` kaydı (karar `kullanıcı`dan, var olan HD kaydı, tutarlı sayılar, dejenere olmayan tetik oranı) — `active` (legacy olmayan) veçhe için zorunlu, `doc_check` #16 denetler; terfi kontrol listesi (son madde açık kullanıcı kararı, otomatik tamamlanmaz); sayısal örneklem kapısı yok, N yazılır ve kanıt zayıfsa söylenir; dejenere veçhe `shadow`da kalır; bayat/boş `provenance.reviewed` listesi; yanlış-pozitif bütçesi yalnız kullanıcı parametresiyle. Kullanıcı kararları: asgari makine 060/061'de, sayma birimi tekilleştirilmiş özne, sayısal kapı yok, legacy muaf.
+- **Doğrulama:** `reasoning/selftest.py` 38/38 (10 kasıtlı bozma yakalandı, ikisi ilk turda sızıp güçlendirildi); etkilenen selftest'ler, `--golden-set`, `doc_check` temiz; `validate` çıktısı ve şema değişmedi. Bugünkü rapor: teknik olarak terfie hazır veçhe yok; üç ışık/hava veçhesi dejenere.
+- **Golden etkisi:** yok. **Sınır:** hiçbir veçhe terfi ettirilmedi; `REVIEW_MAX_AGE_DAYS=365` onay bekliyor; sunum ağırlığı olmadığı için ağırlık kalibrasyonu yazılmadı; plan §8.3 bütçe sayıları kodlanmadı. **Sonraki direktif:** `DEV-069`.
+
 ## HD-047 — `testfit/` + yaşanabilirlik mercek paketi (DEV-063)
 
 - **Durum:** COMPLETED

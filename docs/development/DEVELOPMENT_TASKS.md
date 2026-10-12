@@ -67,7 +67,7 @@ Tamamlanan işlerin ayrıntılı gerekçesi, karar süreci ve ölçülen etkisi
 | DEV-070 | `docs/agents/` — bilgi mühendisi rolü + büyütme protokolü (Faz 2) | COMPLETED (2026-10-09) |
 | DEV-062 | `reasoning/` — ışık-hava-yönelim mercek paketi (Faz 3) | COMPLETED (2026-10-09) |
 | DEV-063 | `reasoning/`+`furniture/` — yaşanabilirlik mercek paketi + deneme yerleşimi (Faz 3) | COMPLETED (2026-10-12) |
-| DEV-066 | `reasoning/` — kalibrasyon, ayırt edicilik ve terfi (shadow→active) protokolü (Faz 4) | PLANNED (sıra 9/12) |
+| DEV-066 | `reasoning/` — kalibrasyon, ayırt edicilik ve terfi (shadow→active) protokolü (Faz 4) | COMPLETED (2026-10-12) |
 | DEV-069 | `brief/` — kullanıcı ihtiyaç beyanı ve mimari program toplama (Faz 6) | PLANNED (sıra 10/12) |
 | DEV-068 | `impact/` — revizyon etki analizi (minimal patch planlama; Faz 6) | PLANNED (sıra 11/12) |
 | DEV-067 | Tüm modüller — her modülün muhakeme katkısı (`reasoning.py` veya gerekçeli muafiyet; Faz 5) | PLANNED (sıra 12/12) |
@@ -719,28 +719,6 @@ belirleyeceksin ... her birini sıralama olarak birbirine bağla"):**
 > **mevcut `validate.py` çıktısını ve golden referansları bozmamak** ortak kabul şartıdır (`DEV-065`in şema
 > sürümü uyarısı satırı bilinen tek istisnadır). Bölünmesi önerilen maddelerde parçalar **sayısal** yeni DEV
 > kimlikleri olur (`doc_check` `### DEV-\d+` ister; `DEV-063A` gibi kimlikler görünmez kalır).
-
-### DEV-066 — `reasoning/` — kalibrasyon, ayırt edicilik ve terfi protokolü
-
-- **Durum:** PLANNED
-- **Kapsam (plan §7.3, §8.3):** ayırt edicilik raporu (golden seti + gerçek proje tetik
-  oranı), yanlış-pozitif bütçesi, `shadow→active` terfi kontrol listesi, eşik güncelleme
-  sözleşmesi (`standards/` ile aynı: değer güncellemesi sürüm artırmaz, alan şekli artırır),
-  `provenance.reviewed` bayatlama listesi, sunum kuyruğu ağırlıklarının kalibrasyonu.
-- **Kabul ölçütü:** ölçüm #6 gibi "her yerde öten" veçhe `shadow`da kalır ve rapor nedenini
-  yazar; ayırıcı eklenince oran düşer ve terfi edebilir; bu rapor olmadan terfi mümkün
-  değildir (`doc_check` #12'ye bağlı).
-- **Önkoşul:** **≥2 mercek paketi** (`DEV-061` + `DEV-062` veya `DEV-063`) — tek paketle
-  ayırt edicilik karşılaştırılamaz.
-- **Sıra:** 9/12 — plan §10.1; geliştirici yorumu ve netleştirme soruları 2026-10-09 kod denetimine dayanır (iki bağımsız ajan; `DEV-070` yalnız bir denetim).
-- **Geliştirici yorumu:** Olduğu gibi uygulanamaz: `DEV-061`in kabulü bu maddenin üreteceği 'ayırt edicilik raporu'nu ister, bu madde de `DEV-061`i ister (döngü). Çözüm: asgari terfi makinesi (konu başına ölçüm sözleşmesi + tetik oranı raporu + imzalı terfi kaydı + `legacy` bayrağı) `060`/`061`e çekilir; bu madde politikayı (sınırlar, yanlış-pozitif bütçesi, sunum ağırlıkları) taşır. Kapı #12 maddede yanlış anılmış (yalnız vaka varlığına bakar, ayırt edicilik denetlemez). Korpus zayıf: golden setin 13 referansında yatak odası/salon/giriş kapısı yok → ayırt edicilik yalnız gerçek projede 3 bağımsız birimle ölçülür; bu yüzden otomatik sayısal kapı değil, rapor + açık kullanıcı kararı + `HD` kaydı. '≥2 paket' önkoşulu teknik dayanaktan yoksun; asgari makine öne çekilince 061 ile birlikte ilk terfi mümkün olur.
-- **Netleştirme soruları** (her biri önerilen varsayılanla; kullanıcı tek tek onaylayınca madde `READY` olur):
-  1. Asgari terfi makinesi `060`/`061`e çekilsin mi (~1 oturum maliyet)? Öneri: evet; aksi halde `061` kabulü doğrulanamaz ve #4/#5 kullanıcıya 8. adımda ulaşır.
-  2. Sayma birimi: tekilleştirilmiş uygun özne (özdeş katlar bir sayılır; 'koşamadı' paydadan çıkar, 'ölçülemedi' diye raporlanır, %0 değildir). 'Her yerde öten' sınırı kullanıcı tercihi (kaynak yok).
-  3. Asgari örneklem: otomatik sayısal kapı yok; araç N'yi yazar ('3 bağımsız birim, kanıt zayıf'), terfi açık kullanıcı kararı + `HD` kaydı. Öneri: evet.
-  4. Mevcut 6 adaptör `active`+`legacy` ve #12/#16 kapılarından muaf (yalnız `validate.py`nin zaten çağırdıkları). Öneri: evet.
-- **Kullanıcı kararları (2026-10-09, netleştirme tamam; başlamak için kullanıcı onayı bekleniyor):** (1) asgari terfi makinesi `060`/`061`e çekilir, bu madde politikayı taşır — EVET; (2) sayma birimi tekilleştirilmiş özne ('koşamadı' paydadan çıkar, 'ölçülemedi' raporlanır) — EVET; (3) sayısal örneklem kapısı yok, araç N'yi yazar, terfi açık kullanıcı kararı + `HD` kaydı — EVET; (4) mevcut eski adaptörler `active`+`legacy`, #12/#16 kapılarından muaf — EVET.
-- **Uygulama sonucu (2026-10-12, kabul bekliyor):** `Promotion` modeli (imzalı terfi kaydı: `hd_ref`, `decided_on`, `decided_by='kullanici'`, `eligible/fired/unmeasurable`) + `Facet.promotion`; `active` (legacy olmayan) veçhe kaydı olmadan kayıt tutarsızdır; `doc_check` **#16** (kullanıcı kararı, var olan HD kaydı, tutarlı sayılar, **dejenere olmayan** tetik oranı; `legacy` muaf — terfi ETTİRMEZ, raporsuz/kararsız/dejenere terfiyi engeller); `reasoning/promotion.py`: `promotion_readiness` (kontrol listesi: vaka, tetik oranı [N yazılır, kanıt zayıfsa söylenir, sayısal örneklem kapısı YOK], anlatım, çözüm yolu, eşik, kaynak, **kullanıcı kararı = daima bekliyor**), `promotion_snippet` (kayıt taslağı, karardan SONRA), `stale_review_list`, `per_unit_topic_counts`; `reasoning_report.py --promotion [--fp-budget N]` (yanlış-pozitif bütçesi yalnız kullanıcı parametresiyle; varsayılan YOK); eşik güncelleme sözleşmesi modül ve rol belgelerine yazıldı. **Kanıt:** bugünkü rapor: teknik olarak terfie hazır veçhe YOK (hepsinin anlatım şablonu eksik); `yasam_mahalli_penceresi` 0/8, `capraz_havalandirma` 0/3, `islak_hacim_havalandirma` 0/6 DEJENERE (neden yazılı), `giristen_yatak_odasi_gorus` ve `komsu_giris_yakinligi` 2/3 (dejenere değil, kanıt ZAYIF N=3), `salon_kuzeye_bakiyor` `north_angle` yokken ölçülemez; 16 veçhe gözden geçirilmemiş listesinde; `reasoning/selftest.py` 38/38; 10 kasıtlı bozma (dejenere kontrolü, `decided_by`, HD kaydı, kullanıcı kararı maddesini otomatik tamam yapma, dejenere engeli, bayat/boş ayrımı, birim eşleme, bütçeyi varsayılan açma …) yakalandı — ikisi ilk turda sızdı (bayat liste nedeni, bütçesiz çalışma) ve testler güçlendirildi. `validate` çıktısı ve şema DEĞİŞMEDİ. **Kullanıcıya:** (1) `REVIEW_MAX_AGE_DAYS=365` hâlâ onayınızı bekliyor; (2) hiçbir veçhe terfi ettirilmedi; (3) sunum kuyruğunda kalibre edilecek ağırlık olmadığı için ağırlık kalibrasyonu KODLANMADI (gerekçe `reasoning/CLAUDE.md`de); (4) plan §8.3'teki "≤3 / ≤5" bütçe sayıları kullanıcı onayı olmadığı için kodlanmadı. Kilit bırakıldı.
 
 ### DEV-069 — `brief/` — kullanıcı ihtiyaç beyanı ve mimari program toplama
 
@@ -1963,3 +1941,8 @@ Bir görev için agent şunları yapmadan `COMPLETED` yazamaz:
 
 - **Durum:** COMPLETED (2026-10-12) — kullanıcı onayıyla (dört netleştirme kararı) uygulandı. Ayrıntılı kayıt: `HD-047`.
 - **Özet:** yeni `scripts/testfit/` (K1–K4 deneme yerleştirme sınavı; `furniture` + `collision` yalnız tüketilir) + `lenses/yasanabilirlik.py` (2 `shadow`, 1 `draft`, 1 `idea`; `active` yok); rev-28 5 yatak odası K1.
+
+### DEV-066 — `reasoning/` — kalibrasyon, ayırt edicilik ve terfi protokolü
+
+- **Durum:** COMPLETED (2026-10-12) — kullanıcı onayıyla (dört netleştirme kararı) uygulandı. Ayrıntılı kayıt: `HD-048`.
+- **Özet:** `Promotion` kaydı + `doc_check` #16 + `reasoning_report.py --promotion` (kontrol listesi, N'li tetik oranı, dejenere engeli, bayat liste, kullanıcı parametreli bütçe); terfi kullanıcı kararıdır, hiçbir veçhe terfi ettirilmedi.
