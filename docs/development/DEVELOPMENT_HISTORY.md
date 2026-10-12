@@ -4,6 +4,15 @@ Aktif geçmiş kapasitesi: **50 kayıt**. En eski tamamlanmış kayıt, 51. kay�
 alınırken silinir. Ayrıntılı teknik değişiklikler git geçmişi ve ilgili proje
 provenance kayıtlarıyla ilişkilendirilir.
 
+## HD-049 — `brief/` v0: ihtiyaç toplama sözleşmesi (DEV-069)
+
+- **Durum:** COMPLETED
+- **Tamamlanma:** 2026-10-12
+- **Kapsam:** `docs/agents/PROJECT_OPERATOR_AGENT.md` ("İhtiyaç toplama" + soru kataloğu), `scripts/CLAUDE.md` (`brief/` satırı), `DEVELOPMENT_TASKS.md`. Kod ve şema DEĞİŞMEDİ.
+- **Sonuç:** her soru opsiyonel; "bilmiyorum"/"sen karar ver" geçerli; kullanılan varsayılan adıyla bildirilir ve yalnız kaynaklı katalog/modül sabiti olabilir; varsayılanı olmayan değerde (birim programı, kat ölçüsü, kat yüksekliği, kuzey yönü, pencere yüksekliği) üretim durur ve sorar, yön uydurulmaz; ihtiyaç cümleleri yeni `requests.jsonl` satırı açılmadan ilk işleyen revizyonun request metnine aynen girer. Kullanıcı kararları: opsiyonel + varsayılanlar adıyla bildirilir; v0 = operatör talimatı + soru kataloğu.
+- **Doğrulama:** katalogdaki on varsayılan sabitin kodda var olduğu grep ile; `doc_check` temiz. Kasıtlı bozma uygulanamaz (kod yok).
+- **Golden etkisi:** yok. **Sınır:** hane ihtiyaçları (misafir, ev ofisi …) hiçbir ölçüme bağlı değil; v1 `brief` şema alanı v0 gerçek konuşmada koşulana dek yok. **Sonraki direktif:** `DEV-068`.
+
 ## HD-048 — `reasoning/`: terfi politikası ve ayırt edicilik raporu (DEV-066)
 
 - **Durum:** COMPLETED
