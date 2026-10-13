@@ -21,7 +21,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from validate import check_stairs, check_walls  # noqa: E402
+import re
+import subprocess
+
+from validate import check_stairs, check_walls, warning_summary  # noqa: E402
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 REAL_CONTEXT_PATH = PROJECT_ROOT / "context.json"
@@ -189,6 +192,64 @@ def check_stairs_invalid_exit_door_id_is_error() -> list[str]:
     return []
 
 
+def check_success_line_counts_all_warnings_dev080() -> list[str]:
+    """DEV-080: basari satirindaki uyari sayisi, basilan TUM `UYARI (...)` satirlarinin sayisidir (rev-29'da 15 uyari basilirken '(0 uyari)' yaziyordu)."""
+    errors: list[str] = []
+    eq = lambda label, got, want: errors.append(f"{label}: {got!r} != {want!r}") if got != want else None  # noqa: E731
+    eq("bos", warning_summary({}), "0 uyari")
+    eq("hepsi sifir", warning_summary({"surum": 0, "cakisma": 0}), "0 uyari")
+    eq("tek kategori", warning_summary({"cakisma": 2}), "2 uyari: 2 cakisma")
+    eq("karma (sifirlar atilir, sira korunur)", warning_summary({"surum": 1, "merdiven": 0, "sartname": 10, "mimari": 5, "cakisma": 0}),
+       "16 uyari: 1 surum, 10 sartname, 5 mimari")
+    contexts = [("gercek proje", REAL_CONTEXT_PATH)] + [(d.parent.name, d) for d in sorted((PROJECT_ROOT / "golden").glob("*/context.json"))]
+    contexts.append(("plandan_cephe", PROJECT_ROOT / "scripts" / "elevations" / "golden" / "plandan_cephe" / "context.json"))
+    for name, path in contexts:
+        out = subprocess.run([sys.executable, str(Path(__file__).resolve().parent / "validate.py"), str(path)],
+                             capture_output=True, text=True, timeout=600).stdout
+        printed = [l for l in out.splitlines() if l.startswith("UYARI (")]
+        last = out.strip().splitlines()[-1]
+        m = re.search(r"\((\d+) uyari(?:: ([^)]*))?\)\.$", last)
+        if not m:
+            errors.append(f"{name}: basari satiri uyari ozeti yok: {last!r}")
+            continue
+        eq(f"{name}: toplam = basilan UYARI satirlari", int(m.group(1)), len(printed))
+        cats: dict[str, int] = {}
+        for l in printed:
+            k = l[len("UYARI ("):l.index(")")]
+            cats[k] = cats.get(k, 0) + 1
+        shown = {} if not m.group(2) else {p.split()[1]: int(p.split()[0]) for p in m.group(2).split(", ")}
+        eq(f"{name}: kategori dokumu", shown, cats)
+        if name == "gercek proje":
+            eq("rev-29 gercek proje ozeti", m.group(0), "(15 uyari: 10 sartname, 5 mimari).")
+        if name == "plandan_cephe":
+            eq("uyarisiz golden", m.group(0), "(0 uyari).")
+    # cakisma uyarilari: gercek/golden projelerde cakisma UYARISI yok -> motor stub'lanir (dogrudan sayma yolunu sinar)
+    import contextlib
+    import io
+    import validate as v
+
+    class _Report:
+        ok = True
+        warnings = ["a", "b"]
+        def warning_lines(self):  # noqa: E301
+            return ["a", "b"]
+        def error_lines(self):  # noqa: E301
+            return []
+
+    original = v.check_collisions
+    v.check_collisions = lambda ctx: _Report()
+    try:
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            v.run_validation(PROJECT_ROOT / "golden" / "minimal" / "context.json")
+        lines = buf.getvalue().strip().splitlines()
+        eq("cakisma uyarilari sayilir", lines[-1].endswith("(3 uyari: 1 surum, 2 cakisma)."), True)
+        eq("cakisma uyari satirlari basilir", sum(1 for l in lines if l.startswith("UYARI (cakisma)")), 2)
+    finally:
+        v.check_collisions = original
+    return errors
+
+
 def main() -> int:
     groups = (
         ("kapi bosluguna baglanan duvar ucu UYARI/HATA verir", check_wall_ending_in_door_gap_flags()),
@@ -200,6 +261,7 @@ def main() -> int:
         ("merdiven cikis kapisi HIZASIZSA UYARI verir (DEV-047)", check_stairs_exit_door_misaligned_flags()),
         ("exit_door_id OPT-IN'dir", check_stairs_exit_door_id_is_opt_in()),
         ("gecersiz exit_door_id HATA verir", check_stairs_invalid_exit_door_id_is_error()),
+        ("basari satiri TUM uyarilari sayar (DEV-080)", check_success_line_counts_all_warnings_dev080()),
     )
     failed = False
     for name, errors in groups:

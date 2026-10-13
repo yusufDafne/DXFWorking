@@ -581,6 +581,16 @@ def check_sections(context: dict) -> list[str]:
     return errors
 
 
+def warning_summary(counts: dict[str, int]) -> str:
+    """DEV-080: basari satirindaki uyari ozeti. Toplam, basilan TUM `UYARI (...)` satirlarinin sayisidir (surum/merdiven/sartname/mimari/cakisma);
+    sifirdan buyukse kategori dokumu eklenir: `15 uyari: 10 sartname, 5 mimari`. Sifirsa `0 uyari`."""
+    total = sum(counts.values())
+    if total == 0:
+        return "0 uyari"
+    parts = ", ".join(f"{n} {k}" for k, n in counts.items() if n)
+    return f"{total} uyari: {parts}"
+
+
 def run_validation(context_path: Path = DEFAULT_CONTEXT_PATH) -> bool:
     context = load_json(context_path)
     schema = load_json(SCHEMA_PATH)
@@ -594,8 +604,10 @@ def run_validation(context_path: Path = DEFAULT_CONTEXT_PATH) -> bool:
 
     # --- Surum kapisi (DEV-020): schema gectikten SONRA, geometriden ONCE.
     version_errors, version_warnings = check_compatibility(context)
+    warning_counts: dict[str, int] = {}         # DEV-080: basari satiri TUM basilan UYARI satirlarini sayar
     for warning in version_warnings:
         print(f"UYARI (surum): {warning}")
+    warning_counts["surum"] = len(version_warnings)
     if version_errors:
         print("DOGRULAMA BASARISIZ (surum uyumu):")
         for e in version_errors:
@@ -687,6 +699,7 @@ def run_validation(context_path: Path = DEFAULT_CONTEXT_PATH) -> bool:
         print(f"UYARI (sartname): {warning}")
     for warning in architect_warnings:
         print(f"UYARI (mimari): {warning}")
+    warning_counts.update({"merdiven": len(stair_warnings), "sartname": len(standards_warnings), "mimari": len(architect_warnings)})
 
     if all_errors:
         print("DOGRULAMA BASARISIZ (geometri/mantik):")
@@ -700,6 +713,7 @@ def run_validation(context_path: Path = DEFAULT_CONTEXT_PATH) -> bool:
     clash_report = check_collisions(context)
     for line in clash_report.warning_lines():
         print(f"UYARI (cakisma): {line}")
+    warning_counts["cakisma"] = len(clash_report.warning_lines())
     if not clash_report.ok:
         print("DOGRULAMA BASARISIZ (cakisma):")
         for line in clash_report.error_lines():
@@ -712,7 +726,7 @@ def run_validation(context_path: Path = DEFAULT_CONTEXT_PATH) -> bool:
         f"{declared} / sistem {SCHEMA_VERSION}), "
         f"{len(context['floors'])} kat + {len(context['elevations'])} cephe saglik "
         f"kontrollerinden ve cakisma denetiminden gecti "
-        f"({len(clash_report.warnings)} uyari)."
+        f"({warning_summary(warning_counts)})."
     )
     return True
 

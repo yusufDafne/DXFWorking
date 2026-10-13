@@ -160,7 +160,7 @@ geliştirme görevleri, tamamlanmış geçmiş, fikirler ve geliştirici notlar�
      mantıklı mı),
    - **çakışma denetimi** (`scripts/collision/`; tefriş odanın dışında mı,
      duvara/kolona/kapı açılım yayına giriyor mu — bkz. "Çakışma denetimi")
-     yapılır. **Doğrulama geçmeden DXF üretilmez.**
+     yapılır. **Doğrulama geçmeden DXF üretilmez.** Başarı satırındaki uyarı özeti (DEV-080) basılan TÜM `UYARI (...)` satırlarını sayar: `(15 uyari: 10 sartname, 5 mimari)`; uyarısız `(0 uyari)`.
 4. Doğrulama başarılıysa `scripts/generate_dxf.py` çalıştırılıp
    `output/plan.dxf` sıfırdan yeniden üretilir.
 5. İsteğe bağlı olarak `scripts/preview.py` ile `output/preview.png` üretilip
@@ -194,6 +194,7 @@ geliştirme görevleri, tamamlanmış geçmiş, fikirler ve geliştirici notlar�
    python scripts/reasoning/selftest.py  # DEV-060 (kapilar enjekte edilen bozuk kayitla sinanir)
    python scripts/testfit/selftest.py   # DEV-063 (deneme yerlestirme; collision ile tutarlilik)
    python scripts/impact/selftest.py   # DEV-068 (etki alani; span yayilimi kasitli bozmayla sinanir)
+   python scripts/validate_selftest.py  # DEV-041/047/080 (orkestrasyon; basari satiri uyari sayaci)
    python scripts/shafts/selftest.py   # rev-27 (stairs/standards/templates/architect de kendi selftest'leriyle)
    ```
 
