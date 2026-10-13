@@ -540,6 +540,61 @@ def check_window_placement_dev075() -> list[str]:
     return errors
 
 
+def check_window_door_aware_dev077() -> list[str]:
+    """DEV-077: pencere ortalama AYNI duvardaki kapi/gecis bosluklarini hesaba katar; aciklik ust uste binme UYARISI. ELLE degerler."""
+    from openings import placement as pl
+    errors: list[str] = []
+
+    def eq(label, got, want):
+        if got != want:
+            errors.append(f"{label}: {got!r} != {want!r}")
+
+    wall = lambda i, a, b, t: {"id": i, "start": list(a), "end": list(b), "thickness": t}  # noqa: E731
+    host = wall("host", (0, 0), (10000, 0), 200.0)
+    walls = [host, wall("sol", (0, 4000), (0, 0), 200.0), wall("sag", (10000, 0), (10000, 4000), 200.0),
+             wall("p1", (3000, 0), (3000, 4000), 150.0), wall("p2", (7000, 0), (7000, 4000), 100.0)]
+    rect = lambda i, x0, x1: {"id": i, "polygon": [[x0, 0], [x1, 0], [x1, 4000], [x0, 4000]]}  # noqa: E731
+    r2 = rect("R2", 3000, 7000)                                    # serbest aralik (3075, 6950)
+    door = {"id": "d", "type": "door", "wall_id": "host", "position_from_start": 5000.0, "width": 900.0}   # bosluk 4550-5450
+    gaps = pl.occupied_gaps(host, [door, {"id": "w0", "type": "window", "wall_id": "host", "position_from_start": 4000.0, "width": 800.0},
+                                   {"id": "x", "type": "door", "wall_id": "baska", "position_from_start": 5000.0, "width": 900.0}], exclude_id="yok")
+    eq("bosluklar: yalniz AYNI duvarin penceresiz aciklilari", gaps, [(4550.0, 5450.0, "d")])
+    eq("kendi kimligi haric", pl.occupied_gaps(host, [door], exclude_id="d"), [])
+    eq("gecis (passage) de bosluk sayilir", len(pl.occupied_gaps(host, [dict(door, type="passage")])), 1)
+    eq("subtract: ortada bosluk", pl.subtract_gaps((3075.0, 6950.0), gaps), [(3075.0, 4550.0), (5450.0, 6950.0)])
+    eq("subtract: aralik disi bosluk etkisiz", pl.subtract_gaps((0.0, 1000.0), gaps), [(0.0, 1000.0)])
+    eq("subtract: aralik tamamen kapli", pl.subtract_gaps((4600.0, 5400.0), gaps), [])
+    eq("subtract: ic ice bosluklar", pl.subtract_gaps((0.0, 100.0), [(10.0, 50.0, "a"), (20.0, 30.0, "b")]), [(0.0, 10.0), (50.0, 100.0)])
+    pos = lambda w, near=None: pl.default_window_position(host, r2, walls, w, gaps=gaps, near=near)  # noqa: E731
+    eq("kapi solunda (near 4000): (3075,4550) ortasi", pos(1200.0, 4000.0), 3812.5)
+    eq("kapi saginda (near 6000): (5450,6950) ortasi", pos(1200.0, 6000.0), 6200.0)
+    eq("near yok: en genis parca", pos(1200.0), 6200.0)
+    eq("yalniz saga sigan (1480 > 1475)", pos(1480.0, 4000.0), 6200.0)
+    eq("tam sigan (1475 = parca) kabul", pos(1475.0, 4000.0), 3812.5)
+    eq("hicbir parcaya sigmaz (1600) -> None", pos(1600.0, 4000.0), None)
+    eq("near kapi ustunde: en yakin parca", pos(1200.0, 4900.0), 3812.5)      # 4900: sola 350, saga 550 uzak
+    eq("kapisiz eski davranis aynen", pl.default_window_position(host, r2, walls, 1800.0), 5012.5)
+    fl = {"walls": walls, "rooms": [r2], "openings": [door, {"id": "pn", "type": "window", "wall_id": "host",
+                                                             "position_from_start": 4900.0, "width": 1200.0}]}
+    row = [x for x in pl.placement_suggestions(fl) if x["window"] == "pn"][0]
+    eq("oneri kapiyi atlar", (row["suggested"], row["blocked_by"]), (3812.5, ["d"]))
+    row0 = [x for x in pl.placement_suggestions({"walls": walls, "rooms": [r2], "openings": [fl["openings"][1]]}) if x["window"] == "pn"][0]
+    eq("kapisiz oneri ortada", (row0["suggested"], row0["blocked_by"]), (5012.5, []))
+    far = dict(door, id="uzak", position_from_start=8500.0)               # R2 aralik disinda (R3'te)
+    row1 = [x for x in pl.placement_suggestions({"walls": walls, "rooms": [r2], "openings": [far, fl["openings"][1]]}) if x["window"] == "pn"][0]
+    eq("odanin aralik disindaki kapi oneriyi/blocked_by'i etkilemez", (row1["suggested"], row1["blocked_by"]), (5012.5, []))
+    # ust uste binme uyarisi
+    ov = lambda pos, w: pl.check_opening_overlaps({"openings": [door, {"id": "w", "type": "window", "wall_id": "host",  # noqa: E731
+                                                                         "position_from_start": pos, "width": w}]})
+    eq("binen pencere-kapi UYARI", len(ov(4500.0, 1000.0)), 1)
+    eq("tam temas uyari yok", ov(3950.0, 1200.0), [])               # 3350-4550 | 4550-5450
+    eq("1 mm binme (esik) uyari yok", ov(3951.0, 1200.0), [])
+    eq("2 mm binme uyari", len(ov(3952.0, 1200.0)), 1)
+    eq("baska duvar uyari yok", pl.check_opening_overlaps({"openings": [door, dict(door, id="e", wall_id="baska")]}), [])
+    eq("duvarsiz/konumsuz aciklik atlanir", pl.check_opening_overlaps({"openings": [door, {"id": "z", "type": "window"}]}), [])
+    return errors
+
+
 def check_opening_classes_dev076() -> list[str]:
     """DEV-076: sinif katalogu (ELLE degerler), turetme iliskileri, bagimsizlik, new_opening/new_window, dogrulama, cetvel."""
     import openings as op_mod
@@ -658,6 +713,7 @@ def main() -> int:
     groups = (
         ("acikık siniflari: ana giris, dukkan kapisi, vitrin (DEV-076)", check_opening_classes_dev076()),
         ("pencere yerlesimi: serbest aralik, ortalama, birlesim uyarisi (DEV-075)", check_window_placement_dev075()),
+        ("pencere ortalama kapiyi atlar + aciklik ust uste binme (DEV-077)", check_window_door_aware_dev077()),
         ("pencere yuksekligi/denizlik + cetvel (DEV-072)", check_window_heights_dev072()),
         ("asansor kapisi: 3 tur, varsayilan surme, 250mm pay (DEV-055)", check_elevator_doors_dev055()),
         ("kanat boyunca duvar yakinligi (DEV-057 Grup A)", check_leaf_clearance_along_dev057()),

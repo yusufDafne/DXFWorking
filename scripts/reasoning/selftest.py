@@ -535,7 +535,7 @@ def check_mahremiyet_report() -> list[str]:
         e.append("gercek projede hic otmeyen vechenin DEJENERE diye raporlanmasi gerekir")
     out = subprocess.run([sys.executable, str(ROOT / "scripts" / "reasoning_report.py")],
                          capture_output=True, text=True, timeout=600).stdout
-    for needle in ("16 uyari satiri -> 4 tekil konu", "Golge vecheler", "5/6 ozne tetikledi", "OLCULMEYEN"):
+    for needle in ("15 uyari satiri -> 3 tekil konu", "Golge vecheler", "5/6 ozne tetikledi", "OLCULMEYEN"):
         if needle not in out:
             e.append(f"rapor ciktisinda '{needle}' yok")
     return e
@@ -635,8 +635,8 @@ def check_queue_and_modes() -> list[str]:
                          capture_output=True, text=True, timeout=600).stdout
     real = parse_validate_output(out)
     sh, rs = select_topics(real, {})
-    if (len(real), len(sh), len(rs)) != (16, 3, 0):
-        e.append(f"rev-28: 16 satir (15 + surum notu) -> 3 konu beklenirdi: {(len(real), len(sh), len(rs))}")
+    if (len(real), len(sh), len(rs)) != (15, 3, 0):
+        e.append(f"rev-29: 15 satir (surum notu YOK: proje 1.7.0) -> 3 konu beklenirdi: {(len(real), len(sh), len(rs))}")
     reg, _ = _prod_registry()  # golge gorunurluk degismezi
     shadow_f = Finding("mahremiyet.gorsel.giristen_yatak_odasi_gorus|K1|a|1", "mahremiyet.gorsel.giristen_yatak_odasi_gorus", "K1", "m", ("a",))
     active_f = Finding("mahremiyet.gorsel.giris_wc_gorus|K1|a|1", "mahremiyet.gorsel.giris_wc_gorus", "K1", "m", ("a",))
@@ -898,7 +898,9 @@ def check_decision_schema_and_validate() -> list[str]:
     r = run_validate(with_decisions([mutated(lambda d: d.update(bilinmeyen=1))]))
     if r.returncode == 0:
         e.append("schema ek alanlari reddetmeli (additionalProperties)")
-    base = subprocess.run([sys.executable, str(ROOT / "scripts" / "validate.py"), str(ROOT / "context.json")], capture_output=True, text=True, timeout=600)
+    old_ctx = json.loads((ROOT / "context.json").read_text(encoding="utf-8"))
+    old_ctx["meta"]["schema_version"] = "1.3.0"          # rev-29'dan once gercek projenin surumu; eski proje = tek surum notu
+    base = run_validate(old_ctx)
     lines = [l for l in base.stdout.splitlines() if l.startswith("UYARI") and "(surum)" not in l]
     if len(lines) != 15 or sum(1 for l in base.stdout.splitlines() if "(surum)" in l) != 1:
         e.append("eski context: 15 mimari/sartname uyari + TEK surum notu (1.3.0 -> 1.4.0) beklenirdi")
@@ -1138,6 +1140,7 @@ def check_isik_report_and_coverage() -> list[str]:
     import reasoning_report as rr
     reg, _ = _prod_registry()
     ctx = json.loads((ROOT / "context.json").read_text(encoding="utf-8"))
+    ctx["meta"].pop("north_angle", None)        # rev-29'da gercek projeye north_angle=0 yazildi; bu kontrol "kuzey verilmedi" durumunu sinar
     e = []
     rep = rr.build_coverage(reg, ctx)
     text = rep.text()

@@ -76,6 +76,7 @@ Tamamlanan işlerin ayrıntılı gerekçesi, karar süreci ve ölçülen etkisi
 | DEV-074 | Kuzey sözleşmesi — kuzeye en yakın cephe üstte, `meta.north_angle` ∈ [−45°, +45°] | COMPLETED (2026-10-12) |
 | DEV-075 | `openings/` — normal pencere varsayılan denizliği 900 mm + pencere varsayılan konumu (iç duvarlar arasında ortala) + duvar birleşiminde pencere uyarısı | COMPLETED (2026-10-12) |
 | DEV-076 | `openings/` — açıklık sınıfları kataloğu (ana giriş, dükkân kapısı, vitrin, boy pencere; sınıf başına varsayılan ölçüler) | COMPLETED (2026-10-12) |
+| DEV-077 | `openings/` — pencere ortalama kapı/geçiş boşluklarını atlar + açıklık üst üste binme UYARISI | PLANNED |
 | DEV-071 | `docs/development/reviews/` — soğuk başlangıç sınavı (reviewer; `DEV-070` ayrılan parça, önkoşulsuz) | PLANNED |
 
 ## READY
@@ -729,6 +730,15 @@ belirleyeceksin ... her birini sıralama olarak birbirine bağla"):**
 
 - **Durum:** COMPLETED (2026-10-09) — kullanıcı onayıyla (dört netleştirme kararı) uygulandı. Ayrıntılı kayıt: `HD-045`.
 - **Özet:** `KNOWLEDGE_ENGINEER_AGENT.md` + `AGENT_PERMISSIONS.json` (`knowledge_engineering`, reviews/ yalnız reviewer) + reviewer "Sistem sınavı"; sınav `DEV-071`e ayrıldı (PLANNED).
+
+### DEV-077 — `openings/` — pencere ortalama kapıyı atlar + açıklık üst üste binme UYARISI
+
+- **Durum:** PLANNED — uygulandı, kullanıcı kabulü bekleniyor
+- **Kullanıcı talebi (2026-10-12):** rev-29 raporundaki boşluğun ayrı madde olarak eklenmesi onaylandı ("ikisini de onaylıyorum").
+- **Kapsam:** `openings/placement.py` (`occupied_gaps`, `subtract_gaps`, `default_window_position(gaps, near)`, `placement_suggestions` `blocked_by`, `check_opening_overlaps`), `validate.py` UYARI kancası, `openings/CLAUDE.md`, kök `CLAUDE.md`.
+- **Kabul ölçütü:** elle hesaplanan parçalar/ortalar; kapısız duvarda eski davranış birebir; sığmayan durumda `None`; ters (yanlış-pozitif) durumlar; kasıtlı bozmalar; gerçek projede `validate` çıktısı DEĞİŞMEZ; golden temiz.
+- **Önkoşul:** `DEV-075`.
+- **Uygulama sonucu (2026-10-13, kabul bekliyor):** `occupied_gaps`, `subtract_gaps`, `default_window_position(gaps, near)`, öneri satırında `blocked_by`, `check_opening_overlaps` + `validate.py` UYARISI. Kapı/geçiş/asansör kapısı boşlukları ortalamadan çıkarılır, pencereyi alan parçalardan mevcut konuma en yakın olan ortalanır; sığmazsa `None`. **Kanıt:** elle hesaplanan parçalar/ortalar (3812,5 / 6200), 16 kasıtlı bozmadan 14'ü yakalandı (2'si birbirini örten eşdeğer koruma), gerçek projede `validate` çıktısı değişmedi (0 üst üste binme), tüm selftest/golden temiz. **Yan bulgu (rev-29 sonrası kaçırılmıştı, bu turda düzeltildi):** `reasoning` selftest'i gerçek projeyi "north_angle yok / 1.3.0 / 16 satır" varsayıyordu; rev-29 bunu bozdu, test artık bu durumları kopyalarla kurar.
 
 ### DEV-071 — `docs/development/reviews/` — soğuk başlangıç sınavı (reviewer)
 

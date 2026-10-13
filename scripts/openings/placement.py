@@ -89,13 +89,65 @@ def room_span(host: dict, room: dict, walls: list[dict]) -> tuple[float, float] 
     return best
 
 
-def default_window_position(host: dict, room: dict, walls: list[dict], width: float) -> float | None:
+def occupied_gaps(host: dict, openings: list[dict], exclude_id: str | None = None) -> list[tuple[float, float, str]]:
+    """Bu duvardaki penceresiz (kapi/gecis/asansor kapisi) aciklik bosluklari: [(lo, hi, id)] (`position_from_start` MERKEZDIR).
+    Pencere ortalanirken bu bosluklar serbest aralikdan CIKARILIR; diger pencereler cikarilmaz (ayni odada birden fazla pencere
+    icin ortalama anlamli degildir, bkz. `placement_suggestions` `shared`)."""
+    out = []
+    for o in openings:
+        if o.get("wall_id") != host["id"] or o.get("type") == "window" or o.get("id") == exclude_id:
+            continue
+        c, w = float(o["position_from_start"]), float(o["width"])
+        out.append((c - w / 2.0, c + w / 2.0, str(o["id"])))
+    return sorted(out)
+
+
+def subtract_gaps(span: tuple[float, float], gaps: list[tuple[float, float, str]]) -> list[tuple[float, float]]:
+    """`span` icinden bosluklari cikarir; kalan pozitif uzunluklu parcalar sirali doner."""
+    cursor, out = span[0], []
+    for lo, hi, _i in sorted(gaps):
+        if hi <= cursor or lo >= span[1]:
+            continue
+        if lo > cursor:
+            out.append((cursor, lo))
+        cursor = max(cursor, hi)
+    if cursor < span[1]:
+        out.append((cursor, span[1]))
+    return [(a, b) for a, b in out if b - a > 1e-9]
+
+
+def default_window_position(host: dict, room: dict, walls: list[dict], width: float, gaps=None, near: float | None = None) -> float | None:
     """Pencere merkezi (`position_from_start`): odanin serbest araliginin ortasi. Aralik pencereden dar ya da oda bu duvarla
-    ortusmuyorsa None (sigmaz; uydurma konum YOK)."""
+    ortusmuyorsa None (sigmaz; uydurma konum YOK). `gaps` (bkz. `occupied_gaps`) verilirse serbest aralik once kapi/gecis bosluklarindan
+    arindirilir; pencereyi alabilen parcalar arasindan `near` noktasini iceren (yoksa ona en yakin; `near` yoksa en genis) secilir
+    ve ORTALANIR."""
     span = room_span(host, room, walls)
-    if span is None or span[1] - span[0] < width:
+    if span is None:
         return None
-    return (span[0] + span[1]) / 2.0
+    parts = [pt for pt in subtract_gaps(span, gaps or []) if pt[1] - pt[0] >= width]
+    if not parts:
+        return None
+    if near is None:
+        lo, hi = max(parts, key=lambda pt: pt[1] - pt[0])
+    else:
+        lo, hi = min(parts, key=lambda pt: 0.0 if pt[0] <= near <= pt[1] else min(abs(near - pt[0]), abs(near - pt[1])))
+    return (lo + hi) / 2.0
+
+
+def check_opening_overlaps(floor: dict) -> list[str]:
+    """validate.py UYARILARI: AYNI duvardaki iki aciklik (pencere/kapi/gecis) birbirine 1 mm'den fazla giriyorsa. Temas uyari degildir."""
+    from spatial import SHARED_EDGE_TOLERANCE_MM as TOL
+    ops = [o for o in floor.get("openings", []) if o.get("wall_id") and "position_from_start" in o and "width" in o]
+    out: list[str] = []
+    for i, a in enumerate(ops):
+        for b in ops[i + 1:]:
+            if a["wall_id"] != b["wall_id"]:
+                continue
+            alo, ahi = float(a["position_from_start"]) - float(a["width"]) / 2.0, float(a["position_from_start"]) + float(a["width"]) / 2.0
+            blo, bhi = float(b["position_from_start"]) - float(b["width"]) / 2.0, float(b["position_from_start"]) + float(b["width"]) / 2.0
+            if min(ahi, bhi) - max(alo, blo) > TOL:
+                out.append(f"Aciklik '{a['id']}' ({alo:.0f}-{ahi:.0f} mm) ile '{b['id']}' ({blo:.0f}-{bhi:.0f} mm) ayni duvarda ('{a['wall_id']}') ust uste biniyor.")
+    return out
 
 
 def check_window_junctions(floor: dict) -> list[str]:
@@ -147,12 +199,14 @@ def placement_suggestions(floor: dict) -> list[dict]:
                 best = (r, sp)
         if best is None:
             out.append({"window": op["id"], "wall": host["id"], "room": None, "current": cur, "suggested": None, "delta": None,
-                        "span": None, "shared": 0})
+                        "span": None, "shared": 0, "blocked_by": []})
             continue
         r, sp = best
-        sug = default_window_position(host, r, walls, float(op["width"]))
+        gaps = occupied_gaps(host, floor.get("openings", []), exclude_id=op["id"])
+        sug = default_window_position(host, r, walls, float(op["width"]), gaps=gaps, near=cur)
+        blocked = [i for lo, hi, i in gaps if min(hi, sp[1]) - max(lo, sp[0]) > 1e-9]
         out.append({"window": op["id"], "wall": host["id"], "room": r["id"], "current": cur, "suggested": sug,
-                    "delta": None if sug is None else sug - cur, "span": sp, "shared": 0})
+                    "delta": None if sug is None else sug - cur, "span": sp, "shared": 0, "blocked_by": blocked})
     for row in out:        # ayni oda + ayni duvar uzerindeki pencere sayisi
         row["shared"] = sum(1 for o in out if o["room"] == row["room"] and o["wall"] == row["wall"]) if row["room"] else 0
     return out

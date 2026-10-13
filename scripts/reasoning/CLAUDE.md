@@ -74,8 +74,7 @@ kabul edilmiş" diye SAYIYI söyler (sessiz geçme yok). Bulgu anahtarı mesaj T
 görünerek düşer (güvenli yön). `validate.py` yalnız `check_decisions` HATALARINI ekler (boş gerekçe, yinelenen kimlik, boş `covers`,
 bozuk hash, olmayan `supersedes`); bulgunun kendisi UYARI kalır. Ekleme-yalnızlık KONVANSİYONDUR (denetim: reviewer git diff);
 yeni karar eskiyi `supersedes` ile ezer. **Şema MINOR 1.3.0 → 1.4.0:** alanı taşımayan projede `validate` bir `UYARI (surum)` satırı
-ekler (15 → 16 satır; konu sayısı etkilenmez: `legacy.surum` sunulmaz). Gerçek projenin `meta.schema_version` değeri henüz 1.3.0
-(güncellemek ayrı bir proje revizyonudur, kullanıcı kararı).
+ekler (15 → 16 satır; konu sayısı etkilenmez: `legacy.surum` sunulmaz). Gerçek projenin `meta.schema_version` değeri rev-29'da 1.7.0'a çıkarıldı (artık sürüm notu satırı yok: 15 satır → 3 konu); eski proje durumu selftest'te `schema_version=1.3.0` kopyasıyla sınanır.
 
 ## Çakışma denetimi: EXEMPT
 `collision/scene.py::COLLISION_EXEMPT` içinde (geometri/ayak izi üretmez).

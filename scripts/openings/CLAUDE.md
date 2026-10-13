@@ -191,6 +191,16 @@ Kullanıcı kararı (2026-10-12): **varsayılan konum = pencerenin odasının d�
 Rev-28'de 76 pencerenin 0'ı birleşime düşer (`validate` çıktısı değişmedi); önerilerde 10'a yakını 100 mm'den fazla sapar (örn. zemin kat dükkân vitrinleri ~3 m). `CONTRACT_VERSION` 1.4 → 1.5.
 Test: `selftest.py::check_window_placement_dev075` (elle hesaplanan birleşim/aralık/orta değerleri, sınırlar, açık plan, iç içe bölgeler; 10 kasıtlı bozma yakalandı).
 
+## DEV-077: pencere ortalama kapıyı atlar + açıklık üst üste binme (`placement.py`)
+
+rev-29'da gerçek bir boşluk görüldü: `window_placement_report.py` dükkân vitrini için dükkân kapısının TAM ORTASINI (4000) önerdi, çünkü ortalama aynı duvardaki kapıyı bilmiyordu.
+Artık `placement_suggestions` ve `default_window_position(..., gaps=, near=)` aynı duvardaki **penceresiz açıklıkların** (kapı, `passage`, asansör kapısı; `occupied_gaps`) boşluklarını
+serbest aralıktan çıkarır (`subtract_gaps`); pencereyi alabilen parçalar arasından `near` (mevcut konum) noktasını içeren — yoksa ona en yakın, `near` yoksa en geniş — parça seçilir ve ORTALANIR.
+Hiçbir parça sığmazsa `None` (konum uydurulmaz). Başka pencereler çıkarılmaz (aynı odada çok pencere için öneri hâlâ tek pencere varsayar, `shared`). Öneri satırına `blocked_by` (atlanan açıklık kimlikleri) eklendi.
+`check_opening_overlaps(floor)` → `validate.py` UYARISI: aynı duvarda iki açıklık 1 mm'den fazla üst üste biniyorsa (temas ve 1 mm'ye kadar örtüşme uyarı değil; yeni sayı yok, `SHARED_EDGE_TOLERANCE_MM`).
+Gerçek projede (rev-29) 0 uyarı; kapısız duvarlarda eski davranış birebir. Context sözleşmesi değişmedi (`CONTRACT_VERSION` 1.6).
+Test: `selftest.py::check_window_door_aware_dev077` (elle hesaplanan parçalar ve ortalar, sınırlar, uzak kapı, yanlış-pozitifler; 16 kasıtlı bozmadan 14'ü yakalandı, 2'si birbirini örten koruma — eşdeğer).
+
 ## DEV-076: açıklık sınıfları kataloğu (`classes.py`, şema 1.7.0)
 
 Kullanıcı kararı (2026-10-12): ana giriş, dükkân kapısı, vitrin ve boy pencere **ayrı sınıflardır**; her birinin varsayılan ölçüleri vardır ve kullanıcı değeri (`width`/`height`/`sill_height`) her zaman varsayılanı ezer.
