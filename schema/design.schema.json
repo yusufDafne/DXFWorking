@@ -434,7 +434,7 @@
         "floor_depth": { "type": "number", "exclusiveMinimum": 0, "description": "Tum katlarda ortak bina ayak izi derinligi" },
         "north_angle": {
           "type": "number",
-          "description": "Kuzey oku (DEV-025, scripts/northarrow). Plan paftasinin 'yukari' yonunun (+Y) GERCEK KUZEY'e olan saat-yonunde acisi, derece. 0 = kuzey yukarida. DEV-074 sozlesmesi: vaziyet planinda kuzey daima yukaridir; proje planinin kuzeye en yakin cephesi paftanin ust kenarina paraleldir, bu yuzden aci -45..+45 olmalidir (esdeger acilar normalize edilir; aralik disi aci validate HATASI, proje sessizce dondurulmez). Verilmezse ok HIC CIZILMEZ - yon uydurulmaz."
+          "description": "Kuzey oku (DEV-025, scripts/northarrow). Plan paftasinin 'yukari' yonunun (+Y) GERCEK KUZEY'e olan saat-yonunde acisi, derece. 0 = kuzey yukarida. DEV-081 sozlesmesi: gelen vaziyet plani kuzey yukaridir; proje paftaya binanin UZUN kenari yatay, kuzeye yakin UZUN yuzu ustte olacak sekilde yerlestirilir; vaziyette bina kuzeyden saat yonunde B derece donukse north_angle = -B olur (30 derece donuk bina -> -30). Izinli aralik dikdortgen binada -90..+90, tam kare binada -45..+45 (esdeger acilar normalize edilir; aralik disi aci validate HATASI - proje sessizce dondurulmez). Kat planinda ok pafta ic cizgisinin SAG-UST kosesinde durur. Verilmezse ok cizilmez, yon uydurulmaz."
         }
       }
     },

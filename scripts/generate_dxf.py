@@ -419,9 +419,9 @@ def draw_floor_sheet(msp, floor: dict, dx: float, units: str, floor_width: float
     # konumdaki grafik olcek cubugu kullanici talebiyle KALDIRILDI - bkz.
     # DEVELOPMENT_HISTORY.md HD-012.)
     if north_arrow is not None:
-        center_x = dx + floor_width / 2.0
-        arrow_center = (center_x, floor_depth + sheet_margin + north_arrow.radius)
-        north_arrow.draw(msp, arrow_center, north_angle)
+        # DEV-081: pafta IC cizgisinin SAG-UST kosesi (cizimin kendisi kose icinde kalir)
+        _ix0, _iy0, inner_x1, inner_y1 = sheet.inner_bounds(dx, floor_width, 0.0, floor_depth)
+        north_arrow.draw(msp, north_arrow.corner_center(inner_x1, inner_y1, sheet_margin), north_angle)
 
     content_entities = list(msp)[content_start:]
     sheet.draw(msp, dx, floor_width, 0.0, floor_depth, floor["label"], content_entities=content_entities)

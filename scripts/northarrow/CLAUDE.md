@@ -41,20 +41,12 @@ nesnesini hiç OLUŞTURMAZ, hiçbir çizim yapılmaz (schema'da opsiyonel).
 
 ## Yerleşim (NEREYE çizileceği bu sınıfın işi DEĞİLDİR)
 
-`NorthArrow.draw(msp, center, angle_deg)` sadece VERİLEN merkeze çizer;
-konum kararı `generate_dxf.py`nindir. Bugünkü yerleşim: her kat paftasının
-**KUZEY (üst) kenarındaki padding bölgesinde, katın TAM ORTASINDA**
-(`dx + floor_width/2`) — aks baloncuklarından kasıtlı olarak uzak durmak
-içindir: bu projede strüktürel akslar tipik olarak kenarlarda/uçlarda
-bulunur (dış cephe, çekirdek sınırı), tam ortada NADİREN aks olur. Güney ve
-batı kenarları zaten ölçü zinciri + aks baloncuklarıyla DOLU olduğu için
-(bkz. `scripts/dimensions/CLAUDE.md`, `scripts/axis/CLAUDE.md`) kuzey/doğu
-kenarları seçildi. **Bilinen sınırlama:** bu, aks konumlarıyla piksel-kesin
-çakışmama GARANTİSİ değildir — tam ortada gerçekten bir aks olan bir
-projede görsel çakışma olabilir; `pafta::CONTENT_PADDING`in kendisi de
-benzer bir çakışmayı (rev-13, aks baloncuğu ↔ başlık kutusu) KABA bir
-padding artışıyla çözmüştü, bu modül de aynı sınıf pragmatik yaklaşımı
-izler (per-konum kaçınma yerine "güvenli bölge" seçimi).
+`NorthArrow.draw(msp, center, angle_deg)` sadece VERİLEN merkeze çizer; konum kararı `generate_dxf.py`nindir (ve `preview.py` aynısını yansıtır). **DEV-081
+(kullanıcı kararı 2026-10-13):** kat planında ok pafta **iç çizgisinin SAĞ-ÜST köşesindedir**: merkez = `NorthArrow.corner_center(inner_x1, inner_y1, margin)` =
+`(inner_x1 − margin − extent, inner_y1 − margin − extent)`; `extent` çizimin merkezden en uzak noktasının (daire + ibre ucundaki "K" etiketi) muhafazakâr üst sınırıdır
+(`radius·(1+label_gap_ratio) + label_height`), `margin` baskıda 10 mm'dir (`sheet_margin`). İç çizgi `pafta::Sheet.inner_bounds(dx, width, y_bottom, y_top)` ile
+`Sheet.draw`ın kullandığı hesapla BİREBİR alınır. Köşe, `CONTENT_PADDING` bölgesindedir (aks baloncukları/ölçü zincirinin dışında); ortak pafta yüksekliği taşıyan
+projelerde ok binanın üstünden yüksekte durabilir (kullanıcı kararı: köşe). Eski "kat genişliğinin ortası" yerleşimi KALKTI.
 
 ## Public API
 
@@ -80,8 +72,7 @@ edilebildiği (sahte stil test çiftiyle).
 
 ## Bilinen sınırlamalar
 
-- **Aks baloncuklarıyla piksel-kesin çakışmama garantisi yok** (bkz.
-  "Yerleşim").
+- **Köşe yerleşimi** pafta iç çizgisine göredir; çok küçük bir pafta içeriğinde ok bina çizimine yaklaşabilir (selftest üretilen DXF'te başka öğeye binmediğini sınar).
 - **Elevations/sections'a kuzey oku çizilmez** (kullanıcı isteği örtük
   kaldı, ama mantık açık: kuzey bir PLAN/vaziyet kavramıdır, düşey bir
   görünüşte/kesitte yönü göstermenin standart bir karşılığı yoktur).
@@ -93,3 +84,9 @@ veçhe kaydı lens paketinde) yazılır ve `REASONING_PROVIDERS`a girer — kura
 
 ## DEV-074: kuzey sözleşmesi
 Vaziyet planında kuzey daima yukarı; proje planının **kuzeye en yakın cephesi** paftanın üst kenarına paraleldir ve plan paftasındaki ok vaziyet planına göre projenin yönünü gösterir. Dik açılı binada cepheler 90° arayla olduğundan `meta.north_angle` ∈ **[−45°, +45°]** (`NORTH_HALF_RANGE_DEG`, geometriden türer; ölçüm eşiği değildir). `normalize_north_angle`: eşdeğer açı (−180, +180] (350 → −10). `check_north_convention(meta)` aralık dışında `validate.py` HATASI verir ("proje sessizce döndürülmez, karar sizin"); alan yoksa sessiz kalır (ok çizilmez, yön uydurulmaz). Yerleşim planını analiz eden altyapı YOKTUR: yön yalnız açıyla bildirilir. Çizim (`NorthArrow`) ve yönelim veçhesinin hesabı DEĞİŞMEDİ (ham açı eşdeğer olduğundan kullanılmaya devam eder). `CONTRACT_VERSION` 1.0 → 1.1. Vaziyet paftası: `DEV-024` (arsa verisi gelince). Test: `selftest.py::check_north_convention_dev074` (sınır ±45 / ±45,01, normalize, 5 kasıtlı bozma).
+
+## DEV-081: kuzey sözleşmesi (DEV-074'ün yerine geçer)
+Gelen vaziyet kuzey yukarıdır; proje paftaya uzun kenar yatay, kuzeye yakın uzun yüz üstte yerleşir; ok vaziyetteki gerçek yöne göre döner (`north_angle = −bina_dönüşü`; 30° → −30°). İzinli aralık
+dikdörtgen binada **[−90°, +90°]** (`NORTH_LONG_SIDE_HALF_RANGE_DEG`), tam karede **[−45°, +45°]** (`NORTH_HALF_RANGE_DEG`), ölçü bilinmiyorsa muhafazakâr 45 (`north_half_range(meta)`). `check_north_convention` aralık
+dışında HATA; `check_north_layout`: `north_angle` verilmişse `floor_width < floor_depth` UYARI (otomatik döndürme YOK). Sağ-üst köşe yerleşimi için "Yerleşim". `CONTRACT_VERSION` 1.1 → 1.2.
+Vaziyetteki bina dönüklüğünün hesabı ve vaziyet pusulası `DEV-084`te. Test: `selftest.py::check_north_convention_dev081` + `check_corner_placement_dev081` (üretilen DXF'te ok merkezi ⇒ kendi iç çizgisinin sağ-üst köşesi; başka öğeye binmeme), `validate_selftest.py::check_north_hook_in_validate_dev081`; 11 kasıtlı bozma yakalandı.

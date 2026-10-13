@@ -321,14 +321,14 @@ geliştirme görevleri, tamamlanmış geçmiş, fikirler ve geliştirici notlar�
   bir **kuzey oku** sembolü çizilir. Veri `meta.north_angle` (derece, saat
   yönünde, paftanın "yukarı" yönünden gerçek kuzeye) ile gelir; **verilmezse
   ok HİÇ çizilmez** — yön uydurulmaz.
-- **Kuzey sözleşmesi (DEV-074, kullanıcı kararı 2026-10-12):** **vaziyet planında kuzey simgesi DAİMA yukarıyı gösterir**
-  (vaziyet paftası ayrı madde: `DEV-024`, arsa verisi gelince). Proje, paftaya **kuzeye en yakın cephesi üst kenara paralel**
-  olacak şekilde yerleştirilir ve **proje plan paftalarındaki ok, vaziyet planına göre projenin yönünü gösterir**. Dik açılı bir
-  binanın cepheleri 90° arayla durduğu için `meta.north_angle` bu yüzden **−45°…+45°** olmalıdır (eşdeğer açılar normalize
-  edilir: 350 = −10); aralık dışı açı `validate.py` **HATASI**dır — proje sessizce döndürülmez (otomatik migrasyon yok), karar
-  istenir. Kullanıcı bir yerleşim planı verirse bunu analiz edecek altyapı henüz yoktur: yön yalnız **açıyla** bildirilir.
-  Uygulama: `scripts/northarrow::check_north_convention`.
-  **Revizyon bekliyor (2026-10-13, `DEV-081`):** kullanıcı kat planında okun **sağ üst köşede** durmasını ve vaziyet pusulasının **kullanıcının belirteceği açıda** olmasını istedi; **Karar verildi (Q1/Q2, plan: `docs/development/SITE_PLAN_STUDY_PLAN.md` §2):** gelen vaziyet planı kuzey yukarıdır (değilse kullanıcıya uyarı); proje paftaya binanın uzun kenarı yatay, kuzeye yakın uzun yüzü üstte olacak şekilde yerleşir; pusula vaziyetteki gerçek yöne göre döner (30° → −30°); aralık dikdörtgen binada `[−90°, +90°]` olacak (kare: `[−45°, +45°]`; teyit bekliyor). **Uygulama `DEV-081`de yapılana dek yukarıdaki sözleşme (vaziyette daima yukarı, `[−45°, +45°]`) kodda geçerlidir.**
+- **Kuzey sözleşmesi (DEV-081, kullanıcı kararı 2026-10-13; DEV-074'ün yerine geçer):** **gelen vaziyet planı DAİMA kuzey yukarıdır**
+  (kuzeyi göstermiyorsa kullanıcıya UYARI; yön tahmin edilmez — vaziyet paftası/içeri aktarma: `DEV-082`/`DEV-084`). Proje, paftaya **binanın UZUN kenarı yatay ve
+  kuzeye yakın uzun yüzü paftanın üstüne bakacak** şekilde yerleştirilir; **pafta pusulası vaziyetteki gerçek yöne göre döner**: vaziyette bina kuzeyden saat
+  yönünde B° dönükse `meta.north_angle = −B` (30° dönük bina → −30°). **Kat planı paftalarında aynı mantık geçerlidir ve ok pafta iç çizgisinin SAĞ-ÜST
+  köşesinde durur** (`NorthArrow.corner_center`, `Sheet.inner_bounds`). İzinli aralık (geometriden türer, ölçüm eşiği değildir): **dikdörtgen binada
+  `[−90°, +90°]`** (iki uzun yüzden kuzeye yakın olanın dış normali kuzeyle ≤ 90°), **tam kare binada `[−45°, +45°]`**; eşdeğer açılar normalize edilir (350 = −10);
+  aralık dışı açı `validate.py` **HATASI**dır ve `meta.floor_width < meta.floor_depth` (uzun kenar yatay değil) `north_angle` verilmişse **UYARI**dır — proje sessizce
+  döndürülmez (otomatik migrasyon yok), karar istenir. Yön yalnız **açıyla** bildirilir. Uygulama: `scripts/northarrow::check_north_convention` / `check_north_layout`.
 - Kuzey okunun **NASIL çizildiği** (`NorthArrowStyle` Protocol'ü,
   `scripts/northarrow/`) standarttan ayrılmıştır — ileride farklı bir
   sembol tasarımına geçilmesi `NorthArrow(style=...)` ile enjekte edilir,

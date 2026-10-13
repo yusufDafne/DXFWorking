@@ -30,6 +30,7 @@ mümkün olduğunca **kendi kendine yeterli** olacak şekilde yazılmıştır.
    ekstra boşluk yoktur (`meta.sheet_gap` kaldırıldı); çağıran taraf ardışık
    paftaların X-ofsetini `width + 2*(CONTENT_PADDING+FRAME_GAP)` kadar
    ilerletir.
+   **`Sheet.inner_bounds(dx, width, y_bottom, y_top)` (DEV-081)** iç çizginin `(x0, y0, x1, y1)` sınırlarını `draw` ile BİREBİR aynı hesapla verir (kuzey oku sağ-üst köşe gibi iç çizgiye göre yerleşen öğeler içeriği çizmeden önce kullanır).
 2. **`fit_text_height` / `fit_uniform_text_height`** — gerçek font
    metrikleriyle (kaba karakter-sayısı tahmini DEĞİL) bir metnin verilen
    genişliğe sığacağı en büyük yüksekliği hesaplar. `Sheet`, TÜM pafta

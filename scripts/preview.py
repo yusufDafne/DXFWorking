@@ -414,9 +414,9 @@ def generate_preview(context_path: Path = DEFAULT_CONTEXT_PATH, output_path: Pat
             for cut in sections:
                 draw_cut_marker_preview(ax, cut, cursor, floor_width, floor_depth)
             if north_angle is not None:
-                center_x = cursor + floor_width / 2.0
                 north_arrow = NorthArrow(scale)
-                arrow_center = (center_x, floor_depth + sheet_margin + north_arrow.radius)
+                _ix0, _iy0, inner_x1, inner_y1 = sheet.inner_bounds(cursor, floor_width, 0.0, floor_depth)
+                arrow_center = north_arrow.corner_center(inner_x1, inner_y1, sheet_margin)
                 draw_north_arrow_preview(ax, arrow_center, north_angle, north_arrow.radius)
             cursor += floor_width + 2 * FRAME_HALF_WIDTH
         for elevation in context["elevations"]:

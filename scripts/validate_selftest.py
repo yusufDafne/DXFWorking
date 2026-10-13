@@ -250,6 +250,43 @@ def check_success_line_counts_all_warnings_dev080() -> list[str]:
     return errors
 
 
+def check_north_hook_in_validate_dev081() -> list[str]:
+    """DEV-081: validate.py kuzey kurallarini GERCEKTEN cagirir (aralik HATASI + paftalama UYARISI)."""
+    import copy
+    import tempfile
+    errors: list[str] = []
+    base = json.loads((PROJECT_ROOT / "golden" / "kesit_ornek" / "context.json").read_text(encoding="utf-8"))
+
+    def run(mutate):
+        ctx = copy.deepcopy(base)
+        mutate(ctx["meta"])
+        with tempfile.TemporaryDirectory() as tmp:
+            p = Path(tmp) / "context.json"
+            p.write_text(json.dumps(ctx), encoding="utf-8")
+            r = subprocess.run([sys.executable, str(Path(__file__).resolve().parent / "validate.py"), str(p)], capture_output=True, text=True, timeout=600)
+        return r.returncode, r.stdout
+
+    def rect(m, angle):                                   # dikdortgen, uzun kenar yatay
+        m.update(floor_width=12000.0, floor_depth=9000.0, north_angle=angle)
+
+    rc, out = run(lambda m: rect(m, 75.0))
+    if rc != 0 or "north_angle" in out:
+        errors.append(f"dikdortgende 75 derece gecmeli: rc={rc}")
+    rc, out = run(lambda m: rect(m, 100.0))
+    if rc == 0 or "meta.north_angle=100" not in out:
+        errors.append("dikdortgende 100 derece HATA olmali")
+    rc, out = run(lambda m: m.update(north_angle=75.0))   # kare (9000x9000): 75 > 45
+    if rc == 0 or "meta.north_angle=75" not in out:
+        errors.append("karede 75 derece HATA olmali")
+    rc, out = run(lambda m: m.update(floor_width=9000.0, floor_depth=12000.0, north_angle=0.0))
+    if rc != 0 or "UYARI (sartname): meta.floor_width" not in out:
+        errors.append(f"uzun kenar dikeyse UYARI beklenirdi: rc={rc}")
+    rc, out = run(lambda m: (m.pop("north_angle", None), m.update(floor_width=9000.0, floor_depth=12000.0)))
+    if "meta.floor_width" in out:
+        errors.append("north_angle yoksa paftalama uyarisi OLMAMALI")
+    return errors
+
+
 def main() -> int:
     groups = (
         ("kapi bosluguna baglanan duvar ucu UYARI/HATA verir", check_wall_ending_in_door_gap_flags()),
@@ -262,6 +299,7 @@ def main() -> int:
         ("exit_door_id OPT-IN'dir", check_stairs_exit_door_id_is_opt_in()),
         ("gecersiz exit_door_id HATA verir", check_stairs_invalid_exit_door_id_is_error()),
         ("basari satiri TUM uyarilari sayar (DEV-080)", check_success_line_counts_all_warnings_dev080()),
+        ("validate kuzey kurallarini cagirir (DEV-081)", check_north_hook_in_validate_dev081()),
     )
     failed = False
     for name, errors in groups:

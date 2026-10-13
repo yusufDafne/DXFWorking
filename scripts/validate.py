@@ -106,7 +106,7 @@ from architect import (  # noqa: E402
     check_wet_area_reachable_without_bedroom,
 )
 from elevations import derive_level_openings  # noqa: E402
-from northarrow import check_north_convention  # noqa: E402
+from northarrow import check_north_convention, check_north_layout  # noqa: E402
 from openings import (check_elevator_door_insets, check_opening_nuances, check_window_class_errors,  # noqa: E402
                       check_opening_overlaps, check_window_heights, check_window_junctions)
 from walls import Wall, WallCatalog, check_wall_thickness, gaps_for_wall  # noqa: E402
@@ -620,7 +620,7 @@ def run_validation(context_path: Path = DEFAULT_CONTEXT_PATH) -> bool:
     all_errors += check_floor_codes(context["floors"])
     # DEV-065: tasarim karari kaydi (opt-in). Bos gerekce vb. veri kalitesi HATASIDIR; bulgunun kendisi yine UYARI.
     all_errors += check_decisions(context)
-    all_errors += check_north_convention(context.get("meta", {}))    # DEV-074
+    all_errors += check_north_convention(context.get("meta", {}))    # DEV-074 / DEV-081
     # Aks etiketleme kurali (DEV-015): dusey numerik, yatay alfabetik, ara aks
     # kesme isaretiyle. '1A' yasaktir - yatay aks ailesiyle ve kolon
     # adlandirmasiyla (B2) carpisir.
@@ -630,6 +630,7 @@ def run_validation(context_path: Path = DEFAULT_CONTEXT_PATH) -> bool:
     stair_warnings: list[str] = []
     standards_warnings: list[str] = list(check_shafts_across_floors(context["floors"]))
     standards_warnings = [f"{w}" for w in standards_warnings]
+    standards_warnings += check_north_layout(context.get("meta", {}))          # DEV-081 (yalniz north_angle verilmisse)
     architect_warnings: list[str] = []
     for floor in context["floors"]:
         all_errors += check_floor(units, floor)

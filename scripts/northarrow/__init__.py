@@ -102,6 +102,15 @@ class NorthArrow:
         self.text_layer = text_layer
         self.radius = to_modelspace(PRINTED_RADIUS_MM, scale_denominator)
         self.label_height = to_modelspace(PRINTED_LABEL_MM, scale_denominator)
+        # Cizilen herhangi bir ogenin merkezden en uzak mesafesi (ibre ucundaki etiket dahil, MUHAFAZAKAR ust sinir):
+        # etiket merkezi radius*(1+label_gap_ratio) uzakta, yarim metin yuksekligi kadar daha tasar.
+        gap_ratio = getattr(self.style, "label_gap_ratio", 0.45)
+        self.extent = self.radius * (1.0 + gap_ratio) + self.label_height
+
+    def corner_center(self, inner_x1: float, inner_y1: float, margin: float) -> tuple[float, float]:
+        """DEV-081: kat planinda ok pafta IC cizgisinin SAG-UST kosesine yerlesir: tum cizim (daire + ibre + etiket) ic cizgiye
+        `margin` kadar pay birakarak kose icinde kalir. Konum karari cagirana aittir (`generate_dxf.py`/`preview.py` ayni yardimciyi kullanir)."""
+        return (inner_x1 - margin - self.extent, inner_y1 - margin - self.extent)
 
     def draw(self, msp, center: tuple[float, float], angle_deg: float) -> None:
         self.style.draw(msp, center, self.radius, angle_deg, self.layer,
@@ -110,10 +119,21 @@ class NorthArrow:
 
 # Bu modulun CONTEXT SOZLESMESI surumu (DEV-020). KOD surumu DEGILDIR.
 # Bkz. scripts/version.py
-CONTRACT_VERSION = "1.1"   # DEV-074: meta.north_angle [-45, +45] sozlesmesi (validate HATASI)
+CONTRACT_VERSION = "1.2"   # DEV-081: dikdortgen binada [-90, +90] (uzun kenar yatay, kuzeye yakin uzun yuz ustte); kare [-45, +45]; 1.1: DEV-074 sozlesmesi
 
 # Dik acili binanin cepheleri 90 derece arayla: kuzeye en yakin cephe en cok 90/2 = 45 derece uzaktadir (geometri, olcum esigi degil).
-NORTH_HALF_RANGE_DEG = 45.0
+NORTH_HALF_RANGE_DEG = 45.0            # TAM KARE bina: dort cepheden kuzeye en yakini en cok 90/2 = 45 derece uzakta
+# DEV-081 (kullanici karari 2026-10-13): proje paftaya UZUN KENARI YATAY, kuzeye yakin UZUN yuzu USTTE olacak sekilde konur. Iki karsit uzun yuzun
+# disa bakan normalleri 180 derece arayla oldugundan kuzeye yakin olan en cok 90 derece uzaktadir (geometri, olcum esigi degil).
+NORTH_LONG_SIDE_HALF_RANGE_DEG = 90.0
+
+
+def north_half_range(meta: dict) -> float:
+    """Izinli |north_angle| ust siniri: dikdortgen binada (floor_width != floor_depth) 90, tam karede 45; olculer bilinmiyorsa MUHAFAZAKAR 45."""
+    w, d = meta.get("floor_width"), meta.get("floor_depth")
+    if isinstance(w, (int, float)) and isinstance(d, (int, float)) and not isinstance(w, bool) and not isinstance(d, bool) and w > 0 and d > 0 and w != d:
+        return NORTH_LONG_SIDE_HALF_RANGE_DEG
+    return NORTH_HALF_RANGE_DEG
 
 
 def normalize_north_angle(angle_deg: float) -> float:
@@ -123,20 +143,37 @@ def normalize_north_angle(angle_deg: float) -> float:
 
 
 def check_north_convention(meta: dict) -> list[str]:
-    """validate.py HATALARI: `meta.north_angle` verilmisse kuzeye en yakin cephe ustte olmali (|aci| <= 45). Verilmemisse bos
-    (ok cizilmez, yon uydurulmaz; yonelim veçhesi 'kuzey yonu verilmedi' der)."""
+    """validate.py HATALARI: `meta.north_angle` verilmisse kuzeye yakin uzun yuz ustte olmali (dikdortgen: |aci| <= 90; tam kare: <= 45).
+    Verilmemisse bos (ok cizilmez, yon uydurulmaz; yonelim veçhesi 'kuzey yonu verilmedi' der)."""
     if "north_angle" not in meta:
         return []
     raw = meta["north_angle"]
     a = normalize_north_angle(raw)
-    if abs(a) <= NORTH_HALF_RANGE_DEG:
+    limit = north_half_range(meta)
+    if abs(a) <= limit:
         return []
-    return [f"meta.north_angle={raw:g} (esdeger {a:g}): kuzey sozlesmesi proje planinin KUZEYE EN YAKIN cephesinin paftanin ust kenarina paralel "
-            f"olmasini ister (aci -{NORTH_HALF_RANGE_DEG:g}..+{NORTH_HALF_RANGE_DEG:g}). Bu aci icin proje farkli bir yonde yerlestirilmis; "
-            "proje sessizce dondurulmez - hangi cephe kuzeye en yakin, projeyi yeniden yerlestirmek mi yoksa aciyi duzeltmek mi istiyorsunuz?"]
+    shape = "dikdortgen binada uzun kenar yatay ve kuzeye yakin uzun yuz ustte" if limit == NORTH_LONG_SIDE_HALF_RANGE_DEG else "kare binada kuzeye en yakin cephe ustte"
+    return [f"meta.north_angle={raw:g} (esdeger {a:g}): kuzey sozlesmesi {shape} olmasini ister (aci -{limit:g}..+{limit:g}). Bu aci icin proje farkli "
+            "bir yonde yerlestirilmis; proje sessizce dondurulmez - projeyi vaziyete gore yeniden yerlestirmek mi yoksa aciyi duzeltmek mi istiyorsunuz?"]
+
+
+def check_north_layout(meta: dict) -> list[str]:
+    """validate.py UYARISI (yalniz `north_angle` verilmisse): paftalama uzun kenari YATAY ister; floor_width < floor_depth ise plan bu
+    sozlesmeye gore yerlestirilmemistir. Otomatik dondurme YOK - karar sorulur (DEV-081)."""
+    if "north_angle" not in meta:
+        return []
+    w, d = meta.get("floor_width"), meta.get("floor_depth")
+    if isinstance(w, (int, float)) and isinstance(d, (int, float)) and w < d:
+        return [f"meta.floor_width ({w:g}) < meta.floor_depth ({d:g}): kuzey sozlesmesi paftalamada binanin UZUN kenarinin yatay olmasini ister. "
+                "Plan bu sozlesmeye gore yerlestirilmemis; proje sessizce dondurulmez - kuzey okunun yonu ve cephe yerlesimi icin karar sizin."]
+    return []
+
 
 __all__ = [
     "NORTH_HALF_RANGE_DEG",
+    "NORTH_LONG_SIDE_HALF_RANGE_DEG",
+    "north_half_range",
+    "check_north_layout",
     "check_north_convention",
     "normalize_north_angle",
     "NORTH_LABEL",

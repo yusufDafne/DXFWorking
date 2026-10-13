@@ -479,6 +479,17 @@ class Sheet:
             self.frame_y0, self.frame_y1 = -pads, pads
         self.outer_height = self.frame_y1 - self.frame_y0
 
+    def inner_bounds(self, dx: float, width: float, y_bottom: float, y_top: float,
+                     padding: float | None = None, frame_gap: float | None = None) -> tuple[float, float, float, float]:
+        """Paftanin IC cizgisinin `(x0, y0, x1, y1)` sinirlari (`draw` ile BIREBIR ayni hesap). Icerigi cizmeden ONCE iç çizgiye gore
+        yerlesim gerektiren ogeler (ornegin kat planinda sag-ust kose kuzey oku, DEV-081) icin."""
+        pad = self.padding if padding is None else padding
+        gap = self.frame_gap if frame_gap is None else frame_gap
+        pads = pad + gap
+        outer_y0 = min(self.frame_y0, y_bottom - pads)
+        outer_y1 = max(self.frame_y1, y_top + pads)
+        return dx - pad, outer_y0 + gap, dx + width + pad, outer_y1 - gap
+
     def draw(self, msp, dx: float, width: float, y_bottom: float, y_top: float,
               label: str, content_entities=None, title_box: bool = True,
               padding: float | None = None, frame_gap: float | None = None) -> None:
@@ -491,15 +502,10 @@ class Sheet:
         # padding/frame_gap normalde sinif genelindedir; KAPAK PAFTASI gibi
         # ozel paftalar bunlari override edebilir (orada pafta dis cercevesi
         # kapak blogunun dis hattiyla cakistigi icin padding 0'dir).
-        pad = self.padding if padding is None else padding
         gap = self.frame_gap if frame_gap is None else frame_gap
-        pads = pad + gap
-        outer_y0 = min(self.frame_y0, y_bottom - pads)
-        outer_y1 = max(self.frame_y1, y_top + pads)
-
-        inner_x0, inner_x1 = dx - pad, dx + width + pad
+        inner_x0, inner_y0, inner_x1, inner_y1 = self.inner_bounds(dx, width, y_bottom, y_top, padding, frame_gap)
         outer_x0, outer_x1 = inner_x0 - gap, inner_x1 + gap
-        inner_y0, inner_y1 = outer_y0 + gap, outer_y1 - gap
+        outer_y0, outer_y1 = inner_y0 - gap, inner_y1 + gap
 
         if content_entities is not None:
             verify_within_frame(content_entities, outer_x0, outer_y0, outer_x1, outer_y1, label)
