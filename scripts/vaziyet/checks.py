@@ -49,7 +49,7 @@ def check_site(context: dict) -> tuple[list[str], list[str]]:
     buildable = None
     if parcel is not None:
         if site.get("setbacks") is None:
-            warnings.append("site.setbacks verilmemis: yapilasma alani hesaplanamadi (cekme mesafesi uydurulmaz; kullanici degeri ya da varsayilan katalog gerekir)")
+            warnings.append("site.setbacks verilmemis: yapilasma alani hesaplanamadi (cekme mesafesi uydurulmaz; kullanici degeri ya da varsayilan katalog gerekir: `python scripts/defaults_report.py`, DEV-086)")
         else:
             try:
                 buildable = buildable_area(parcel, site["setbacks"])

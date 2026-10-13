@@ -22,6 +22,7 @@ ile aynı sınıf bir ad düzeltmesi). Dizin/paket: `vaziyet/`. **Veri anahtarı
 | `building_footprint`, `plan_north_angle` | bina dikdörtgeni (merkez + saat yönünde dönme) ve `north_angle = −B` |
 | `scan_site_dxf`, `SiteScan`, `Candidate`, `build_site_patch`, `layer_hint` | vaziyet DXF'i SALT OKUNUR tarama + ONAYLI aday seçiminden `site` patch taslağı (dosyaya YAZMAZ) |
 | `check_site` | `validate.py` kancası (opt-in): HATA geçersiz parsel/yerleşim alanı, `road_edges` aralığı, çekme alanı yok ediyor, bina parsel DIŞINDA; UYARI kuzey onaysız, yerleşim alanı parsel dışı, çekme yok, bina yapılaşma alanı dışında |
+| `ZONING_DEFAULTS`, `ZoningValue`, `ZoningResolution`, `resolve_zoning`, `edge_roles`, `setbacks_for_parcel` | **DEV-086** imar standart değer kataloğu (aşağıda) |
 | `write_sample` | basit ÖRNEK vaziyet DXF'i (kullanıcıya verilir); CLI `python scripts/site_sample.py`; tarama CLI `python scripts/site_scan.py dosya.dxf [--patch c0,c1]` |
 
 ## Vaziyet DXF sözleşmesi (kullanıcıya verilen basit düzen)
@@ -31,6 +32,14 @@ ile aynı sınıf bir ad düzeltmesi). Dizin/paket: `vaziyet/`. **Veri anahtarı
 **Tahmin yok:** `$INSUNITS` = 0 ise mm'ye ÇEVRİLMEZ (`to_mm=None`, uyarı) ve `build_site_patch` reddeder; **DWG okunmaz** (AC10xx başlığı → "DXF olarak kaydedin", dönüştürücü `DEV-087`).
 **Kuzey denetimi:** `KUZEY`/`north` katmanındaki ilk çizgi/polyline'ın yönü (başlangıç→uç, +Y'den saat yönünde) `NORTH_UP_TOLERANCE_DEG = 1` içindeyse `yukari`; sapıyorsa `yukari_degil`; yalnız "K/N/KUZEY/NORTH" metni varsa `belirsiz`; hiçbiri yoksa `yok`.
 `yukari` dışındakilerde kullanıcıya UYARI (DEV-081: gelen vaziyet kuzey yukarıdır; yön tahmin edilmez).
+
+## İmar standart değer kataloğu (DEV-086, `zoning.py`)
+Kullanıcı kararı (2026-10-13): çekme/TAKS/KAKS kullanıcıdan (dil modeline ayrıca) istenir; **bilinmiyorsa standart değerler kullanılır** — bunlar kısa bir araştırmayla kaydedilmiş, **kaynağı İKİNCİL ve DOĞRULANMAMIŞ** (`verified=False`)
+geçici değerlerdir; kullanıcı gerçek yönetmelik verisiyle değiştirecektir. Değerler (ayrık nizam): ön 5000 / yan 3000 / arka 3000 mm (asgari; uygulama imar planında aksi hüküm yoksa), TAKS 0,40 (planda TAKS belirtilmeyen ayrık/blok nizam),
+KAKS **sayı yok** (belirtilmediyse yapı yaklaşma mesafelerinden çıkan taban alanı × kat adedi; bu durumda TAKS en çok 0,60). Kaynak bağlantıları ve kayıt `scripts/vaziyet/zoning.py` + `python scripts/defaults_report.py --catalog`.
+**Sözleşme:** her kayıt koşul + nizam + kaynak + tarih + `verified` taşır; **kullanıcı değeri HER ZAMAN ezer** (0 da geçerli); **koşul eşleşmezse varsayılan UYGULANMAZ** (`plan_states` ile planın TAKS/KAKS belirttiği bildirilirse, ya da nizam `ayrik` değilse soru döner — varsayım yok);
+kullanılan her varsayılan ADIYLA bildirilir (`ZoningResolution.describe`, `defaults_report.py`: `site.setbacks` yoksa hangi varsayılanların uygulanacağını SÖYLER, UYGULAMAZ). `edge_roles`: yola bakan kenar = ön; kalanlardan ilk yol kenarına en antiparalel (eşitlikte en uzun) = arka; diğerleri yan —
+yola bakan kenar bilinmiyorsa rol UYDURULMAZ. `setbacks_for_parcel` → `site.setbacks` biçimi (`edges_mm`). Güncelleme sözleşmesi (`standards/` ile aynı): değer DEĞİŞİMİ sürüm artırmaz (`researched_on`/`verified`/`source` güncellenir, HD kaydı), alan ŞEKLİ değişimi `CONTRACT_VERSION`ı artırır. Katalog değerleri BAĞIMSIZ literal sayılardır.
 
 ## Çakışma denetimi: EXEMPT
 `collision/scene.py::COLLISION_EXEMPT` içinde: vaziyet düzlemi kat sahnesinden ayrı bir koordinat dünyasıdır; parsel/yapılaşma alanı/ayak izi içerme denetimi `checks.py::check_site`te (tekil arite).
@@ -42,7 +51,7 @@ ile aynı sınıf bir ad düzeltmesi). Dizin/paket: `vaziyet/`. **Veri anahtarı
 ## Doğrulama
 `python scripts/vaziyet/selftest.py` — 5 grup: çokgen geçerliliği (kelebek/yinelenen/kolinear + L yanlış-pozitif yok), **ELLE hesaplanan** offset (dikdörtgen, kenar başına, L konkav reflex genişlemesi, çökme, eşdoğrusal, kısmen çöken), çekme çözümleme +
 ayak izi (90° saat yönü elle) + `plan_north_angle`, `check_site` kancası, DXF içeri aktarma (üretilen örnek, salt-okunurluk/sha256, birim/cm×10, LINE zinciri [açık/dallı/8-şekli/0,5 mm–5 mm boşluk], kuzey 4 durum + 1° sınırı, desteklenmeyenler, DWG, bozuk dosya).
-Kasıtlı bozma (31 mutasyon): 29'u yakalandı; 2'si **eşdeğer savunma satırı** (offset'te `signed_area<=0` kenar-yönü kontrolüyle örtüşür; LINE zincirinde derece≠2 dışlaması dolaşma başarısızlığıyla örtüşür — rastgele 4000+20000 çokgen aramasıyla ayrıştıran girdi bulunamadı).
+DEV-086 testi `check_zoning_catalog_dev086` (elle okunan değerler, kullanıcı üstünlüğü, koşul/nizam, rol seçimi, defaults_report CLI; 17 kasıtlı bozmadan 16'sı yakalandı, 1'i ölü savunma satırı). Kasıtlı bozma (DEV-082: 31 mutasyon): 29'u yakalandı; 2'si **eşdeğer savunma satırı** (offset'te `signed_area<=0` kenar-yönü kontrolüyle örtüşür; LINE zincirinde derece≠2 dışlaması dolaşma başarısızlığıyla örtüşür — rastgele 4000+20000 çokgen aramasıyla ayrıştıran girdi bulunamadı).
 Golden: `scripts/vaziyet/golden/parsel_ornek` (şema 1.8.0 + `site` + `north_angle=−30`; bina 6000×9000 olduğundan `floor_width < floor_depth` UYARISI bilinçli olarak görünür).
 
 ## Bilinen sınırlamalar
@@ -51,4 +60,4 @@ Golden: `scripts/vaziyet/golden/parsel_ornek` (şema 1.8.0 + `site` + `north_ang
 - Parsel kenar indeksi CCW normalizasyonuna göredir (CW girdide ilk köşe değişebilir); `road_edges` bu indekslerle yazılır — içeri aktarma patch'i `Parcel` sırasını değil DXF sırasını verir, kullanıcı onayında kenar numaraları gösterilmelidir (`DEV-085`).
 - Tek parsel, tek bina dikdörtgeni; çok parselli/çok bloklu/L biçimli bina kapsam dışı.
 - Bina ayak izi parsel DIŞINDA ise HATA, yalnız çekmeye giriyorsa UYARI; `placement_zone` eleme değildir.
-- Yerleşim etüdü, vaziyet paftası/pusulası, brief, varsayılan imar değerleri ve DWG sonraki maddelerdir.
+- Yerleşim etüdü, vaziyet paftası/pusulası, brief ve DWG sonraki maddelerdir. İmar varsayılanları ikincil kaynaklıdır ve doğrulanmamıştır; yalnız ayrık nizam; TAKS 0,40 / 0,60 farklı koşulların değeridir (birbirinin yerine geçmez); kat adedi/taban alanı hesabı (KAKS) etüt motorunda (DEV-083).

@@ -17,6 +17,7 @@ import ezdxf  # noqa: E402
 
 from vaziyet import (DxfInputError, Parcel, VaziyetError, build_site_patch, buildable_area, building_footprint, check_site,  # noqa: E402
                      inward_offset, layer_hint, normalize_ccw, plan_north_angle, resolve_setbacks, scan_site_dxf, validate_polygon, write_sample)
+from vaziyet import ZONING_DEFAULTS, edge_roles, resolve_zoning, setbacks_for_parcel  # noqa: E402
 
 RECT = [(0, 0), (10000, 0), (10000, 20000), (0, 20000)]
 LSHAPE = [(0, 0), (20000, 0), (20000, 10000), (10000, 10000), (10000, 20000), (0, 20000)]
@@ -324,6 +325,95 @@ def check_dxf_input() -> list[str]:
     return e
 
 
+def check_zoning_catalog_dev086() -> list[str]:
+    """DEV-086: imar standart deger katalogu - elle okunan degerler, kullanici ustunlugu, kosul eslesmezse UYGULANMAZ, adiyla bildirim."""
+    import re
+    e: list[str] = []
+    want = {"front_setback_mm": 5000.0, "side_setback_mm": 3000.0, "rear_setback_mm": 3000.0, "taks": 0.40, "taks_max_without_kaks": 0.60, "kaks_rule": None}
+    _eq(e, "katalog degerleri (tabloyla birebir)", {k: z.value for k, z in ZONING_DEFAULTS.items()}, want)
+    for k, z in ZONING_DEFAULTS.items():
+        if z.verified or not z.condition or not z.urls or not z.source or z.nizam != "ayrik":
+            e.append(f"{k}: DOGRULANMADI + kosul + kaynak/url + ayrik nizam tasimali: {z}")
+    src = open(Path(__file__).resolve().parent / "zoning.py", encoding="utf-8").read()
+    for name in ("DEFAULT_FRONT_SETBACK_MM", "DEFAULT_SIDE_SETBACK_MM", "DEFAULT_REAR_SETBACK_MM", "DEFAULT_TAKS", "DEFAULT_TAKS_MAX_WITHOUT_KAKS"):
+        if not re.search(rf"^{name} = \d+(\.\d+)?\b", src, re.M):
+            e.append(f"{name} bagimsiz LITERAL sayi olmali (hesaplanmaz/birbirine baglanmaz)")
+    r = resolve_zoning()
+    _eq(e, "varsayilanlar: hepsi katalogdan", (r.sources["front_setback_mm"], r.sources["taks"], len(r.used_defaults)), ("varsayilan:DEFAULT_FRONT_SETBACK_MM", "varsayilan:DEFAULT_TAKS", 6))
+    _eq(e, "varsayilan: soru yok", r.questions, ())
+    d = r.describe()
+    _eq(e, "bildirim: her varsayilan ADIYLA + DOGRULANMADI + kosul", all("DOGRULANMADI" in x and "kosul:" in x for x in d) and len(d) == 6, True)
+    _eq(e, "bildirim adlari", [("DEFAULT_FRONT_SETBACK_MM" in d[0]), ("DEFAULT_TAKS_MAX_WITHOUT_KAKS" in d[4])], [True, True])
+    r = resolve_zoning({"front_setback_mm": 7000, "side_setback_mm": 0})
+    _eq(e, "kullanici degeri ezer (0 da gecerli)", (r.values["front_setback_mm"], r.sources["front_setback_mm"], r.values["side_setback_mm"], r.sources["side_setback_mm"]),
+        (7000.0, "kullanici", 0.0, "kullanici"))
+    _eq(e, "ezilen varsayilan bildirilmez", ["DEFAULT_FRONT_SETBACK_MM" in x or "DEFAULT_SIDE_SETBACK_MM" in x for x in r.describe()], [False] * 4)
+    r = resolve_zoning({"kaks": 1.5})
+    _eq(e, "kullanici KAKS: 'KAKS yok' siniri/kurali UYGULANMAZ", (r.values["kaks"], r.values["taks_max_without_kaks"], r.values["kaks_rule"], r.values["taks"]), (1.5, None, None, 0.40))
+    r = resolve_zoning(plan_states={"taks": True})
+    _eq(e, "plan TAKS belirtiyor: varsayilan UYGULANMAZ + soru", (r.values["taks"], any("TAKS" in q for q in r.questions)), (None, True))
+    r = resolve_zoning(plan_states={"kaks": True})
+    _eq(e, "plan KAKS belirtiyor: KAKS kurali/siniri UYGULANMAZ + soru", (r.values["taks_max_without_kaks"], r.values["kaks_rule"], any("KAKS" in q for q in r.questions)), (None, None, True))
+    r = resolve_zoning({"taks": 0.5}, nizam="bitisik")
+    _eq(e, "baska nizam: katalog yok -> soru; kullanici degeri yine gecer", (r.values["taks"], r.values["front_setback_mm"], r.used_defaults, len(r.questions) >= 5), (0.5, None, (), True))
+    for bad in ({"xyz": 1}, {"taks": -0.1}, {"taks": True}, {"front_setback_mm": "5"}):
+        try:
+            resolve_zoning(bad)
+            e.append(f"{bad!r}: hata beklenirdi")
+        except VaziyetError:
+            pass
+    rect = Parcel.from_polygon(RECT)
+    _eq(e, "roller: yol=0", edge_roles(rect, [0]), ["on", "yan", "arka", "yan"])
+    _eq(e, "roller: yol=1 (yan kenar)", edge_roles(rect, [1]), ["yan", "on", "yan", "arka"])
+    _eq(e, "roller: kose parsel (iki yol)", edge_roles(rect, [0, 1]), ["on", "on", "arka", "yan"])
+    trap = Parcel.from_polygon([(0, 0), (30000, 0), (26000, 40000), (2000, 40000)])
+    _eq(e, "roller: yamuk (arka = en antiparalel)", edge_roles(trap, [0]), ["on", "yan", "arka", "yan"])
+    ell = Parcel.from_polygon([(0, 0), (20000, 0), (20000, 10000), (12000, 10000), (12000, 20000), (0, 20000)])
+    _eq(e, "roller: iki antiparalel aday -> en uzun arka", edge_roles(ell, [0]), ["on", "yan", "yan", "yan", "arka", "yan"])
+    for bad, frag in (([], "bilinmiyor"), ([9], "gecersiz"), ([True], "gecersiz")):
+        try:
+            edge_roles(rect, bad)
+            e.append(f"road_edges={bad}: hata beklenirdi")
+        except VaziyetError as exc:
+            if frag not in str(exc):
+                e.append(f"road_edges={bad}: '{frag}' bekleniyordu: {exc}")
+    sb, res = setbacks_for_parcel(rect, [0], {"front_setback_mm": 6000, "side_setback_mm": 2500, "rear_setback_mm": 4000})
+    _eq(e, "setbacks_for_parcel kullanici (on/yan/arka/yan)", sb, {"edges_mm": [6000.0, 2500.0, 4000.0, 2500.0]})
+    sb, res = setbacks_for_parcel(Parcel.from_polygon([(0, 0), (30000, 0), (30000, 40000), (0, 40000)]), [0])
+    _eq(e, "setbacks_for_parcel varsayilan", sb, {"edges_mm": [5000.0, 3000.0, 3000.0, 3000.0]})
+    _eq(e, "varsayilan cekmelerle yapilasma alani ELLE", _rounded(buildable_area(Parcel.from_polygon([(0, 0), (30000, 0), (30000, 40000), (0, 40000)]), sb)),
+        [(3000.0, 5000.0), (27000.0, 5000.0), (27000.0, 37000.0), (3000.0, 37000.0)])
+    try:
+        setbacks_for_parcel(rect, [0], nizam="bitisik")
+        e.append("katalogda olmayan nizamda cekme varsayilani UYDURULMAMALI")
+    except VaziyetError as exc:
+        if "varsayilan YOK" not in str(exc):
+            e.append(f"nizam hatasi soru metni icermeli: {exc}")
+    # defaults_report: katalog ve `site` varsayilan bildirimi
+    import json as _json
+    import subprocess
+    script = str(Path(__file__).resolve().parent.parent / "defaults_report.py")
+    out = subprocess.run([sys.executable, script, "--catalog"], capture_output=True, text=True, timeout=300).stdout
+    for needle in ("DEFAULT_FRONT_SETBACK_MM", "DEFAULT_TAKS_MAX_WITHOUT_KAKS", "DOGRULANMADI", "alomaliye.com"):
+        if needle not in out:
+            e.append(f"defaults_report --catalog '{needle}' icermeli")
+    with tempfile.TemporaryDirectory() as tmp:
+        ctx = {"site": {"parcel": {"polygon": [[0, 0], [30000, 0], [30000, 40000], [0, 40000]]}, "road_edges": [0]}}
+        p1 = Path(tmp) / "c.json"
+        p1.write_text(_json.dumps(ctx), encoding="utf-8")
+        out = subprocess.run([sys.executable, script, str(p1)], capture_output=True, text=True, timeout=300).stdout
+        if "5000.0, 3000.0, 3000.0, 3000.0" not in out or "DEFAULT_FRONT_SETBACK_MM" not in out:
+            e.append(f"site.setbacks yokken uygulanacak varsayilanlar bildirilmeli: {out!r}")
+        ctx["site"]["setbacks"] = {"uniform_mm": 3000}
+        p1.write_text(_json.dumps(ctx), encoding="utf-8")
+        out = subprocess.run([sys.executable, script, str(p1)], capture_output=True, text=True, timeout=300).stdout
+        if "UYGULANIRDI" in out:
+            e.append("site.setbacks VARKEN varsayilan bildirimi OLMAMALI")
+    sb, _ = setbacks_for_parcel(rect, [0], {"front_setback_mm": 1, "side_setback_mm": 2, "rear_setback_mm": 3}, nizam="bitisik")
+    _eq(e, "baska nizam + tum cekmeler kullanicidan -> gecer", sb, {"edges_mm": [1.0, 2.0, 3.0, 2.0]})
+    return e
+
+
 def main() -> int:
     groups = (
         ("cokgen gecerliligi (kendini kesen/yinelenen/kolinear + L yanlis-pozitif yok)", check_polygon_validity()),
@@ -331,6 +421,7 @@ def main() -> int:
         ("cekme cozumleme + bina ayak izi + plan_north_angle", check_setbacks_and_footprint()),
         ("validate kancasi check_site (hata/uyari/yanlis-pozitif)", check_site_validation_hook()),
         ("vaziyet DXF ice aktarma (salt okunur, birim, zincir, kuzey, desteklenmeyen, DWG)", check_dxf_input()),
+        ("imar standart deger katalogu: kullanici ustunlugu, kosul, bildirim, kenar rolleri (DEV-086)", check_zoning_catalog_dev086()),
     )
     failed = False
     for name, errors in groups:

@@ -1,6 +1,6 @@
 """Kullanilan KATALOG VARSAYILANLARINI adiyla bildirir (DEV-072; DEV-069 ilkesi: sessiz varsayilan yok). SALT OKUNUR.
 
-`python scripts/defaults_report.py [context.json]` - su an: pencere yuksekligi/denizlik (openings.heights); `--catalog`: sinif katalogu (openings.classes). Baska modullerin
+`python scripts/defaults_report.py [context.json]` - su an: pencere yuksekligi/denizlik (openings.heights) + `site.setbacks` yoksa uygulanacak imar varsayilanlari (vaziyet.zoning, DEV-086); `--catalog`: sinif katalogu (openings.classes) + imar standart deger katalogu. Baska modullerin
 varsayilanlari (merdiven, saft, cekirdek) kendi katalog sabitleridir ve soru katalogunda (PROJECT_OPERATOR_AGENT.md) listelidir;
 bu rapor yalniz PROJE VERISINDE eksik oldugu icin KULLANILAN varsayilanlari sayar.
 """
@@ -13,6 +13,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import elevations  # noqa: E402
 import openings  # noqa: E402
+import vaziyet  # noqa: E402
 
 DESCRIPTIONS = {
     "DEFAULT_WINDOW_HEIGHT_MM": "pencere yuksekligi (normal): {v} mm",
@@ -37,16 +38,43 @@ def catalog() -> None:
               f"  ({', '.join(n for n in spec.names if n)})  - {spec.note}")
 
 
+def zoning_catalog() -> None:
+    """DEV-086: imar standart deger katalogu (cekme/TAKS/KAKS) - DOGRULANMAMIS, kullanici gercek yonetmelikle degistirecek."""
+    print("Imar standart deger katalogu (vaziyet/zoning.py; DOGRULANMADI - kullanici gercek yonetmelikle belirleyecek; kullanici degeri her zaman ezer):")
+    for z in vaziyet.ZONING_DEFAULTS.values():
+        val = "kural metni (sayi yok)" if z.value is None else f"{z.value:g} {z.unit}"
+        print(f"  - {z.name:32s} = {val:24s} {z.label}; kosul: {z.condition}; nizam: {z.nizam}; kaynak: {z.source} ({z.researched_on})")
+        for u in z.urls:
+            print(f"        {u}")
+
+
+def site_defaults(ctx: dict) -> list[str]:
+    """`site` var ama `site.setbacks` YOKSA: hangi varsayilanlarin UYGULANACAGINI soyler (UYGULAMAZ; patch kullanici onayiyla)."""
+    site = ctx.get("site")
+    if not site or site.get("setbacks") or "parcel" not in site:
+        return []
+    try:
+        sb, res = vaziyet.setbacks_for_parcel(vaziyet.Parcel.from_polygon(site["parcel"]["polygon"]), site.get("road_edges", []))
+    except vaziyet.VaziyetError as exc:
+        return [f"site.setbacks verilmemis ve varsayilan uygulanamiyor: {exc}"]
+    return [f"site.setbacks verilmemis; kullanici degeri gelmezse sunlar UYGULANIRDI (edges_mm = {sb['edges_mm']}):"] + [f"  {x}" for x in res.describe()]
+
+
 def main(argv=None) -> int:
     if argv and "--catalog" in argv:
         catalog()
+        print()
+        zoning_catalog()
         return 0
     path = Path(argv[0] if argv else Path(__file__).resolve().parent.parent / "context.json")
     ctx = json.loads(path.read_text(encoding="utf-8"))
     used = openings.defaults_used(ctx)
     facade_used = elevations.derive.defaults_used_on_facades(ctx)
+    site_lines = site_defaults(ctx)
     if not used and not facade_used:
         print("Kullanilan katalog varsayilani yok.")
+        for line in site_lines:
+            print(line)
         return 0
     print(f"Kullanilan katalog varsayilanlari ({openings.heights.DEFAULT_SOURCE}):")
     for name, n in used.items():
@@ -54,6 +82,8 @@ def main(argv=None) -> int:
         print(f"  - {name} = {v:g}: {DESCRIPTIONS[name].format(v=f'{v:g}')} ({n} pencerede)")
     for label, n in facade_used.items():
         print(f"  - {label}: {n} kapi (DEV-073, kullanici karari: dukkan kapilari boy pencere)")
+    for line in site_lines:
+        print(line)
     return 0
 
 
