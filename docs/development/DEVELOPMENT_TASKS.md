@@ -752,6 +752,7 @@ belirleyeceksin ... her birini sıralama olarak birbirine bağla"):**
 - **Açık küçük kararlar (uygulayıcı kullanıcıya sorar, uydurmaz):** etiket cümlesinin tam metni; nottaki veçhe sayısı üst sınırı (öneri: hepsi, en çok bir satır — uzarsa "ve N tane daha" biçimi).
 - **Kabul ölçütü:** rev-29 gerçek projesinde `brief` çıktısı 3 konu + 1 not satırı; `validate` çıktısı değişmez; tüm selftest/golden/doc_check temiz.
 - **Önkoşul:** yok. `DEV-079`un önkoşuludur.
+- **Uygulama sonucu (2026-10-13, kabul bekliyor):** `reasoning/explain.py::shadow_note` (sabit baş cümle + veçhe başlıkları; rakamsız, tek satır, yinelenen atılır, sondaki "?" kalkar, gözlem yoksa satır yok), `reasoning/__init__` dışa aktarımı, `reasoning_dialogue.py::shadow_titles` + `brief` sonunda not (kuyruk ve konu sayısı DEĞİŞMEDİ: gerçek projede 3 konu + 1 not), `reasoning_report.py` gölge başlığı yeni kurala hizalandı, belgeler (kök `CLAUDE.md` muhakeme ilkesi 7, `reasoning/CLAUDE.md`, operatör belgesi, plan §5). **Kanıt:** `check_shadow_note_dev078` (elle metin eşitliği, rakam lint'i, konu sayısı 3, gölge başlığın konu gövdesinde görünmemesi, sunum kuyruğunun shadow'u almaması), 7 kasıtlı bozma yakalandı. **Seçilen küçük kararlar (itiraz edilebilir):** baş cümle metni "Henüz doğrulanmamış gözlemler var (deneme aşamasındaki kurallar; bunlar kesin uyarı değildir ve sizden karar istemiyorum). Şu sorularda gözlem yapıldı: …"; nottaki veçhe sayısı sınırı YOK (hepsi, tek satır).
 
 ### DEV-079 — `reasoning/` + belgeler — DEV-071 tur 2
 

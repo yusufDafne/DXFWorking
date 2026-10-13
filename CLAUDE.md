@@ -113,7 +113,8 @@ kod gerektirmeden **bugünden** geçerli işletim ilkeleridir:
 5. **Sessiz geçme.** Veri eksikliğinden bakılamayan bir bakış açısı varsa söyle (örn. `meta.north_angle`
    yok → yönelim değerlendirilemedi). "Temiz" ile "hiç bakılmadı" aynı şey değildir.
 6. Aynı kök nedene bağlı uyarıları (özellikle özdeş katlardakileri) **tek konu** olarak sun.
-7. Yeni bir ilke keşfedersen (kullanıcı bir defekt gösterdi ya da kendin buldun) bunu
+7. **Gölge (`shadow`) gözlemler** henüz doğrulanmamış deneme kurallarıdır: kullanıcıya KONU olarak sunulmaz, ama `reasoning_dialogue.py brief` çıktısındaki tek satırlık nota göre (DEV-078) adıyla anılabilir — kesin uyarı gibi anlatma, sayı verme, karar isteme.
+8. Yeni bir ilke keşfedersen (kullanıcı bir defekt gösterdi ya da kendin buldun) bunu
    **vaka → ilke → veçhe** olarak kaydedilmek üzere işaretle (kayıt rolü ve kuralları: `docs/agents/KNOWLEDGE_ENGINEER_AGENT.md`); proje operatörü merkezi dokümana
    yazamaz, bunu kullanıcıya bildirir, kayıt sistem geliştirme oturumunda yapılır.
 

@@ -18,7 +18,7 @@ from .findings import (diff_findings, group_across_floors, make_key, message_sig
                        severity_band, severity_from_curve)
 from .decisions import (Reopened, check_decisions, decision_numbers, evaluate, evidence_hash, evidence_snapshot,
                         make_decision)
-from .explain import (ExplainError, allowed_numbers_for, Narrative, Topic, append_dialogue, coverage_sentence, effective_mode,
+from .explain import (ExplainError, allowed_numbers_for, Narrative, Topic, append_dialogue, coverage_sentence, shadow_note, effective_mode,
                       is_presentable, lint_template, match_smells, narrate, read_dialogue, render,
                       select_topics, validate_record, verify_numbers)
 from .model import (CheckAdapter, Facet, Finding, Lens, Plain, Profile, Promotion, Provenance, Remedy, Smell, Tension,
@@ -40,7 +40,7 @@ __all__ = [
     "severity_band", "severity_from_curve", "TriggerReport", "trigger_report", "REASONING_EXEMPT",
     "REASONING_PROVIDERS", "Registry", "load_registry", "validate_registry",
     "Reopened", "check_decisions", "decision_numbers", "evaluate", "evidence_hash", "evidence_snapshot", "make_decision",
-    "ExplainError", "allowed_numbers_for", "Narrative", "Topic", "Remedy", "append_dialogue", "coverage_sentence", "effective_mode",
+    "ExplainError", "allowed_numbers_for", "Narrative", "Topic", "Remedy", "append_dialogue", "coverage_sentence", "shadow_note", "effective_mode",
     "is_presentable", "lint_template", "match_smells", "narrate", "read_dialogue", "render", "select_topics",
     "validate_record", "verify_numbers", "Promotion", "ReadinessItem", "per_unit_topic_counts", "promotion_readiness",
     "promotion_snippet", "stale_review_list",

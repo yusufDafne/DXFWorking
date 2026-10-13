@@ -267,6 +267,8 @@ Yeni koku eklemek bir **kayıt** eklemektir (bileşen veçhe kimlikleri + kök n
 
 ## 5. Diyalog sözleşmesi (kullanıcıyla konuşma)
 
+> **DEV-078 (2026-10-13):** `shadow` bulgular KONU olarak sunulmaz (kuyruk değişmez) ama `brief` çıktısının sonunda tek satırlık sabit, rakamsız bir "henüz doğrulanmamış gözlemler" notuyla adıyla anılır; kesin uyarı gibi anlatılmaz, sayı verilmez, karar istenmez.
+
 Hedef: *"kullanıcı bazı şeyleri gözünden kaçırabilir; sen onun kapsamlı düşünen
 motorusun"* ve *"teknik altyapıya girmeden, nihai ürün üzerinden anlat."*
 

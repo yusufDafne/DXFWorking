@@ -309,6 +309,24 @@ def coverage_sentence(blocked: list[tuple[str, str]], unmeasured: list[str]) -> 
     return " ".join(parts)
 
 
+SHADOW_NOTE_HEAD = ("Henüz doğrulanmamış gözlemler var (deneme aşamasındaki kurallar; bunlar kesin uyarı değildir "
+                    "ve sizden karar istemiyorum). Şu sorularda gözlem yapıldı: ")
+
+
+def shadow_note(titles) -> str:
+    """DEV-078: `shadow` veçhelerin kullanıcıya KONU olarak sunulmadığı kuralının tamamlayıcısı - sunum kuyruğuna girmeyen gözlemler
+    tek satırlık sabit bir notla ADIYLA anılır. Başlıksız (gözlem yok) -> boş metin (satır üretilmez). Rakam içermez (kapı #13);
+    kesin uyarı kalıbı kullanmaz; sayı vermez."""
+    seen: list[str] = []
+    for t in titles:
+        t = str(t).strip().rstrip("?").strip()
+        if t and t not in seen:
+            seen.append(t)
+    if not seen:
+        return ""
+    return SHADOW_NOTE_HEAD + "; ".join(seen) + "."
+
+
 # ---------------------------------------------------------------- diyalog kaydi (dialogue.jsonl, ekleme-yalniz)
 RECORD_KEYS = ("rev", "ts", "context_sha256", "finding_keys", "text", "mode", "level")
 _SHA_RE = re.compile(r"^[0-9a-f]{64}$")

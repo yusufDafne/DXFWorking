@@ -1286,6 +1286,56 @@ def check_gate16_promotions() -> list[str]:
     return e
 
 
+def check_shadow_note_dev078() -> list[str]:
+    """DEV-078: shadow gozlemler KONU olarak sunulmaz (kuyruk degismez) ama tek satirlik, rakamsiz, kesin-uyari-olmayan notla adiyla anilir."""
+    from reasoning import explain
+    e: list[str] = []
+    if explain.shadow_note([]) != "":
+        e.append("gozlem yokken satir uretilmemeli")
+    if explain.shadow_note(["", "  ?"]) != "":
+        e.append("bos basliklar yok sayilmali")
+    n = explain.shadow_note(["Birinci soru mu?", "Ikinci soru mu", "Birinci soru mu?"])
+    want = explain.SHADOW_NOTE_HEAD + "Birinci soru mu; Ikinci soru mu."
+    if n != want:
+        e.append(f"not metni (sira korunur, yinelenen atilir, sondaki '?' kalkar): {n!r}")
+    if "\n" in n:
+        e.append("not TEK satir olmali")
+    if explain.lint_template(explain.SHADOW_NOTE_HEAD):
+        e.append(f"not govdesi rakam icermemeli (kapi #13): {explain.lint_template(explain.SHADOW_NOTE_HEAD)}")
+    if "kesin uyarı değildir" not in explain.SHADOW_NOTE_HEAD or "karar istemiyorum" not in explain.SHADOW_NOTE_HEAD:
+        e.append("not 'kesin uyari degil' ve 'karar istemiyorum' demeli")
+    # gercek proje: brief konu sayisi DEGISMEZ (3), not tam bir kez, notta yalniz shadow basliklari
+    reg, _ = _prod_registry()
+    ctx = json.loads((ROOT / "context.json").read_text(encoding="utf-8"))
+    import reasoning_dialogue as rd
+    titles = rd.shadow_titles(reg, ctx)
+    shadow_titles_all = {f.title_tr for f in reg.facets.values() if f.status == "shadow"}
+    if not titles or not set(titles) <= shadow_titles_all:
+        e.append(f"shadow_titles yalniz bulgu ureten SHADOW vechelerin basliklari olmali: {titles}")
+    for t in titles:
+        if any(ch.isdigit() for ch in t):
+            e.append(f"baslik rakam iceriyor: {t}")
+    if rd.shadow_titles(reg, {"meta": ctx["meta"], "floors": []}):
+        e.append("kat yokken (calisan veche yok) not konusu olmamali")
+    out = subprocess.run([sys.executable, str(ROOT / "scripts" / "reasoning_dialogue.py"), "brief", "--level", "sade",
+                          "--context", str(ROOT / "context.json")], capture_output=True, text=True, timeout=600).stdout
+    if out.count(explain.SHADOW_NOTE_HEAD) != 1:
+        e.append("brief cikti sayisi: not tam bir kez yazilmali")
+    if out.count("--- Konu ") != 3:
+        e.append(f"brief konu sayisi 3 kalmali (shadow kuyruga girmez): {out.count('--- Konu ')}")
+    body = out.split(explain.SHADOW_NOTE_HEAD)[0]
+    for t in titles:
+        if t.rstrip("?") in body:
+            e.append(f"shadow baslik KONU govdesinde gorunuyor (yalniz notta olmali): {t}")
+    # sunum kuyrugu hala shadow'u almaz (DEV-064 degismezi)
+    from reasoning import select_topics
+    sh = [f for f in __import__("reasoning_report").shadow_findings(reg, ctx).values() for f in f]
+    shown, rest = select_topics(sh, reg.facets)
+    if shown or rest:
+        e.append("sunum kuyrugu shadow bulgulari ALMAMALI")
+    return e
+
+
 def check_promotion_readiness_and_lists() -> list[str]:
     import datetime
     from reasoning import per_unit_topic_counts, promotion_readiness, promotion_snippet, select_topics, stale_review_list, trigger_report
@@ -1377,7 +1427,7 @@ def main() -> int:
               check_decision_core, check_decision_schema_and_validate, check_reopened_presentation, check_decide_cli_end_to_end,
               check_knowledge_engineer_role, check_isik_pack_registry_and_cases, check_facade_and_measurements,
               check_isik_report_and_coverage, check_yasanabilirlik_pack, check_gate16_promotions,
-              check_promotion_readiness_and_lists, check_promotion_report_cli]
+              check_promotion_readiness_and_lists, check_promotion_report_cli, check_shadow_note_dev078]
     failed = 0
     for check in checks:
         try:

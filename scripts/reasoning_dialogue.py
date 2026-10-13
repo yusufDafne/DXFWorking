@@ -57,6 +57,13 @@ def current_findings(context: Path):
     return parse_validate_output(run_validate(context))
 
 
+def shadow_titles(registry, context) -> list[str]:
+    """DEV-078: bulgu ÜRETEN `shadow` veçhelerin başlıkları (kayıt sırasıyla). Script köprüsü; çekirdek çizim modülü import etmez."""
+    import reasoning_report
+    found = reasoning_report.shadow_findings(registry, context)
+    return [registry.facets[fid].title_tr for fid in registry.facets if found.get(fid)]
+
+
 def cmd_brief(args) -> int:
     if not args.level:
         print(explain.LEVEL_QUESTION)
@@ -94,6 +101,10 @@ def cmd_brief(args) -> int:
     sentence = coverage_sentence(blocked, [registry.facets[i].title_tr for i in cov.unmeasured if i in registry.facets])
     if sentence:
         print("\n" + sentence)
+    # DEV-078: shadow gozlemler KONU olarak sunulmaz (kuyruk degismez) ama tek satirlik notla adiyla anilir
+    note = explain.shadow_note(shadow_titles(registry, context))
+    if note:
+        print("\n" + note)
     print("\nKAYIT ANAHTARLARI (append --key icin):")
     print(json.dumps(keys_out, ensure_ascii=False))
     return 0

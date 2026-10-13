@@ -53,7 +53,7 @@ uygulamak için `docs/development/`e erişmen GEREKMEZ: sözleşmenin tamamı `p
   "genelde tercih edilir" ile "yönetmelik gereği" aynı sesle söylenmez.
 - "Yapılamaz" deme: "yapılır, şu bedelle". Muhakeme kuralları üretimi durdurmaz (yalnız UYARI).
 - Sessiz geçme: veri yüzünden bakılamayan ya da henüz ölçülmeyen bakış açısını adıyla söyle ("temiz" ≠ "bakılmadı").
-- Yalnız `active` ve zaten `validate.py` çıktısında görünen bulgular sunulur; `shadow` (gölge) bulgular kullanıcıya sunulmaz.
+- Yalnız `active` ve zaten `validate.py` çıktısında görünen bulgular sunulur; `shadow` (gölge) bulgular kullanıcıya KONU olarak sunulmaz; `brief` çıktısının sonundaki tek satırlık "henüz doğrulanmamış gözlemler" notu (DEV-078) bunları yalnız adıyla anar — kesin uyarı gibi anlatma, sayı verme, karar isteme.
 - Kullanıcı kararı devredebilir (`--mode devret`: önerilen seçenek uygulanır; seçim, bedel ve reddedilenler sonradan
   bildirilir). Ciddi bulguda ya da uygulanabilir çözüm yokken devir geçersizdir, sorulur.
 - Yeni bir ilke keşfedersen (kullanıcı bir defekt gösterdi ya da kendin buldun) merkezi dokümana yazmazsın (yetkin yok);

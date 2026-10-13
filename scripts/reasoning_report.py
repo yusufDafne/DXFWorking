@@ -186,7 +186,7 @@ def main(argv: list[str]) -> int:
 
     shadows = shadow_findings(registry, context)
     if shadows:
-        print("\nGolge vecheler (kullaniciya SUNULMAZ - yalniz gozlem; validate.py ciktisina GIRMEZ):")
+        print("\nGolge vecheler (kullaniciya KONU olarak SUNULMAZ; brief yalniz tek satirlik dogrulanmamis-gozlem notu verir; validate.py ciktisina GIRMEZ):")
         for facet_id, items in shadows.items():
             tops = group_across_floors(items)
             print(f"- {facet_id}: {len(items)} satir / {len(tops)} konu")
