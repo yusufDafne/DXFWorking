@@ -4,6 +4,15 @@ Aktif geçmiş kapasitesi: **50 kayıt**. En eski tamamlanmış kayıt, 51. kay�
 alınırken silinir. Ayrıntılı teknik değişiklikler git geçmişi ve ilgili proje
 provenance kayıtlarıyla ilişkilendirilir.
 
+## HD-058 — Pencere ortalama kapıyı atlar + açıklık üst üste binme (DEV-077)
+
+- **Durum:** COMPLETED
+- **Tamamlanma:** 2026-10-13
+- **Kapsam:** `scripts/openings/{placement,__init__,selftest}.py`+`CLAUDE.md`, `scripts/validate.py`, `scripts/reasoning/selftest.py`+`CLAUDE.md`, kök `CLAUDE.md`.
+- **Sonuç:** rev-29'da görülen boşluk (ortalama aynı duvardaki kapıyı bilmiyor; vitrin için dükkân kapısının tam ortası öneriliyordu) kapatıldı: `occupied_gaps`/`subtract_gaps`/`default_window_position(gaps, near)`, öneri satırında `blocked_by`, `check_opening_overlaps` (+ `validate` UYARISI). Kapısız duvarlarda eski davranış birebir.
+- **Doğrulama:** elle hesaplanan parçalar/ortalar (3812,5 / 6200), 16 kasıtlı bozmadan 14'ü yakalandı (2'si birbirini örten eşdeğer koruma), gerçek projede 0 üst üste binme, `validate` çıktısı değişmedi. Yan bulgu: `reasoning` selftest'i rev-29 sonrası kırılmıştı (north_angle/şema 1.3.0/16 satır varsayımı), düzeltildi.
+- **Golden etkisi:** yok. **Sonraki direktif:** yok (sistem mimarı sıradaki maddeyi seçer).
+
 ## HD-057 — Açıklık sınıfları kataloğu (DEV-076)
 
 - **Durum:** COMPLETED
