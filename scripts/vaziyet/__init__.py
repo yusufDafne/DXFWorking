@@ -15,10 +15,17 @@ from .dxf_in import (Candidate, DxfInputError, SiteScan, build_site_patch, layer
 from .parcel import Parcel, VaziyetError, inward_offset, normalize_ccw, validate_polygon  # noqa: E402
 from .sample import write_sample  # noqa: E402
 from .setback import buildable_area, building_footprint, plan_north_angle, resolve_setbacks  # noqa: E402
+from .candidates import Candidate as StudyCandidate, build_candidates, footprint_within  # noqa: E402
+from .metrics import Measurement, measure_candidate  # noqa: E402
+from .narrate import narrate_alternative  # noqa: E402
+from .study import (DEFAULT_ALTERNATIVES, MAX_ALTERNATIVES, OBJECTIVES, OBJECTIVE_LABEL, Alternative, StudyResult, ceiling_checks, pareto_front, run_study,  # noqa: E402
+                    select_unweighted, select_weighted)
 from .zoning import (ZONING_DEFAULTS, ZoningResolution, ZoningValue, edge_roles, resolve_zoning, setbacks_for_parcel)  # noqa: E402
 
 __all__ = [
     "CONTRACT_VERSION", "Parcel", "VaziyetError", "DxfInputError", "Candidate", "SiteScan", "validate_polygon", "normalize_ccw", "inward_offset",
     "resolve_setbacks", "buildable_area", "building_footprint", "plan_north_angle", "scan_site_dxf", "build_site_patch", "layer_hint",
     "write_sample", "check_site", "ZONING_DEFAULTS", "ZoningValue", "ZoningResolution", "resolve_zoning", "edge_roles", "setbacks_for_parcel",
+    "StudyCandidate", "build_candidates", "footprint_within", "Measurement", "measure_candidate", "narrate_alternative", "DEFAULT_ALTERNATIVES", "MAX_ALTERNATIVES",
+    "OBJECTIVES", "OBJECTIVE_LABEL", "Alternative", "StudyResult", "ceiling_checks", "pareto_front", "run_study", "select_unweighted", "select_weighted",
 ]

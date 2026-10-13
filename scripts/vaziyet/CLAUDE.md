@@ -1,8 +1,8 @@
-# vaziyet modülü (vaziyet/parsel girdisi) — DEV-082 v1
+# vaziyet modülü (vaziyet/parsel girdisi + yerleşim etüdü) — DEV-082 v1, DEV-083
 
 Kullanıcının **vaziyet/parsel planı** girdisini içeri alır, parsel ve çekme geometrisini doğrular ve yapılaşma alanını hesaplar. Plan: `docs/development/SITE_PLAN_STUDY_PLAN.md`
-(`DEV-081`…`DEV-087`). Bu madde **yalnız girdi katmanıdır**: yerleşim etüdü motoru `DEV-083`, vaziyet paftası/DXF çıktısı `DEV-084`, brief/onay diyaloğu `DEV-085`, imar varsayılan
-kataloğu `DEV-086`, DWG `DEV-087`. **Context'e YAZMAZ, DXF ÇİZMEZ, çekme değeri UYDURMAZ.**
+(`DEV-081`…`DEV-087`). Girdi katmanı `DEV-082`, **yerleşim etüdü motoru `DEV-083`** (aşağıda); vaziyet paftası/DXF çıktısı `DEV-084`, brief/onay diyaloğu `DEV-085`, imar varsayılan
+kataloğu `DEV-086`, DWG `DEV-087`. **Context'e YAZMAZ, DXF ÇİZMEZ, çekme/adım/dönüş/ağırlık değeri UYDURMAZ.**
 
 ## İsim notu
 Plan `site/` adını kullanıyordu; `site` bir **Python stdlib modülüdür** (yorumlayıcı başlarken otomatik yüklenir) — `import site` paketimizi DEĞİL stdlib'i verirdi (`import` → `importer`, `fixture` → `golden`
@@ -23,6 +23,10 @@ ile aynı sınıf bir ad düzeltmesi). Dizin/paket: `vaziyet/`. **Veri anahtarı
 | `scan_site_dxf`, `SiteScan`, `Candidate`, `build_site_patch`, `layer_hint` | vaziyet DXF'i SALT OKUNUR tarama + ONAYLI aday seçiminden `site` patch taslağı (dosyaya YAZMAZ) |
 | `check_site` | `validate.py` kancası (opt-in): HATA geçersiz parsel/yerleşim alanı, `road_edges` aralığı, çekme alanı yok ediyor, bina parsel DIŞINDA; UYARI kuzey onaysız, yerleşim alanı parsel dışı, çekme yok, bina yapılaşma alanı dışında |
 | `ZONING_DEFAULTS`, `ZoningValue`, `ZoningResolution`, `resolve_zoning`, `edge_roles`, `setbacks_for_parcel` | **DEV-086** imar standart değer kataloğu (aşağıda) |
+| `build_candidates`, `footprint_within`, `StudyCandidate` | **DEV-083** sıralı aday ızgarası (adım + dönüş kümesi KULLANICI parametresi, varsayılan yok) ve ayak izi içerme testi (sınır içeridir, 1 mm içeri giren dışarıdır) |
+| `Measurement`, `measure_candidate` | **DEV-083** aday ölçümleri; her ölçüm kaynak fonksiyon adını taşır; veri yoksa ölçüm YOKTUR |
+| `pareto_front`, `select_unweighted`, `select_weighted`, `ceiling_checks`, `run_study`, `Alternative`, `StudyResult`, `OBJECTIVES`, `DEFAULT_ALTERNATIVES`, `MAX_ALTERNATIVES` | **DEV-083** eleme + seçim + TAKS/KAKS tavanı + etüt |
+| `narrate_alternative` | **DEV-083** alternatif anlatımı (sabit şablon + ölçülmüş yer-tutucu; şablonda rakam lint'i) |
 | `write_sample` | basit ÖRNEK vaziyet DXF'i (kullanıcıya verilir); CLI `python scripts/site_sample.py`; tarama CLI `python scripts/site_scan.py dosya.dxf [--patch c0,c1]` |
 
 ## Vaziyet DXF sözleşmesi (kullanıcıya verilen basit düzen)
@@ -41,6 +45,17 @@ KAKS **sayı yok** (belirtilmediyse yapı yaklaşma mesafelerinden çıkan taban
 kullanılan her varsayılan ADIYLA bildirilir (`ZoningResolution.describe`, `defaults_report.py`: `site.setbacks` yoksa hangi varsayılanların uygulanacağını SÖYLER, UYGULAMAZ). `edge_roles`: yola bakan kenar = ön; kalanlardan ilk yol kenarına en antiparalel (eşitlikte en uzun) = arka; diğerleri yan —
 yola bakan kenar bilinmiyorsa rol UYDURULMAZ. `setbacks_for_parcel` → `site.setbacks` biçimi (`edges_mm`). Güncelleme sözleşmesi (`standards/` ile aynı): değer DEĞİŞİMİ sürüm artırmaz (`researched_on`/`verified`/`source` güncellenir, HD kaydı), alan ŞEKLİ değişimi `CONTRACT_VERSION`ı artırır. Katalog değerleri BAĞIMSIZ literal sayılardır.
 
+## Yerleşim etüdü (DEV-083, `candidates.py` / `metrics.py` / `study.py` / `narrate.py`, CLI `scripts/site_study.py`)
+**Salt okunur ve deterministik.** Akış: aday ızgarası → ELEME → ölçüm → alternatif seçimi. Dil modeli bu kodu çağırmaz; yalnız parametreleri ÖNERİR (adım, dönüşler, N, ağırlık) ve kullanıcı onaylar (`DEV-085`).
+- **Aday:** yapılaşma alanı sınır kutusunda `step_mm` adımlı BİNA MERKEZİ ızgarası × `rotations_deg`; sıra (dönüş, x, y); dönüş girdi sırası sonucu değiştirmez. **Adım ve dönüş kümesi ZORUNLU** (CLI'da da); korkuluk `MAX_CANDIDATES = 200000` (adımı büyütün).
+- **Eleme (alternatif listesine hiç girmez, nedeni sayılır):** `parsel_disi`, `yapilasma_alani_disi`. Sınırda duran ayak izi ELENMEZ; 1 mm içeri giren elenir (`CONTAINMENT_TOLERANCE_MM = 1e-6` yalnız kayan nokta payıdır). İçbükey yapılaşma alanında köşeler içeride olsa da girintiyi kesen ayak izi elenir.
+- **Ölçümler** (`metrics.py`; her biri kaynak fonksiyon adıyla): yapılaşma alanı sınırına pay, parsel kenarlarına mesafe, yol dışındaki en yakın sınır, yola mesafe + yola bakan YÜZ (`ust/sag/alt/sol`) + açı farkı, dört yüzün gerçek pusula açısı (`bearing_*_deg`), uzun yüzlerin güneyden sapması (kuzey onaylıysa), bahçe parça sayısı (ayak izi parsel sınırına birden çok ayrık yerde değiyorsa bölünür), `YERLESIM_ALANI` örtüşme oranı + merkez uzaklığı (bölge ELEME DEĞİL; dışına taşan alternatif açıkça işaretlenir). **Veri yoksa ölçüm yoktur ve not düşülür** (yol bildirilmedi → yola yakınlık ekseni dışarıda; kuzey onaysız → ışık ekseni dışarıda).
+- **Seçim:** N varsayılan **3** (kullanıcı kararı Q6; üst sınır `MAX_ALTERNATIVES = 10` yalnız sunum sınırıdır). **Ağırlıksız:** Pareto cephesinden her TAKAS EKSENİNİ en iyi yapan aday (`road_proximity`, `neighbor_clearance`, `light_south`, `zone_fit` sırasıyla), sonra normalize uzayda en uzak aday; aynı vektörlü (eşdeğer) aday tekrar seçilmez → N'den az dönebilir ve bu SÖYLENİR. Eksenler kalite iddiası değil, farklı ödünleşimlerin temsilcisidir; tek "en iyi" iddiası yoktur. **Ağırlıklı (isteğe bağlı):** min-max normalize eksenlerin ağırlıklı toplamı, eşitlikte küçük indeks; ağırlık anahtarları bilinen eksenler, negatif/hepsi sıfır reddedilir; `min_separation_mm` (kullanıcı parametresi, varsayılan yok) yakın komşuları atlatır.
+- **Tavan:** TAKS = ayak izi / parsel; KAKS = ayak izi × kat adedi / parsel (kat adedi VERİLMEDİYSE KAKS ÖLÇÜLEMEZ, uydurulmaz). Tavan değeri CLI'da `resolve_zoning`dan (kullanıcı > katalog) gelir ve kaynağı ADIYLA ("varsayılan:DEFAULT_TAKS", doğrulanmadı) bildirilir. Tavan aşımı konumdan bağımsızdır; UYARI olarak not düşer, alternatifleri engellemez (muhakeme politikası: FORBID yalnız fiziksel çakışma).
+- **Anlatım:** `narrate_alternative` sabit şablon + `{olcum:ad}` yer-tutucusu; şablon metninde rakam (Unicode Nd/No/Nl) `lint_template` ile yasak; ölçüm yoksa cümle yazılmaz.
+- **CLI:** `python scripts/site_study.py context.json --step-mm 5000 --rotations 0,90 [--n 3] [--weights road_proximity=2,...] [--min-separation-mm X] [--taks 0.4] [--kaks 1.2] [--floors 5] [--json]`. `site.setbacks` yoksa katalog çekmesine düşer ve bunu bildirir.
+- **Standart profili (planlı, DEV-088):** çekme/TAKS/KAKS bugün `zoning.py` kataloğundan gelir; bölge/şehir bazlı profil seçimi ("İstanbul standartlarına göre", "şuranın standartları nasıl", "proje özelinde ilerle") DEV-088'dedir ve bu modül değeri yine TEK çözümleyiciden (`resolve_zoning`) alır.
+
 ## Çakışma denetimi: EXEMPT
 `collision/scene.py::COLLISION_EXEMPT` içinde: vaziyet düzlemi kat sahnesinden ayrı bir koordinat dünyasıdır; parsel/yapılaşma alanı/ayak izi içerme denetimi `checks.py::check_site`te (tekil arite).
 
@@ -49,9 +64,10 @@ yola bakan kenar bilinmiyorsa rol UYDURULMAZ. `setbacks_for_parcel` → `site.se
 **Sağlayıcıya geçiş:** bu modül için bir veçhe doğarsa modül `REASONING_EXEMPT`ten çıkar, `scripts/vaziyet/reasoning.py` (rol + ölçüm beyanı; veçhe kaydı lens paketinde) yazılır ve `REASONING_PROVIDERS`a girer — kural ve izinler: `docs/agents/KNOWLEDGE_ENGINEER_AGENT.md`.
 
 ## Doğrulama
-`python scripts/vaziyet/selftest.py` — 5 grup: çokgen geçerliliği (kelebek/yinelenen/kolinear + L yanlış-pozitif yok), **ELLE hesaplanan** offset (dikdörtgen, kenar başına, L konkav reflex genişlemesi, çökme, eşdoğrusal, kısmen çöken), çekme çözümleme +
+`python scripts/vaziyet/selftest.py` — 11 grup (5 girdi + DEV-086 + 5 DEV-083): çokgen geçerliliği (kelebek/yinelenen/kolinear + L yanlış-pozitif yok), **ELLE hesaplanan** offset (dikdörtgen, kenar başına, L konkav reflex genişlemesi, çökme, eşdoğrusal, kısmen çöken), çekme çözümleme +
 ayak izi (90° saat yönü elle) + `plan_north_angle`, `check_site` kancası, DXF içeri aktarma (üretilen örnek, salt-okunurluk/sha256, birim/cm×10, LINE zinciri [açık/dallı/8-şekli/0,5 mm–5 mm boşluk], kuzey 4 durum + 1° sınırı, desteklenmeyenler, DWG, bozuk dosya).
 DEV-086 testi `check_zoning_catalog_dev086` (elle okunan değerler, kullanıcı üstünlüğü, koşul/nizam, rol seçimi, defaults_report CLI; 17 kasıtlı bozmadan 16'sı yakalandı, 1'i ölü savunma satırı). Kasıtlı bozma (DEV-082: 31 mutasyon): 29'u yakalandı; 2'si **eşdeğer savunma satırı** (offset'te `signed_area<=0` kenar-yönü kontrolüyle örtüşür; LINE zincirinde derece≠2 dışlaması dolaşma başarısızlığıyla örtüşür — rastgele 4000+20000 çokgen aramasıyla ayrıştıran girdi bulunamadı).
+**DEV-083 testleri** (ELLE hesap: 30×40 m parsel, çekme 5 m → yapılaşma alanı 20×30 m, bina 10×6 m, adım 5 m → 35 aday/15 kalan [dönüş 90 ile 70/30], çekme 2 m adım 13 m → 9 aday/2 kalan/7 parsel dışı; yol/bahçe/bölge/yüz açısı ölçümleri; Pareto ve seçim vektörleri; TAKS 0,05, KAKS 0,25; CLI): 41 kasıtlı bozmanın 41'i yakalandı (ilk turda 6'sı sızdı: iki yol kenarı, çeşitlilikte en yakın aday, bir negatif + bir pozitif ağırlık, `min_separation_mm`, "az alternatif" notu, Nd-dışı rakam lint'i → testler güçlendirildi). Yanlış-pozitif: sınırdaki aday elenmez, L içindeki ayak izi geçer, bölgeyi kapsayan ayak izi 1,0.
 Golden: `scripts/vaziyet/golden/parsel_ornek` (şema 1.8.0 + `site` + `north_angle=−30`; bina 6000×9000 olduğundan `floor_width < floor_depth` UYARISI bilinçli olarak görünür).
 
 ## Bilinen sınırlamalar
@@ -60,4 +76,5 @@ Golden: `scripts/vaziyet/golden/parsel_ornek` (şema 1.8.0 + `site` + `north_ang
 - Parsel kenar indeksi CCW normalizasyonuna göredir (CW girdide ilk köşe değişebilir); `road_edges` bu indekslerle yazılır — içeri aktarma patch'i `Parcel` sırasını değil DXF sırasını verir, kullanıcı onayında kenar numaraları gösterilmelidir (`DEV-085`).
 - Tek parsel, tek bina dikdörtgeni; çok parselli/çok bloklu/L biçimli bina kapsam dışı.
 - Bina ayak izi parsel DIŞINDA ise HATA, yalnız çekmeye giriyorsa UYARI; `placement_zone` eleme değildir.
-- Yerleşim etüdü, vaziyet paftası/pusulası, brief ve DWG sonraki maddelerdir. İmar varsayılanları ikincil kaynaklıdır ve doğrulanmamıştır; yalnız ayrık nizam; TAKS 0,40 / 0,60 farklı koşulların değeridir (birbirinin yerine geçmez); kat adedi/taban alanı hesabı (KAKS) etüt motorunda (DEV-083).
+- **Etüt (DEV-083) sınırları:** tek dikdörtgen bina; ızgara tabanlı (adım kullanıcıda — adımın arasında kalan en iyi konum görülmez); bahçe "parça sayısı" yalnız parsel sınırına değme üzerinden hesaplanır (alan/şekil ölçüsü yok); cephe başına ışık için kaynaksız eşik YOK (yalnız güneyden sapma ölçülür); komşu parsel/mevcut bina çakışması ve yol ayak izi yok (parsel dışı elemesi bunların yerini tutmaz); alternatifin vaziyet paftası/DXF'i `DEV-084`, brief/onay diyaloğu `DEV-085`.
+- Vaziyet paftası/pusulası, brief ve DWG sonraki maddelerdir. İmar varsayılanları ikincil kaynaklıdır ve doğrulanmamıştır; yalnız ayrık nizam; TAKS 0,40 / 0,60 farklı koşulların değeridir (birbirinin yerine geçmez); kat adedi/taban alanı hesabı (KAKS) etüt motorunda (DEV-083).
