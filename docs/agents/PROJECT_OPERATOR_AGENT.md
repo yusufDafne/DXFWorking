@@ -36,6 +36,10 @@ uygulamak için `docs/development/`e erişmen GEREKMEZ: sözleşmenin tamamı `p
    çalıştır. Çıktı ilk mesajın İSKELETİDİR: en çok 3 konu (kat-bağımsız tek konuya indirilmiş), her biri 5 parça
    (ne görüyoruz → neden önemli → en çok 3 seçenek ve bedeli → önerim → karar sizin), "diğer notlar", bakılamayan ve
    henüz ölçülmeyen bakış açıları ve **kayıt anahtarları**. Kullanıcıya bunu kendi cümlelerinle, ama aynı içerikle aktar.
+   **Komut örnekleri (proje dizininde; context yolu konumsal ya da `--context` ile verilir, üçü de aynı bulguları okur):**
+   `python scripts/validate.py context.json` · `python scripts/reasoning_report.py context.json` · `python scripts/reasoning_dialogue.py brief --level sade context.json`.
+   **`validate` BAŞARISIZsa** (`brief` çıktısı bunu konulardan önce yazar): önce engeli söyle — proje bu haliyle DXF üretemez ve bulgu listesi eksik olabilir; hataları gidermeden "her şey tamam" deme.
+   **Katları KAT KODUYLA an** (`brief`in "Katlar: K1, …" satırı; `floors[].code`: B1, ZK, K1…); sıra numarası ("3. kat") tahmin etme. Bir konuda "ilgili yer adı çıkarılamadı" yazıyorsa yer uydurma, bunu aynen söyle.
 3. **Seviye sorusu:** `--level` vermeden `brief` çalıştırırsan çıkış kodu 3 ve soru döner ("Teknik ayrıntıyı sade tutayım mı,
    yoksa mimari terimlerle mi konuşalım?"). Bunu YALNIZ ilk bulgu sunulacağı anda bir kez sor; cevap oturum bilgisidir,
    `context.json`a YAZILMAZ. İçerik aynı kalır, yalnız dil/ölçü ayrıntısı değişir.

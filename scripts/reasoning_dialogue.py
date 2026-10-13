@@ -57,6 +57,11 @@ def current_findings(context: Path):
     return parse_validate_output(run_validate(context))
 
 
+def validate_failed(output: str) -> bool:
+    """DEV-079: `validate.py` ciktisi 'DOGRULAMA BASARISIZ' diyorsa bulgu listesi EKSIK olabilir (uretim durur)."""
+    return "DOGRULAMA BASARISIZ" in output
+
+
 def shadow_titles(registry, context) -> list[str]:
     """DEV-078: bulgu ÜRETEN `shadow` veçhelerin başlıkları (kayıt sırasıyla). Script köprüsü; çekirdek çizim modülü import etmez."""
     import reasoning_report
@@ -74,13 +79,16 @@ def cmd_brief(args) -> int:
     registry, load_errors = load_registry()
     for err in load_errors:
         print("UYARI (kayit):", err)
-    findings = current_findings(context_path)
+    validate_output = run_validate(context_path)
+    findings = parse_validate_output(validate_output)
     before = current_findings(Path(args.before)) if args.before else None
     intent = tuple(x for x in (args.intent or "").split(",") if x)
     decisions = context.get("design_decisions", [])
     shown, rest = select_topics(findings, registry.facets, before, intent, decisions=decisions)
     accepted = [k for k, v in evaluate(findings, decisions).items() if v[0] == "kabul"]
     print(f"[Seviye: {args.level}; mod: {args.mode}]")
+    if validate_failed(validate_output):
+        print("\n" + explain.VALIDATE_FAILED_NOTE)
     if not shown:
         print("Sunulacak bir konu yok (kayitli uyari bulunmuyor).")
     keys_out = []
@@ -88,6 +96,9 @@ def cmd_brief(args) -> int:
         nar = narrate(topic, registry.facets, registry.remedies, level=args.level, mode=args.mode)
         tag = " [YAN ETKI]" if topic.side_effect else ""
         print(f"\n--- Konu {n}/{len(shown)}{tag} ---\n{nar.text()}")
+        fl = explain.floors_line(explain.floor_codes_in_order(topic.floors, context.get("floors", [])))
+        if fl:
+            print(fl)
         keys_out.append(list(nar.finding_keys))
     for smell, parts in match_smells(shown, registry.smells):
         print(f"\n(Kok neden: '{smell.title_tr}' - {smell.root_cause_tr})")
@@ -215,6 +226,7 @@ def main(argv: list[str]) -> int:
     for name in ("brief", "append", "decide", "verify"):
         p = sub.add_parser(name)
         p.add_argument("--context", default=str(DEFAULT_CONTEXT))
+        p.add_argument("context_pos", nargs="?", help="context.json yolu (--context ile ayni; validate.py/reasoning_report.py gibi konumsal da verilebilir)")
         if name == "decide":
             p.add_argument("--key", action="append", default=[], required=True)
             p.add_argument("--reason")
@@ -234,6 +246,8 @@ def main(argv: list[str]) -> int:
         if name in ("append", "verify"):
             p.add_argument("--dialogue")
     args = ap.parse_args(argv)
+    if getattr(args, "context_pos", None):
+        args.context = args.context_pos
     if args.cmd == "guide":
         print(GUIDE)
         return 0

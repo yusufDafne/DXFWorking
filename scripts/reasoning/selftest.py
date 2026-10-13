@@ -771,7 +771,8 @@ def check_dialogue_cli() -> list[str]:
         e.append("rev-28 brief: tam 3 konu, diger not yok beklenirdi")
     if "ölçülmüyor" not in r.stdout:
         e.append("brief henuz olculmeyen bakis acilarini adiyla soylemeli")
-    body = _re.sub(r"(?m)^(\[Seviye.*|--- Konu .*|\d+\. .*)$", "", r.stdout.split("KAYIT ANAHTARLARI")[0])
+    # "Katlar: K1, ..." (DEV-079) kat KODLARI = eleman adi sinifidir ({ad:..} gibi kimlik, olculen sayi degil) - serbest rakam sayilmaz
+    body = _re.sub(r"(?m)^(\[Seviye.*|--- Konu .*|\d+\. .*|Katlar: .*)$", "", r.stdout.split("KAYIT ANAHTARLARI")[0])
     if any(ch.isdigit() for ch in body):
         e.append("sade seviyede serbest rakam olmamali")
     tmp = Path(tempfile.mkdtemp())
@@ -1353,6 +1354,55 @@ def check_shadow_note_dev078() -> list[str]:
     return e
 
 
+def check_brief_dev079() -> list[str]:
+    """DEV-079: tur 1'de kanitlanan belge/arac eksikleri - `validate` BASARISIZ iken engel notu, konumsal context, kat kodu satiri, bos 'ilgili yer'."""
+    from reasoning import explain, narrate, select_topics
+    e: list[str] = []
+    for name in ("VALIDATE_FAILED_NOTE", "NO_ELEMENT_NOTE", "FLOORS_LINE_HEAD"):
+        errs = explain.lint_template(getattr(explain, name))
+        if errs:
+            e.append(f"{name} rakam icermemeli (kapi #13): {errs}")
+    if explain.floors_line([]) != "" or explain.floors_line(["", " "]) != "":
+        e.append("kat kodu yokken satir uretilmemeli")
+    if explain.floors_line(["ZK", "K2", "ZK", "K1"]) != "Katlar: ZK, K2, K1.":
+        e.append(f"kat satiri (sira korunur, yinelenen atilir): {explain.floors_line(['ZK', 'K2', 'ZK', 'K1'])!r}")
+    fl = [{"id": "bodrum1", "code": "B1"}, {"id": "zemin", "code": "ZK"}, {"id": "normal1", "code": "K1"}, {"id": "cati"}]
+    if explain.floor_codes_in_order(("normal1", "bodrum1", "zemin", "cati"), fl) != ["B1", "ZK", "K1", "cati"]:
+        e.append(f"kat kodlari BINA SIRASIYLA (alfabetik degil), kodsuz kat kimlikle: {explain.floor_codes_in_order(('normal1', 'bodrum1', 'zemin', 'cati'), fl)}")
+    if explain.floor_codes_in_order(("yok",), fl) != []:
+        e.append("olmayan kat sessizce atlanmali/uydurulmamali")
+    reg, _ = _prod_registry()
+    mk = lambda elems: Finding("legacy.sartname|K1|x|1", "legacy.sartname", "K1", "msg", elems)  # noqa: E731
+    for elems, want_note in (((), True), (("uB_salon",), False)):
+        shown, _rest = select_topics([mk(elems)], reg.facets)
+        text = narrate(shown[0], reg.facets, reg.remedies, level="sade").see
+        if (explain.NO_ELEMENT_NOTE in text) != want_note:
+            e.append(f"elemanlar={elems}: 'ilgili yer cikarilamadi' notu {'olmali' if want_note else 'OLMAMALI'}: {text!r}")
+        if not want_note and "İlgili yer: uB_salon." not in text:
+            e.append("elemanli bulguda 'Ilgili yer' yazmali")
+    script = str(ROOT / "scripts" / "reasoning_dialogue.py")
+    good = _current_version_context()
+    flag = subprocess.run([sys.executable, script, "brief", "--level", "sade", "--context", str(good)], capture_output=True, text=True, timeout=600).stdout
+    pos = subprocess.run([sys.executable, script, "brief", "--level", "sade", str(good)], capture_output=True, text=True, timeout=600).stdout
+    if not flag or flag != pos:
+        e.append("konumsal context ile --context AYNI cikti vermeli")
+    if explain.VALIDATE_FAILED_NOTE in flag:
+        e.append("gecerli projede engel notu OLMAMALI")
+    if flag.count("Katlar: K1, K2, K3, K4, K5.") != 3 or "normal1" in "".join(l for l in flag.splitlines() if l.startswith("Katlar:")):
+        e.append("her konuda 'Katlar: K1, ..., K5.' (kat KODU, kat kimligi degil) yazmali")
+    ctx = json.loads(good.read_text(encoding="utf-8"))
+    ctx["floors"][3]["openings"][0]["width"] = 1e6          # aciklik duvardan genis -> validate HATA
+    with tempfile.TemporaryDirectory() as tmp:
+        bad = Path(tmp) / "context.json"
+        bad.write_text(json.dumps(ctx), encoding="utf-8")
+        out = subprocess.run([sys.executable, script, "brief", "--level", "sade", str(bad)], capture_output=True, text=True, timeout=600).stdout
+    if out.count(explain.VALIDATE_FAILED_NOTE) != 1:
+        e.append("validate BASARISIZ iken engel notu tam bir kez yazilmali")
+    elif out.index(explain.VALIDATE_FAILED_NOTE) > out.index("--- Konu 1"):
+        e.append("engel notu konulardan ONCE gelmeli")
+    return e
+
+
 def check_promotion_readiness_and_lists() -> list[str]:
     import datetime
     from reasoning import per_unit_topic_counts, promotion_readiness, promotion_snippet, select_topics, stale_review_list, trigger_report
@@ -1444,7 +1494,7 @@ def main() -> int:
               check_decision_core, check_decision_schema_and_validate, check_reopened_presentation, check_decide_cli_end_to_end,
               check_knowledge_engineer_role, check_isik_pack_registry_and_cases, check_facade_and_measurements,
               check_isik_report_and_coverage, check_yasanabilirlik_pack, check_gate16_promotions,
-              check_promotion_readiness_and_lists, check_promotion_report_cli, check_shadow_note_dev078]
+              check_promotion_readiness_and_lists, check_promotion_report_cli, check_shadow_note_dev078, check_brief_dev079]
     failed = 0
     for check in checks:
         try:

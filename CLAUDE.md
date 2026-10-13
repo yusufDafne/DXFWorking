@@ -113,8 +113,9 @@ kod gerektirmeden **bugünden** geçerli işletim ilkeleridir:
 5. **Sessiz geçme.** Veri eksikliğinden bakılamayan bir bakış açısı varsa söyle (örn. `meta.north_angle`
    yok → yönelim değerlendirilemedi). "Temiz" ile "hiç bakılmadı" aynı şey değildir.
 6. Aynı kök nedene bağlı uyarıları (özellikle özdeş katlardakileri) **tek konu** olarak sun.
-7. **Gölge (`shadow`) gözlemler** henüz doğrulanmamış deneme kurallarıdır: kullanıcıya KONU olarak sunulmaz, ama `reasoning_dialogue.py brief` çıktısındaki tek satırlık nota göre (DEV-078) adıyla anılabilir — kesin uyarı gibi anlatma, sayı verme, karar isteme.
-8. Yeni bir ilke keşfedersen (kullanıcı bir defekt gösterdi ya da kendin buldun) bunu
+7. **Doğrulama BAŞARISIZsa önce engeli söyle** (DEV-079): `validate.py` "DOGRULAMA BASARISIZ" diyorsa proje DXF üretemez ve bulgu listesi EKSİK olabilir — anlatıya bununla başla (`brief` bunu konulardan önce kendisi yazar). **Katları KAT KODUYLA an** (`floors[].code`: B1, ZK, K1…; `brief` "Katlar: …" satırını verir) — sıra numarası tahmin etme ("3. kat" demek yerine kodu söyle).
+8. **Gölge (`shadow`) gözlemler** henüz doğrulanmamış deneme kurallarıdır: kullanıcıya KONU olarak sunulmaz, ama `reasoning_dialogue.py brief` çıktısındaki tek satırlık nota göre (DEV-078) adıyla anılabilir — kesin uyarı gibi anlatma, sayı verme, karar isteme.
+9. Yeni bir ilke keşfedersen (kullanıcı bir defekt gösterdi ya da kendin buldun) bunu
    **vaka → ilke → veçhe** olarak kaydedilmek üzere işaretle (kayıt rolü ve kuralları: `docs/agents/KNOWLEDGE_ENGINEER_AGENT.md`); proje operatörü merkezi dokümana
    yazamaz, bunu kullanıcıya bildirir, kayıt sistem geliştirme oturumunda yapılır.
 

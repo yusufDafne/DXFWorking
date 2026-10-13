@@ -36,6 +36,7 @@ REOPEN_PREFIX = "Daha önce bilinçli olarak kabul etmiştiniz (gerekçeniz: “
 REOPEN_MID = "”); ölçüm değişti: "
 REOPEN_SUFFIX = " Bu yüzden yeniden soruyorum."
 REOPEN_BEFORE, REOPEN_NOW, REOPEN_GONE = "önce", "şimdi", "ölçülemedi"
+NO_ELEMENT_NOTE = " İlgili yer adı bulgudan çıkarılamadı (bulgu birden çok elemanı ya da binanın genelini kapsıyor olabilir); ayrıntı için mimar seviyesinde ölçüm notu verilir."
 UNSCORED_NOTE = "Bu konunun ne kadar ciddi olduğu ölçülemedi; önem sırası belirtilmiyor."
 # kategori -> (ne goruyoruz, neden onemli): `legacy.<kategori>` bulgulari icin (bu uyarilar validate.py'de zaten kullaniciya gorunur)
 CATEGORY_PLAIN = {
@@ -270,6 +271,8 @@ def narrate(topic: Topic, facets: dict[str, Facet], remedies: dict[str, Remedy],
         see, why = CATEGORY_PLAIN.get(cat, CATEGORY_PLAIN["mimari"])
         if topic.elements:
             see += " İlgili yer: " + ", ".join(topic.elements) + "."
+        else:
+            see += NO_ELEMENT_NOTE
         remedy_ids = []
     if len(topic.floors) > 1:
         see += " Bu durum özdeş katların hepsinde aynı biçimde görülüyor."
@@ -307,6 +310,27 @@ def coverage_sentence(blocked: list[tuple[str, str]], unmeasured: list[str]) -> 
     if unmeasured:
         parts.append("Şu bakış açıları henüz ölçülmüyor (bu, 'sorun yok' demek değildir): " + "; ".join(unmeasured) + ".")
     return " ".join(parts)
+
+
+VALIDATE_FAILED_NOTE = ("Önce bir engel: doğrulama BAŞARISIZ olduğu için proje bu haliyle DXF üretemez ve aşağıdaki bulgular eksik olabilir; "
+                        "önce doğrulama hataları giderilmeli.")
+FLOORS_LINE_HEAD = "Katlar: "
+
+
+def floors_line(codes) -> str:
+    """DEV-079: konunun geçtiği katları KAT KODUYLA (`floors[].code`: K1, ZK, B2 ...) söyler; sıra numarası TAHMİN EDİLMEZ. Kod yoksa satır yok."""
+    seen: list[str] = []
+    for c in codes:
+        c = str(c).strip()
+        if c and c not in seen:
+            seen.append(c)
+    return FLOORS_LINE_HEAD + ", ".join(seen) + "." if seen else ""
+
+
+def floor_codes_in_order(topic_floor_ids, context_floors) -> list[str]:
+    """Konunun katlari BINA SIRASIYLA (context `floors[]` sirasi; alfabetik DEGIL) ve KAT KODUYLA; kod yoksa kat kimligi."""
+    wanted = set(topic_floor_ids)
+    return [str(f.get("code") or f.get("id")) for f in context_floors if f.get("id") in wanted]
 
 
 SHADOW_NOTE_HEAD = ("Henüz doğrulanmamış gözlemler var (deneme aşamasındaki kurallar; bunlar kesin uyarı değildir "

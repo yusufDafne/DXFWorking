@@ -49,7 +49,7 @@ komşu giriş 2/3, ıslak ortak duvar 5/6, sandviç banyo 0/6 = dejenere/bilgi t
 köprüsü (`facet_check`) çekirdekte değil bu betiktedir (çekirdek çizim modülü import etmez).
 
 ## Diyalog köprüsü (`scripts/reasoning_dialogue.py`, DEV-064/065)
-`guide` (sözleşme metni; operatör `docs/`ı okuyamaz), `decide --key ... --reason` (karar kaydı; `context.json`a EKLEME, mevcut biçim korunur), `brief --level sade|mimar [--mode] [--before] [--intent]` (sonunda **DEV-078** "henüz doğrulanmamış gözlemler" notu; konu sayısı/kuyruk DEĞİŞMEZ; seviye
+`guide` (sözleşme metni; operatör `docs/`ı okuyamaz), `decide --key ... --reason` (karar kaydı; `context.json`a EKLEME, mevcut biçim korunur), `brief --level sade|mimar [--mode] [--before] [--intent] [context.json | --context context.json]` (**DEV-079:** context konumsal da verilebilir [`validate.py`/`reasoning_report.py` gibi]; `validate` BAŞARISIZsa konulardan ÖNCE "doğrulama başarısız, bulgular eksik olabilir" engel notu; her konunun altında bina sırasıyla "Katlar: K1, …" kat KODU satırı; bulgudan eleman çıkarılamayan konuda "ilgili yer adı çıkarılamadı" notu; sonunda **DEV-078** "henüz doğrulanmamış gözlemler" notu; konu sayısı/kuyruk DEĞİŞMEZ; seviye
 verilmezse çıkış 3 + soru), `append` (`<proje>/dialogue.jsonl`, kaynaksız sayıda çıkış 1 ve YAZILMAZ), `verify` (reviewer;
 `context_sha256` eşleşmeyen kayıt "doğrulanamadı" diye raporlanır). Bulgular `validate.py` stdout'undan okunur
 (`validate.py` değişmez); köprü çekirdek DIŞINDADIR. rev-28: 15 satır → 3 konu → ilk mesajda 3 konu.
