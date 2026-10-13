@@ -79,14 +79,16 @@ Tamamlanan işlerin ayrıntılı gerekçesi, karar süreci ve ölçülen etkisi
 | DEV-077 | `openings/` — pencere ortalama kapı/geçiş boşluklarını atlar + açıklık üst üste binme UYARISI | COMPLETED (2026-10-13) |
 | DEV-078 | `reasoning/` — shadow gözlemlerin sunumu: kuyruğa girmez, tek satırlık "henüz doğrulanmamış gözlemler" notuyla anılır | COMPLETED (2026-10-13) |
 | DEV-079 | `reasoning/` + belgeler — DEV-071 tur 2: belge eksiklerinin kapatılması, rubrik düzeltmesi, ikinci sınav turu | PLANNED |
-| DEV-080 | `validate.py` — başarı satırındaki "(N uyari)" sayacı yalnız çakışma uyarılarını sayıyor; toplam uyarıyı yansıtmalı | PLANNED |
-| DEV-081 | `northarrow/` — kuzey sözleşmesi: kat planında sağ üst köşe, paftalama (uzun kenar yatay, kuzeye yakın yüz üstte), pusula vaziyetteki gerçek yöne göre (`DEV-074` revizyonu) | PLANNED |
-| DEV-082 | `vaziyet/` I — şema `site`, `Parcel`/çekme, vaziyet DXF içeri aktarma (aday + onaylı patch) | PLANNED |
+| DEV-080 | `validate.py` — başarı satırındaki "(N uyari)" sayacı yalnız çakışma uyarılarını sayıyor; toplam uyarıyı yansıtmalı | COMPLETED (2026-10-13) |
+| DEV-081 | `northarrow/` — kuzey sözleşmesi: kat planında sağ üst köşe, paftalama (uzun kenar yatay, kuzeye yakın yüz üstte), pusula vaziyetteki gerçek yöne göre (`DEV-074` revizyonu) | COMPLETED (2026-10-13) |
+| DEV-082 | `vaziyet/` I — şema `site`, `Parcel`/çekme, vaziyet DXF içeri aktarma (aday + onaylı patch) | COMPLETED (2026-10-13) |
 | DEV-083 | `vaziyet/` II — deterministik yerleşim etüdü motoru (aday, eleme, ölçüm, alternatifler) | PLANNED |
 | DEV-084 | `vaziyet/` III — vaziyet paftası + bağımsız DXF çıktısı + alternatif karşılaştırma | PLANNED |
 | DEV-085 | `vaziyet/` IV — kullanıcı/dil modeli bilgi akışı, faz dallanması, onay diyaloğu, seçim patch'i | PLANNED |
-| DEV-086 | İmar standart değer kataloğu — çekme, TAKS, KAKS varsayılanları (kısa araştırma; kullanıcı gerçek yönetmelikle değiştirecek) | PLANNED |
+| DEV-086 | İmar standart değer kataloğu — çekme, TAKS, KAKS varsayılanları (kısa araştırma; kullanıcı gerçek yönetmelikle değiştirecek) | COMPLETED (2026-10-13) |
 | DEV-087 | DWG girdisi — dönüştürücü kararı ve entegrasyonu | PLANNED |
+| DEV-088 | Standart profili — bölge/şehir bazlı standart seçimi ("İstanbul standartlarına göre"), standart sorgusu, "proje değerleriyle ilerle"; modüller profile duyarlı | PLANNED |
+| DEV-089 | Kullanıcıya anlatım kalitesi — DEV-064/078/079 ve soğuk sınav bulgularının toparlanması, yeni anlatım geliştirmesi | PLANNED |
 | DEV-071 | `docs/development/reviews/` — soğuk başlangıç sınavı (reviewer; `DEV-070` ayrılan parça, önkoşulsuz) | PLANNED |
 
 ## READY
@@ -757,34 +759,8 @@ belirleyeceksin ... her birini sıralama olarak birbirine bağla"):**
 - **Tur 1 sınırları (tekrar edilir):** mühürlü paket sandbox değildir; talimat güvene dayanır (rapor bunu söyler).
 - **Uygulama sonucu (2026-10-13):** belge/araç eksikleri kapatıldı (`brief`: doğrulama-başarısız notu, konumsal `context`, her konuda "Katlar: …" satırı kat koduyla, boş-öğe notu; kök `CLAUDE.md` ilke 7) ve rubrik düzeltmesi koşulardan önce ön-kayıt commit'iyle (`c0b1ebb`) yazıldı; mutasyonla sınandı. **Tur 2 SONUCU: üç vaka da KALDI** (`reviews/DEV-071-2026-10-13-tur2.md`, bağımsız notlayıcı): `guncel` 1/3, `kuzey30` 0/3, `eski_uC` 0/3. Baskın neden C1 ("plan §5 okundu"): 9 koşunun yalnız 1'i §5'i okudu (diğerleri başlık grep'i, `sed 1,200p` ya da yalnız `wc -c`); C1 sayılmazsa `guncel` 3/3, `kuzey30` 1/3, `eski_uC` 0/3. `eski_uC` C1'den bağımsız da düştü: shadow kaynaklı `uC` banyo bulguları etiketsiz kesin cümleyle yazıldı (C6), bir ajan kat numarasını yanlış verdi ("2.–6. kat"), biri araç çıktısında olmayan "43 konu" yazdı. Belge boşlukları B1–B7 raporda (özellikle: `brief` shadow notu yalnız soru başlığı veriyor; plan'ın hangi bölümünün zorunlu olduğu yazmıyor; validate/mimari ile shadow'un aynı konuda ayrı etiketlenmesi yönergesi yok; rapor "45 konu" ↔ `brief` "3 + 41" farkı açıklanmıyor). **Sonuç kuralı gereği DEV-079 ve DEV-071 TAMAMLANMADI**; kalan eksik BİLGİ eksiği sayılır, tur 3 kullanıcıya sorulur.
 
-### DEV-080 — `validate.py` — başarı satırı uyarı sayacı
 
-- **Durum:** PLANNED — kullanıcı onayı verildi (2026-10-13), uygulama sonraki agentic oturumda kullanıcının başlatmasıyla.
-- **Kaynak:** `DEV-071` tur 1'de bir sınav ajanı, ben ve reviewer doğruladı: rev-29 projesinde `validate.py` 15 `UYARI` satırı basarken son satır "(0 uyari)" yazıyor. Neden: `scripts/validate.py` başarı satırı yalnız `len(clash_report.warnings)` (çakışma uyarıları) sayıyor; şartname/mimari/sürüm/pencere uyarıları sayılmıyor.
-- **Kullanıcı kararı (2026-10-13):** "yap" — gerçek toplamı yansıtacak şekilde düzelt. Önerilen biçim: `(N uyari: X cakisma, Y diger)` ya da tek toplam sayı; uygulayıcı kullanıcıya iki biçimi gösterip seçtirir.
-- **Kapsam:** `scripts/validate.py` son satır (tüm UYARI çıktıları tek yerde sayılır, ayrı sayaç bırakılmaz — yeni uyarı kategorileri otomatik dahil olsun diye çıktı satırlarından değil, uyarı toplayan listeden sayılır); `reasoning/adapters.py::parse_validate_output` son satırı UYARI saymadığı için etkilenmez (selftest ile doğrulanır); `scripts/CLAUDE.md`/kök `CLAUDE.md` varsa sayaç anlatımı. **Etki:** bu satır `output/provenance.json`, golden `expected.json` ve birkaç selftest metninde geçebilir — `grep "uyari)"` ile taranır; DEĞİŞEN her beklenti raporlanır.
-- **Kabul ölçütü:** rev-29'da son satır 15 uyarıyı yansıtır; uyarısız golden projede "0"; uyarı üreten bir golden'da gerçek sayı; kasıtlı bozma: sayaç yine yalnız çakışmayı sayarsa test kırılır; `reasoning` adaptörü ve tüm selftest/golden/doc_check temiz.
-- **Önkoşul:** yok.
-- **Uygulama sonucu (2026-10-13, kabul bekliyor):** `validate.py::warning_summary` + `run_validation` kategori sayaçları (surum/merdiven/sartname/mimari/cakisma); başarı satırı artık `(15 uyari: 10 sartname, 5 mimari)` (uyarısızsa `(0 uyari)`). **Seçilen biçim (itiraz edilebilir):** toplam + sıfırdan büyük kategorilerin dökümü (iki seçenekten ikincisi; uyarısız projelerde satır eskisiyle aynı kalır). **Kanıt:** `validate_selftest.py::check_success_line_counts_all_warnings_dev080` — gerçek proje + 13 golden + plandan_cephe için "toplam = basılan UYARI satırı sayısı" ve kategori dökümü eşitliği; çakışma uyarısı gerçek/golden projede yok → motor stub'lanarak ayrıca sayılır; 6 kasıtlı bozma yakalandı (biri ilk turda sızdı: çakışma sayacı, stub testi eklendi). **Etki taraması:** `grep "uyari)"` — başka dosyada bu satıra bağımlılık yok; `output/provenance.json` ve golden `expected.json` değişmedi; `reasoning` adaptörü başarı satırını UYARI saymaz.
 
-### DEV-081 — `northarrow/` — kuzey sözleşmesi, paftalama ve pusula (`DEV-074` revizyonu)
-
-- **Durum:** PLANNED — kullanıcı kararları 2026-10-13 (Q1/Q2, `SITE_PLAN_STUDY_PLAN.md` §2). Kalan teyit: Q2' (aşağıda).
-- **Kullanıcı kararı:** *"gelen vaziyet planı zaten daima kuzeyi gösterecek, göstermiyorsa kullanıcıya uyarı yapılacak. Paftalama yapılırken binanın uzun kenarı yatay olacak ve kuzeye yakın tarafı paftanın üstüne bakacak şekilde yerleştirilecek. Pafta pusulası vaziyetteki gerçek yöne göre döndürülmüş olacak (30° → pusula −30° dönmüş). Kat planı paftalarında da aynı mantık geçerli; pusula vaziyete göre gerçek yönü göstermeli."* Ayrıca (2026-10-13): kat planında ok **sağ üst köşede**.
-- **Kapsam:** (1) `generate_dxf.py` kat planı kuzey oku konumu: **pafta iç çizgisinin sağ üst köşesi** (padding içinde; aks/ölçü zinciri çakışması ve taşma kapıları geçmeli). (2) Sözleşme: `meta.north_angle = −bina_donusu` (bina_donusu: vaziyette binanın üst yüzü dış normalinin kuzeyden saat yönünde açısı; örnek +30° → −30°); pusula sınıfı değişmez (`NorthArrow`), açı verilir. (3) Aralık: dikdörtgen binada uzun kenar yatay, kuzeye yakın uzun yüz üstte ⇒ `north_angle ∈ [−90°, +90°]`; tam kare binada `[−45°, +45°]` (eski kural); `meta.floor_width ≥ meta.floor_depth` değilse `validate` UYARISI (otomatik döndürme YOK, karar sorulur). (4) Kök `CLAUDE.md` "Kuzey oku", `scripts/northarrow/CLAUDE.md`, `check_north_convention`, `schema` açıklaması ve operatör belgesi yeni sözleşmeye göre yeniden yazılır (bugünkü "vaziyette daima yukarı + ±45°" cümlesi KALKAR; "gelen vaziyet kuzey yukarıdır, değilse uyarı" girer). (5) Vaziyet pusulası `DEV-084`te çizilir; bu madde çağrı noktasını hazırlar.
-- **Teyit (Q2'):** `±45°` yerine dikdörtgen binada `±90°` sonucu (planın çıkarımı, kullanıcı doğrulamadı). Uygulayıcı bunu kullanıcıya gösterip onay alır.
-- **Kabul ölçütü:** rev-29 projesinde (20000×17500, north 0) ok sağ üst köşede (DXF koordinatı + preview); sınır değerleri ELLE (±90 geçer, ±90,01 hata; kare bina ±45); `floor_width < floor_depth` uyarısı; `north_angle` yoksa ok HİÇ çizilmez; kasıtlı bozma: ok yine ortada, işaret ters (+30 yerine −30), aralık hâlâ ±45 ise test kırılır; golden `expected.json` değişimleri bilinçli ve raporlanır.
-- **Önkoşul:** Q2' teyidi. `DEV-084`ün önkoşuludur.
-- **Uygulama sonucu (2026-10-13, kabul bekliyor):** `pafta::Sheet.inner_bounds` (`draw` ile aynı hesap), `NorthArrow.extent`/`corner_center`, `generate_dxf.py` + `preview.py` kat planında ok **iç çizginin sağ-üst köşesinde**; `northarrow`: `NORTH_LONG_SIDE_HALF_RANGE_DEG=90`, `north_half_range(meta)` (dikdörtgen 90, tam kare 45, ölçü bilinmiyorsa 45), `check_north_convention` yeni aralık, `check_north_layout` (`north_angle` varsa `floor_width < floor_depth` UYARI), `validate.py` kancası, `CONTRACT_VERSION` 1.2; şema açıklaması, kök `CLAUDE.md` "Kuzey sözleşmesi" yeniden yazıldı (DEV-074 cümleleri KALDIRILDI), `northarrow`/`pafta` `CLAUDE.md`, operatör belgesi. **Kanıt:** elle hesaplanan `inner_bounds`/`corner_center`; üretilen DXF'te her okun merkezi KENDİ iç çizgisinin sağ-üst köşesinde ve başka öğeye binmiyor; sınırlar (±90 geçer, ±90,01 hata; kare ±45; ölçü yok ±45); validate uçtan uca; 11 kasıtlı bozma yakalandı. **Önemli:** Q2' (dikdörtgende ±90°) kullanıcı "hepsini sırayla uygula" talimatıyla uygulandı ama AYRI teyit alınmadı — tek sabit (`NORTH_LONG_SIDE_HALF_RANGE_DEG`) ve tek fonksiyon (`north_half_range`) olduğundan geri alması kolaydır. **Örnek proje:** `output/` bilerek YENİDEN ÜRETİLMEDİ (çıktılar revizyona bağlıdır); ok yeni konumda bir sonraki revizyonda (rev-30) görünür. Golden `expected.json` değişmedi, golden-set temiz.
-
-### DEV-082 — `vaziyet/` I — şema, parsel/çekme, vaziyet DXF içeri aktarma, örnek DXF
-
-- **Durum:** PLANNED — plan: `SITE_PLAN_STUDY_PLAN.md` §3, §4(A,B), §6, §8.
-- **Kullanıcı kararı:** girdi muhtemelen DWG; çizim basit: parsel sınırları, yorumlanabilir kısa metinler, yaklaşık yerleşim bölgesi alanı; sistem **basit örnek vaziyet DXF'i** hazırlayıp sunar. Gelen vaziyet kuzey yukarıdır, değilse **uyarı**.
-- **Kapsam:** yeni modül `scripts/vaziyet/` (+ `CLAUDE.md`, `selftest.py`, golden, `CONTRACT_VERSION`; `doc_check` #10/#10b/#10c; çakışma muafiyeti/ayak izi kararı); şema **MINOR** (additif, opt-in): `site` (`parcel.polygon`, `placement_zone.polygon`, `setbacks`, `north_confirmed`, `source{path,sha256}`, `building{position,rotation}`); `Parcel` geçerlilik (kapalı, kendini kesmez, alan); `setback.py` iç offset (çekme değeri kullanıcıdan, yoksa `DEV-086` varsayılanı ADIYLA bildirilerek); `dxf_in.py`: parsel/yerleşim alanı/yol/not ADAYLARI (katman adı zorunlu değil; dil modeli yalnız ÖNERİR, kullanıcı onaylar), **kuzey işareti denetimi** (işaret yok/yukarıyı göstermiyor/okunamıyor ⇒ kullanıcıya UYARI + açıyı kullanıcıdan iste; tahmin YOK), birim/ölçek TAHMİN EDİLMEZ; **`scripts/site_sample.py` örnek vaziyet DXF üreteci** (`scripts/vaziyet/samples/ornek_vaziyet.dxf`: `PARSEL`, `YERLESIM_ALANI`, `YOL`, `NOT`, `KUZEY` katmanlı basit parsel + kısa kullanım notu); `Parcel.as_site_dict()` ile onaylı patch (otomatik birleştirme YOK). DWG: sessiz okunmaz; "DXF olarak kaydedin" der (`DEV-087`).
-- **Kabul ölçütü:** ELLE hesaplanan mini parseller (dikdörtgen, L, eğik) için alan/offset; örnek DXF'in script tarafından üretilip `dxf_in` ile bire bir okunması; kasıtlı bozma (offset ters yön, açık zincir kabulü, birim tahmini, kuzey işareti yokken uyarısız geçme); yanlış-pozitif (sınırda poligon, kuzey işaretli dosyada uyarı yok); örnek proje çıktısı DEĞİŞMEZ; tüm selftest/golden/doc_check temiz.
-- **Önkoşul:** yok. `DEV-083`ün önkoşuludur.
-- **Uygulama sonucu (2026-10-13, kabul bekliyor):** yeni modül **`scripts/vaziyet/`** (`parcel.py`, `setback.py`, `dxf_in.py`, `checks.py`, `sample.py`, `selftest.py`, `CLAUDE.md`, `scripts/vaziyet/golden/parsel_ornek`, `scripts/vaziyet/samples/ornek_vaziyet.dxf`); CLI `scripts/site_sample.py` (örnek vaziyet DXF üreteci) ve `scripts/site_scan.py` (salt okunur tarama + `--patch`); şema **1.8.0** (`site`), `version.py` (`SCHEMA_VERSION`, `CONTRACT_MODULES += vaziyet`), `validate.py` kancası (`check_site`), `COLLISION_EXEMPT` + `REASONING_EXEMPT` gerekçeleri, `scripts/CLAUDE.md`. **Ad değişikliği (itiraz edilebilir):** plandaki `scripts/site/` `site` Python stdlib modülüyle çakıştığı için `vaziyet/` oldu (veri anahtarı `context.json::site` kaldı); plan/görev belgeleri güncellendi. **Kanıt:** ELLE hesaplanan offset (dikdörtgen, kenar başına, L konkav, çökme, kısmen çöken, eşdoğrusal), çokgen geçerliliği (kelebek/L yanlış-pozitif), ayak izi dönmesi (90° elle), `plan_north_angle` (30 → −30), DXF tarama (birim/cm, LINE zinciri, kuzey 4 durum, DWG, desteklenmeyenler), 31 kasıtlı bozmadan 29'u yakalandı (2'si eşdeğer savunma satırı; CLAUDE.md'de). **Yan etki ve çözümü:** şema 1.8.0 örnek projenin `validate` çıktısına bir `UYARI (surum)` ekler (proje 1.7.0'da kalır; güncellemesi rev-30). Bundan etkilenen testler (reasoning 15-satır beklentileri, `validate_selftest` mutlak sayıları) projenin SİSTEM SÜRÜMÜNE çekilmiş geçici kopyasında koşar hale getirildi. **Bilinçli notlar:** golden bina 6000×9000 (derinlik > genişlik) olduğundan DEV-081 paftalama UYARISI golden'da görünür; yerleşim etüdü/vaziyet paftası/brief bu madde DEĞİL.
 
 ### DEV-083 — `vaziyet/` II — deterministik yerleşim etüdü motoru
 
@@ -810,14 +786,6 @@ belirleyeceksin ... her birini sıralama olarak birbirine bağla"):**
 - **Kabul ölçütü:** onaysız brief ile çalışma reddedilir (kasıtlı bozma); şema dışı alan reddi; "parsel sunmuyorum" dalı ikinci faza yönlendirir (ve birinci faz kodu çalışmaz); varsayılan kullanımı bildirilir; seçim patch'i `validate` geçer ve provenance'a yazılır; anlatımda kaynaksız sayı yok; tüm selftest/golden/doc_check temiz.
 - **Önkoşul:** `DEV-083`.
 
-### DEV-086 — İmar standart değer kataloğu (çekme, TAKS, KAKS varsayılanları)
-
-- **Durum:** PLANNED — kullanıcı talebi 2026-10-13 ("ayrıca kaydet; Türkiye standartları hakkında kısa araştırmayla default değerler tanımla; gerçek yönetmelik verileriyle ben sonra belirleyeceğim").
-- **Kaynak araştırma:** `SITE_PLAN_STUDY_PLAN.md` §13 (ikincil kaynaklar, DOĞRULANMADI): ön bahçe 5,00 m / yan 3,00 m / arka 3,00 m (asgari, planda aksi hüküm yoksa); TAKS 0,40 (planda TAKS yoksa ayrık/blok nizam); KAKS verilmediyse yaklaşma mesafelerinden bulunan taban alanı × kat adedi ve TAKS en çok 0,60.
-- **Kapsam:** yeni kütüphane (öneri: `scripts/vaziyet/zoning.py` ya da `scripts/standards/` altında; `standards/` ile aynı konum/sözleşme: proje VERİSİ DEĞİL, `context.json`a yazılmaz): `ZoningDefaults` kayıtları — her değer **koşul, nizam, kaynak, tarih, doğrulandı=False** alanı taşır; `resolve(user_values)` kullanıcı değerini her zaman üstün tutar; kullanılan her varsayılan **adıyla bildirilir** (`defaults_report.py` deseni); `python scripts/defaults_report.py --catalog` bu kataloğu listeler; "Güncelleme sözleşmesi" (kullanıcı gerçek yönetmelikle değerleri değiştirir → HD kaydı, `provenance.reviewed` güncellenir, `CONTRACT_VERSION` değişmez). v1 yalnız **ayrık nizam**; katalogda olmayan nizam/koşul için sistem SORAR (varsayım yok).
-- **Kabul ölçütü:** elle okunan değerler tabloyla birebir; kullanıcı değeri ezer; koşul eşleşmezse varsayılan UYGULANMAZ (soru döner); her kullanımda bildirim; kasıtlı bozma: kullanıcı değeri varsayılana ezdirilirse, koşulsuz uygulanırsa, bildirilmezse test kırılır; `doğrulandı=False` iken çıktıda "doğrulanmamış varsayılan" ibaresi.
-- **Önkoşul:** yok. `DEV-083`ün önkoşuludur.
-- **Uygulama sonucu (2026-10-13, kabul bekliyor):** `scripts/vaziyet/zoning.py` (`ZONING_DEFAULTS`: ön 5000 / yan 3000 / arka 3000 mm, TAKS 0,40, KAKS-yoksa TAKS ≤ 0,60, KAKS sayı yok — her kayıt koşul + nizam + kaynak/URL + araştırma tarihi + `verified=False`; `resolve_zoning` [kullanıcı > katalog > soru; `plan_states` ile planın TAKS/KAKS belirttiği ve nizam ≠ ayrık durumunda varsayılan UYGULANMAZ], `ZoningResolution.describe` [ADIYLA + "DOĞRULANMADI" bildirimi], `edge_roles` [ön/arka/yan; yola bakan kenar bilinmiyorsa rol uydurulmaz], `setbacks_for_parcel` → `site.setbacks` biçimi), `defaults_report.py` (`--catalog` imar kataloğu + `site.setbacks` yokken uygulanacak varsayılanlar), `check_site` uyarı metni, operatör belgesi satırı, `vaziyet/CLAUDE.md`. **Konum kararı (itiraz edilebilir):** `scripts/vaziyet/zoning.py` (`standards/` değil; parsel modülünün sahibi olduğu veri). **Kanıt:** `check_zoning_catalog_dev086` (tabloyla birebir değerler, literal-bağımsızlık, kullanıcı üstünlüğü [0 dahil], koşul/nizam, rol seçimi: dikdörtgen/yan yol/köşe/yamuk/iki aday-en uzun, varsayılan çekmelerle yapılaşma alanı ELLE, defaults_report CLI), 17 kasıtlı bozmadan 16'sı yakalandı (1'i ölü savunma satırı). **Doğrulanmamış değerler** ikincil kaynaklıdır (bkz. plan §13); kullanıcı gerçek yönetmelikle değiştirince `researched_on`/`verified` güncellenir.
 
 ### DEV-087 — DWG girdisi (dönüştürücü kararı)
 
@@ -826,6 +794,23 @@ belirleyeceksin ... her birini sıralama olarak birbirine bağla"):**
 - **Kapsam:** seçenekler: (a) kullanıcı "DXF olarak kaydet" yapar (kod yok, belge); (b) ODA File Converter (ücretsiz, kapalı kaynak) komut satırı entegrasyonu; (c) LibreDWG `dwg2dxf` (GPL). Seçilen araç `scripts/vaziyet/dwg_in.py` ile **dış araç sarmalı** olur: kurulu değilse açık hata ("DXF olarak kaydedin"), çıktı DXF yine `dxf_in` onay kapısından geçer, dönüşüm kaydı (araç adı/sürümü/sha256) `site.source`a yazılır. Ortamda araç yoksa test sahte dönüştürücüyle yapılır.
 - **Kabul ölçütü:** araç yok ⇒ sessiz yutma yok; dönüşüm sonrası aynı aday akışı; kasıtlı bozma: dönüştürücü hatasını yutma; lisans/kurulum notu belgelenir.
 - **Önkoşul:** kullanıcı kararı; `DEV-082`.
+
+### DEV-088 — Standart profili: bölge/şehir bazlı standart seçimi
+
+- **Durum:** PLANNED — kullanıcı talebi 2026-10-13 (uygulama sırası kullanıcıda).
+- **Kullanıcı kararı:** bir standart verildiğinde (çekme, TAKS/KAKS, ileride yönetmelik değerleri) kullanıcı dil modeline üç yoldan birini söyleyebilir: (a) *"TR / İstanbul standartlarına göre yap"* → o bölgenin profili uygulanır; (b) *"şuranın standartları nasıl?"* → sistem profili YALNIZ gösterir, hiçbir şey uygulamaz; sonra kullanıcı (c) *"proje özelinde değerlerle ilerle"* diyebilir → profile bakılmaz, proje verisi/kullanıcı değeri geçerlidir. Modüller buna duyarlı olmalı: standart değerini kullanan her modül değeri tek bir çözümleyiciden (profil) alır, kendi sabitini tutmaz.
+- **Kapsam (taslak):** `ZoningDefaults` (DEV-086) bölge anahtarıyla genişler (`profile_id`: örn. `TR`, `TR-ISTANBUL`; kayıt başına kaynak/tarih/`verified`); `resolve(profile=…, user_values=…)`; `meta`/`site` altında opt-in `standards_profile` (seçim kaydı; seçilmezse davranış DEĞİŞMEZ); `defaults_report.py --profile <id>` salt okunur sorgu; profilde olmayan değer için varsayım YOK (sorulur); diğer standart tüketen modüller (`standards/`, `vaziyet/`) profil çözümleyicisine bağlanır. Gerçek şehir değerleri kullanıcıdan gelir (sistem yönetmelik rakamı uydurmaz; araştırılmış değerler `doğrulandı=False` kalır).
+- **Kabul ölçütü:** profil seçilmediğinde mevcut tüm çıktılar bayt-bayt aynı; profil seçilince değer kaynağı (hangi profil) bildirilir; sorgu modu hiçbir veri yazmaz; "proje özelinde" modu profili yok sayar; kasıtlı bozma: sorgu modunun uygulaması, profilin kullanıcı değerini ezmesi, bildirilmemesi.
+- **Önkoşul:** `DEV-086` (tamamlandı). `DEV-083` mevcut `resolve_zoning` çağrısını kullanır; bu madde onu genişletir, çağıran taraf değişmez.
+
+### DEV-089 — Kullanıcıya anlatım kalitesi (toparlama ve yeni geliştirme)
+
+- **Durum:** PLANNED — kullanıcı talebi 2026-10-13: *"sistemin kullanıcıya anlatım kalitesi önemlidir; tam oturmamışsa yapılanları toparla ve yeni bir geliştirme fikri olarak planla."*
+- **Bugüne kadar yapılanlar:** `DEV-064` anlatıyı şablondan üretir ve kaynaksız sayıyı reddeder; `DEV-078` doğrulanmamış gözlemleri tek satırlık notla anar; `DEV-079` doğrulama-başarısız notu, kat kodu satırı, konumsal `context`; `DEV-080` doğru uyarı sayacı. Soğuk sınav (`DEV-071`) tur 1: `guncel` geçti, diğerleri kaldı; tur 2 (`reviews/DEV-071-2026-10-13-tur2.md`): üç vaka da kaldı, ölçülen asıl sorun anlatımın kendisinden çok ajanın planı yeterince okumaması ve doğrulanmamış gözlemlerin kesin gibi yazılması.
+- **Açık sorunlar (tur 2, B1–B7):** `brief` gözlem notu yalnız soru başlığını veriyor, bulguyu vermiyor; doğrulanmış uyarı ile doğrulanmamış gözlemin aynı konuda ayrı etiketlenmesi için yönerge yok; planın hangi bölümünün zorunlu okuma olduğu yazmıyor; rapor "45 konu", `brief` "3 + 41" gösteriyor ve fark açıklanmıyor; `brief`in "bulgular eksik olabilir" cümlesini aktarma yönergesi yok; kat sıra numarası yerine kat kodu kullanımı yetersiz kalıyor.
+- **Kapsam (taslak, uygulamadan önce kullanıcıyla netleşir):** (1) anlatıyı ajanın serbest yazısına bırakmak yerine `brief`in KULLANICIYA OKUNACAK hazır metin bloğunu (konular + gözlem notu + ölçülemeyenler + engel) üretmesi; ajan yalnız seçim ve sade dile çevirme yapar; (2) doğrulanmış uyarı ve doğrulanmamış gözlem çıktıda yapısal olarak ayrı bölümlerde; (3) konu sayısı farkının (toplam / sunulan) tek cümleyle açıklanması; (4) zorunlu okuma listesinin belgede tek yerde ve araç çıktısında (`guide`) görünmesi; (5) kullanıcı dili ayarı: mimar/mühendis ise teknik iç mekanizma ayrıntısı verilmez — anlatım KULLANICININ işine odaklanır (kullanıcı geri bildirimi 2026-10-13: iç işleyişin teknik ayrıntısı istenmiyor); (6) yeni sınav tasarımı: ölçüt "ajan doğru belgeyi okudu mu" yerine doğrudan ÇIKTI kalitesini (etiketleme, sayı kaynağı, engel önce) ölçer — tur sayısı kullanıcı kararı.
+- **Kabul ölçütü:** (1) ve (2) için `reasoning_dialogue` selftest'i (elle metin eşitliği, rakam lint'i, doğrulanmamışın doğrulanmış bölümünde görünmemesi); sınav turu kullanıcı isterse.
+- **Önkoşul:** yok.
 
 ### DEV-071 — `docs/development/reviews/` — soğuk başlangıç sınavı (reviewer)
 
@@ -2022,6 +2007,26 @@ Bir görev için agent şunları yapmadan `COMPLETED` yazamaz:
 
 - **Durum:** COMPLETED (2026-10-12) — kullanıcı kabulüyle. Ayrıntılı kayıt: `HD-056`.
 - **Özet:** normal pencere denizliği 900 mm; varsayılan konum iç duvarlar arasında ortalı; iç duvar–dış cephe birleşiminde pencere `validate` UYARISI; `window_placement_report.py`.
+
+### DEV-080 — `validate.py` — başarı satırı uyarı sayacı
+
+- **Durum:** COMPLETED (2026-10-13) — kullanıcı kabulüyle. Ayrıntılı kayıt: `HD-060`.
+- **Özet:** `validate` başarı satırı artık basılan TÜM `UYARI` satırlarını sayar: `(15 uyari: 10 sartname, 5 mimari)`; uyarısızsa `(0 uyari)`.
+
+### DEV-081 — `northarrow/` — kuzey sözleşmesi, paftalama ve pusula (`DEV-074` revizyonu)
+
+- **Durum:** COMPLETED (2026-10-13) — kullanıcı kabulüyle. Ayrıntılı kayıt: `HD-061`.
+- **Özet:** kuzey oku kat planında iç çizginin sağ-üst köşesinde; `north_angle = −bina_dönüşü`; izinli aralık dikdörtgende ±90°, kare binada ±45° (kullanıcı teyidi 2026-10-13); `floor_width < floor_depth` UYARI.
+
+### DEV-082 — `vaziyet/` I — şema, parsel/çekme, vaziyet DXF içeri aktarma, örnek DXF
+
+- **Durum:** COMPLETED (2026-10-13) — kullanıcı kabulüyle. Ayrıntılı kayıt: `HD-062`.
+- **Özet:** yeni `scripts/vaziyet/` modülü: şema 1.8.0 `site`, parsel doğrulama + çekme, vaziyet DXF tarama (kuzey denetimi), örnek vaziyet DXF üreteci; DWG sessiz okunmaz.
+
+### DEV-086 — İmar standart değer kataloğu (çekme, TAKS, KAKS varsayılanları)
+
+- **Durum:** COMPLETED (2026-10-13) — kullanıcı kabulüyle. Ayrıntılı kayıt: `HD-063`.
+- **Özet:** imar varsayılan kataloğu (`vaziyet/zoning.py`): çekme 5/3/3 m, TAKS 0,40, KAKS-yoksa TAKS ≤ 0,60; hepsi koşullu, kaynaklı, `doğrulanmadı`; kullanıcı değeri üstün; kullanım adıyla bildirilir.
 
 ### DEV-078 — `reasoning/` — shadow gözlemlerin sunumu
 

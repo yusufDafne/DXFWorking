@@ -4,6 +4,42 @@ Aktif geçmiş kapasitesi: **50 kayıt**. En eski tamamlanmış kayıt, 51. kay�
 alınırken silinir. Ayrıntılı teknik değişiklikler git geçmişi ve ilgili proje
 provenance kayıtlarıyla ilişkilendirilir.
 
+## HD-063 — İmar standart değer kataloğu (DEV-086)
+
+- **Durum:** COMPLETED
+- **Tamamlanma:** 2026-10-13
+- **Kapsam:** `scripts/vaziyet/zoning.py`, `scripts/defaults_report.py`, `scripts/vaziyet/checks.py`, `scripts/vaziyet/CLAUDE.md`, operatör belgesi, `SITE_PLAN_STUDY_PLAN.md` §13.
+- **Sonuç:** çekme (ön 5000 / yan 3000 / arka 3000 mm), TAKS 0,40 ve KAKS-yoksa TAKS ≤ 0,60 varsayılanları; her kayıt koşul, nizam, kaynak, tarih ve `verified=False` taşır. Kullanıcı değeri her zaman üstün; planın aksi hükmü ya da ayrık dışı nizamda varsayılan uygulanmaz, soru döner; kullanılan varsayılan adıyla ve "doğrulanmadı" ibaresiyle bildirilir.
+- **Doğrulama:** 17 kasıtlı bozmadan 16'sı yakalandı (1'i ölü savunma satırı). Değerler ikincil kaynaklıdır; kullanıcı gerçek yönetmelikle değiştirecek.
+- **Golden etkisi:** yok. **Sonraki direktif:** yönetmelik/şehir bazlı standart seçimi (DEV-088).
+
+## HD-062 — `vaziyet/` I: parsel, çekme, vaziyet DXF içeri aktarma (DEV-082)
+
+- **Durum:** COMPLETED
+- **Tamamlanma:** 2026-10-13
+- **Kapsam:** yeni `scripts/vaziyet/`, `scripts/site_sample.py`, `scripts/site_scan.py`, şema 1.8.0 (`site`), `scripts/version.py`, `scripts/validate.py` kancası, muafiyet kayıtları, `scripts/CLAUDE.md`.
+- **Sonuç:** parsel çokgen doğrulama + iç offset (çekme), bina ayak izi (merkez + dönüş), vaziyet DXF tarama (parsel/yerleşim alanı/yol/not adayları, kuzey işareti denetimi, birim `$INSUNITS`'ten), örnek vaziyet DXF üreteci, onaylı patch. DWG sessiz okunmaz. Modül adı `site` yerine `vaziyet` (stdlib çakışması).
+- **Doğrulama:** 31 kasıtlı bozmadan 29'u yakalandı (2'si eşdeğer savunma satırı). Şema 1.8.0 örnek projeye bir sürüm uyarısı ekler; güncellemesi rev-30'da.
+- **Golden etkisi:** yeni `scripts/vaziyet/golden/parsel_ornek`. **Sonraki direktif:** DEV-083.
+
+## HD-061 — Kuzey sözleşmesi: sağ-üst köşe, paftalama, ±90° (DEV-081)
+
+- **Durum:** COMPLETED
+- **Tamamlanma:** 2026-10-13
+- **Kapsam:** `scripts/northarrow/`, `scripts/pafta/` (`Sheet.inner_bounds`), `scripts/generate_dxf.py`, `scripts/preview.py`, `scripts/validate.py`, şema açıklaması, kök `CLAUDE.md`, operatör belgesi.
+- **Sonuç:** ok kat planında iç çizginin sağ-üst köşesi; `meta.north_angle = −bina_dönüşü`; izinli aralık dikdörtgende ±90°, tam karede ±45° (kullanıcı teyidi alındı); `floor_width < floor_depth` UYARI. DEV-074'ün "vaziyette daima yukarı + ±45°" cümleleri kalktı.
+- **Doğrulama:** 11 kasıtlı bozma yakalandı; üretilen DXF'te ok iç çizgi köşesinde ve başka öğeye binmiyor. Örnek proje çıktısı yeniden üretilmedi (rev-30).
+- **Golden etkisi:** yok. **Sonraki direktif:** DEV-084.
+
+## HD-060 — `validate` başarı satırı uyarı sayacı (DEV-080)
+
+- **Durum:** COMPLETED
+- **Tamamlanma:** 2026-10-13
+- **Kapsam:** `scripts/validate.py`, `scripts/validate_selftest.py`, kök `CLAUDE.md`.
+- **Sonuç:** soğuk sınavda yakalanan hata: 15 `UYARI` basılırken "(0 uyari)" yazıyordu. Sayaç artık tüm kategorileri sayar (`warning_summary`).
+- **Doğrulama:** gerçek proje + 13 golden için toplam = basılan satır sayısı; 6 kasıtlı bozma yakalandı (biri ilk turda sızdı, çakışma sayacı için stub testi eklendi).
+- **Golden etkisi:** yok. **Sonraki direktif:** yok.
+
 ## HD-059 — Shadow gözlemlerin sunumu (DEV-078)
 
 - **Durum:** COMPLETED
