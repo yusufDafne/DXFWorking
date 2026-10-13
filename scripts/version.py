@@ -67,7 +67,8 @@ SCRIPTS_ROOT = Path(__file__).resolve().parent
 #           additif, OPT-IN. Varsayilan yukseklikler (1200 / boy 2000 + 40 mm denizlik) KATALOGDADIR (kullanici karari 2026-10-12), context'e yazilmaz.
 #   1.6.0 - DEV-073: `elevations[].openings_from` ('generic'|'plan'; cephe plan aciklıklarindan turetilir; additif, OPT-IN, varsayilan eski davranis).
 #   1.7.0 - DEV-076: `openings[].door_class` ('main_entry'|'shop'; opsiyonel) ve `window_class` enum'una 'shopfront' (vitrin); additif, OPT-IN.
-SCHEMA_VERSION = "1.7.0"
+#   1.8.0 - DEV-082: ust seviye `site` (vaziyet/parsel: parcel, placement_zone, road_edges, setbacks, building, source, north_confirmed; additif, OPT-IN).
+SCHEMA_VERSION = "1.8.0"
 
 # Alani tasimayan eski projeler icin varsayilan. Bugun tum projeler bu
 # surumden gelmektedir.
@@ -102,6 +103,7 @@ CONTRACT_MODULES: tuple[str, ...] = (
     "templates",
     "testfit",
     "typography",
+    "vaziyet",
     "walls",
 )
 

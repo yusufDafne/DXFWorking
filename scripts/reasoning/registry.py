@@ -28,6 +28,8 @@ REASONING_EXEMPT: dict[str, str] = {
     "reasoning": "Dusunuldu, olcum/kural vermez: cekirdegin kendisi; bilgi tasimaz (bilgi lens paketlerinde ve saglayici modullerde yasar).",
     "spatial": "Dusunuldu, olcum/kural vermez: salt sorgu kutuphanesi (DEV-059); muhakemeye olcum SAGLAYABILIR ama kendi veche/kurali yoktur, "
                "sorgulari tuketen modullerin reasoning.py'si kullanir.",
+    "vaziyet": "Dusunuldu, olcum/kural vermez: vaziyet/parsel girdisi ve cekme geometrisi (DEV-082) kullanicinin verdigi parseli dogrular; muhakemeye (kent_parsel mercegi, plan Par.9 adayi) "
+               "ileride olcum SAGLAYABILIR ama bugun veche/kural yok. Sonraki veche (plan Par.9): kent_parsel (aday merceg, kullanici secmedi).",
     "impact": "Dusunuldu, olcum/kural vermez: revizyon etki alani raporu (DEV-068) hangi elemanlara bakilacagini soyler, kendisi veche/olcum "
               "saglamaz; muhakemede mercek secimi ve kor nokta taramasinin ileride tuketilecek kaynagidir (plan adim 3 ve 5).",
     "axis": "Dusunuldu, olcum/kural vermez: aks izgarasi referans cizgisidir; cephe tayini (capraz havalandirma) aks verisiyle degil "

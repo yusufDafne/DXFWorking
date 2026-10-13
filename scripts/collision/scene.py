@@ -103,6 +103,9 @@ COLLISION_EXEMPT: dict[str, str] = {
                  "SONRA, NORMAL pipeline (rooms/walls/openings.collision) "
                  "zaten kapsar - importer ile AYNI 'aday veri uretir, "
                  "denetimi KENDI yapmaz' gerekcesi.",
+    "vaziyet": "Vaziyet/parsel girdisi (DEV-082): parsel, cekme ve bina ayak izi VAZIYET duzleminde (kat planindan ayri bir koordinat dunyasi) calisir; kat ici elemanlarla "
+               "(duvar/tefris/kolon) ayni sahnede cakismaz. Parsel/yapilasma alani/ayak izi icerme denetimi `vaziyet/checks.py::check_site`te (tekil arite), "
+               "validate.py'den cagrilir; collision motoru kat sahnesine vaziyet katmani eklemez.",
     "impact": "Revizyon ETKI ALANI raporudur (DEV-068): context ve collision ayak izlerini OKUR, KENDI ayak izi URETMEZ, context.json'a HIC YAZMAZ, "
               "DXF cizmez; sonuc turevdir. Kapi acilimi/ayak izi kenarlarini collision sahnesinden alir, cakisma KARARI vermez.",
     "testfit": "Deneme yerlestirme SINAVIDIR (DEV-063): furniture katalog olculerini ve collision motorunu TUKETIR, KENDI ayak izi "

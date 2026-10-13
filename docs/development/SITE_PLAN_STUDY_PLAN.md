@@ -2,7 +2,7 @@
 
 Durum: **PLAN** (kod yok). Kaynak: kullanıcı talebi ve **Q1–Q6 cevapları, 2026-10-13** (§12'de kayıtlı). Görev durumu ve sıra `DEVELOPMENT_TASKS.md`de TEK kaynaktır;
 bu belge tasarımı, veri akışını, dil modeli sınırını ve açık kararları tutar. Hiçbir madde kullanıcı onayı olmadan başlamaz
-(`DEV-048` planıyla aynı kural). `DEV-024` (`site/` vaziyet planı) bu planla yeniden kapsamlandı (bkz. §9).
+(`DEV-048` planıyla aynı kural). `DEV-024` (`vaziyet/` vaziyet planı) bu planla yeniden kapsamlandı (bkz. §9).
 
 ## 1. Kullanıcı talebi (özet, 2026-10-13)
 
@@ -68,7 +68,7 @@ bahçe istekleri…); (b) belirsizlikte kullanıcıya soru sormak; (c) motorun �
 
 Motor tamamen deterministiktir: aynı parsel + aynı brief + aynı tohum-siz arama → aynı alternatif listesi. Rastgelelik yoktur (ızgara/aday kümesi sıralıdır).
 
-## 6. `site/` modülü (yeni, `DEV-024`ün genişletilmiş hali)
+## 6. `vaziyet/` modülü (yeni, `DEV-024`ün genişletilmiş hali; **dizin adı `site` değil `vaziyet`** — `site` Python stdlib modülüyle çakışır; veri anahtarı `context.json::site` kalır)
 
 Bağımsız modül kuralı (kök `CLAUDE.md`): kendi `CLAUDE.md`'si, `selftest.py`, gerekçeli `COLLISION_EXEMPT`/ayak izi kararı, `REASONING` katkısı (muaf ya da
 sağlayıcı — `doc_check` #10), `CONTRACT_VERSION`. Alt parçalar (öneri; kod yazılırken `site/CLAUDE.md`de kesinleşir):
@@ -102,7 +102,7 @@ Kullanıcı **muhtemelen DWG** sunacak ve çizim **olabildiğince basit** olacak
 
 - **DWG:** `ezdxf` DWG okumaz. Bu yüzden sistem girdisi **DXF**'tir; DWG için bir dönüştürücü (ODA File Converter, LibreDWG `dwg2dxf` vb.) gerekir. Dönüştürücü bir dış araç ve lisans/kurulum kararıdır → ayrı madde `DEV-087`, kararı kullanıcı verir. Geçici yol: kullanıcı CAD'den "DXF olarak kaydet" yapar. Dönüştürücü yoksa sistem DWG'yi **sessizce okumaz**; "DXF olarak kaydedin" der.
 - **Basit vaziyet sözleşmesi** (`DEV-082`de belgelenir; sistemin ürettiği örnek dosya aynı kuralı izler): `PARSEL` katmanında kapalı polyline (parsel sınırı); `YERLESIM_ALANI` katmanında kapalı polyline (binanın yaklaşık oturmasını istediği bölge); `YOL` katmanında çizgiler (yol kenarı); `NOT` katmanında kısa metinler (`KUZEY`, `YOL`, `KOMSU PARSEL`, ada/parsel no, serbest not); `KUZEY` katmanında kuzey işareti. **Katman adları zorunlu DEĞİLDİR:** kullanıcının dosyasında farklı adlar olabilir → sistem kapalı poligonları ve metinleri **aday** olarak listeler, dil modeli metinlere bakarak hangisinin parsel/yerleşim alanı olduğunu **önerir**, kullanıcı onaylar (§5, onay kapısı 1).
-- **Örnek dosya:** `scripts/site/samples/` altında, **script tarafından üretilen** bir `ornek_vaziyet.dxf` (basit dikdörtgen/yamuk parsel + yol + `YERLESIM_ALANI` + notlar + kuzey işareti) ve kullanıcıya verilecek kısa kullanım notu. DXF'i elle yazmak yasaktır; `python scripts/site_sample.py` üretir (`DEV-082`).
+- **Örnek dosya:** `scripts/vaziyet/samples/` altında, **script tarafından üretilen** bir `ornek_vaziyet.dxf` (basit dikdörtgen/yamuk parsel + yol + `YERLESIM_ALANI` + notlar + kuzey işareti) ve kullanıcıya verilecek kısa kullanım notu. DXF'i elle yazmak yasaktır; `python scripts/site_sample.py` üretir (`DEV-082`).
 - **Çıktı:** vaziyet paftası ve alternatifleri ana `plan.dxf`'ten **bağımsız DXF** olarak da alınabilir (`export.py`, `DEV-084`).
 - Kullanıcının DXF'i **kaynak olarak saklanır** (sha256 + yol `site.source`); `context.json`a gömülmez.
 
@@ -111,10 +111,10 @@ Kullanıcı **muhtemelen DWG** sunacak ve çizim **olabildiğince basit** olacak
 | Madde | Konu | Önkoşul |
 |---|---|---|
 | `DEV-081` | Kuzey sözleşmesi: kat planında ok sağ üst köşe; paftalama kuralı (uzun kenar yatay, kuzeye yakın yüz üstte); pusula vaziyetteki gerçek yöne göre döner; `north_angle` aralığı `[−90°, +90°]` (kare: `[−45°, +45°]`) | Q2' teyidi |
-| `DEV-082` | `site/` I: şema `site`, `Parcel`/çekme, vaziyet DXF içeri aktarma, kuzey işareti denetimi, **örnek vaziyet DXF üreteci** | yok |
-| `DEV-083` | `site/` II: deterministik yerleşim etüdü motoru (varsayılan **3** alternatif, isteğe bağlı ağırlık) | `DEV-082`, `DEV-086` |
-| `DEV-084` | `site/` III: vaziyet paftası, bağımsız DXF çıktısı, alternatif karşılaştırma; pafta pusulası döndürülmüş | `DEV-081`, `DEV-082` (`DEV-083` karşılaştırma için) |
-| `DEV-085` | `site/` IV: kullanıcı/dil modeli bilgi akışı, dallanma (parsel sunuyor mu?), onay diyaloğu, seçim patch'i | `DEV-083` |
+| `DEV-082` | `vaziyet/` I: şema `site`, `Parcel`/çekme, vaziyet DXF içeri aktarma, kuzey işareti denetimi, **örnek vaziyet DXF üreteci** | yok |
+| `DEV-083` | `vaziyet/` II: deterministik yerleşim etüdü motoru (varsayılan **3** alternatif, isteğe bağlı ağırlık) | `DEV-082`, `DEV-086` |
+| `DEV-084` | `vaziyet/` III: vaziyet paftası, bağımsız DXF çıktısı, alternatif karşılaştırma; pafta pusulası döndürülmüş | `DEV-081`, `DEV-082` (`DEV-083` karşılaştırma için) |
+| `DEV-085` | `vaziyet/` IV: kullanıcı/dil modeli bilgi akışı, dallanma (parsel sunuyor mu?), onay diyaloğu, seçim patch'i | `DEV-083` |
 | `DEV-086` | İmar standart değer kataloğu (çekme, TAKS, KAKS varsayılanları; kullanıcı sonra gerçek yönetmelikle değiştirecek) | yok |
 | `DEV-087` | DWG girdisi: dönüştürücü kararı ve entegrasyonu | kullanıcı kararı (araç/lisans) |
 | `DEV-024` | (eski) vaziyet planı | **yeniden kapsamlandı:** `DEV-082`/`DEV-084`e bölündü; ayrıca açılmaz |
@@ -126,7 +126,7 @@ Kullanıcı **muhtemelen DWG** sunacak ve çizim **olabildiğince basit** olacak
 - Beklenen değerler ELLE hesaplanabilir mini parsellerle (dikdörtgen, L, eğik kenarlı) kurulur; kasıtlı bozma (çekmeyi yok say, parsel dışı alternatifi geçir, offset hatası,
   rotasyon işaretini ters çevir) testleri; yanlış-pozitif tarafı (sınırda duran alternatif eleme dışı, 1 mm içeri giren elemeli).
 - **DXF içeri aktarma:** birim/ölçek tahmini YOK; belirsizse sorar. Kapanmayan zincir, çakışan poligon, birden çok aday → aday listesi + güven, otomatik seçim yok.
-- **Golden:** `scripts/site/golden/` (modül referansı) küçük sentetik parsellerle; ana örnek projeye `site` yazılması ayrı bir revizyondur (rev-N).
+- **Golden:** `scripts/vaziyet/golden/` (modül referansı) küçük sentetik parsellerle; ana örnek projeye `site` yazılması ayrı bir revizyondur (rev-N).
 - **Determinizm testi:** aynı girdi iki koşuda bayt-bayt aynı alternatif listesi.
 - Dil modeli katmanı: şablonlara **rakam lint'i** (#13) uygulanır; modelin önerdiği `Brief` alanı şema dışıysa reddedilir; model çıktısı hiçbir koşulda koordinata dönüşmez
   (kasıtlı bozma: modelin "çekme 3 m" önerisini kullanıcı onayı olmadan motora geçirme girişimi reddedilir).

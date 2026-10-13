@@ -24,7 +24,7 @@ Tamamlanan işlerin ayrıntılı gerekçesi, karar süreci ve ölçülen etkisi
 | DEV-021 | `sections/` — kesit modülü | COMPLETED (rev-17) |
 | DEV-022 | `stairs/` — merdiven gerçek geometrisi | COMPLETED (2026-09-25) |
 | DEV-023 | `ceiling/` — yansıtılmış tavan planı | COMPLETED (2026-09-28) |
-| DEV-024 | `site/` — vaziyet planı | PLANNED |
+| DEV-024 | `vaziyet/` — vaziyet planı | PLANNED |
 | DEV-025 | Kuzey oku (+ grafik ölçek çubuğu, rev-18'de geri alındı) | COMPLETED (rev-17) |
 | DEV-026 | `legend/` — alan hesap cetveli | PLANNED |
 | DEV-027 | Kaçış (tahliye) planı | PLANNED |
@@ -81,10 +81,10 @@ Tamamlanan işlerin ayrıntılı gerekçesi, karar süreci ve ölçülen etkisi
 | DEV-079 | `reasoning/` + belgeler — DEV-071 tur 2: belge eksiklerinin kapatılması, rubrik düzeltmesi, ikinci sınav turu | PLANNED |
 | DEV-080 | `validate.py` — başarı satırındaki "(N uyari)" sayacı yalnız çakışma uyarılarını sayıyor; toplam uyarıyı yansıtmalı | PLANNED |
 | DEV-081 | `northarrow/` — kuzey sözleşmesi: kat planında sağ üst köşe, paftalama (uzun kenar yatay, kuzeye yakın yüz üstte), pusula vaziyetteki gerçek yöne göre (`DEV-074` revizyonu) | PLANNED |
-| DEV-082 | `site/` I — şema `site`, `Parcel`/çekme, vaziyet DXF içeri aktarma (aday + onaylı patch) | PLANNED |
-| DEV-083 | `site/` II — deterministik yerleşim etüdü motoru (aday, eleme, ölçüm, alternatifler) | PLANNED |
-| DEV-084 | `site/` III — vaziyet paftası + bağımsız DXF çıktısı + alternatif karşılaştırma | PLANNED |
-| DEV-085 | `site/` IV — kullanıcı/dil modeli bilgi akışı, faz dallanması, onay diyaloğu, seçim patch'i | PLANNED |
+| DEV-082 | `vaziyet/` I — şema `site`, `Parcel`/çekme, vaziyet DXF içeri aktarma (aday + onaylı patch) | PLANNED |
+| DEV-083 | `vaziyet/` II — deterministik yerleşim etüdü motoru (aday, eleme, ölçüm, alternatifler) | PLANNED |
+| DEV-084 | `vaziyet/` III — vaziyet paftası + bağımsız DXF çıktısı + alternatif karşılaştırma | PLANNED |
+| DEV-085 | `vaziyet/` IV — kullanıcı/dil modeli bilgi akışı, faz dallanması, onay diyaloğu, seçim patch'i | PLANNED |
 | DEV-086 | İmar standart değer kataloğu — çekme, TAKS, KAKS varsayılanları (kısa araştırma; kullanıcı gerçek yönetmelikle değiştirecek) | PLANNED |
 | DEV-087 | DWG girdisi — dönüştürücü kararı ve entegrasyonu | PLANNED |
 | DEV-071 | `docs/development/reviews/` — soğuk başlangıç sınavı (reviewer; `DEV-070` ayrılan parça, önkoşulsuz) | PLANNED |
@@ -195,7 +195,7 @@ kullanıcı tarafından KESİN olarak verilmiştir ve fikir gibi değerlendirilm
   paylaşacak; o talepte geometri (A4, sağ-alt sabitleme, eşit offset,
   antetsiz pafta) değişmemelidir.
 
-### DEV-024 — `site/` — vaziyet planı
+### DEV-024 — `vaziyet/` — vaziyet planı
 
 - **Durum:** PLANNED
 
@@ -786,15 +786,16 @@ belirleyeceksin ... her birini sıralama olarak birbirine bağla"):**
 - **Önkoşul:** Q2' teyidi. `DEV-084`ün önkoşuludur.
 - **Uygulama sonucu (2026-10-13, kabul bekliyor):** `pafta::Sheet.inner_bounds` (`draw` ile aynı hesap), `NorthArrow.extent`/`corner_center`, `generate_dxf.py` + `preview.py` kat planında ok **iç çizginin sağ-üst köşesinde**; `northarrow`: `NORTH_LONG_SIDE_HALF_RANGE_DEG=90`, `north_half_range(meta)` (dikdörtgen 90, tam kare 45, ölçü bilinmiyorsa 45), `check_north_convention` yeni aralık, `check_north_layout` (`north_angle` varsa `floor_width < floor_depth` UYARI), `validate.py` kancası, `CONTRACT_VERSION` 1.2; şema açıklaması, kök `CLAUDE.md` "Kuzey sözleşmesi" yeniden yazıldı (DEV-074 cümleleri KALDIRILDI), `northarrow`/`pafta` `CLAUDE.md`, operatör belgesi. **Kanıt:** elle hesaplanan `inner_bounds`/`corner_center`; üretilen DXF'te her okun merkezi KENDİ iç çizgisinin sağ-üst köşesinde ve başka öğeye binmiyor; sınırlar (±90 geçer, ±90,01 hata; kare ±45; ölçü yok ±45); validate uçtan uca; 11 kasıtlı bozma yakalandı. **Önemli:** Q2' (dikdörtgende ±90°) kullanıcı "hepsini sırayla uygula" talimatıyla uygulandı ama AYRI teyit alınmadı — tek sabit (`NORTH_LONG_SIDE_HALF_RANGE_DEG`) ve tek fonksiyon (`north_half_range`) olduğundan geri alması kolaydır. **Örnek proje:** `output/` bilerek YENİDEN ÜRETİLMEDİ (çıktılar revizyona bağlıdır); ok yeni konumda bir sonraki revizyonda (rev-30) görünür. Golden `expected.json` değişmedi, golden-set temiz.
 
-### DEV-082 — `site/` I — şema, parsel/çekme, vaziyet DXF içeri aktarma, örnek DXF
+### DEV-082 — `vaziyet/` I — şema, parsel/çekme, vaziyet DXF içeri aktarma, örnek DXF
 
 - **Durum:** PLANNED — plan: `SITE_PLAN_STUDY_PLAN.md` §3, §4(A,B), §6, §8.
 - **Kullanıcı kararı:** girdi muhtemelen DWG; çizim basit: parsel sınırları, yorumlanabilir kısa metinler, yaklaşık yerleşim bölgesi alanı; sistem **basit örnek vaziyet DXF'i** hazırlayıp sunar. Gelen vaziyet kuzey yukarıdır, değilse **uyarı**.
-- **Kapsam:** yeni modül `scripts/site/` (+ `CLAUDE.md`, `selftest.py`, golden, `CONTRACT_VERSION`; `doc_check` #10/#10b/#10c; çakışma muafiyeti/ayak izi kararı); şema **MINOR** (additif, opt-in): `site` (`parcel.polygon`, `placement_zone.polygon`, `setbacks`, `north_confirmed`, `source{path,sha256}`, `building{position,rotation}`); `Parcel` geçerlilik (kapalı, kendini kesmez, alan); `setback.py` iç offset (çekme değeri kullanıcıdan, yoksa `DEV-086` varsayılanı ADIYLA bildirilerek); `dxf_in.py`: parsel/yerleşim alanı/yol/not ADAYLARI (katman adı zorunlu değil; dil modeli yalnız ÖNERİR, kullanıcı onaylar), **kuzey işareti denetimi** (işaret yok/yukarıyı göstermiyor/okunamıyor ⇒ kullanıcıya UYARI + açıyı kullanıcıdan iste; tahmin YOK), birim/ölçek TAHMİN EDİLMEZ; **`scripts/site_sample.py` örnek vaziyet DXF üreteci** (`scripts/site/samples/ornek_vaziyet.dxf`: `PARSEL`, `YERLESIM_ALANI`, `YOL`, `NOT`, `KUZEY` katmanlı basit parsel + kısa kullanım notu); `Parcel.as_site_dict()` ile onaylı patch (otomatik birleştirme YOK). DWG: sessiz okunmaz; "DXF olarak kaydedin" der (`DEV-087`).
+- **Kapsam:** yeni modül `scripts/vaziyet/` (+ `CLAUDE.md`, `selftest.py`, golden, `CONTRACT_VERSION`; `doc_check` #10/#10b/#10c; çakışma muafiyeti/ayak izi kararı); şema **MINOR** (additif, opt-in): `site` (`parcel.polygon`, `placement_zone.polygon`, `setbacks`, `north_confirmed`, `source{path,sha256}`, `building{position,rotation}`); `Parcel` geçerlilik (kapalı, kendini kesmez, alan); `setback.py` iç offset (çekme değeri kullanıcıdan, yoksa `DEV-086` varsayılanı ADIYLA bildirilerek); `dxf_in.py`: parsel/yerleşim alanı/yol/not ADAYLARI (katman adı zorunlu değil; dil modeli yalnız ÖNERİR, kullanıcı onaylar), **kuzey işareti denetimi** (işaret yok/yukarıyı göstermiyor/okunamıyor ⇒ kullanıcıya UYARI + açıyı kullanıcıdan iste; tahmin YOK), birim/ölçek TAHMİN EDİLMEZ; **`scripts/site_sample.py` örnek vaziyet DXF üreteci** (`scripts/vaziyet/samples/ornek_vaziyet.dxf`: `PARSEL`, `YERLESIM_ALANI`, `YOL`, `NOT`, `KUZEY` katmanlı basit parsel + kısa kullanım notu); `Parcel.as_site_dict()` ile onaylı patch (otomatik birleştirme YOK). DWG: sessiz okunmaz; "DXF olarak kaydedin" der (`DEV-087`).
 - **Kabul ölçütü:** ELLE hesaplanan mini parseller (dikdörtgen, L, eğik) için alan/offset; örnek DXF'in script tarafından üretilip `dxf_in` ile bire bir okunması; kasıtlı bozma (offset ters yön, açık zincir kabulü, birim tahmini, kuzey işareti yokken uyarısız geçme); yanlış-pozitif (sınırda poligon, kuzey işaretli dosyada uyarı yok); örnek proje çıktısı DEĞİŞMEZ; tüm selftest/golden/doc_check temiz.
 - **Önkoşul:** yok. `DEV-083`ün önkoşuludur.
+- **Uygulama sonucu (2026-10-13, kabul bekliyor):** yeni modül **`scripts/vaziyet/`** (`parcel.py`, `setback.py`, `dxf_in.py`, `checks.py`, `sample.py`, `selftest.py`, `CLAUDE.md`, `scripts/vaziyet/golden/parsel_ornek`, `scripts/vaziyet/samples/ornek_vaziyet.dxf`); CLI `scripts/site_sample.py` (örnek vaziyet DXF üreteci) ve `scripts/site_scan.py` (salt okunur tarama + `--patch`); şema **1.8.0** (`site`), `version.py` (`SCHEMA_VERSION`, `CONTRACT_MODULES += vaziyet`), `validate.py` kancası (`check_site`), `COLLISION_EXEMPT` + `REASONING_EXEMPT` gerekçeleri, `scripts/CLAUDE.md`. **Ad değişikliği (itiraz edilebilir):** plandaki `scripts/site/` `site` Python stdlib modülüyle çakıştığı için `vaziyet/` oldu (veri anahtarı `context.json::site` kaldı); plan/görev belgeleri güncellendi. **Kanıt:** ELLE hesaplanan offset (dikdörtgen, kenar başına, L konkav, çökme, kısmen çöken, eşdoğrusal), çokgen geçerliliği (kelebek/L yanlış-pozitif), ayak izi dönmesi (90° elle), `plan_north_angle` (30 → −30), DXF tarama (birim/cm, LINE zinciri, kuzey 4 durum, DWG, desteklenmeyenler), 31 kasıtlı bozmadan 29'u yakalandı (2'si eşdeğer savunma satırı; CLAUDE.md'de). **Yan etki ve çözümü:** şema 1.8.0 örnek projenin `validate` çıktısına bir `UYARI (surum)` ekler (proje 1.7.0'da kalır; güncellemesi rev-30). Bundan etkilenen testler (reasoning 15-satır beklentileri, `validate_selftest` mutlak sayıları) projenin SİSTEM SÜRÜMÜNE çekilmiş geçici kopyasında koşar hale getirildi. **Bilinçli notlar:** golden bina 6000×9000 (derinlik > genişlik) olduğundan DEV-081 paftalama UYARISI golden'da görünür; yerleşim etüdü/vaziyet paftası/brief bu madde DEĞİL.
 
-### DEV-083 — `site/` II — deterministik yerleşim etüdü motoru
+### DEV-083 — `vaziyet/` II — deterministik yerleşim etüdü motoru
 
 - **Durum:** PLANNED — plan: `SITE_PLAN_STUDY_PLAN.md` §5, §7.
 - **Kullanıcı kararı:** *"alternatif sayısı default 3 olsun, kullanıcının dil modelinden talebine göre yeniden değerlendirilebilsin. Ağırlıklar da aynı şekilde isteğe bağlı olsun."*
@@ -802,7 +803,7 @@ belirleyeceksin ... her birini sıralama olarak birbirine bağla"):**
 - **Kabul ölçütü:** elle hesaplanan küçük parselde alternatif kümesi ve elenenler birebir; **determinizm** (aynı girdi → bayt-bayt aynı liste); N=3 varsayılan ve N=5 isteğe bağlı; ağırlıksız/ağırlıklı iki mod; kasıtlı bozma: çekmeyi yok sayan eleme, parsel dışı sızma, rotasyon işareti, ağırlıksız tek "en iyi", varsayılan değerin bildirilmemesi; yanlış-pozitif: sınırdaki alternatif elenmemeli, 1 mm içeri giren elenmeli.
 - **Önkoşul:** `DEV-082`, `DEV-086`.
 
-### DEV-084 — `site/` III — vaziyet paftası, bağımsız DXF çıktısı, paftalama
+### DEV-084 — `vaziyet/` III — vaziyet paftası, bağımsız DXF çıktısı, paftalama
 
 - **Durum:** PLANNED — plan: `SITE_PLAN_STUDY_PLAN.md` §2, §8.
 - **Kullanıcı kararı:** vaziyet planı DXF olarak dışarıya da alınabilmeli; pusula vaziyetteki gerçek yöne göre döner.
@@ -810,7 +811,7 @@ belirleyeceksin ... her birini sıralama olarak birbirine bağla"):**
 - **Kabul ölçütü:** sentetik parselde bina 30° dönük ⇒ kat planı pusulası −30° (DXF'te ölçülür); 0° ve ±90° sınırları; ana proje (site yok) çıktısı bayt-bayt aynı; kasıtlı bozma: işaret ters, pusula yukarıya kilitli, uzun kenar dikey yerleşim; golden temiz.
 - **Önkoşul:** `DEV-081`, `DEV-082` (karşılaştırma için `DEV-083`).
 
-### DEV-085 — `site/` IV — kullanıcı/dil modeli bilgi akışı, dallanma, onay diyaloğu
+### DEV-085 — `vaziyet/` IV — kullanıcı/dil modeli bilgi akışı, dallanma, onay diyaloğu
 
 - **Durum:** PLANNED — plan: `SITE_PLAN_STUDY_PLAN.md` §4, §5, §9 (faz dallanması).
 - **Kullanıcı kararları:** dil modeli desteği alınır, çalışma deterministik; kullanıcı onayına göre ilerlenir. *"Kullanıcı dil modeline çekme/TAKS/KAKS gibi bilgileri ayrıca sunacak; bilinmiyorsa standart değerler kullanılacak."* Faz kullanıcının parsel planı sunup sunmak istemesine göre belirlenir; sunmak istemezse sonraki faza geçilir.
@@ -822,7 +823,7 @@ belirleyeceksin ... her birini sıralama olarak birbirine bağla"):**
 
 - **Durum:** PLANNED — kullanıcı talebi 2026-10-13 ("ayrıca kaydet; Türkiye standartları hakkında kısa araştırmayla default değerler tanımla; gerçek yönetmelik verileriyle ben sonra belirleyeceğim").
 - **Kaynak araştırma:** `SITE_PLAN_STUDY_PLAN.md` §13 (ikincil kaynaklar, DOĞRULANMADI): ön bahçe 5,00 m / yan 3,00 m / arka 3,00 m (asgari, planda aksi hüküm yoksa); TAKS 0,40 (planda TAKS yoksa ayrık/blok nizam); KAKS verilmediyse yaklaşma mesafelerinden bulunan taban alanı × kat adedi ve TAKS en çok 0,60.
-- **Kapsam:** yeni kütüphane (öneri: `scripts/site/zoning.py` ya da `scripts/standards/` altında; `standards/` ile aynı konum/sözleşme: proje VERİSİ DEĞİL, `context.json`a yazılmaz): `ZoningDefaults` kayıtları — her değer **koşul, nizam, kaynak, tarih, doğrulandı=False** alanı taşır; `resolve(user_values)` kullanıcı değerini her zaman üstün tutar; kullanılan her varsayılan **adıyla bildirilir** (`defaults_report.py` deseni); `python scripts/defaults_report.py --catalog` bu kataloğu listeler; "Güncelleme sözleşmesi" (kullanıcı gerçek yönetmelikle değerleri değiştirir → HD kaydı, `provenance.reviewed` güncellenir, `CONTRACT_VERSION` değişmez). v1 yalnız **ayrık nizam**; katalogda olmayan nizam/koşul için sistem SORAR (varsayım yok).
+- **Kapsam:** yeni kütüphane (öneri: `scripts/vaziyet/zoning.py` ya da `scripts/standards/` altında; `standards/` ile aynı konum/sözleşme: proje VERİSİ DEĞİL, `context.json`a yazılmaz): `ZoningDefaults` kayıtları — her değer **koşul, nizam, kaynak, tarih, doğrulandı=False** alanı taşır; `resolve(user_values)` kullanıcı değerini her zaman üstün tutar; kullanılan her varsayılan **adıyla bildirilir** (`defaults_report.py` deseni); `python scripts/defaults_report.py --catalog` bu kataloğu listeler; "Güncelleme sözleşmesi" (kullanıcı gerçek yönetmelikle değerleri değiştirir → HD kaydı, `provenance.reviewed` güncellenir, `CONTRACT_VERSION` değişmez). v1 yalnız **ayrık nizam**; katalogda olmayan nizam/koşul için sistem SORAR (varsayım yok).
 - **Kabul ölçütü:** elle okunan değerler tabloyla birebir; kullanıcı değeri ezer; koşul eşleşmezse varsayılan UYGULANMAZ (soru döner); her kullanımda bildirim; kasıtlı bozma: kullanıcı değeri varsayılana ezdirilirse, koşulsuz uygulanırsa, bildirilmezse test kırılır; `doğrulandı=False` iken çıktıda "doğrulanmamış varsayılan" ibaresi.
 - **Önkoşul:** yok. `DEV-083`ün önkoşuludur.
 
@@ -830,7 +831,7 @@ belirleyeceksin ... her birini sıralama olarak birbirine bağla"):**
 
 - **Durum:** PLANNED — kullanıcı kararı bekliyor (araç/lisans).
 - **Kaynak:** Q3: kullanıcı muhtemelen DWG verecek. `ezdxf` DWG okumaz.
-- **Kapsam:** seçenekler: (a) kullanıcı "DXF olarak kaydet" yapar (kod yok, belge); (b) ODA File Converter (ücretsiz, kapalı kaynak) komut satırı entegrasyonu; (c) LibreDWG `dwg2dxf` (GPL). Seçilen araç `scripts/site/dwg_in.py` ile **dış araç sarmalı** olur: kurulu değilse açık hata ("DXF olarak kaydedin"), çıktı DXF yine `dxf_in` onay kapısından geçer, dönüşüm kaydı (araç adı/sürümü/sha256) `site.source`a yazılır. Ortamda araç yoksa test sahte dönüştürücüyle yapılır.
+- **Kapsam:** seçenekler: (a) kullanıcı "DXF olarak kaydet" yapar (kod yok, belge); (b) ODA File Converter (ücretsiz, kapalı kaynak) komut satırı entegrasyonu; (c) LibreDWG `dwg2dxf` (GPL). Seçilen araç `scripts/vaziyet/dwg_in.py` ile **dış araç sarmalı** olur: kurulu değilse açık hata ("DXF olarak kaydedin"), çıktı DXF yine `dxf_in` onay kapısından geçer, dönüşüm kaydı (araç adı/sürümü/sha256) `site.source`a yazılır. Ortamda araç yoksa test sahte dönüştürücüyle yapılır.
 - **Kabul ölçütü:** araç yok ⇒ sessiz yutma yok; dönüşüm sonrası aynı aday akışı; kasıtlı bozma: dönüştürücü hatasını yutma; lisans/kurulum notu belgelenir.
 - **Önkoşul:** kullanıcı kararı; `DEV-082`.
 

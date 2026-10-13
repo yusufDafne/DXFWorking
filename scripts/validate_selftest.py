@@ -219,10 +219,19 @@ def check_success_line_counts_all_warnings_dev080() -> list[str]:
             cats[k] = cats.get(k, 0) + 1
         shown = {} if not m.group(2) else {p.split()[1]: int(p.split()[0]) for p in m.group(2).split(", ")}
         eq(f"{name}: kategori dokumu", shown, cats)
-        if name == "gercek proje":
-            eq("rev-29 gercek proje ozeti", m.group(0), "(15 uyari: 10 sartname, 5 mimari).")
-        if name == "plandan_cephe":
-            eq("uyarisiz golden", m.group(0), "(0 uyari).")
+    # SURUM-BAGIMSIZ mutlak beklentiler: sistem surumu artinca projenin meta.schema_version'u geride kalir ve bir 'surum' uyarisi eklenir;
+    # bu yuzden mutlak sayilar projenin SISTEM SURUMUNE cekilmis kopyasinda sinanir.
+    from version import SCHEMA_VERSION
+    import tempfile
+    for name, path, want in (("gercek proje", REAL_CONTEXT_PATH, "(15 uyari: 10 sartname, 5 mimari)."),
+                             ("plandan_cephe", PROJECT_ROOT / "scripts" / "elevations" / "golden" / "plandan_cephe" / "context.json", "(0 uyari).")):
+        ctx = json.loads(path.read_text(encoding="utf-8"))
+        ctx["meta"]["schema_version"] = SCHEMA_VERSION
+        with tempfile.TemporaryDirectory() as tmp:
+            q = Path(tmp) / "context.json"
+            q.write_text(json.dumps(ctx), encoding="utf-8")
+            out = subprocess.run([sys.executable, str(Path(__file__).resolve().parent / "validate.py"), str(q)], capture_output=True, text=True, timeout=600).stdout
+        eq(f"{name} (guncel surumde) ozeti", out.strip().splitlines()[-1].endswith(want), True)
     # cakisma uyarilari: gercek/golden projelerde cakisma UYARISI yok -> motor stub'lanir (dogrudan sayma yolunu sinar)
     import contextlib
     import io

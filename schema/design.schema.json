@@ -480,6 +480,44 @@
         }
       }
     },
+    "site": {
+      "type": "object",
+      "description": "Vaziyet/parsel verisi (DEV-082, sema 1.8.0, OPT-IN; scripts/vaziyet). Girdi: kullanicinin vaziyet DXF'i (kaynak `source` ile saklanir, DXF context'e gomulmez); adaylar `scripts/vaziyet/dxf_in.py` ile cikarilir, kullanici ONAYLADIKTAN sonra normal revizyon akisiyla buraya yazilir. Birim mm. Gelen vaziyet KUZEY YUKARI kabul edilir (`north_confirmed`).",
+      "additionalProperties": false,
+      "properties": {
+        "source": {
+          "type": "object", "additionalProperties": false,
+          "properties": { "path": { "type": "string" }, "sha256": { "type": "string" }, "units": { "type": ["string", "null"] } },
+          "description": "Vaziyet DXF'inin yolu, sha256'si ve algilanan birimi (kayit; tasarim verisi degil)."
+        },
+        "north_confirmed": { "type": "boolean", "description": "Kullanici vaziyet planinin KUZEY YUKARI oldugunu onayladi (DEV-081). Yoksa/false ise validate UYARIR; yon tahmin edilmez." },
+        "parcel": {
+          "type": "object", "additionalProperties": false, "required": ["polygon"],
+          "properties": { "polygon": { "type": "array", "minItems": 3, "items": { "type": "array", "minItems": 2, "maxItems": 2, "items": { "type": "number" } }, "description": "Parsel sinir koseleri [x, y] mm; kapali kabul edilir (son nokta ilkini TEKRARLAMAZ); kenar i = kose[i] -> kose[i+1] (CCW normalizasyonundan sonra)." } }
+        },
+        "placement_zone": {
+          "type": "object", "additionalProperties": false, "required": ["polygon"],
+          "properties": { "polygon": { "type": "array", "minItems": 3, "items": { "type": "array", "minItems": 2, "maxItems": 2, "items": { "type": "number" } }, "description": "Kullanicinin binanin YAKLASIK oturmasini istedigi bolge (eleme degil, yaklasik istek)." } }
+        },
+        "road_edges": { "type": "array", "items": { "type": "integer", "minimum": 0 }, "description": "Yola bakan parsel kenari indeksleri." },
+        "setbacks": {
+          "type": "object", "additionalProperties": false,
+          "properties": {
+            "uniform_mm": { "type": "number", "minimum": 0, "description": "Tum kenarlar icin ayni cekme (mm)." },
+            "edges_mm": { "type": "array", "items": { "type": "number", "minimum": 0 }, "description": "Kenar basina cekme (mm), parsel kenar sayisi kadar." }
+          },
+          "description": "Cekme (yapi yaklasma) mesafeleri: KULLANICI girdisidir; verilmezse hesaplanmaz (varsayilan katalog DEV-086)."
+        },
+        "building": {
+          "type": "object", "additionalProperties": false, "required": ["position"],
+          "properties": {
+            "position": { "type": "array", "minItems": 2, "maxItems": 2, "items": { "type": "number" }, "description": "Bina ayak izi MERKEZI (vaziyet koordinati, mm)." },
+            "rotation_deg": { "type": "number", "description": "Saat yonunde donme: kuzey-yukari vaziyette binanin ust yuzunun dis normalinin kuzeyden acisi (B). Kat plani meta.north_angle = -B (DEV-081)." }
+          },
+          "description": "SECILEN yerlesim (kullanici onayiyla); ayak izi meta.floor_width x meta.floor_depth dikdortgenidir."
+        }
+      }
+    },
     "design_decisions": {
       "type": "array",
       "description": "Tasarim karari kaydi (DEV-065, OPT-IN; ekleme-yalnizlik KONVANSIYONDUR: yeni karar eskiyi `supersedes` ile ezer, kayit silinmez). Bir bulgunun bilincli goz ardi edilmesi gerekcesiyle birlikte buradadir. KANITA BAGLI: bir `covers[]` ogesinin `evidence_hash`i bulgunun guncel olcumuyle eslesmezse kabul DUSER ve bulgu yeniden sunulur. Kaydi bir dil modeli ELLE yazmaz: `scripts/reasoning_dialogue.py decide`. Gerekce bos olamaz (validate.py HATA).",

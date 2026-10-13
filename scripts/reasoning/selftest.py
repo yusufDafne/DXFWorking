@@ -515,6 +515,23 @@ def check_mahremiyet_real_project() -> list[str]:
     return e
 
 
+_CURRENT_VERSION_CONTEXT: Path | None = None
+
+
+def _current_version_context() -> Path:
+    """Gercek projenin, meta.schema_version'u SISTEM SURUMUNE cekilmis gecici kopyasi: sistem surumu artinca proje geride kalir ve validate bir
+    'surum' uyarisi ekler; satir/konu sayisi beklentileri bundan etkilenmesin (surum notu ayri bir kontrolde sinanir)."""
+    global _CURRENT_VERSION_CONTEXT
+    if _CURRENT_VERSION_CONTEXT is None or not _CURRENT_VERSION_CONTEXT.exists():
+        from version import SCHEMA_VERSION
+        ctx = json.loads((ROOT / "context.json").read_text(encoding="utf-8"))
+        ctx["meta"]["schema_version"] = SCHEMA_VERSION
+        d = Path(tempfile.mkdtemp())
+        _CURRENT_VERSION_CONTEXT = d / "context.json"
+        _CURRENT_VERSION_CONTEXT.write_text(json.dumps(ctx, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    return _CURRENT_VERSION_CONTEXT
+
+
 def check_mahremiyet_report() -> list[str]:
     """reasoning_report: golge bolumu + asgari tetik orani; validate.py cikisi DEGISMEZ (15 satir)."""
     import reasoning_report as rr
@@ -533,7 +550,7 @@ def check_mahremiyet_report() -> list[str]:
         e.append(f"#6 tetik orani 5/6 olmali: {rates}")
     if rates.get("mahremiyet.gecis.islak_iki_bolgeye_kapili") != (0, 6, True):
         e.append("gercek projede hic otmeyen vechenin DEJENERE diye raporlanmasi gerekir")
-    out = subprocess.run([sys.executable, str(ROOT / "scripts" / "reasoning_report.py")],
+    out = subprocess.run([sys.executable, str(ROOT / "scripts" / "reasoning_report.py"), str(_current_version_context())],
                          capture_output=True, text=True, timeout=600).stdout
     for needle in ("15 uyari satiri -> 3 tekil konu", "Golge vecheler", "5/6 ozne tetikledi", "OLCULMEYEN"):
         if needle not in out:
@@ -631,7 +648,7 @@ def check_queue_and_modes() -> list[str]:
     shown, rest = select_topics(parse_validate_output(SAMPLE + extra), {}, limit=3)
     if (len(shown), len(rest)) != (3, 2):
         e.append(f"5 konu (SAMPLE 3 + 2): 3 ilk mesaj + 2 diger not: {(len(shown), len(rest))}")
-    out = subprocess.run([sys.executable, str(ROOT / "scripts" / "validate.py"), str(ROOT / "context.json")],
+    out = subprocess.run([sys.executable, str(ROOT / "scripts" / "validate.py"), str(_current_version_context())],
                          capture_output=True, text=True, timeout=600).stdout
     real = parse_validate_output(out)
     sh, rs = select_topics(real, {})
