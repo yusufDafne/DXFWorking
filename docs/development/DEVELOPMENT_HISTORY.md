@@ -4,6 +4,15 @@ Aktif geçmiş kapasitesi: **50 kayıt**. En eski tamamlanmış kayıt, 51. kay�
 alınırken silinir. Ayrıntılı teknik değişiklikler git geçmişi ve ilgili proje
 provenance kayıtlarıyla ilişkilendirilir.
 
+## HD-059 — Shadow gözlemlerin sunumu (DEV-078)
+
+- **Durum:** COMPLETED
+- **Tamamlanma:** 2026-10-13
+- **Kapsam:** `scripts/reasoning/{explain,__init__,selftest}.py`+`CLAUDE.md`, `scripts/reasoning_dialogue.py`, `scripts/reasoning_report.py`, kök `CLAUDE.md`, operatör belgesi, plan §5.
+- **Sonuç:** shadow gözlemler sunum kuyruğuna girmez; `brief` sonunda rakamsız tek satırlık "henüz doğrulanmamış gözlemler" notu (`shadow_note`) çıkar, kesin uyarı gibi anlatılmaz ve karar istemez. Gerçek projede 3 konu + 1 not.
+- **Doğrulama:** `check_shadow_note_dev078` (elle metin eşitliği, rakam lint'i, konu sayısı, kuyruğa girmeme), 7 kasıtlı bozma yakalandı. Tur 2 sınavında 9 koşunun 9'u notu kullandı (etiketleme kalitesi için bkz. DEV-079 sonucu).
+- **Golden etkisi:** yok. **Sonraki direktif:** yok.
+
 ## HD-058 — Pencere ortalama kapıyı atlar + açıklık üst üste binme (DEV-077)
 
 - **Durum:** COMPLETED
