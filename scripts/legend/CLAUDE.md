@@ -112,3 +112,14 @@ alır.
   tanımsız tip `?` öneki ve büyük-harf tip adıyla düşer (sessizce atlanmaz).
 - **Tefriş/kolon cetveli YOK** — `FurnitureSchedule` zaten var ama bu
   modülde ÇİZİLMEZ; ayrı bir karar gerekir (bkz. `scripts/furniture/CLAUDE.md`).
+
+## Muhakeme katkısı (DEV-048)
+**Rol:** gerekçeli muaf (`reasoning/registry.py::REASONING_EXEMPT`, DEV-067). **Gerekçe (düşünüldü, ölçüm/kural vermez):** kapi/pencere cetveli ozet tablodur; plan Par.9 adayi ekonomi_verim.net_brut (alan cetveli) henuz yok.
+**Sağlayıcıya geçiş:** bu modül için bir veçhe doğarsa modül `REASONING_EXEMPT`ten çıkar, `scripts/legend/reasoning.py` (rol + ölçüm beyanı;
+veçhe kaydı lens paketinde) yazılır ve `REASONING_PROVIDERS`a girer — kural ve izinler: `docs/agents/KNOWLEDGE_ENGINEER_AGENT.md`.
+
+## DEV-072: yükseklik ve denizlik sütunları
+Cetvel `COLUMNS` artık `YUKSEKLIK (cm)` ve `DENIZLIK (cm)` taşır (7 sütun, ağırlıklar toplamı 1). Değerler `openings.heights.resolve_window_heights`tan gelir (verilen ya da katalog varsayılanı); normal pencerenin denizliği varsayılan 90 cm (DEV-075; öncesi `VERILMEDI` idi), kapı/asansör `-`. Boy pencere markası `PB…`; aynı genişlikte farklı yükseklik/denizlik markaya eklenir. `ScheduleRow.values()` DXF ve önizlemenin TEK kaynağıdır. `CONTRACT_VERSION` 1.1. DXF çıktısı BİLİNÇLİ olarak değişir (cetvel).
+
+## DEV-076: sınıf etiketleri
+Sınıflı açıklık satırı sınıf etiketi ve markasını taşır (`BOY PENCERE`/`PB`, `VITRIN`/`PV`, `ANA GIRIS KAPISI`/`KG`, `DUKKAN KAPISI`/`KD`; sınıfsız kapı `KAPI`/`K`, normal pencere `PENCERE`/`P`). Sınıflı kapıda YÜKSEKLİK/DENİZLİK dolu, sınıfsız kapıda `-`. Sınıf bilgisi `openings.classes.OPENING_CLASSES`tan okunur (etiket/ön ek tek kaynak).

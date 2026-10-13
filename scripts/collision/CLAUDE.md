@@ -148,3 +148,8 @@ değiştirmez. Yalnızca rapor üretir; kabul kararını `validate.py` verir.
   "çifte sorumluluk").
 - **Pafta/aks/ölçü denetlenmez** (`COLLISION_EXEMPT`); pafta taşması `Sheet.
   verify_within_frame` ile DXF seviyesinde ayrıca kontrol edilir.
+
+## Muhakeme katkısı (DEV-048)
+**Rol:** gerekçeli muaf (`reasoning/registry.py::REASONING_EXEMPT`, DEV-067). **Gerekçe (düşünüldü, ölçüm/kural vermez):** fiziksel cakismanin sahibidir (FORBID alani) ve mimari muhakemenin SINIRINI cizer (anayasa: muhakeme yalniz UYARI); muhakeme ayak izlerini testfit/impact uzerinden TUKETIR, collision'a veche koymaz.
+**Sağlayıcıya geçiş:** bu modül için bir veçhe doğarsa modül `REASONING_EXEMPT`ten çıkar, `scripts/collision/reasoning.py` (rol + ölçüm beyanı;
+veçhe kaydı lens paketinde) yazılır ve `REASONING_PROVIDERS`a girer — kural ve izinler: `docs/agents/KNOWLEDGE_ENGINEER_AGENT.md`.

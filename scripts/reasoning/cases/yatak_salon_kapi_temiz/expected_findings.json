@@ -1,0 +1,6 @@
+{
+ "expect_keys": [],
+ "expect_absent": [
+  "mahremiyet.gecis.yatak_salona_dogrudan|*|d_oda_salon,oda,salon|79e89cd4"
+ ]
+}

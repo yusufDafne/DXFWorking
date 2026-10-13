@@ -114,3 +114,8 @@ hesaplanabilir olduğu (3-4-5 üçgeni).
 - **`CONTRAST_MIN_DISTANCE` tek bir global eşiktir** — gruba özel farklı
   eşikler (örn. bazı gruplar için daha sıkı) şu an desteklenmiyor; ihtiyaç
   doğarsa `LayerColor`a bir `min_distance_override` alanı eklenebilir.
+
+## Muhakeme katkısı (DEV-048)
+**Rol:** gerekçeli muaf (`reasoning/registry.py::REASONING_EXEMPT`, DEV-067). **Gerekçe (düşünüldü, ölçüm/kural vermez):** katman renk kaydi; okunabilirlik/kontrast denetimi kendi validate_palette'indedir, mimari muhakemeye konu degildir.
+**Sağlayıcıya geçiş:** bu modül için bir veçhe doğarsa modül `REASONING_EXEMPT`ten çıkar, `scripts/palette/reasoning.py` (rol + ölçüm beyanı;
+veçhe kaydı lens paketinde) yazılır ve `REASONING_PROVIDERS`a girer — kural ve izinler: `docs/agents/KNOWLEDGE_ENGINEER_AGENT.md`.

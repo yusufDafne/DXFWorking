@@ -85,3 +85,11 @@ edilebildiği (sahte stil test çiftiyle).
 - **Elevations/sections'a kuzey oku çizilmez** (kullanıcı isteği örtük
   kaldı, ama mantık açık: kuzey bir PLAN/vaziyet kavramıdır, düşey bir
   görünüşte/kesitte yönü göstermenin standart bir karşılığı yoktur).
+
+## Muhakeme katkısı (DEV-048)
+**Rol:** gerekçeli muaf (`reasoning/registry.py::REASONING_EXEMPT`, DEV-067). **Gerekçe (düşünüldü, ölçüm/kural vermez):** yonelim merceginin girdisi meta.north_angle verisidir, bu modulun kodu degil (reasoning_report meta'dan okur); kuzey oku yalniz cizimdir.
+**Sağlayıcıya geçiş:** bu modül için bir veçhe doğarsa modül `REASONING_EXEMPT`ten çıkar, `scripts/northarrow/reasoning.py` (rol + ölçüm beyanı;
+veçhe kaydı lens paketinde) yazılır ve `REASONING_PROVIDERS`a girer — kural ve izinler: `docs/agents/KNOWLEDGE_ENGINEER_AGENT.md`.
+
+## DEV-074: kuzey sözleşmesi
+Vaziyet planında kuzey daima yukarı; proje planının **kuzeye en yakın cephesi** paftanın üst kenarına paraleldir ve plan paftasındaki ok vaziyet planına göre projenin yönünü gösterir. Dik açılı binada cepheler 90° arayla olduğundan `meta.north_angle` ∈ **[−45°, +45°]** (`NORTH_HALF_RANGE_DEG`, geometriden türer; ölçüm eşiği değildir). `normalize_north_angle`: eşdeğer açı (−180, +180] (350 → −10). `check_north_convention(meta)` aralık dışında `validate.py` HATASI verir ("proje sessizce döndürülmez, karar sizin"); alan yoksa sessiz kalır (ok çizilmez, yön uydurulmaz). Yerleşim planını analiz eden altyapı YOKTUR: yön yalnız açıyla bildirilir. Çizim (`NorthArrow`) ve yönelim veçhesinin hesabı DEĞİŞMEDİ (ham açı eşdeğer olduğundan kullanılmaya devam eder). `CONTRACT_VERSION` 1.0 → 1.1. Vaziyet paftası: `DEV-024` (arsa verisi gelince). Test: `selftest.py::check_north_convention_dev074` (sınır ±45 / ±45,01, normalize, 5 kasıtlı bozma).

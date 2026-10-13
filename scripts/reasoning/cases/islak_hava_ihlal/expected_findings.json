@@ -1,0 +1,6 @@
+{
+ "expect_keys": [
+  "isik_hava_yonelim.hava.islak_hacim_havalandirma|*|wc|7b45908f"
+ ],
+ "expect_absent": []
+}

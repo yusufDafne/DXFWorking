@@ -569,6 +569,42 @@ GELECEK gereksinim belirtti: sistem bir oda programının verilen bir alana
 sığıp sığmadığını ÖNCEDEN kontrol edip bildirmeli — bu `DEV-038` olarak
 kayıt altına alındı (**uygulama izni DEĞİLDİR**, yalnızca PLANNED).
 
+## Mimari muhakeme planı (`DEV-048`, genişletildi 2026-10-05)
+
+**Durum:** yalnız PLAN + belge; kod, şema, `context.json`, DXF DEĞİŞMEDİ. `DEV-048` `PLANNED`
+kalır; uygulama `DEV-059`…`DEV-070` (hiçbiri `READY` değil). Ayrıntı:
+`ARCHITECTURAL_REASONING_PLAN.md` (TEK kaynak). Faz 0 işletim ilkeleri kök `CLAUDE.md`
+"Mimari muhakeme" bölümü ve `PROJECT_OPERATOR_AGENT.md` "Kullanıcıyla konuşma" ile **şimdiden
+etkindir**.
+
+- **İlk ucuz kontrol (muhakeme işine başlamadan):** plan §1.1'deki dokuz ölçümü yeniden
+  üret (mevcut `architect.rules` yardımcılarıyla, salt-okunur) — bulgular değiştiyse plan
+  bayatlamıştır. Özellikle #4 (girişten görünen yatak odası kapısı) ve #5 (komşu giriş
+  kapıları 1485 mm) gerçek projede **hiçbir kural tarafından görülmüyor**; bunlar plan
+  değişikliği değil bilgidir, kullanıcı isterse ayrı revizyon konusudur.
+- **Durum (2026-10-09 oturum sonu):** `DEV-059` (`spatial/`) ve `DEV-060` (`reasoning/` çekirdeği) **COMPLETED**
+  (`HD-040`, `HD-041`). `DEV-061` (mahremiyet paketi) **UYGULANDI, kabul bekliyor** (2026-10-09; görev maddesinde "Uygulama sonucu");
+  sıradaki: kullanıcı kabulü → COMPLETED + HD kaydı → `DEV-064`.
+  Kalan sıra: `061 → 064 → 065 → 070 → 062 → 063 → 066 → 069 → 068 → 067` (plan §10.1). `DEV-064`…`DEV-067`
+  maddelerinin netleştirme soruları henüz sorulmadı.
+- **Planlı genel kontrol:** kullanıcı, planlanan tüm maddeler tamamlandıktan SONRA ayrıca bir genel kontrol
+  yapılacağını belirtti (tüm selftest'ler, `validate` çıktısı, `--golden-set`, `doc_check`, plan §10.3 geriye
+  dönük doğrulama ve §8.5 soğuk başlangıç sınavı).
+- **Devam ederken ilk ucuz kontrol:** `python scripts/doc_check.py`, `python scripts/reasoning/selftest.py`,
+  `python scripts/spatial/selftest.py`, `python scripts/reasoning_report.py` (rev-28: 15 satır → 3 konu).
+- **Kullanıcıya bildirilecek yan bulgu:** `check_wet_area_adjacency` (`DEV-052`) ve
+  `check_entry_wet_door_proximity` (`DEV-053`) tamamlanmış ve selftest'li ama `validate.py` tarafından
+  **hiç çağrılmıyor**; gerçek projede çalışmıyorlar. Bağlamak çıktıyı değiştirir (kullanıcı kararı).
+- **Denetim kaydı:** denetim/çürütme sonuçları workflow günlüğündedir (`wf_942eee3c-6d3`); `DEV-070` için
+  çürütme ajanı kullanım limiti nedeniyle koşamadı, yorumu tek denetime dayanır.
+- **Kullanıcı kararı bekleyen maddeler:** plan §11 (10 madde; öneriler yazılı). En çok bloklayanlar:
+  #1 çekirdeğin adı/yeri, #2 `validate.py` çıktısının değişmemesi, #3 `design_decisions[]` şema
+  alanı, #4 pencere yüksekliği (veri alanı mı), #6 hangi yönetmelik maddelerinin önce getirileceği.
+- **Bilinen risk:** mercek veçheleri `shadow` merdiveninden geçmeden kullanıcıya gösterilirse
+  alarm yorgunluğu yapar (ölçüm #6: ıslak hacim ↔ yatak odası/salon ortak duvarı 6/6 öter).
+- **Ortam notu:** `validate.py`/`generate_dxf.py` `ezdxf` ve `jsonschema` ister; temiz bir
+  ortamda `pip install ezdxf jsonschema` gerekir (`doc_check.py` ikisine de ihtiyaç duymaz).
+
 ## İlk okuma sırası
 
 1. Bu dosya.
@@ -578,6 +614,8 @@ kayıt altına alındı (**uygulama izni DEĞİLDİR**, yalnızca PLANNED).
 5. `scripts/generate_dxf.py`, schema ve mevcut golden output.
 6. `docs/development/AGENT_PERMISSIONS.json` ve
    `PROVENANCE_TEMPLATE.json`.
+7. Muhakeme/diyalog/mercek işi için: `ARCHITECTURAL_REASONING_PLAN.md` (ve `DEV-060`
+   sonrasında `scripts/reasoning/CLAUDE.md`).
 
 ## İlk ucuz kontrol
 

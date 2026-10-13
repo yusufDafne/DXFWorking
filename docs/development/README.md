@@ -14,6 +14,10 @@ okur.
   seçenekler.
 - `DEVELOPER_NOTES.md`: Bir sonraki geliştiriciye doğrudan çalışma bağlamı,
   açık kararlar, riskler ve önerilen ilk kontrol.
+- `ARCHITECTURAL_REASONING_PLAN.md`: `DEV-048` mimari muhakeme planı — bilgi modeli
+  (mercek/veçhe/bulgu/koku), etüt protokolü, diyalog sözleşmesi, üç ana mercek, her modülün
+  rolü, fazlar ve açık kararlar. `scripts/reasoning/` kurulunca yerini o modülün
+  `CLAUDE.md`si alır. Muhakeme/diyalog/mercek işine başlayan her agent önce bunu okur.
 - `AGENT_PERMISSIONS.json`: Roller için izinli ve yasaklı okuma/yazma alanları.
 - `PROVENANCE_TEMPLATE.json`: Proje revizyonu ve nihai DXF izlenebilirlik
   şablonu.

@@ -85,3 +85,8 @@ Burada yalnızca "hangi font, hangi stil adı" sorusu yanıtlanır.
   gösterim bugün **büyük harf** ile sağlanıyor, kalın font ile değil.
 - Rol listesi (`ROLES`) kod seviyesindedir; yeni bir rol eklemek kod
   değişikliği gerektirir.
+
+## Muhakeme katkısı (DEV-048)
+**Rol:** gerekçeli muaf (`reasoning/registry.py::REASONING_EXEMPT`, DEV-067). **Gerekçe (düşünüldü, ölçüm/kural vermez):** proje yazi tipi kaydi; asgari metin yuksekligi baskisi okunabilirlik meselesidir, mimari muhakemeye konu degildir.
+**Sağlayıcıya geçiş:** bu modül için bir veçhe doğarsa modül `REASONING_EXEMPT`ten çıkar, `scripts/typography/reasoning.py` (rol + ölçüm beyanı;
+veçhe kaydı lens paketinde) yazılır ve `REASONING_PROVIDERS`a girer — kural ve izinler: `docs/agents/KNOWLEDGE_ENGINEER_AGENT.md`.

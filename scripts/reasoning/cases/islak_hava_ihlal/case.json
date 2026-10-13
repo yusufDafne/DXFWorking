@@ -1,0 +1,50 @@
+{
+ "id": "islak_hava_ihlal",
+ "facet": "isik_hava_yonelim.hava.islak_hacim_havalandirma",
+ "role": "ihlal",
+ "origin": "elle yazilmis, uydurulmus mini sahne (DEV-062; gercek gecmis geometri DEGIL)",
+ "floor": {
+  "rooms": [
+   {
+    "id": "wc",
+    "room_type": "wc",
+    "unit_id": "uA",
+    "polygon": [
+     [
+      0,
+      0
+     ],
+     [
+      2000,
+      0
+     ],
+     [
+      2000,
+      2000
+     ],
+     [
+      0,
+      2000
+     ]
+    ]
+   }
+  ],
+  "walls": [
+   {
+    "id": "w_alt",
+    "start": [
+     0,
+     0
+    ],
+    "end": [
+     2000,
+     0
+    ],
+    "thickness": 200.0,
+    "layer": "D"
+   }
+  ],
+  "openings": [],
+  "shafts": []
+ }
+}

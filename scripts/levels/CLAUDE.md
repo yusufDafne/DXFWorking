@@ -138,3 +138,8 @@ test çiftiyle), katman RGB'sinin kod-sahipli olduğu.
   "bağımsız reviewer düzeltmesi").
 - **Tek bir dikey eksen (Y) varsayılır** — yatay bir kot (örn. X ekseninde
   bir kademe) bugün modellenmiyor, kapsamı dışında.
+
+## Muhakeme katkısı (DEV-048)
+**Rol:** gerekçeli muaf (`reasoning/registry.py::REASONING_EXEMPT`, DEV-067). **Gerekçe (düşünüldü, ölçüm/kural vermez):** kot isareti bir anotasyondur; plan Par.9 adayi erisilebilirlik.esik gercek projede level_marks verisi yokken olculemez.
+**Sağlayıcıya geçiş:** bu modül için bir veçhe doğarsa modül `REASONING_EXEMPT`ten çıkar, `scripts/levels/reasoning.py` (rol + ölçüm beyanı;
+veçhe kaydı lens paketinde) yazılır ve `REASONING_PROVIDERS`a girer — kural ve izinler: `docs/agents/KNOWLEDGE_ENGINEER_AGENT.md`.

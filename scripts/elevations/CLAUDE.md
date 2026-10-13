@@ -17,13 +17,20 @@ izole modül karşılığıdır (`axis`/`dimensions`/`openings`/`rooms` ile ayn�
 | `ensure_below_ground_linetype` | `DASHED` linetype'ı idempotent yükler |
 | `elevation_vertical_extent` | Geriye dönük yardımcı: `Sheet.content_ranges` ve `preview.py` bunu kullanır |
 
-## Kararın özü: gerçek plan geometrisinden TÜRETİLMEZ
+## Kararın özü: varsayılan jenerik, opt-in PLANDAN TÜRETME (DEV-073)
 
-Bu, kök `CLAUDE.md`'nin rev-2'de kullanıcı onayıyla sabitlediği bir
-karardır — cepheler semantik/basit bir seviye istifi + eşit aralıklı jenerik
-pencere dikdörtgenleridir. `DEV-011`'in "Fikir 2"si (plandan açıklık
-türetme, opt-in) bilerek uygulanmadı; açık karar olarak kalıyor (bkz. "Açık
-kararlar").
+Kök `CLAUDE.md`nin rev-2 kararı (kullanıcı onayıyla): cepheler **varsayılan olarak** semantik/basit bir seviye istifi + eşit aralıklı jenerik pencere
+dikdörtgenleridir (`window_count`/`window_size`/`door`); `elevations[].openings_from` verilmeyen cephe eski çizimi BİREBİR korur.
+**DEV-073'te (kullanıcı kararı 2026-10-12) bu kararın opt-in istisnası geldi:** `elevations[].openings_from = "plan"` olan cephede planın dış duvarlarındaki GERÇEK
+pencere/kapı açıklıkları çizilir — aynı genişlik, yükseklik, denizlik ve yatay konum (`derive.py`, `derive_level_openings`, `FacadeRect`).
+- **Cephe seçimi `axis_source`tan** (mevcut `AxisGrid.draw_on_elevation` izdüşümüyle AYNI): `vertical` → ÖN cephe (planın alt kenarı, y en küçük dış duvar; yatay eksen = plan X, soldan sağa); `horizontal` → SAĞ cephe (x en büyük dış duvar; yatay eksen = plan Y).
+- **Kat↔seviye eşleşmesi SIRAYLA** (`sections` ile aynı sözleşme; sayılar eşit olmak zorunda — `validate.py` HATA verir).
+- Dış yüz `spatial.facade_normal` (`spatial.exterior_openings`) ile bulunur; iç açıklıklar cepheye girmez; eksen hizalı olmayan dış duvarlar ATLANIR ve notta söylenir.
+- Pencere yükseklik/denizliği `openings.heights` (verilen ya da adıyla bildirilen katalog varsayılanı: 1200/900; boy pencere 2000/40). **Dış KAPI:** `door_class` (`main_entry` 2100/40, `shop` 2100/40; DEV-076) varsa SINIF varsayılanı geçer; sınıfsız dış kapıda yükseklik verisi yoktur ve kullanıcı kararı gereği
+  (dükkân kapıları "boy pencere") **boy pencere varsayılanlarıyla (2000 mm / 40 mm)** çizilir; kapıda `height` verilmişse o geçer; kullanılan varsayılan `defaults_report.py`de adıyla bildirilir. Pencere sınıfları (normal/boy/vitrin) `window_class`tan gelir.
+- Denizlik + yükseklik seviye yüksekliğini aşarsa ya da açıklık cephe genişliğinin dışına düşerse `validate.py` UYARI verir (KIRPMA YAPILMAZ).
+- `ElevationSheet.draw(..., context=...)` plan cephe için `context` ister (yoksa `ValueError`); `preview.py` AYNI `derive_level_openings` kaynağını kullanır (DXF ve önizleme ayrışmaz).
+- Çatı/makine dairesi seviyesi ve eşleşen katı olmayan seviye açıklık almaz. `CONTRACT_VERSION` 1.0 → 1.1; şema 1.6.0. Test: `selftest.py::check_plan_derived_dev073` (elle hesaplanan dikdörtgenler, 12 kasıtlı bozma yakalandı) + `golden/plandan_cephe`.
 
 ## Zemin-altı kesikli linetype (rev-14, kapatılan basitleştirme)
 
@@ -121,3 +128,8 @@ modülünü import ETMEZ, sadece bu sözleşmeyi bekler — duck typing).
 - **`below_ground` + `window_count`/`door` birlikte kullanılırsa** pencere/
   kapı de `DASHED` çizilir (tutarlılık için); bu proje verisinde bu
   kombinasyon HENÜZ yok, sadece `selftest.py`de sentetik olarak sınandı.
+
+## Muhakeme katkısı (DEV-048)
+**Rol:** gerekçeli muaf (`reasoning/registry.py::REASONING_EXEMPT`, DEV-067). **Gerekçe (düşünüldü, ölçüm/kural vermez):** cephe seviye istifi; plan Par.9 adayi isik.derinlik pencere yuksekligi (openings[].height) gercek projede gelince anlam kazanir, bugun veri yok.
+**Sağlayıcıya geçiş:** bu modül için bir veçhe doğarsa modül `REASONING_EXEMPT`ten çıkar, `scripts/elevations/reasoning.py` (rol + ölçüm beyanı;
+veçhe kaydı lens paketinde) yazılır ve `REASONING_PROVIDERS`a girer — kural ve izinler: `docs/agents/KNOWLEDGE_ENGINEER_AGENT.md`.

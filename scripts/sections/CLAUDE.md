@@ -176,3 +176,8 @@ y_bottom, y_top)` sözleşmesine sahip herhangi bir nesneyi kabul eder
   düzleminde çalışır, kesit dikey bir izdüşümdür).
 - **Seviye sırası doğrulanmaz** (sadece SAYI eşitliği) — `elevations/`in
   kendi "seviye sırası ÖNCE gelmelidir" bilinen sınırlamasıyla AYNI sınıf.
+
+## Muhakeme katkısı (DEV-048)
+**Rol:** gerekçeli muaf (`reasoning/registry.py::REASONING_EXEMPT`, DEV-067). **Gerekçe (düşünüldü, ölçüm/kural vermez):** bina kesiti cizimi; plan Par.9 adayi kesitte bas yuksekligi (merdiven) henuz yok.
+**Sağlayıcıya geçiş:** bu modül için bir veçhe doğarsa modül `REASONING_EXEMPT`ten çıkar, `scripts/sections/reasoning.py` (rol + ölçüm beyanı;
+veçhe kaydı lens paketinde) yazılır ve `REASONING_PROVIDERS`a girer — kural ve izinler: `docs/agents/KNOWLEDGE_ENGINEER_AGENT.md`.

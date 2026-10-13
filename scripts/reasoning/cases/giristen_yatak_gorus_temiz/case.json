@@ -1,0 +1,122 @@
+{
+ "id": "giristen_yatak_gorus_temiz",
+ "facet": "mahremiyet.gorsel.giristen_yatak_odasi_gorus",
+ "role": "temiz",
+ "origin": "elle yazilmis, uydurulmus mini sahne (DEV-061; gercek gecmis geometri DEGIL)",
+ "floor": {
+  "rooms": [
+   {
+    "id": "ort",
+    "room_type": "koridor",
+    "polygon": [
+     [
+      0,
+      -2000
+     ],
+     [
+      8000,
+      -2000
+     ],
+     [
+      8000,
+      0
+     ],
+     [
+      0,
+      0
+     ]
+    ]
+   },
+   {
+    "id": "hol",
+    "room_type": "koridor",
+    "unit_id": "uA",
+    "polygon": [
+     [
+      0,
+      0
+     ],
+     [
+      4000,
+      0
+     ],
+     [
+      4000,
+      3000
+     ],
+     [
+      0,
+      3000
+     ]
+    ]
+   },
+   {
+    "id": "hedef",
+    "room_type": "yatak_odasi",
+    "unit_id": "uA",
+    "polygon": [
+     [
+      4000,
+      0
+     ],
+     [
+      8000,
+      0
+     ],
+     [
+      8000,
+      3000
+     ],
+     [
+      4000,
+      3000
+     ]
+    ]
+   }
+  ],
+  "walls": [
+   {
+    "id": "w_in",
+    "start": [
+     0,
+     0
+    ],
+    "end": [
+     8000,
+     0
+    ],
+    "thickness": 100.0,
+    "layer": "D"
+   },
+   {
+    "id": "w_h",
+    "start": [
+     4000,
+     0
+    ],
+    "end": [
+     4000,
+     3000
+    ],
+    "thickness": 100.0,
+    "layer": "D"
+   }
+  ],
+  "openings": [
+   {
+    "id": "d_giris",
+    "type": "door",
+    "wall_id": "w_in",
+    "position_from_start": 2000,
+    "width": 900
+   },
+   {
+    "id": "d_hedef",
+    "type": "door",
+    "wall_id": "w_h",
+    "position_from_start": 500,
+    "width": 800
+   }
+  ]
+ }
+}

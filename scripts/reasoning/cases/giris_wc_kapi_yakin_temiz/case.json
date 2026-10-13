@@ -1,0 +1,122 @@
+{
+ "id": "giris_wc_kapi_yakin_temiz",
+ "facet": "mahremiyet.gorsel.giris_wc_kapi_yakin",
+ "role": "temiz",
+ "origin": "elle yazilmis, uydurulmus mini sahne (DEV-061; gercek gecmis geometri DEGIL)",
+ "floor": {
+  "rooms": [
+   {
+    "id": "band",
+    "room_type": "koridor",
+    "polygon": [
+     [
+      0,
+      -2000
+     ],
+     [
+      6000,
+      -2000
+     ],
+     [
+      6000,
+      0
+     ],
+     [
+      0,
+      0
+     ]
+    ]
+   },
+   {
+    "id": "hol",
+    "room_type": "koridor",
+    "unit_id": "A",
+    "polygon": [
+     [
+      0,
+      0
+     ],
+     [
+      6000,
+      0
+     ],
+     [
+      6000,
+      1500
+     ],
+     [
+      0,
+      1500
+     ]
+    ]
+   },
+   {
+    "id": "wc",
+    "room_type": "wc",
+    "unit_id": "A",
+    "polygon": [
+     [
+      0,
+      1500
+     ],
+     [
+      6000,
+      1500
+     ],
+     [
+      6000,
+      3000
+     ],
+     [
+      0,
+      3000
+     ]
+    ]
+   }
+  ],
+  "walls": [
+   {
+    "id": "w_in",
+    "start": [
+     0,
+     0
+    ],
+    "end": [
+     6000,
+     0
+    ],
+    "thickness": 100.0,
+    "layer": "D"
+   },
+   {
+    "id": "w_wc",
+    "start": [
+     0,
+     1500
+    ],
+    "end": [
+     6000,
+     1500
+    ],
+    "thickness": 100.0,
+    "layer": "D"
+   }
+  ],
+  "openings": [
+   {
+    "id": "ent",
+    "type": "door",
+    "wall_id": "w_in",
+    "position_from_start": 1000,
+    "width": 900
+   },
+   {
+    "id": "dwc",
+    "type": "door",
+    "wall_id": "w_wc",
+    "position_from_start": 5000,
+    "width": 800
+   }
+  ]
+ }
+}

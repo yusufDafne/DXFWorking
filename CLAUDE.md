@@ -88,6 +88,35 @@ kalıcı kurallardır. Aşağıdaki kurallar istisnasız uygulanır.
   context patch → validate → DXF üretimi → preview/inceleme → kabul → final.
   Revizyon ve çıktı ilişkisi append-only/provenance kayıtlarıyla korunur.
 
+## Mimari muhakeme (DEV-048, Faz 0 — plan aşaması)
+
+Bu sistem yalnızca çizmez; **kullanıcının kapsamlı düşünen motorudur.** Kullanıcı bir şeyi
+gözünden kaçırdığında yakalarsın ve yakaladığını mimar olmayan birinin de anlayacağı dille,
+nihai ürün üzerinden anlatırsın. Bilgi modeli, etüt protokolü ve diyalog sözleşmesi:
+`docs/development/ARCHITECTURAL_REASONING_PLAN.md` (`scripts/reasoning/` kurulana dek TEK
+kaynak; uygulama `DEV-059`…`DEV-070`, hiçbiri kullanıcı onayı olmadan başlamaz). Aşağıdakiler
+kod gerektirmeden **bugünden** geçerli işletim ilkeleridir:
+
+1. Her talepte önce hangi **bakış açılarını** (mahremiyet, ışık-hava-yönelim, yaşanabilirlik;
+   ayrıca sirkülasyon, tesisat/hijyen, yapısal düzen…) etkilediğini düşün. Yalnız sorulana değil
+   **talebin yan etkilerine** de bak: değişiklikten önce ve sonra uyarı kümesini karşılaştır.
+2. Bulguyu sade dille ve nihai ürün üzerinden anlat: ne görüyoruz → neden önemli → en çok 3
+   seçenek ve bedeli → öneri → karar sizin. Kural adı/koordinat boğma; kullanıcı mimarsa kısa
+   ve terimli konuş (içerik aynı, dil değişir).
+3. **Sayı uydurma.** Söylediğin her sayı ya o projenin ölçümüdür ya kaynağı kayıtlı bir katalog
+   sabiti. Yönetmelik rakamını kaynaksız "kesin" diye sunma; "genelde tercih edilir" ile
+   "yönetmelik gereği" aynı sesle söylenmez.
+4. **"Yapılamaz" deme;** "yapılır, şu bedelle" de. Muhakeme kuralları üretimi durdurmaz (yalnız
+   UYARI; FORBID yalnız fiziksel çakışmaya aittir). Karar kullanıcınındır ve devredilebilir
+   ("sen karar ver" denirse önerini uygula, seçimi ve bedelini sonradan bildir; ciddi bir
+   bulguda devir olsa bile sor).
+5. **Sessiz geçme.** Veri eksikliğinden bakılamayan bir bakış açısı varsa söyle (örn. `meta.north_angle`
+   yok → yönelim değerlendirilemedi). "Temiz" ile "hiç bakılmadı" aynı şey değildir.
+6. Aynı kök nedene bağlı uyarıları (özellikle özdeş katlardakileri) **tek konu** olarak sun.
+7. Yeni bir ilke keşfedersen (kullanıcı bir defekt gösterdi ya da kendin buldun) bunu
+   **vaka → ilke → veçhe** olarak kaydedilmek üzere işaretle (kayıt rolü ve kuralları: `docs/agents/KNOWLEDGE_ENGINEER_AGENT.md`); proje operatörü merkezi dokümana
+   yazamaz, bunu kullanıcıya bildirir, kayıt sistem geliştirme oturumunda yapılır.
+
 ## Mimari referans
 
 Uzun vadeli sistem vizyonu, generic component contract, agent çalışma yöntemi
@@ -160,6 +189,10 @@ geliştirme görevleri, tamamlanmış geçmiş, fikirler ve geliştirici notlar�
    python scripts/importer/selftest.py
    python scripts/sections/selftest.py
    python scripts/northarrow/selftest.py
+   python scripts/spatial/selftest.py  # DEV-059 (eski<->yeni diferansiyel)
+   python scripts/reasoning/selftest.py  # DEV-060 (kapilar enjekte edilen bozuk kayitla sinanir)
+   python scripts/testfit/selftest.py   # DEV-063 (deneme yerlestirme; collision ile tutarlilik)
+   python scripts/impact/selftest.py   # DEV-068 (etki alani; span yayilimi kasitli bozmayla sinanir)
    python scripts/shafts/selftest.py   # rev-27 (stairs/standards/templates/architect de kendi selftest'leriyle)
    ```
 
@@ -167,6 +200,12 @@ geliştirme görevleri, tamamlanmış geçmiş, fikirler ve geliştirici notlar�
    **kasıtlı bozmayla** sınanır. "Temiz döndü" çıktısı tek başına hiçbir şey
    kanıtlamaz — kontrol hiç çalışmasa da temiz dönerdi. Her test ayrıca
    **yanlış-pozitif** tarafını da sınar.
+   **Diyalog köprüsü (DEV-064):** `python scripts/reasoning_dialogue.py guide|brief|append|verify` — kullanıcıya sunulan anlatı
+   şablondan üretilir, kaynaksız sayı reddedilir, `<proje>/dialogue.jsonl`e ekleme-yalnız kaydedilir. `decide` ile bilinçli kabul
+   `context.json::design_decisions[]`e gerekçesiyle yazılır (şema 1.4.0, opt-in; kanıt değişirse kabul düşer).
+   **Muhakeme raporu (DEV-060, EK ve BLOKLAMAZ):** `python scripts/reasoning_report.py [context.json]
+   [--before onceki.json]` — kapsam (hangi mercek koştu/koşamadı) + uyarıları kat-bağımsız tek konulara
+   indirger; `validate.py` çıktısı DEĞİŞMEZ.
 8. **Doküman tutarlılığı:** `python scripts/doc_check.py` çalıştırılır. Bu
    kontrol, "çalışma sonunda dokümanları güncelle" kuralını düzyazı olmaktan
    çıkarıp MEKANİK hale getirir: görev durumu ile bulunduğu bölüm, durum özeti
@@ -280,6 +319,13 @@ geliştirme görevleri, tamamlanmış geçmiş, fikirler ve geliştirici notlar�
   bir **kuzey oku** sembolü çizilir. Veri `meta.north_angle` (derece, saat
   yönünde, paftanın "yukarı" yönünden gerçek kuzeye) ile gelir; **verilmezse
   ok HİÇ çizilmez** — yön uydurulmaz.
+- **Kuzey sözleşmesi (DEV-074, kullanıcı kararı 2026-10-12):** **vaziyet planında kuzey simgesi DAİMA yukarıyı gösterir**
+  (vaziyet paftası ayrı madde: `DEV-024`, arsa verisi gelince). Proje, paftaya **kuzeye en yakın cephesi üst kenara paralel**
+  olacak şekilde yerleştirilir ve **proje plan paftalarındaki ok, vaziyet planına göre projenin yönünü gösterir**. Dik açılı bir
+  binanın cepheleri 90° arayla durduğu için `meta.north_angle` bu yüzden **−45°…+45°** olmalıdır (eşdeğer açılar normalize
+  edilir: 350 = −10); aralık dışı açı `validate.py` **HATASI**dır — proje sessizce döndürülmez (otomatik migrasyon yok), karar
+  istenir. Kullanıcı bir yerleşim planı verirse bunu analiz edecek altyapı henüz yoktur: yön yalnız **açıyla** bildirilir.
+  Uygulama: `scripts/northarrow::check_north_convention`.
 - Kuzey okunun **NASIL çizildiği** (`NorthArrowStyle` Protocol'ü,
   `scripts/northarrow/`) standarttan ayrılmıştır — ileride farklı bir
   sembol tasarımına geçilmesi `NorthArrow(style=...)` ile enjekte edilir,
@@ -342,7 +388,7 @@ geliştirme görevleri, tamamlanmış geçmiş, fikirler ve geliştirici notlar�
     kapilariyla), bodrum/catida YOK (acik gecis - rampa/teras).
 - **Mutfak tezgahi:** `floor.counters[]` icinde basit dikdortgen poligon
   olarak tanimlanir, `MOBILYA` katmaninda kapali polyline ciizilir.
-- **Cephe gorunusleri (elevations):** Gercek plan geometrisinden TURETILMEZ;
+- **Cephe gorunusleri (elevations) — DEV-073:** `elevations[].openings_from: "plan"` (opt-in) olan cephede pencere/kapilar planin dis duvarlarindaki GERCEK acikliklardan turetilir (ayni genislik, yukseklik, denizlik, konum; kat<->seviye siralamayla; dis kapi boy pencere varsayilaniyla 2000/40 mm). Asagidaki jenerik cizim varsayilandir: Gercek plan geometrisinden TURETILMEZ;
   kullanicinin acikca izin verdigi sekilde (bkz. rev-2 talebi) semantik/basit
   bir seviye istifi + esit araliklarla yerlestirilmis jenerik pencere
   dikdortgenleri olarak cizilir. Uygulamasi rev-14'ten (`DEV-011`) itibaren
@@ -502,6 +548,18 @@ guncellenir.
   **Kolon adı bugün çizilmez** — kullanıcı kolonları aks birleşim
   noktalarıyla ifade ediyor; altyapı (`Column.name`, `ColumnLabelStyle`)
   hazırdır ve `meta.column_label.enabled` ile kod değişmeden açılır.
+- **Pencere yüksekliği, denizlik ve konum (DEV-072/DEV-075, kullanıcı kararı 2026-10-12):** varsayılan pencere yüksekliği **1200 mm** ve zeminden
+  **900 mm** (denizlik); **boy pencere** (`window_class: "tall"`, örn. balkon kapısı, dükkân vitrini) **2000 mm** yükseklik ve zeminden **40 mm**.
+  Bunlar katalog varsayılanıdır (`scripts/openings/heights.py`, `context.json`a yazılmaz); `openings[].height` / `sill_height` verilirse o değer
+  geçer — ölçü ve düşey konum dinamiktir. Kullanılan varsayılan adıyla bildirilir (`python scripts/defaults_report.py`). Cetvel yükseklik/denizlik
+  sütunlarını taşır. **Varsayılan yatay konum:** pencere, ait olduğu odanın dış duvar boyunca uzanan **serbest aralığının ortasına** konur (iç
+  duvarların dış duvara bağlandığı yerler çıkarılır; iki oda arasında duvar yoksa pencere kendi odasının sınırında biter —
+  `scripts/openings/placement.py`). **İç duvarın dış cepheye bağlandığı yerde (iç duvar kalınlığı kadar bölge) pencere olmamalıdır:**
+  `validate.py` bunu UYARIR; mevcut pencereler için ortalanmış konum önerisi `python scripts/window_placement_report.py` (salt okunur).
+- **Açıklık sınıfları (DEV-076, kullanıcı kararı 2026-10-12):** boy pencere (`tall`) **1600 × 2000 mm**, denizlik 40 mm (taban); **vitrin** (`window_class: "shopfront"`) **2000 × 2200 mm**
+  (+400 genişlik / +200 yükseklik); **ana giriş** (`door_class: "main_entry"`) **1700 × 2100 mm** (+100 / +100); **dükkân kapısı** (`door_class: "shop"`) ana giriş ölçüleriyle başlar ama
+  AYRI sınıf ve ayrı sabitlerdir (gelecekte özelleştirilebilir). Kullanıcı değeri varsayılanı ezer; genişlik `context.json`da açık yazılır, sınıf genişliği yalnız yeni açıklık üretirken kullanılır
+  (`openings.new_opening` / `new_window`). Katalog: `python scripts/defaults_report.py --catalog`.
 - **Pafta modülü (`scripts/pafta/`, rev-4'te ilk modül olarak kuruldu):**
   Pafta çerçevesi, başlık kutusu, tasma kontrolü ve kağıt boyutu planlaması
   ARTIK `scripts/generate_dxf.py`'de DEĞİL, kendi izole modülünde
@@ -746,7 +804,7 @@ guncellenir.
      `git add` veya `git commit` çalıştırılmaz. Onay gelmeden başka bir talebe
      geçilmez.
 3. Onay geldiğinde ilgili dosyalar (`context.json`, `output/plan.dxf`,
-   `output/preview.png`, `requests.jsonl`) `git add` ile stage edilip
+   `output/preview.png`, `requests.jsonl`, varsa `dialogue.jsonl`) `git add` ile stage edilip
    commit'lenir. **Git config (local/global) hiçbir zaman değiştirilmez** —
    kullanıcı izin verse bile bu kural geçerlidir. Commit kimliği sabit bir
    kişi veya agent adına zorlanmaz: hangi agent çalışıyorsa kendi beyan ettiği

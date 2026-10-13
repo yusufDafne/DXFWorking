@@ -1,0 +1,6 @@
+{
+ "expect_keys": [],
+ "expect_absent": [
+  "mahremiyet.gorsel.giris_wc_kapi_yakin|*|dwc,ent|ca394bd6"
+ ]
+}

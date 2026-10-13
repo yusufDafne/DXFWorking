@@ -82,6 +82,7 @@ from version import (  # noqa: E402
     check_compatibility,
     project_schema_version,
 )
+from reasoning.decisions import check_decisions  # noqa: E402  (DEV-065; cekirdek cizim modulu import etmez)
 from shafts import check_shafts, check_shafts_across_floors  # noqa: E402
 from stairs import (  # noqa: E402
     StairFitError, exit_door_alignment_warning, resolve_stair, stair_access_warnings,
@@ -104,7 +105,10 @@ from architect import (  # noqa: E402
     check_wet_area_door_proximity,
     check_wet_area_reachable_without_bedroom,
 )
-from openings import check_elevator_door_insets, check_opening_nuances  # noqa: E402
+from elevations import derive_level_openings  # noqa: E402
+from northarrow import check_north_convention  # noqa: E402
+from openings import (check_elevator_door_insets, check_opening_nuances, check_window_class_errors,  # noqa: E402
+                      check_window_heights, check_window_junctions)
 from walls import Wall, WallCatalog, check_wall_thickness, gaps_for_wall  # noqa: E402
 
 AREA_TOLERANCE_RATIO = 0.03  # oda alani vs poligon alani icin tolerans
@@ -486,6 +490,7 @@ def check_floor(units: str, floor: dict) -> list[str]:
     errors += [prefix + e for e in check_rooms(units, floor["rooms"], floor["walls"])]
     errors += [prefix + e for e in check_walls(units, floor["walls"], floor["openings"])]
     errors += [prefix + e for e in check_openings(floor["openings"], floor["walls"])]
+    errors += [prefix + e for e in check_window_class_errors(floor["openings"])]      # DEV-072
     # DEV-036: room_type VERILMIS ama standards.STANDARDS'ta TANIMSIZ bir
     # deger YAZIM HATASIDIR (arity-1, walls.kind ile AYNI desen) - HATA.
     errors += [prefix + e for e in check_room_types(floor["rooms"])]
@@ -504,6 +509,24 @@ def check_elevation(elevation: dict) -> list[str]:
         if level["height"] <= 0:
             errors.append(prefix + f"seviye '{level['label']}' yuksekligi pozitif olmali.")
     return errors
+
+
+def check_elevation_plan(context: dict, elevation: dict) -> tuple[list[str], list[str]]:
+    """DEV-073: `openings_from='plan'` cephe icin (HATALAR, UYARILAR). Eslesme/eksen sozlesmesi bozuksa HATA (cizim sessizce yanlis katlari
+    cizerdi); turetim notlari (seviye yuksekligini asan aciklik, cephe disina dusen aciklik, egik duvar) UYARI."""
+    if elevation.get("openings_from") != "plan":
+        return [], []
+    prefix = f"[{elevation['id']}] "
+    errors: list[str] = []
+    if elevation.get("axis_source") not in ("vertical", "horizontal"):
+        errors.append(prefix + "openings_from='plan' icin axis_source 'vertical' (on cephe) ya da 'horizontal' (sag cephe) olmali.")
+    if len(context["floors"]) != len(elevation["levels"]):
+        errors.append(prefix + f"openings_from='plan': kat sayisi ({len(context['floors'])}) ile seviye sayisi ({len(elevation['levels'])}) "
+                      "esit olmali - kat<->seviye eslesmesi SIRAYLA yapilir.")
+    if errors:
+        return errors, []
+    _rects, notes = derive_level_openings(context, elevation)
+    return [], notes
 
 
 def check_sections(context: dict) -> list[str]:
@@ -583,6 +606,9 @@ def run_validation(context_path: Path = DEFAULT_CONTEXT_PATH) -> bool:
     all_errors: list[str] = []
 
     all_errors += check_floor_codes(context["floors"])
+    # DEV-065: tasarim karari kaydi (opt-in). Bos gerekce vb. veri kalitesi HATASIDIR; bulgunun kendisi yine UYARI.
+    all_errors += check_decisions(context)
+    all_errors += check_north_convention(context.get("meta", {}))    # DEV-074
     # Aks etiketleme kurali (DEV-015): dusey numerik, yatay alfabetik, ara aks
     # kesme isaretiyle. '1A' yasaktir - yatay aks ailesiyle ve kolon
     # adlandirmasiyla (B2) carpisir.
@@ -643,9 +669,14 @@ def run_validation(context_path: Path = DEFAULT_CONTEXT_PATH) -> bool:
                 + check_wall_thickness(walls, rooms, units)
             )
         ]
+        standards_warnings += [f"[{floor['id']}] " + w for w in check_window_heights(floor)]     # DEV-072
+        standards_warnings += [f"[{floor['id']}] " + w for w in check_window_junctions(floor)]   # DEV-075
 
     for elevation in context["elevations"]:
         all_errors += check_elevation(elevation)
+        plan_errors, plan_notes = check_elevation_plan(context, elevation)          # DEV-073
+        all_errors += plan_errors
+        standards_warnings += plan_notes
 
     all_errors += check_sections(context)
 

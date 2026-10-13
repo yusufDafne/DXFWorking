@@ -16,6 +16,22 @@ burada yeniden yazildi.
 """
 from __future__ import annotations
 
+try:
+    from ..spatial import (
+        TOUCH_TOLERANCE_MM,
+        dist_point_segment as _dist_point_segment,
+        door_frame as _door_mid,
+        point_in_polygon as _point_in_polygon,
+        touches_within as _touches,
+    )
+except ImportError:
+    from spatial import (
+        TOUCH_TOLERANCE_MM,
+        dist_point_segment as _dist_point_segment,
+        door_frame as _door_mid,
+        point_in_polygon as _point_in_polygon,
+        touches_within as _touches,
+    )
 from .measure import (
     arm_rects,
     arm_widths,
@@ -41,47 +57,8 @@ ARM_NARROWING_TOLERANCE_MM = 100.0
 # cikarilabilir). Yonetmelik gelince bu sabit guncellenir.
 OPEN_DOOR_MIN_PASSAGE_MM = 800.0
 
-_TOUCH_TOLERANCE_MM = 300.0
+_TOUCH_TOLERANCE_MM = TOUCH_TOLERANCE_MM
 
-
-def _dist_point_segment(p, a, b) -> float:
-    ax, ay = a
-    dx, dy = b[0] - ax, b[1] - ay
-    seg2 = dx * dx + dy * dy
-    t = 0.0 if seg2 == 0 else max(0.0, min(1.0, ((p[0] - ax) * dx + (p[1] - ay) * dy) / seg2))
-    return ((p[0] - ax - t * dx) ** 2 + (p[1] - ay - t * dy) ** 2) ** 0.5
-
-
-def _point_in_polygon(point, polygon) -> bool:
-    x, y = point
-    inside = False
-    n = len(polygon)
-    for k in range(n):
-        (x0, y0), (x1, y1) = polygon[k], polygon[(k + 1) % n]
-        if (y0 > y) != (y1 > y) and x < (x1 - x0) * (y - y0) / (y1 - y0) + x0:
-            inside = not inside
-    return inside
-
-
-def _touches(point, polygon, tol=_TOUCH_TOLERANCE_MM) -> bool:
-    n = len(polygon)
-    return any(
-        _dist_point_segment(point, polygon[k], polygon[(k + 1) % n]) <= tol
-        for k in range(n)
-    )
-
-
-def _door_mid(door: dict, walls_by_id: dict):
-    wall = walls_by_id.get(door.get("wall_id"))
-    if wall is None:
-        return None, None
-    sx, sy = wall["start"]
-    ex, ey = wall["end"]
-    length = ((ex - sx) ** 2 + (ey - sy) ** 2) ** 0.5
-    if length == 0:
-        return None, None
-    t = door["position_from_start"] / length
-    return (sx + t * (ex - sx), sy + t * (ey - sy)), ((ex - sx) / length, (ey - sy) / length)
 
 
 def _doors(openings):

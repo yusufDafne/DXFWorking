@@ -7,9 +7,11 @@ from dataclasses import dataclass
 
 from ezdxf.enums import TextEntityAlignment
 try:
+    from ..spatial import point_in_polygon as _spatial_point_in_polygon
     from ..pafta import fit_text_height
     from ..walls.scan import RoomPolygonScanner
 except ImportError:
+    from spatial import point_in_polygon as _spatial_point_in_polygon
     from pafta import fit_text_height
     from walls.scan import RoomPolygonScanner
 
@@ -83,17 +85,9 @@ class PolygonOps:
 
     @staticmethod
     def _point_in_polygon(pt, polygon: list[list[float]]) -> bool:
-        x, y = pt
-        inside = False
-        n = len(polygon)
-        for i in range(n):
-            x1, y1 = polygon[i]
-            x2, y2 = polygon[(i + 1) % n]
-            if (y1 > y) != (y2 > y):
-                x_at_y = (x2 - x1) * (y - y1) / (y2 - y1) + x1
-                if x < x_at_y:
-                    inside = not inside
-        return inside
+        # DEV-059: collision.geometry'deki (bit duzeyinde ayni) tek sahibe delege; takma ad
+        # rooms/selftest.py'nin dogrudan cagrisi icin korunur.
+        return _spatial_point_in_polygon(pt, polygon)
 
     @staticmethod
     def _distance_to_boundary(pt, polygon: list[list[float]]) -> float:

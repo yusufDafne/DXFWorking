@@ -120,3 +120,8 @@ kısıtlanıyor; ekstra bir geometrik/mantıksal invariant (stairs'teki
   pozitif `ceiling_height_mm` kabul edilir, örn. duvar yüksekliğinden
   büyük bir değer engellenmez (bu proje henüz duvar/kat yüksekliğini
   `rooms[]` seviyesinde bilmiyor, çapraz kontrol için veri yok).
+
+## Muhakeme katkısı (DEV-048)
+**Rol:** gerekçeli muaf (`reasoning/registry.py::REASONING_EXEMPT`, DEV-067). **Gerekçe (düşünüldü, ölçüm/kural vermez):** yansitilmis tavan plani oda tavan kotunu cizer; hacim/havalandirma veche adayi isik.hacim (plan Par.9) henuz yok ve rooms[].ceiling_height_mm gercek projede verilmedikce olculemez.
+**Sağlayıcıya geçiş:** bu modül için bir veçhe doğarsa modül `REASONING_EXEMPT`ten çıkar, `scripts/ceiling/reasoning.py` (rol + ölçüm beyanı;
+veçhe kaydı lens paketinde) yazılır ve `REASONING_PROVIDERS`a girer — kural ve izinler: `docs/agents/KNOWLEDGE_ENGINEER_AGENT.md`.

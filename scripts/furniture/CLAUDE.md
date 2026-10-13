@@ -39,6 +39,9 @@ kısıtlar.** Bu bir *doğrulama* konusudur, sahiplik konusu değildir. rev-12'd
 uygulandı: denetim `scripts/collision/` motoruna aittir; bu modülün tek
 sorumluluğu **kendi ayak izini** üretmektir — bkz. "Çakışma ayak izi".
 
+## Deneme yerleştirme `testfit/`te (DEV-063)
+Bu modül tip ÖLÇÜLERİNİ (katalog) sağlar; "bu oda tipik bir tefriş kümesini alır mı" sınavı (`testfit/`) bu modülü yalnız TÜKETİR, kümeyi burada TUTMAZ (katalog tip ölçüsüdür, küme değil). `furniture/` DEĞİŞMEDİ.
+
 ## Çakışma ayak izi (rev-12)
 
 `furniture/collision.py::footprints(floor, context)`, her yerleşim için
@@ -138,3 +141,8 @@ bir karardır.
   180 yatak) için katalog sözlüğü değiştirilmelidir, context'ten ölçü
   verilemez.
 - Blok öznitelikleri (`ATTRIB`) kullanılmıyor; tefriş adı çizimde görünmez.
+
+## Muhakeme katkısı (DEV-048)
+**Rol:** gerekçeli muaf (`reasoning/registry.py::REASONING_EXEMPT`, DEV-067). **Gerekçe (düşünüldü, ölçüm/kural vermez):** katalog olculerinin sahibidir; deneme yerlestirme olcumunu testfit/ yapar (DEV-063) ve furniture katalogunu yalniz TUKETIR. Furniture kendi veche kaydi gerektirmez.
+**Sağlayıcıya geçiş:** bu modül için bir veçhe doğarsa modül `REASONING_EXEMPT`ten çıkar, `scripts/furniture/reasoning.py` (rol + ölçüm beyanı;
+veçhe kaydı lens paketinde) yazılır ve `REASONING_PROVIDERS`a girer — kural ve izinler: `docs/agents/KNOWLEDGE_ENGINEER_AGENT.md`.

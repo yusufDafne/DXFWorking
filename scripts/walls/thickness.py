@@ -40,24 +40,9 @@ def interior_thickness(exterior_mm: float = DEFAULT_EXTERIOR_THICKNESS_MM) -> fl
 
 
 def _on_edge(wall: dict, polygon: list[list[float]]) -> bool:
-    """Duvar, poligonun bir kenariyla esdogrusal VE >1mm ortusuyor mu."""
-    n = len(polygon)
-    ws, we = wall["start"], wall["end"]
-    for k in range(n):
-        a, b = polygon[k], polygon[(k + 1) % n]
-        ex, ey = b[0] - a[0], b[1] - a[1]
-        elen = (ex * ex + ey * ey) ** 0.5
-        if elen < 1e-9:
-            continue
-        d0 = abs(ex * (ws[1] - a[1]) - ey * (ws[0] - a[0])) / elen
-        d1 = abs(ex * (we[1] - a[1]) - ey * (we[0] - a[0])) / elen
-        if d0 > _TOL or d1 > _TOL:
-            continue
-        t0 = ((ws[0] - a[0]) * ex + (ws[1] - a[1]) * ey) / elen
-        t1 = ((we[0] - a[0]) * ex + (we[1] - a[1]) * ey) / elen
-        if min(max(t0, t1), elen) - max(min(t0, t1), 0.0) > _TOL:
-            return True
-    return False
+    """Duvar, poligonun bir kenariyla esdogrusal VE >1mm ortusuyor mu (hesap `spatial`da, DEV-068)."""
+    from spatial import wall_on_polygon_edge
+    return wall_on_polygon_edge(wall, polygon, _TOL)
 
 
 def _on_envelope(wall: dict, walls: list[dict]) -> bool:

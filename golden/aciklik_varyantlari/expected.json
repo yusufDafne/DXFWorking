@@ -1,6 +1,6 @@
 {
   "source": "golden/aciklik_varyantlari",
-  "entity_count": 274,
+  "entity_count": 288,
   "entity_types": {
     "ARC": 4,
     "ATTRIB": 3,
@@ -8,18 +8,18 @@
     "DIMENSION": 26,
     "HATCH": 4,
     "INSERT": 1,
-    "LINE": 87,
+    "LINE": 89,
     "LWPOLYLINE": 30,
-    "TEXT": 93
+    "TEXT": 105
   },
   "layers": {
     "AKS": 74,
-    "CERCEVE": 39,
+    "CERCEVE": 41,
     "DUVARLAR": 37,
     "KAPI-PENCERE": 17,
     "KESIT": 10,
     "KOT": 12,
-    "METIN": 58,
+    "METIN": 70,
     "OLCU": 27
   },
   "modelspace_bbox": [

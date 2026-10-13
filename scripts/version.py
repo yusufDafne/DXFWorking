@@ -60,7 +60,14 @@ SCRIPTS_ROOT = Path(__file__).resolve().parent
 #           ve `kind` varsayilani `dog_leg` oldu (davranis: projeler kind'i acik yazar).
 #   1.3.0 - rev-27: `floors[].shafts[]` (saft/havalandirma/baca bosluklari;
 #           additif, bkz. scripts/shafts/).
-SCHEMA_VERSION = "1.3.0"
+#   1.4.0 - DEV-065: ust seviye `design_decisions[]` (tasarim karari kaydi; additif, OPT-IN).
+#           Alani tasimayan 1.3.0 projeleri gecerli kalir (yalniz minor surum notu).
+#           DEV-062 (ayni MINOR, additif): `openings[].height` (opsiyonel pencere/aciklik yuksekligi, mm; varsayilan UYDURULMAZ).
+#   1.5.0 - DEV-072: `openings[].sill_height` (denizlik, mm) ve `openings[].window_class` ('standard'|'tall'; boy pencere/balkon kapisi);
+#           additif, OPT-IN. Varsayilan yukseklikler (1200 / boy 2000 + 40 mm denizlik) KATALOGDADIR (kullanici karari 2026-10-12), context'e yazilmaz.
+#   1.6.0 - DEV-073: `elevations[].openings_from` ('generic'|'plan'; cephe plan aciklıklarindan turetilir; additif, OPT-IN, varsayilan eski davranis).
+#   1.7.0 - DEV-076: `openings[].door_class` ('main_entry'|'shop'; opsiyonel) ve `window_class` enum'una 'shopfront' (vitrin); additif, OPT-IN.
+SCHEMA_VERSION = "1.7.0"
 
 # Alani tasimayan eski projeler icin varsayilan. Bugun tum projeler bu
 # surumden gelmektedir.
@@ -77,6 +84,7 @@ CONTRACT_MODULES: tuple[str, ...] = (
     "dimensions",
     "elevations",
     "furniture",
+    "impact",
     "importer",
     "legend",
     "levels",
@@ -84,12 +92,15 @@ CONTRACT_MODULES: tuple[str, ...] = (
     "openings",
     "pafta",
     "palette",
+    "reasoning",
     "rooms",
     "sections",
     "shafts",
+    "spatial",
     "stairs",
     "standards",
     "templates",
+    "testfit",
     "typography",
     "walls",
 )

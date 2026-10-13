@@ -72,6 +72,11 @@ COLLISION_EXEMPT: dict[str, str] = {
     "levels": "Kot (seviye/datum) isareti (DEV-029) bir ANOTASYONDUR "
               "(bayrak+metin) - dimensions/axis ile AYNI gerekce, plan "
               "geometrisinde anlamli bir alan kaplamaz.",
+    "reasoning": "Muhakeme cekirdegi (DEV-060): bilgi/veri tipleri ve kayit; hicbir geometri uretmez, "
+                 "hicbir ayak izi saglamaz; mimari sagduyu WARN kuraldir, fiziksel cakisma degildir.",
+    "spatial": "Salt SORGU kutuphanesi (DEV-059): kapi orta noktasi, oda temasi, ortak kenar, "
+               "goru hatti. Hicbir ayak izi URETMEZ, hicbir geometri cizmez; mevcut "
+               "oda/duvar/kapi ayak izlerini OKUYAN kurallarin ortak yardimcisidir.",
     "palette": "Katman renk organizasyonu (DEV-030); hic geometri uretmez, "
                "yalnizca kod-sahipli katman renk sabitlerini tanimlar "
                "(typography ile AYNI gerekce).",
@@ -98,6 +103,10 @@ COLLISION_EXEMPT: dict[str, str] = {
                  "SONRA, NORMAL pipeline (rooms/walls/openings.collision) "
                  "zaten kapsar - importer ile AYNI 'aday veri uretir, "
                  "denetimi KENDI yapmaz' gerekcesi.",
+    "impact": "Revizyon ETKI ALANI raporudur (DEV-068): context ve collision ayak izlerini OKUR, KENDI ayak izi URETMEZ, context.json'a HIC YAZMAZ, "
+              "DXF cizmez; sonuc turevdir. Kapi acilimi/ayak izi kenarlarini collision sahnesinden alir, cakisma KARARI vermez.",
+    "testfit": "Deneme yerlestirme SINAVIDIR (DEV-063): furniture katalog olculerini ve collision motorunu TUKETIR, KENDI ayak izi "
+               "URETMEZ, context.json'a HIC YAZMAZ, DXF cizmez; sonuc turevdir. Son dogrulamayi collision motoru yapar.",
     "architect": "Iliskisel/mimari mantik kural kutuphanesidir (DEV-039); "
                  "standards ile AYNI 'salt kutuphane, sifir cizim' "
                  "gerekcesi - HIC ezdxf kullanmaz, YENI bir FIZIKSEL ayak "

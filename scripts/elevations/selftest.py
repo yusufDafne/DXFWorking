@@ -122,8 +122,127 @@ def check_window_and_door_counts() -> list[str]:
     return errors
 
 
+def _plan_context() -> dict:
+    """DEV-073: 6000x9000 bina, tek oda (merkez cizgisinde), ic duvar x=3000. Iki kat: ZEMIN (seviye 0, 3000) ve K1 (seviye 1, 3000)."""
+    wall = lambda i, a, b: {"id": i, "start": list(a), "end": list(b), "thickness": 200.0, "layer": "D"}  # noqa: E731
+    walls = [wall("w_alt", (0, 0), (6000, 0)), wall("w_sag", (6000, 0), (6000, 9000)), wall("w_ust", (6000, 9000), (0, 9000)),
+             wall("w_sol", (0, 9000), (0, 0)), wall("w_orta", (3000, 0), (3000, 9000))]
+    rooms = [{"id": "R", "polygon": [[0, 0], [6000, 0], [6000, 9000], [0, 9000]]}]
+    op = lambda i, t, w, pos, wd, **kw: {"id": i, "type": t, "wall_id": w, "position_from_start": pos, "width": wd, **kw}  # noqa: E731
+    f0 = {"id": "zemin", "rooms": rooms, "walls": walls, "openings": [
+        op("pen", "window", "w_alt", 1500.0, 1200.0),                              # normal: 1200 / 900
+        op("boy", "window", "w_alt", 4500.0, 1800.0, window_class="tall"),         # boy: 2000 / 40
+        op("kapi", "door", "w_alt", 3000.5, 900.0),                                # DIS kapi: boy pencere varsayilani
+        op("ic", "door", "w_orta", 4500.0, 900.0),                                 # IC kapi: cepheye GIRMEZ
+        op("sag", "window", "w_sag", 4000.0, 1000.0),                              # yalniz SAG cephe
+        op("ust", "window", "w_ust", 3000.0, 1000.0)]}                             # ne on ne sag
+    f1 = {"id": "k1", "rooms": rooms, "walls": walls, "openings": [
+        op("ozel", "window", "w_alt", 3000.0, 1000.0, height=1500.0, sill_height=700.0),   # kullanici degeri varsayilani ezer
+        op("sag2", "window", "w_sag", 2000.0, 800.0)]}
+    return {"meta": {}, "floors": [f0, f1], "elevations": [
+        {"id": "on", "label": "ON", "width": 6000.0, "axis_source": "vertical", "openings_from": "plan",
+         "levels": [{"label": "ZEMIN", "height": 3000.0}, {"label": "1. KAT", "height": 3000.0}]},
+        {"id": "sag", "label": "SAG", "width": 9000.0, "axis_source": "horizontal", "openings_from": "plan",
+         "levels": [{"label": "ZEMIN", "height": 3000.0}, {"label": "1. KAT", "height": 3000.0}]}]}
+
+
+def check_plan_derived_dev073() -> list[str]:
+    """DEV-073: plan acikliklarindan turetilen cephe. Beklenen dikdortgenler ELLE hesaplanir."""
+    from elevations import derive_level_openings
+    errors: list[str] = []
+    ctx = _plan_context()
+
+    def eq(label, got, want):
+        if got != want:
+            errors.append(f"{label}: {got!r} != {want!r}")
+
+    r, notes = derive_level_openings(ctx, ctx["elevations"][0])
+    key = lambda x: (x.opening_id, x.x0, x.x1, x.sill, x.height, x.kind, x.class_key)  # noqa: E731
+    eq("on cephe zemin: x0 sirali, 3 aciklik (ic kapi/sag/ust YOK)", [key(x) for x in r[0]],
+       [("pen", 900.0, 2100.0, 900.0, 1200.0, "window", "window.standard"),
+        ("kapi", 2550.5, 3450.5, 40.0, 2000.0, "door", ""),
+        ("boy", 3600.0, 5400.0, 40.0, 2000.0, "window", "window.tall")])
+    eq("on cephe K1: kullanici degeri (1500/700) varsayilani ezer", [key(x) for x in r[1]],
+       [("ozel", 2500.0, 3500.0, 700.0, 1500.0, "window", "window.standard")])
+    eq("notlar bos (temiz)", notes, [])
+    r2, _ = derive_level_openings(ctx, ctx["elevations"][1])
+    eq("sag cephe zemin: yatay eksen = plandaki Y", [key(x) for x in r2[0]], [("sag", 3500.0, 4500.0, 900.0, 1200.0, "window", "window.standard")])
+    eq("sag cephe K1", [key(x) for x in r2[1]], [("sag2", 1600.0, 2400.0, 900.0, 1200.0, "window", "window.standard")])
+    # kaynaklar adiyla bildirilir
+    door = r[0][1]
+    eq("dis kapi kaynagi (boy pencere varsayilani) adiyla", ("boy pencere varsayilani" in door.height_source, "boy pencere varsayilani" in door.sill_source), (True, True))
+    eq("kullanici yuksekligi 'verilen'", (r[1][0].height_source, r[1][0].sill_source), ("verilen", "verilen"))
+    # DIS kapida kullanici `height` degeri varsayilani ezer (denizlik boy pencere varsayilani kalir)
+    kh = _plan_context()
+    kh["floors"][0]["openings"][2]["height"] = 2400.0
+    rk, _ = derive_level_openings(kh, kh["elevations"][0])
+    kapi = [x for x in rk[0] if x.opening_id == "kapi"][0]
+    eq("dis kapi: verilen yukseklik gecer, denizlik varsayilan", (kapi.height, kapi.sill, kapi.height_source), (2400.0, 40.0, "verilen"))
+    # DEV-076: SINIFLI kapilar kendi sinif varsayilanlarini kullanir (siniflandirilmamis kapi boy pencere varsayilani)
+    cd = _plan_context()
+    cd["floors"][0]["openings"][2]["door_class"] = "main_entry"
+    cd["floors"][0]["openings"].append({"id": "dukkan", "type": "door", "wall_id": "w_alt", "position_from_start": 5000.0, "width": 800.0,
+                                        "door_class": "shop"})
+    cd["floors"][0]["openings"].append({"id": "vit", "type": "window", "wall_id": "w_sag", "position_from_start": 7000.0, "width": 800.0,
+                                        "window_class": "shopfront"})
+    rc, _ = derive_level_openings(cd, cd["elevations"][0])
+    by = {x.opening_id: x for x in rc[0]}
+    eq("ana giris kapisi: sinif yuksekligi 2100 / esik 40", (by["kapi"].height, by["kapi"].sill, by["kapi"].class_key), (2100.0, 40.0, "door.main_entry"))
+    eq("dukkan kapisi: sinif yuksekligi", (by["dukkan"].height, by["dukkan"].sill, by["dukkan"].class_key), (2100.0, 40.0, "door.shop"))
+    eq("ana giris kaynagi sinif sabiti", by["kapi"].height_source, "varsayilan:DEFAULT_MAIN_ENTRY_HEIGHT_MM")
+    rs, _ = derive_level_openings(cd, cd["elevations"][1])
+    eq("sag cephe vitrin: 2200 / 40", [(x.height, x.sill, x.class_key) for x in rs[0] if x.opening_id == "vit"], [(2200.0, 40.0, "window.shopfront")])
+    # opt-in: generic cephe -> hicbir sey turetilmez
+    g = {**ctx["elevations"][0]}
+    del g["openings_from"]
+    eq("generic cephe turetmez", derive_level_openings(ctx, g), ({}, []))
+    # notlar: seviye yuksekligini asan aciklik, cephe disina dusen aciklik (kirpilmaz)
+    bad = _plan_context()
+    bad["floors"][1]["openings"][0]["sill_height"] = 1600.0                      # 1600 + 1500 = 3100 > 3000
+    bad["floors"][0]["openings"][0]["position_from_start"] = 5800.0               # x1 = 6400 > 6000
+    _, n = derive_level_openings(bad, bad["elevations"][0])
+    eq("iki not (asma + dis)", len(n), 2)
+    eq("seviye asma notu", any("seviye yuksekligini" in x for x in n), True)
+    eq("cephe disi notu", any("disina dusuyor" in x for x in n), True)
+    # sozlesme hatalari
+    for label, mut in (("kat/seviye sayisi", lambda c: c["elevations"][0]["levels"].pop()),
+                       ("axis_source yok", lambda c: c["elevations"][0].pop("axis_source"))):
+        c = _plan_context()
+        mut(c)
+        try:
+            derive_level_openings(c, c["elevations"][0])
+            errors.append(f"{label}: ValueError beklenirdi")
+        except ValueError:
+            pass
+    # egik dis duvar atlanir ve soylenir
+    c = _plan_context()
+    c["floors"][0]["walls"].append({"id": "w_egik", "start": [0, 0], "end": [3000, 3000], "thickness": 200.0, "layer": "D"})
+    c["floors"][0]["openings"].append({"id": "egik", "type": "window", "wall_id": "w_egik", "position_from_start": 2000.0, "width": 800.0})
+    _, n = derive_level_openings(c, c["elevations"][0])
+    eq("egik/ic aciklik cepheye girmez (notlar temiz ya da egik notu)", all(("egik" in x) for x in n), True)
+    # CIZIM: dikdortgen sayisi = turetilen + zemin-alti DASHED; context'siz plan cephe reddedilir
+    doc = ezdxf.new()
+    msp = doc.modelspace()
+    ElevationSheet.draw(msp, ctx["elevations"][0], 0.0, 120.0, _NullAxisGrid(), 120.0, context=ctx)
+    rects = list(msp.query("LWPOLYLINE[layer=='KAPI-PENCERE']"))
+    eq("DXF: 3 + 1 = 4 aciklik", len(rects), 4)
+    ys = sorted(round(min(p[1] for p in e.get_points("xy"))) for e in rects)
+    eq("DXF: dikdortgen alt kenarlari (ZEMIN: 40, 40, 900; K1: 3700)", ys, [40, 40, 900, 3700])
+    try:
+        ElevationSheet.draw(ezdxf.new().modelspace(), ctx["elevations"][0], 0.0, 120.0, _NullAxisGrid(), 120.0)
+        errors.append("context'siz plan cephe reddedilmeli")
+    except ValueError:
+        pass
+    # jenerik cephe cizimi DEGISMEDI (geriye uyumluluk)
+    doc2 = ezdxf.new()
+    ElevationSheet.draw(doc2.modelspace(), ELEVATION, 0.0, 120.0, _NullAxisGrid(), 120.0)
+    eq("jenerik cephe hala 5 aciklik", len(list(doc2.modelspace().query("LWPOLYLINE[layer=='KAPI-PENCERE']"))), 5)
+    return errors
+
+
 def main() -> int:
     groups = (
+        ("plan acikliklarindan turetilen cephe (DEV-073)", check_plan_derived_dev073()),
         ("seviye istifi (elle hesaplanabilir)", check_placements_hand_computable()),
         ("pafta araligi machine_room'u kapsiyor", check_extent_includes_machine_room()),
         ("zemin-alti -> DASHED (yanlis-pozitif)", check_below_ground_gets_dashed_linetype()),

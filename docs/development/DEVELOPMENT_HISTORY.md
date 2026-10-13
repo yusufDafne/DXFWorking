@@ -4,6 +4,167 @@ Aktif geçmiş kapasitesi: **50 kayıt**. En eski tamamlanmış kayıt, 51. kay�
 alınırken silinir. Ayrıntılı teknik değişiklikler git geçmişi ve ilgili proje
 provenance kayıtlarıyla ilişkilendirilir.
 
+## HD-057 — Açıklık sınıfları kataloğu (DEV-076)
+
+- **Durum:** COMPLETED
+- **Tamamlanma:** 2026-10-12
+- **Kapsam:** `scripts/openings/{classes,heights,__init__,selftest}.py`+`CLAUDE.md`, `scripts/legend`, `scripts/elevations/derive.py`, `scripts/defaults_report.py`, `schema/design.schema.json` (1.7.0), `scripts/version.py`, kök `CLAUDE.md`, operatör belgesi.
+- **Sonuç:** boy pencere 1600×2000/40, vitrin 2000×2200/40, ana giriş 1700×2100/40, dükkân kapısı 1700×2100/40 (ayrı sınıf, bağımsız sabitler); kullanıcı değeri varsayılanı ezer; denizlik/eşik 40 mm boy pencereden devralındı (kullanıcı onayı 2026-10-12).
+- **Doğrulama:** elle hesaplanan değerler, 14 kasıtlı bozma yakalandı, tüm selftest/golden temiz, gerçek proje `validate` çıktısı değişmedi.
+- **Sonraki direktif:** rev-29.
+
+## HD-056 — Varsayılan denizlik 900 mm ve pencere yerleşimi (DEV-075)
+
+- **Durum:** COMPLETED
+- **Tamamlanma:** 2026-10-12
+- **Kapsam:** `scripts/openings/{heights,placement,selftest}.py`, `scripts/validate.py`, `scripts/window_placement_report.py`, belgeler.
+- **Sonuç:** normal pencere denizliği 900 mm; varsayılan konum odanın dış duvar boyunca serbest aralığının ortası (iç duvar birleşimleri çıkarılır, açık planda oda aralığına kırpılır); birleşimde pencere UYARI.
+- **Doğrulama:** elle hesaplanan aralıklar, kasıtlı bozmalar; gerçek projede 76/76 pencere uyarısız.
+
+## HD-055 — Cephenin plan açıklıklarından türetilmesi (DEV-073)
+
+- **Durum:** COMPLETED
+- **Tamamlanma:** 2026-10-12
+- **Kapsam:** `scripts/elevations/{derive,__init__,selftest}.py`, `scripts/spatial`, `scripts/validate.py`, `scripts/preview.py`, şema 1.6.0, golden `plandan_cephe`.
+- **Sonuç:** `openings_from: "plan"` ile cephe açıklıkları planın dış duvar açıklıklarından (genişlik, yükseklik, denizlik, konum) türetilir; kat↔seviye sıralamayla; DXF ve önizleme aynı kaynaktan.
+- **Doğrulama:** elle hesaplanan dikdörtgenler, 12 kasıtlı bozma yakalandı; jenerik cephe değişmedi.
+
+## HD-054 — Kuzey sözleşmesi (DEV-074)
+
+- **Durum:** COMPLETED
+- **Tamamlanma:** 2026-10-12
+- **Kapsam:** `scripts/northarrow/{__init__,selftest}.py`+`CLAUDE.md` (`check_north_convention`, `normalize_north_angle`, `NORTH_HALF_RANGE_DEG`), `scripts/validate.py`, `schema/design.schema.json` (açıklama), kök `CLAUDE.md` "Kuzey oku", `docs/agents/PROJECT_OPERATOR_AGENT.md` ("Yön" satırı).
+- **Sonuç:** vaziyet planında kuzey daima yukarı; proje planının kuzeye en yakın cephesi paftanın üst kenarına paralel; `meta.north_angle` ∈ [−45°, +45°] (dik açılı binada cepheler 90° arayla → en yakın cephe ≤ 45°; eşdeğer açılar normalize: 350 = −10); aralık dışı açı `validate.py` HATASI ("proje sessizce döndürülmez", otomatik migrasyon yok); alan yoksa sessiz (ok çizilmez, yön uydurulmaz). Yerleşim planını analiz eden altyapı yok: yön yalnız açıyla. Kullanıcı kararları: önce kural + doğrulama, vaziyet paftası ayrı madde (`DEV-024`).
+- **Doğrulama:** sınır değerleri (±45 geçer, ±45,01 hata), normalize değerleri, veri yokken sessizlik; 5 kasıtlı bozma yakalandı (biri `KeyError` çökmesiyle); tüm selftest'ler, `--golden-set`, `doc_check` temiz; gerçek projede `validate` çıktısı ve DXF değişmedi.
+- **Golden etkisi:** yok. **Sınır:** örnek projeye `north_angle` yazılmadı (değer kullanıcıdan); aralık dışı açıda otomatik yeniden yerleştirme yok. **Sonraki direktif:** örnek proje revizyonu (rev-29).
+
+## HD-053 — Pencere yüksekliği ve denizlik (DEV-072)
+
+- **Durum:** COMPLETED
+- **Tamamlanma:** 2026-10-12
+- **Kapsam:** `scripts/openings/{heights,__init__,selftest}.py`+`CLAUDE.md`, `scripts/legend/__init__.py`+`CLAUDE.md`, `scripts/preview.py`, `scripts/validate.py`, `scripts/defaults_report.py`, `scripts/version.py` (şema 1.5.0), `schema/design.schema.json`, `scripts/reasoning/lenses/isik_hava_yonelim.py` (metin), 10 `golden/*/expected.json`, kök `CLAUDE.md`, operatör kataloğu.
+- **Sonuç:** katalog varsayılanları (normal pencere 1200 mm; boy pencere 2000 mm yükseklik, 40 mm denizlik — "kullanıcı kararı 2026-10-12"), `context.json`a yazılmaz; `openings[].height`/`sill_height` verilirse geçerli (ölçü ve düşey konum dinamik); normal pencere denizliği `verilmedi` ve hiçbir yerde 0 sayılmaz; boy pencere `window_class: "tall"` (yeni `type` açılmadı: `type == "window"` dallanan 6 yer); denizlik+yükseklik kat yüksekliğini aşarsa UYARI; cetvel YÜKSEKLİK/DENİZLİK sütunları (`PB120`, marka benzersizliği korumalı); kullanılan varsayılanlar adıyla `defaults_report.py`'de. Kullanıcı kararları: 4 cm yalnız boy pencere için; cephe plan açıklıklarından türetilecek (`DEV-073`, engelli); vaziyet/kuzey kuralı ayrı madde.
+- **Doğrulama:** elle hesaplanan değerler ve sınırlar; 10 kasıtlı bozma yakalandı (biri `ValueError` korumasıyla); tüm selftest'ler temiz; `validate` çıktısı yalnız sürüm numarası satırlarında farklı (1.4.0→1.5.0); 10 golden `expected.json` `--update` ile yenilendi (fark yalnız cetvel: TEXT +12, LINE +2); kapak damgası `SISTEM: 1.5.0`.
+- **Golden etkisi:** bilinçli (yalnız cetvel). **Sınır:** örnekte 76 pencere 1200 mm varsayılanıyla, denizlikleri `verilmedi`; `output/` yeniden üretilmedi; balkon kapısı `type: door`; pencere/taban oranı `draft` (eşik kaynaksız). **Sonraki direktif:** `DEV-073` (denizlik değeri gelince), örnek proje revizyonu.
+
+## HD-052 — Genel kontrol: muhakeme programı kapanış doğrulaması (DEV-059…DEV-070)
+
+- **Durum:** COMPLETED
+- **Tamamlanma:** 2026-10-12
+- **Kapsam:** salt doğrulama; kod değişmedi. Plan §10.3 sonucu plana işlendi.
+- **Sonuç:** tüm modül selftest'leri (collision, dimensions, axis, openings, rooms, elevations, walls, importer, sections, northarrow, spatial, reasoning, testfit, shafts, stairs, standards, templates, architect, impact) rc=0; `--golden-set` rc=0; `validate.py` rc=0 ve çıktısı DEV-059'dan beri BİREBİR aynı (17 satır); `doc_check` temiz. Plan §10.3 geriye dönük doğrulama dördü de geçti (bkz. plan §10.3 "Sonuç").
+- **Açık kalan:** `DEV-071` soğuk başlangıç sınavı (§8.5) — bağımsız reviewer koşusu gerektirir, kullanıcı onayı bekliyor; terfi (`shadow→active`) kararı hiçbir veçhe için verilmedi (tümü shadow/draft/idea; açık kullanıcı kararı); `REVIEW_MAX_AGE_DAYS=365` onayı; proje `meta.schema_version` 1.3.0→1.4.0 revizyonu; `meta.north_angle` değeri (kullanıcıdan); plan §11 kararları (#6 hangi yönetmelikler önce, #9 misafir WC).
+- **Golden etkisi:** yok. **Sonraki direktif:** kullanıcı kararı.
+
+## HD-051 — Tüm modüller: muhakeme katkısı kapanışı (DEV-067)
+
+- **Durum:** COMPLETED
+- **Tamamlanma:** 2026-10-12
+- **Kapsam:** `scripts/reasoning/registry.py` (PENDING kaldırıldı, 23 gerekçeli muaf), `scripts/reasoning/{__init__,selftest,CLAUDE}.py/md`, `scripts/doc_check.py` (#10 iki durumlu, #10b, #10c), 20 modülün `CLAUDE.md`si (standart bölüm), `scripts/CLAUDE.md`, plan §8.
+- **Sonuç:** her modül ya sağlayıcı (architect, openings, shafts, testfit) ya da gerekçeli muaf; gerekçe `Dusunuldu, olcum/kural vermez:` ile başlar ve plan §9'daki sonraki veçhe adını yazar. Hiçbir modül yeni sağlayıcı yapılmadı (veçhe bilgisi uydurulmadı). Kullanıcı kararları: kapı #10 üç durumlu → bu maddeyle iki durumlu bloklayıcı; veçhe kaydı yalnız lens paketlerinde; muaf sözlüğü merkezi (`registry.py`); dalga 1 `061/062/063` içinde kapanmıştı.
+- **Doğrulama:** `reasoning/selftest.py` 38/38 (kapı #10 altı kasıtlı bozma, #10b/#10c; bir bozma ilk turda sızdı ve kapatıldı); tüm selftest'ler, `--golden-set`, `doc_check` temiz; `validate` çıktısı ve şema değişmedi.
+- **Golden etkisi:** yok. **Sınır:** `standards` kuralları veçhe olarak kayıtlı değil (gerekçede yazılı); muaf kararları kullanıcı tarafından değiştirilebilir. **Sonraki direktif:** genel kontrol.
+
+## HD-050 — `impact/`: revizyon etki alanı raporu (DEV-068)
+
+- **Durum:** COMPLETED
+- **Tamamlanma:** 2026-10-12
+- **Kapsam:** `scripts/impact/` (yeni: `graph.py`, `report.py`, `selftest.py`, `CLAUDE.md`), `scripts/impact_report.py`, `scripts/spatial/{__init__,selftest,CLAUDE}` (`wall_edge_overlap`, `wall_on_polygon_edge`), `scripts/walls/thickness.py`, `scripts/standards/measure.py` (ortak hesaba bağlandı), `scripts/doc_check.py` (#17), `scripts/version.py`, `scripts/collision/scene.py`, `scripts/reasoning/registry.py` (muafiyet kayıtları), kök ve `scripts/CLAUDE.md`.
+- **Sonuç:** düğüm = (kat, tür, id); kenarlar açık tablolardan (şema alan adlarıyla) ve `spatial`/`collision` sorgularından; duvara kenarla varılınca etki yalnız ilgili duvar parçasından (span) ilerler (span olmadan `uC_banyo` halka-2 = 25 düğüm, span ile 4); aynı birim ve kat ikizi yayılmaz, "ilgili" listelenir; bilinmeyen eleman reddedilir; kapsam raporu bağsız elemanları ve kapsam dışı alanları adıyla söyler. Kullanıcı kararları: v1 yalnız rapor (patch planı ayrı), açık tablo + collision ayak izleri, `blast_radius` + `touched_from_diff` girdisi, span düğümü ve yeni tolerans yok.
+- **Doğrulama:** `impact/selftest.py` 10 kontrol (elle çıkarılan kümeler, yanlış-pozitifler, kasıtlı bozmalar; bir bozma ilk turda sızdı ve zincir testiyle kapatıldı); kapı #17 sahte tablolarla 8 bozmada kırılır; `spatial` selftest'i eski↔yeni örtüşme diferansiyeli ile genişledi; tüm selftest'ler, `--golden-set`, `doc_check` temiz; `validate` çıktısı birebir aynı.
+- **Golden etkisi:** yok. **Sınır:** düşey bağ yalnız kimlik eşleşmesi; pafta düzeyi bağlar (kolon↔aks, ölçü↔baloncuk, kesit) yalnız `DERIVED_OUTPUTS`ta adıyla; operatör akışına bağlanmadı; `depth` varsayılanı 2 bir sunum tercihi. **Sonraki direktif:** `DEV-067`.
+
+## HD-049 — `brief/` v0: ihtiyaç toplama sözleşmesi (DEV-069)
+
+- **Durum:** COMPLETED
+- **Tamamlanma:** 2026-10-12
+- **Kapsam:** `docs/agents/PROJECT_OPERATOR_AGENT.md` ("İhtiyaç toplama" + soru kataloğu), `scripts/CLAUDE.md` (`brief/` satırı), `DEVELOPMENT_TASKS.md`. Kod ve şema DEĞİŞMEDİ.
+- **Sonuç:** her soru opsiyonel; "bilmiyorum"/"sen karar ver" geçerli; kullanılan varsayılan adıyla bildirilir ve yalnız kaynaklı katalog/modül sabiti olabilir; varsayılanı olmayan değerde (birim programı, kat ölçüsü, kat yüksekliği, kuzey yönü, pencere yüksekliği) üretim durur ve sorar, yön uydurulmaz; ihtiyaç cümleleri yeni `requests.jsonl` satırı açılmadan ilk işleyen revizyonun request metnine aynen girer. Kullanıcı kararları: opsiyonel + varsayılanlar adıyla bildirilir; v0 = operatör talimatı + soru kataloğu.
+- **Doğrulama:** katalogdaki on varsayılan sabitin kodda var olduğu grep ile; `doc_check` temiz. Kasıtlı bozma uygulanamaz (kod yok).
+- **Golden etkisi:** yok. **Sınır:** hane ihtiyaçları (misafir, ev ofisi …) hiçbir ölçüme bağlı değil; v1 `brief` şema alanı v0 gerçek konuşmada koşulana dek yok. **Sonraki direktif:** `DEV-068`.
+
+## HD-048 — `reasoning/`: terfi politikası ve ayırt edicilik raporu (DEV-066)
+
+- **Durum:** COMPLETED
+- **Tamamlanma:** 2026-10-12
+- **Kapsam:** `scripts/reasoning/{model,promotion,__init__,selftest}.py`, `scripts/doc_check.py` (#16), `scripts/reasoning_report.py` (`--promotion`, `--fp-budget`), `scripts/reasoning/CLAUDE.md`, `docs/agents/KNOWLEDGE_ENGINEER_AGENT.md`, plan §7.2, `scripts/CLAUDE.md`.
+- **Sonuç:** imzalı `Promotion` kaydı (karar `kullanıcı`dan, var olan HD kaydı, tutarlı sayılar, dejenere olmayan tetik oranı) — `active` (legacy olmayan) veçhe için zorunlu, `doc_check` #16 denetler; terfi kontrol listesi (son madde açık kullanıcı kararı, otomatik tamamlanmaz); sayısal örneklem kapısı yok, N yazılır ve kanıt zayıfsa söylenir; dejenere veçhe `shadow`da kalır; bayat/boş `provenance.reviewed` listesi; yanlış-pozitif bütçesi yalnız kullanıcı parametresiyle. Kullanıcı kararları: asgari makine 060/061'de, sayma birimi tekilleştirilmiş özne, sayısal kapı yok, legacy muaf.
+- **Doğrulama:** `reasoning/selftest.py` 38/38 (10 kasıtlı bozma yakalandı, ikisi ilk turda sızıp güçlendirildi); etkilenen selftest'ler, `--golden-set`, `doc_check` temiz; `validate` çıktısı ve şema değişmedi. Bugünkü rapor: teknik olarak terfie hazır veçhe yok; üç ışık/hava veçhesi dejenere.
+- **Golden etkisi:** yok. **Sınır:** hiçbir veçhe terfi ettirilmedi; `REVIEW_MAX_AGE_DAYS=365` onay bekliyor; sunum ağırlığı olmadığı için ağırlık kalibrasyonu yazılmadı; plan §8.3 bütçe sayıları kodlanmadı. **Sonraki direktif:** `DEV-069`.
+
+## HD-047 — `testfit/` + yaşanabilirlik mercek paketi (DEV-063)
+
+- **Durum:** COMPLETED
+- **Tamamlanma:** 2026-10-12
+- **Kapsam:** `scripts/testfit/` (yeni: `library/engine/measure/reasoning/selftest`, `CLAUDE.md`), `scripts/reasoning/lenses/yasanabilirlik.py`, 4 vaka, `scripts/collision/scene.py` (`COLLISION_EXEMPT`), `scripts/version.py`, `scripts/reasoning/{registry,selftest}.py`, `scripts/CLAUDE.md`, kök `CLAUDE.md`, `scripts/furniture/CLAUDE.md` (işaretçi).
+- **Sonuç:** deneme yerleştirme SINAVI (çözüm önerisi değil, `context.json`a yazılmaz): K1–K4 kapasite merdiveni, net oda + katalog ölçüsü + kapı açılım sektörü, son doğrulama `collision` motoruyla; arama bütçesi aşılırsa "ölçülemedi". 4 veçhe: 2 `shadow` (tek yatak / çift yatak+gardırop sığar mı; Katman A, pay 0), 1 `draft` (geçiş payı, Katman B kodlanmadı), 1 `idea`. Kullanıcı kararları: yeni modül `testfit/`, v1 yalnız yatak odası, K1–K4, Katman A/B ayrımı.
+- **Doğrulama:** elle hesaplanan sınırlar (K4 900×2000; K2 2195/2194 — 5 mm temas toleransı), kapı sektörü/sürme kapı, L oda, bütçe; rev-28 5 yatak odası K1 ve yerleşim `collision.check_context` ile çelişmez; kasıtlı küçültülmüş `uC_oda` yakalanır; `testfit` 5/5, `reasoning` 35/35, 7 kasıtlı bozma yakalandı; tüm selftest'ler, `--golden-set`, `doc_check` temiz; `validate` çıktısı ve şema değişmedi.
+- **Golden etkisi:** yok. **Sınır:** v1 yalnız yatak odası; tetik 0/5 (dejenere, kanıt sentetik); K2 beklentisi 'tercih'; Katman B payları mimardan; eksen-hizalı yerleşim. **Sonraki direktif:** `DEV-066`.
+
+## HD-046 — `reasoning/`: ışık-hava-yönelim mercek paketi (DEV-062)
+
+- **Durum:** COMPLETED
+- **Tamamlanma:** 2026-10-09
+- **Kapsam:** `scripts/reasoning/lenses/isik_hava_yonelim.py`, `scripts/openings/{daylight,reasoning}.py`, `scripts/shafts/{ventilation,reasoning}.py`, `scripts/spatial/__init__.py` (yalnız ekleme), `schema/design.schema.json` (`openings[].height`), `scripts/reasoning/{model,coverage,registry,selftest}.py`, `scripts/reasoning_report.py`, 8 vaka, modül `CLAUDE.md`'leri.
+- **Sonuç:** 5 veçhe (4 `shadow`: yaşam mahalli penceresi, çapraz havalandırma, ıslak hacim havalandırması, salon yönelimi; 1 `draft`: pencere/taban oranı). Kullanıcı kararları: yaşam mahalli/ıslak hacim kümeleri lens-yerel, `tesisat`/`havalandirma` şaftı havalandırma sayılır (≥300 mm), cephe prob noktasıyla, pencere yüksekliği opt-in. Yön uydurulmaz: `meta.north_angle` yoksa yönelim koşamaz ve söyler. Kapsam raporu aynı nedeni tek satırda toplar (`Facet.needs_note_tr`).
+- **Doğrulama:** rev-28 normal1: 14 pencerenin dış yönü tayin edildi; penceresiz yaşam mahalli 0/8, çapraz havalandırma yetersiz 0/3, havalandırmasız ıslak hacim 0/6 (hepsi dejenere); `north_angle=30` ile yönelim 1/3; `reasoning/selftest.py` 34/34 (6 kasıtlı bozma yakalandı, biri test eklenerek); tüm selftest'ler, `--golden-set`, `doc_check` temiz; `validate` çıktısı değişmedi.
+- **Golden etkisi:** yok. **Sınır:** gerçek projede `north_angle` yok; yönelim eşiği 'tercih' (kaynaksız); pencere/taban oranı için eşik ve yükseklik verisi yok; çapraz-mercek gerilimi yazılmadı. **Sonraki direktif:** kullanıcı bekletiyor (`DEV-063`).
+
+## HD-045 — `docs/agents/`: bilgi mühendisi rolü ve büyütme protokolü (DEV-070)
+
+- **Durum:** COMPLETED
+- **Tamamlanma:** 2026-10-09
+- **Kapsam:** `docs/agents/KNOWLEDGE_ENGINEER_AGENT.md` (yeni), `docs/agents/{REVIEWER_VALIDATOR,SYSTEM_DEVELOPMENT}_AGENT.md`, `docs/development/AGENT_PERMISSIONS.json`, `docs/development/reviews/README.md`, kök `CLAUDE.md`, `scripts/reasoning/{CLAUDE.md,selftest.py}`.
+- **Sonuç:** rol, izin sınırı, Vaka→İlke→Veçhe, `DEV-061` paketinden damıtılmış kontrol listesi, terfi merdiveni (`active` yalnız kullanıcı kararı), yapmayacaklar; `knowledge_engineering` izni; `docs/development/reviews/` yalnız reviewer'ın (geliştirici ve bilgi mühendisi için yasak — reviewer bağımsızlığı); soğuk başlangıç sınavı `DEV-071`e ayrıldı. Kullanıcı kararları: sınav ayrı madde, mühürlü paket, 3 koşu ≥2/3, reviews yolu.
+- **Doğrulama:** rol/izin tutarlılığı `reasoning/selftest.py`de mekanik (31/31); `doc_check` temiz; kod ve `validate` çıktısı değişmedi.
+- **Golden etkisi:** yok. **Sınır:** belgenin yeterliliği henüz sınanmadı (`DEV-071`); "başka modülün mevcut kodunu değiştirme" kuralı mekanik zorlanamıyor (belge + reviewer). **Sonraki direktif:** `DEV-062`.
+
+## HD-044 — Şema 1.4.0 + `reasoning/`: tasarım kararı kaydı (DEV-065)
+
+- **Durum:** COMPLETED
+- **Tamamlanma:** 2026-10-09
+- **Kapsam:** `schema/design.schema.json`, `scripts/version.py` (1.4.0), `scripts/reasoning/decisions.py` (yeni), `scripts/reasoning/{explain,__init__,selftest}.py`, `scripts/reasoning_dialogue.py` (`decide`), `scripts/validate.py` (+3 satır), operatör/reviewer talimatları, kök ve modül `CLAUDE.md`'leri, plan §5.5.
+- **Sonuç:** opt-in üst seviye `design_decisions[]`; bir kayıt `covers[]` ile N bulguyu kapsar, ölçülen sayıların anlık görüntüsü yazılır; v1'de herhangi bir ölçüm değişimi (iyileşme dahil) kabulü düşürür ve konu ilk sırada "önce → şimdi" ile geri gelir; kanıtı aynı kabul sessiz ama sayısı söylenir; boş gerekçe `make_decision`/`decide`/`validate.py`de reddedilir. Kullanıcı kararları: kayıt `context.json`da, `covers[]`, v1 düşme kuralı, anlık görüntü.
+- **Doğrulama:** alanı olmayan context aynı çıktıyı verir (sürüm uyarısı satırı hariç: 15 → 16, konu sayısı değişmez); `reasoning/selftest.py` 30/30 (6 kasıtlı bozma yakalandı); 16 selftest, `--golden-set`, `doc_check` temiz.
+- **Golden etkisi:** yok. **Sınır:** gerçek projenin `meta.schema_version` değeri 1.3.0 (güncellemek ayrı revizyon); gerçek projeye karar yazılmadı; ekleme-yalnızlık konvansiyonla (reviewer git diff). **Sonraki direktif:** `DEV-070`.
+
+## HD-043 — `reasoning/`: açıklama motoru, rakam lint'i, diyalog köprüsü (DEV-064)
+
+- **Durum:** COMPLETED
+- **Tamamlanma:** 2026-10-09
+- **Kapsam:** `scripts/reasoning/explain.py` (yeni), `scripts/reasoning_dialogue.py` (yeni), `scripts/reasoning/{model,registry,__init__,selftest}.py`, `lenses/mahremiyet.py` (çözüm yolları, `why_tr` temizliği), `scripts/doc_check.py` (#13), `docs/agents/*`, `docs/development/AGENT_PERMISSIONS.json`, kök `CLAUDE.md`, plan §5.3.
+- **Sonuç:** şablon rakam lint'i (3 yer-tutucu sınıfı, Unicode rakam, satır başı numaralandırma istisnası); uydurmayan `render`; sunum kuyruğu (yalnız `active` + görünen `legacy.*`, `shadow` asla); 5 parçalı anlatım, ≤3 seçenek, `sor`/`devret` (ciddi bulguda ya da çözüm yokken devir geçersiz); `dialogue.jsonl` ekleme-yalnız ve kaynaksız sayıyı reddeden `append`/`verify`. Kullanıcı kararları: anlatı `dialogue.jsonl`'de, köprü çekirdek dışında, 'konu' = kat atılmış kimlik birleştirme, katı lint, seviye bir kez sorulur ve context'e yazılmaz.
+- **Doğrulama:** `validate.py` değişmedi; rev-28 15 satır → 3 konu; `reasoning/selftest.py` 26/26 (6 kasıtlı bozma testleri kırdı); 16 selftest, `--golden-set`, `doc_check` temiz.
+- **Golden etkisi:** yok. **Sınır:** `legacy.*` anlatımı kategori düzeyinde; `{olcum:..}` kullanan gerçek veçhe henüz yok. **Sonraki direktif:** `DEV-065`.
+
+## HD-042 — `reasoning/`: mahremiyet mercek paketi (DEV-061)
+
+- **Durum:** COMPLETED
+- **Tamamlanma:** 2026-10-09
+- **Kapsam:** `scripts/reasoning/lenses/mahremiyet.py`, `scripts/reasoning/cases/` (22 vaka), `scripts/architect/privacy.py`, `scripts/architect/reasoning.py`, `scripts/reasoning/{registry,coverage,selftest}.py`, `scripts/reasoning_report.py`, `scripts/doc_check.py`, modül/`scripts` `CLAUDE.md`'leri.
+- **Sonuç:** 14 veçhe: 5 `active`+`legacy` (`validate.py`nin çağırdığı; iddia selftest'te koddan sabit), 6 `shadow` (DEV-052/053 + 4 yeni ölçüm), 2 `draft`, 1 `idea`; 3 koku; `architect` PENDING'den sağlayıcıya geçti. Kullanıcı kararları: legacy/shadow ayrımı, komşu giriş eşiği 3000 mm (tercih, kaynaksız), ıslak ortak duvar iki veçhe (duvar türü ayırıcısı yok), vakalar git geçmişinden değil elle yazılmış sentetik. Kapsam raporu `idea`/`draft`i "ölçülmeyen" diye söyler; `doc_check` #12 `legacy`yi muaf tutar.
+- **Doğrulama:** `validate.py`/`rules.py` değişmedi; rev-28 normal1: #4 uC 16°/1978, uB 20°/2025; #5 uB–uC 1485 mm; #6 5/6; sandviç banyo 0/6 (dejenere); `reasoning/selftest.py` 19/19 (4 kasıtlı bozma testleri kırdı); 16 selftest, `--golden-set`, `doc_check` temiz.
+- **Golden etkisi:** yok. **Sınır:** çapraz-mercek gerilimleri kayıtsız; misafir WC `idea`; DEV-052/053 `validate.py`ye bağlı değil (ayrı karar). **Sonraki direktif:** `DEV-064`.
+
+## HD-041 — `reasoning/`: mimari muhakeme çekirdeği (DEV-060)
+
+- **Durum:** COMPLETED
+- **Tamamlanma:** 2026-10-09
+- **Kapsam:** `scripts/reasoning/` (yeni), `scripts/reasoning_report.py` (yeni), `scripts/doc_check.py`, `scripts/version.py`, `scripts/collision/scene.py`, `scripts/CLAUDE.md`, kök `CLAUDE.md`, plan belgesi.
+- **Sonuç:** mercek→veçhe→bulgu modeli, kayıt defteri (`REASONING_PROVIDERS`/`EXEMPT`/`PENDING`), kararlı bulgu anahtarı + regresyon farkı + kat-bağımsız kümeleme, `validate` stdout adaptörü, kapsam raporu (koştu/koşamadı/uygulanmaz), asgari terfi ölçeri, vaka koşucusu; `doc_check` kapıları #10 (üç durumlu, PENDING donuk), #11, #12, #14, #15 (bilgi). Kullanıcı kararları: `scripts/reasoning/`, `validate` çıktısı değişmez, üç durumlu kapı, veçhe kaydı lens paketinde (ölçüm sahibi modülde), `scripts/reasoning_report.py`.
+- **Doğrulama:** `validate`/şema/`golden_report` değişmedi; kök context çıktısı bire bir aynı; 15 selftest aynı; `--golden-set` aynı; `reasoning/selftest.py` 14/14 (kapılar enjekte edilen bozuk kayıtla sınanır; üretim koduna 3 kasıtlı bozma selftest'i kırdı); rev-28'de rapor 15 satırı 3 konuya indirir.
+- **Golden etkisi:** yok. **Sınır:** adaptör kategori düzeyinde (`legacy.<kategori>`); kapı #13 ve açıklama motoru `DEV-064`te; üretim kaydı bilerek boş. **Sonraki direktif:** `DEV-061` (mahremiyet paketi).
+
+## HD-040 — `spatial/`: ortak mekânsal sorgu katmanı (DEV-059)
+
+- **Durum:** COMPLETED
+- **Tamamlanma:** 2026-10-09
+- **Kapsam:** `scripts/spatial/` (yeni), `scripts/architect/rules.py`, `scripts/standards/nuances.py`, `scripts/shafts/__init__.py`, `scripts/rooms/__init__.py`, `scripts/version.py`, `scripts/collision/scene.py`, `scripts/CLAUDE.md`, kök `CLAUDE.md`.
+- **Sonuç:** kapı orta noktası, oda teması, ortak kenar, görüş hattı, nokta-poligon yardımcıları tek sahibe (`spatial → collision.geometry`, tek yönlü) taşındı; eski modüller aynı özel adlarla takma ad aldı (40+ çağrı noktası değişmedi). Kullanıcı kararları: `shared_edge_length` tek anlam = mimari sürüm (dört sınır farkı ölçülüp sabitlendi), sıfır uzunluklu duvarda iki davranış korundu, `rooms` delege.
+- **Doğrulama:** `validate.py` çıktısı bire bir aynı; 15 selftest çıktısı bayt düzeyinde aynı; `--golden-set` (13) ve `validate_selftest` aynı; yeni `spatial/selftest.py` 6/6 (eski kodun commit `9f97553`ten donmuş kopyalarıyla gerçek context ve sentetik girdide diferansiyel); `doc_check` temiz.
+- **Golden etkisi:** yok. **Önemli bulgu:** `validate.py` 11 mekânsal yardımcının 6'sına, `--golden-set` denenen 9'una kördür — taşıma doğruluğu yalnız diferansiyel testle kanıtlanabilir.
+- **Sınır:** `validate.py` (2) ve `architect/layout.py` (1) içindeki kopyalar taşınmadı. **Sonraki direktif:** `DEV-060` (muhakeme çekirdeği).
+
 ## HD-039 — Yekpare çekirdek, dikdörtgen U merdiven, şaft çizimi düzeltmesi ve proje rev-28
 
 - **Durum:** COMPLETED

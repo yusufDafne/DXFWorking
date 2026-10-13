@@ -25,8 +25,9 @@ except ImportError:
 LEGEND_FRAME_LAYER = "CERCEVE"
 LEGEND_TEXT_LAYER = "METIN"
 
-COLUMNS = ("MARKA", "TIP", "VARYANT", "GENISLIK (cm)", "ADET")
-COLUMN_WEIGHTS = (0.18, 0.22, 0.28, 0.20, 0.12)
+COLUMNS = ("MARKA", "TIP", "VARYANT", "GENISLIK (cm)", "YUKSEKLIK (cm)", "DENIZLIK (cm)", "ADET")
+COLUMN_WEIGHTS = (0.14, 0.18, 0.20, 0.14, 0.14, 0.12, 0.08)   # toplam 1.00 (DEV-072: yukseklik + denizlik sutunlari)
+NO_HEIGHT_TEXT = "-"              # kapi/asansor/gecit: yukseklik cetvelde yok
 
 # Modelspace VARSAYILANLARI: modul tek basina/selftest icinde kullanildiginda
 # gecerlidir. Gercek uretimde `generate_dxf.py`, kapak blogunun KENDI
@@ -59,6 +60,13 @@ class ScheduleRow:
     variant_label: str
     width_cm: int
     count: int
+    height_text: str = NO_HEIGHT_TEXT      # DEV-072: pencere icin cm metni (varsayilan ya da verilen deger)
+    sill_text: str = NO_HEIGHT_TEXT        # pencere: cm metni
+
+    def values(self) -> tuple[str, ...]:
+        """Cetvel hucre metinleri (COLUMNS sirasiyla) - DXF ve onizleme AYNI kaynaktan okur."""
+        return (self.mark, self.type_label, self.variant_label, str(self.width_cm), self.height_text, self.sill_text,
+                str(self.count))
 
 
 class OpeningLegend:
@@ -67,17 +75,19 @@ class OpeningLegend:
 
     @staticmethod
     def rows(floors: list[dict]) -> list[ScheduleRow]:
-        gathered: list[dict] = []
+        gathered: list[tuple[dict, dict]] = []     # (cetvel satiri, ham veri) - yukseklik/denizlik ham veriden cozulur
         for floor in floors:
-            openings = [Opening.from_context(data) for data in floor.get("openings", [])]
-            gathered.extend(OpeningSchedule.from_openings(openings))
+            for data in floor.get("openings", []):
+                row = OpeningSchedule.from_openings([Opening.from_context(data)])[0]
+                gathered.append((row, data))
 
         counts: Counter = Counter()
-        for row in gathered:
-            counts[(row["type"], row["variant"], row["width"])] += 1
+        for row, data in gathered:
+            counts[(row["type"], row["variant"], row["width"]) + _height_key(data)] += 1
 
-        result = []
-        for (type_, variant, width), count in sorted(counts.items()):
+        base = []
+        for key, count in sorted(counts.items()):
+            type_, variant, width, class_key, h_text, s_text = key
             width_cm = round(width / 10.0)
             # `variant` SADECE kapida anlamlidir (bkz. openings/style.py -
             # pencere HER ZAMAN draw_window ile cizilir, varyanti yok sayar).
@@ -85,16 +95,52 @@ class OpeningLegend:
             # ayrimini uydururdu; bu yuzden pencerede varyant sutunu "-"dir.
             is_door = type_ in ("door", "elevator_door")
             mark_suffix = _VARIANT_MARK_SUFFIX.get(variant, "") if is_door else ""
-            mark = f"{_TYPE_PREFIX.get(type_, '?')}{width_cm:03d}{mark_suffix}"
+            spec = _class_spec(class_key)
+            prefix = spec.mark_prefix if spec is not None else _TYPE_PREFIX.get(type_, "?")        # DEV-076: PB/PV/KG/KD
+            label = spec.label_tr if spec is not None else _TYPE_LABELS.get(type_, type_.upper())
             variant_label = _VARIANT_LABELS.get(variant, variant.upper()) if is_door else "-"
-            result.append(ScheduleRow(
-                mark=mark,
-                type_label=_TYPE_LABELS.get(type_, type_.upper()),
-                variant_label=variant_label,
-                width_cm=width_cm,
-                count=count,
-            ))
+            base.append([f"{prefix}{width_cm:03d}{mark_suffix}", label, variant_label, width_cm, count, h_text, s_text])
+        # marka benzersizligi: ayni marka birden cok satirda ise (ayni genislik, farkli yukseklik/denizlik) yukseklik/denizlik eklenir
+        seen = Counter(r[0] for r in base)
+        result = []
+        for mark, tl, vl, w, c, h, sl in base:
+            if seen[mark] > 1:
+                mark = f"{mark}-{h}" + (f"-{sl}" if sl != NO_HEIGHT_TEXT else "")
+            result.append(ScheduleRow(mark=mark, type_label=tl, variant_label=vl, width_cm=w, count=c, height_text=h, sill_text=sl))
+        marks = [r.mark for r in result]
+        if len(set(marks)) != len(marks):      # son savunma: sessizce ayni markayi iki satirda birakma
+            raise ValueError(f"Cetvel markalari benzersiz degil: {sorted(m for m in set(marks) if marks.count(m) > 1)}")
         return result
+
+
+def _cm_text(mm: float) -> str:
+    cm = mm / 10.0
+    return str(int(round(cm))) if abs(cm - round(cm)) < 1e-9 else f"{cm:.1f}"
+
+
+def _class_spec(class_key: str):
+    if not class_key:
+        return None
+    try:
+        from ..openings.classes import OPENING_CLASSES
+    except ImportError:
+        from openings.classes import OPENING_CLASSES
+    return OPENING_CLASSES[class_key]
+
+
+def _height_key(data: dict) -> tuple[str, str, str]:
+    """(sinif anahtari, yukseklik metni, denizlik metni). Pencere ve SINIFLANDIRILMIS kapi: katalogdan/verilenden cozulur; siniflandirilmamis kapi,
+    asansor kapisi, gecit: ('', '-', '-')."""
+    if data.get("type") not in ("window", "door"):
+        return ("", NO_HEIGHT_TEXT, NO_HEIGHT_TEXT)
+    try:
+        from ..openings.heights import resolve_door_heights, resolve_window_heights
+    except ImportError:
+        from openings.heights import resolve_door_heights, resolve_window_heights
+    r = resolve_window_heights(data) if data["type"] == "window" else resolve_door_heights(data)
+    if r is None:
+        return ("", NO_HEIGHT_TEXT, NO_HEIGHT_TEXT)
+    return (r.class_key, _cm_text(r.height), _cm_text(r.sill))
 
 
 def _center_text(msp, text: str, cx: float, cy: float, height: float):
@@ -133,8 +179,7 @@ class LegendRenderer:
                          (row_ys[0] + row_ys[1]) / 2.0, header_height)
 
         for row_index, row in enumerate(rows, start=1):
-            values = (row.mark, row.type_label, row.variant_label,
-                      str(row.width_cm), str(row.count))
+            values = row.values()
             y_center = (row_ys[row_index] + row_ys[row_index + 1]) / 2.0
             for value, cx0, cx1 in zip(values, col_xs[:-1], col_xs[1:]):
                 _center_text(msp, value, (cx0 + cx1) / 2.0, y_center, text_height)
@@ -152,7 +197,7 @@ class LegendRenderer:
 
 # Bu modulun CONTEXT SOZLESMESI surumu (DEV-020). KOD surumu DEGILDIR.
 # Bkz. scripts/version.py
-CONTRACT_VERSION = "1.0"
+CONTRACT_VERSION = "1.1"   # DEV-072: openings[].height/sill_height/window_class cetvel sutunlari
 
 __all__ = [
     "ScheduleRow", "OpeningLegend", "LegendRenderer", "COLUMNS", "COLUMN_WEIGHTS",

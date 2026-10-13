@@ -40,3 +40,10 @@ tefriş/duvar çakışması `rooms.collision`dan doğal çıkar; şaft↔oda kes
 ## Doğrulama
 `python scripts/shafts/selftest.py` — elle hesaplanan ortak kenar/oran; temiz kat; kasıtlı bozma +
 yanlış-pozitif; kat arası konum; çizim.
+
+## Muhakeme katkısı (DEV-048)
+**Rol:** ölçüm sağlayıcı (`reasoning.py`). **Ölçüm (`ventilation.py`, DEV-062; `validate.py` ÇAĞIRMAZ):** `check_wet_ventilation` — WC/banyonun dış cepheye açılan
+penceresi YA DA `tesisat`/`havalandirma` şaftına ≥ `MIN_SHARED_EDGE_MM` (300 mm) ortak kenarı var mı (`check_shafts` ile AYNI tanım; `baca` sayılmaz).
+**Katıldığı veçhe:** `isik_hava_yonelim.hava.islak_hacim_havalandirma` (`shadow`). **Bilinen boşluk:** şaft tanımsız (`floors[].shafts[]` yok) projede ıslak hacim
+penceresizse veçhe öter (şaft verisi opt-in). **Bilgi mühendisi için not:** `check_shafts` ('şaft ıslak hacmi sunuyor mu') ile bu ('ıslak hacim havalandırılıyor mu')
+FARKLI sorulardır; ortak tanım `MIN_SHARED_EDGE_MM`dedir, ikinci bir eşik yazma.

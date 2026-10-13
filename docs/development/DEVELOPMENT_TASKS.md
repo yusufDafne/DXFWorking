@@ -48,7 +48,7 @@ Tamamlanan işlerin ayrıntılı gerekçesi, karar süreci ve ölçülen etkisi
 | DEV-045 | `templates/`+`architect/` — kat sirkülasyon bandının ölü alan analizi | COMPLETED (2026-10-02) |
 | DEV-046 | `stairs/`+`templates/`+`standards/` — merdiven oda oranı + çok kollu merdiven desteği | COMPLETED (2026-10-02) |
 | DEV-047 | `stairs/`+`architect/` — merdiven sahanlık çıkış noktası ↔ koridor kapısı hizalaması | COMPLETED (2026-10-02) |
-| DEV-048 | Mimari muhakeme yetisinin sistemleştirilmesi (başlangıç planı) | PLANNED |
+| DEV-048 | Mimari muhakeme yetisinin sistemleştirilmesi (şemsiye plan; 2026-10-05'te genişletildi, uygulama `DEV-059`…`DEV-070`) | PLANNED |
 | DEV-049 | `standards/`+`architect/` — mahal/koridor standartları + yerel en dar nokta ölçümü | COMPLETED (2026-10-05) |
 | DEV-050 | `walls/`+`openings/`+`architect/` — kapı/duvar/koridor endüstri standardı nüans kataloğu (15 madde + 16. duvar kalınlığı hiyerarşisi) | COMPLETED (2026-10-05) |
 | DEV-051 | `openings/`+`collision/` — kapı açılımı ↔ kalan net geçiş genişliği dinamik kontrolü | COMPLETED (2026-10-05) |
@@ -59,6 +59,24 @@ Tamamlanan işlerin ayrıntılı gerekçesi, karar süreci ve ölçülen etkisi
 | DEV-056 | `architect/study.py` — etüt modülünün 2D yerleşim optimizasyonuna genişletilmesi | COMPLETED (2026-10-05) |
 | DEV-057 | Kümülatif mini düzeltmeler (DEV-049…056 sırasında çıkanlar; seansın KAPANIŞ maddesi) | COMPLETED (2026-10-05) |
 | DEV-058 | `shafts/` — şaft / havalandırma / baca boşlukları modülü | COMPLETED (2026-10-05) |
+| DEV-059 | `spatial/` — ortak mekânsal sorgu katmanı (5 kopyanın tek sahibe taşınması; `DEV-048` Faz 1a önkoşulu) | COMPLETED (2026-10-09) |
+| DEV-060 | `reasoning/` — muhakeme çekirdeği (mercek/veçhe/bulgu modeli, kayıt, kapsam raporu, `doc_check` kapıları; `DEV-048` Faz 1b) | COMPLETED (2026-10-09) |
+| DEV-061 | `reasoning/` — mahremiyet mercek paketi (mevcut kuralların kaydı + yeni veçheler; Faz 2) | COMPLETED (2026-10-09) |
+| DEV-064 | `reasoning/`+operatör talimatı — diyalog sözleşmesi + açıklama motoru + kök-neden kümeleme (Faz 2) | COMPLETED (2026-10-09) |
+| DEV-065 | Şema + `reasoning/` — tasarım kararı kaydı (`design_decisions[]`), kanıta bağlı kabul (Faz 4) | COMPLETED (2026-10-09) |
+| DEV-070 | `docs/agents/` — bilgi mühendisi rolü + büyütme protokolü (Faz 2) | COMPLETED (2026-10-09) |
+| DEV-062 | `reasoning/` — ışık-hava-yönelim mercek paketi (Faz 3) | COMPLETED (2026-10-09) |
+| DEV-063 | `reasoning/`+`furniture/` — yaşanabilirlik mercek paketi + deneme yerleşimi (Faz 3) | COMPLETED (2026-10-12) |
+| DEV-066 | `reasoning/` — kalibrasyon, ayırt edicilik ve terfi (shadow→active) protokolü (Faz 4) | COMPLETED (2026-10-12) |
+| DEV-069 | `brief/` — kullanıcı ihtiyaç beyanı ve mimari program toplama (Faz 6) | COMPLETED (2026-10-12; v0 — v1 şema alanı sonra) |
+| DEV-068 | `impact/` — revizyon etki analizi (minimal patch planlama; Faz 6) | COMPLETED (2026-10-12) |
+| DEV-067 | Tüm modüller — her modülün muhakeme katkısı (`reasoning.py` veya gerekçeli muafiyet; Faz 5) | COMPLETED (2026-10-12) |
+| DEV-072 | `openings/` — pencere yüksekliği + denizlik (katalog varsayılanı, kullanıcı geçersiz kılar) | COMPLETED (2026-10-12) |
+| DEV-073 | `elevations/` — cepheyi plan açıklıklarından türet | COMPLETED (2026-10-12) |
+| DEV-074 | Kuzey sözleşmesi — kuzeye en yakın cephe üstte, `meta.north_angle` ∈ [−45°, +45°] | COMPLETED (2026-10-12) |
+| DEV-075 | `openings/` — normal pencere varsayılan denizliği 900 mm + pencere varsayılan konumu (iç duvarlar arasında ortala) + duvar birleşiminde pencere uyarısı | COMPLETED (2026-10-12) |
+| DEV-076 | `openings/` — açıklık sınıfları kataloğu (ana giriş, dükkân kapısı, vitrin, boy pencere; sınıf başına varsayılan ölçüler) | COMPLETED (2026-10-12) |
+| DEV-071 | `docs/development/reviews/` — soğuk başlangıç sınavı (reviewer; `DEV-070` ayrılan parça, önkoşulsuz) | PLANNED |
 
 ## READY
 
@@ -479,12 +497,16 @@ ayrımının ve "yalnızca aynı kat" sınırlamasının emsali), `columns/`
 (düşey hizalama sınırlamasının emsali), `DEV-027` (kaçış planı —
 "acil çıkış mesafesi" gibi bir gelecek kural ile kavramsal KOMŞU).
 
-### DEV-048 — Mimari muhakeme yetisinin sistemleştirilmesi (başlangıç planı)
+### DEV-048 — Mimari muhakeme yetisinin sistemleştirilmesi (şemsiye plan; 2026-10-05'te genişletildi)
 
 - **Durum:** PLANNED — bu bir "seç ve başlat" maddesi DEĞİLDİR, `DEV-040`
-  ile AYNI kategoride bir STRATEJİK yönelim notudur. Hiçbir teknoloji/
-  modül kararı verilmedi; bu madde yalnızca fikrin TEK bir yerden
-  izlenebilmesi için açıldı.
+  ile AYNI kategoride bir STRATEJİK şemsiye plandır. **2026-10-05'te
+  genişletildi:** teknoloji kararı verildi (hibrit, aşağıya bakınız), uygulama
+  `DEV-059`…`DEV-070`e bölündü; hiçbiri `READY` değildir ve her biri kullanıcının
+  açık talimatıyla başlar. Bu madde kendi başına kod TETİKLEMEZ.
+- **Ayrıntılı plan (TEK kaynak):** `docs/development/ARCHITECTURAL_REASONING_PLAN.md`
+  — bilgi modeli, etüt protokolü, diyalog sözleşmesi, üç ana mercek, genişletilebilirlik
+  mimarisi, her modülün rolü, fazlar ve açık kararlar orada tutulur, burada TEKRARLANMAZ.
 
 **Neden bu madde (kullanıcının kendi sözleriyle, 2026-10-02):** *"artık
 altyapımızı oldukça geliştirdiğin için mimar gibi düşünmeye ve
@@ -512,7 +534,57 @@ yazacağına karar veren SÜRECİ büyütür — ikisi birbirini BESLER (bu
 maddeden çıkan yeni bir ilke genellikle `DEV-040`nın kural kataloğuna bir
 `DEV-0XX` olarak düşer) ama KARIŞTIRILMAMALIDIR.
 
-**Başlangıç planı (beş aşama, HENÜZ UYGULANMADI):**
+#### 2026-10-05 genişletmesi — özet
+
+Kullanıcı talimatı (2026-10-05): *"bu geliştirilecek şey bir modül ya da yaklaşım
+metodu olup tüm modülleri kapsayabilir, best practices yaklaşımı sen belirleyeceksin ...
+kullanıcı seninle bir konuyu tartışacağı zaman olası problemleri ona uygun biçimde
+ifade edeceksin, çok fazla teknik altyapıya girmeden nihai ürün üzerinden durumu
+açıklayacaksın ... kullanıcı bazı şeyleri gözünden kaçırabilir bu yüzden sen onun
+kapsamlı düşünen motoru olacaksın ... kurallar artırılabilmeli, her kuralın alt
+örneklemleri de zamanla geliştirilebilmeli ... gelecekte gelişmiş bir dil modeli bu
+modül bağlamında özel olarak bu mantıkları geliştirebilmeli, her modül için bu mantığı
+düşün, her modülümüz bağımsız olarak geliştirilebilir olmalıdır."*
+
+- **Karar (Aşama 2'nin açık sorusu ÇÖZÜLDÜ):** *bilgi bildirimseldir, hüküm
+  deterministiktir, anlatım dildir.* (a) düz doküman **şimdi etkindir** (Faz 0: plan
+  belgesi + kök `CLAUDE.md` işaretçisi); (b) script içi veri-odaklı modül
+  `scripts/reasoning/` olarak kurulacak (çekirdek bilgi içermez, çizim modülü import
+  etmez; bilgi sahibi modülde yaşar — `collision/` ters bağımlılık deseni);
+  (c) harici teknoloji (RAG/vektör DB) bilinçli olarak SEÇİLMEDİ (gerekçe: plan §2.1).
+- **Kavramlar:** **mercek** (bakış açısı; kural değil kurallar için çerçeve) →
+  **veçhe** (alt örneklem; ölçülebilir tek soru) → **bulgu** (şiddet 0–1, kanıt,
+  kararlı anahtar) → **tasarım kokusu** (adlı örüntü, kök neden, standart çıkış) ·
+  **gerilim** (veçheler arası ödünleşim) · **profil** · **vaka** · **karar**.
+- **Anayasa (8 madde, plan §2.3):** yalnız UYARI (FORBID yok); sayı uydurulmaz (şablonda
+  rakam yok, yalnız kanıttan); "yapılamaz" denmez; sessiz geçiş yok (kapsam raporu);
+  karar kullanıcınındır ve devredilebilir; proje verisi↔kütüphane ayrımı; bilgi epistemik
+  statü taşır (`kesin`/`yaygın`/`tercih`); modül bağımsızlığı.
+- **Bu oturumun üç ana konusu (plan §6):** **`mahremiyet`** (toplumsal; görsel, işitsel,
+  geçiş, kademelenme, birimler arası, yaşam tarzı), **`isik_hava_yonelim`** (fiziksel-iklimsel),
+  **`yasanabilirlik`** (işlevsel; mobilya sığar mı). Ayrıca 11 aday mercek kataloğu (plan §6.4,
+  fikir statüsünde).
+- **Ölçülmüş boşluklar (plan §1.1, gerçek proje rev-28):** 15 `UYARI` satırı yalnız 3
+  tekil konu · kuzey yönü ve pencere yüksekliği verisi yok (yönelim/ışık oranı koşamaz,
+  sistem bunu söylemiyor) · girişten görünen yatak odası kapısı (`uC`, 16.1°) ve
+  komşu giriş kapıları 1485 mm yakınlıkta — **hiçbir mevcut kural bunları görmüyor** ·
+  tefriş yerleşimi 0/9 kat · mekânsal sorgu yardımcıları 5 ayrı kopya.
+- **Genişletilebilirlik:** yeni veçhe = bildirimsel kayıt + sahibi modülde ölçüm/kural +
+  ≥1 ihlal ve ≥1 yanlış-pozitif vakası; terfi merdiveni `idea→draft→shadow→active`;
+  `doc_check`e mekanik kapılar (her modül `reasoning.py` **ya da** gerekçeli muafiyet).
+- **Gelecekteki gelişmiş dil modeli = "bilgi mühendisi"** (`DEV-070`): yalnız mercek
+  kayıtları, modül-yerel `reasoning.py` ve vakalara yazabilir; şema/eşik-kaynaksız/anayasa
+  yazamaz; final kabulü reviewer verir; **soğuk başlangıç sınavı** (plan §8.5) Aşama 5'in ölçütüdür.
+
+**Alt görevler ve sıra (plan §10.1, 2026-10-09 denetimi sonrası, doğrusal):** `DEV-059` → `DEV-060` →
+`DEV-061` → `DEV-064` → `DEV-065` → `DEV-070` → `DEV-062` → `DEV-063` → `DEV-066` → `DEV-069` → `DEV-068` →
+`DEV-067`. İlk görünür kazanç 4. adımdadır (15 uyarı satırı → 3 konu). Denetimde 12 görevin 9'u olduğu gibi
+uygulanamaz bulundu; düzeltmeler ve kullanıcı kararları her maddenin "Netleştirme soruları"nda, çapraz
+bulgular plan §10.4'te.
+
+#### Orijinal başlangıç planı (2026-10-02; beş aşama — aşağıdaki "Güncel durum" tablosuyla birlikte okunur)
+
+**Başlangıç planı (beş aşama, 2026-10-05'te Faz 0'a eşlendi):**
 
 1. **Envanter — bugüne kadar örtük kalan ilkeleri İSİMLENDİR.** Bu
    oturumda kullanılan muhakeme örnekleri (hub vs. doğrusal sirkülasyon
@@ -541,7 +613,22 @@ maddeden çıkan yeni bir ilke genellikle `DEV-040`nın kural kataloğuna bir
    teknoloji NE OLURSA OLSUN, kök `CLAUDE.md`nin "agentic dokümanlar
    birbirine bağlı tek bir bağlam sistemidir" ilkesiyle UYUMLU olmalı.
 
-**Açık karar (kullanıcı AYRICA tartışacağını belirtti, BURADA
+**Güncel durum (2026-10-05) — aşama ↔ plan eşlemesi:**
+
+| Aşama | Güncel karşılık |
+| ----- | --------------- |
+| 1. Envanter / örtük ilkeleri isimlendirme | Faz 0 **yapıldı**: plan belgesi §3 (kavramlar), §4 (etüt protokolü = "hangi kontrolü hangi sırayla"), §6 (üç mercek), §4.2 (ilk koku kataloğu) |
+| 2. Bilgi tabanının yeri | **ÇÖZÜLDÜ** — hibrit (aşağıdaki not ve plan §2.1) |
+| 3. Geri besleme döngüsü | plan §8.1 "Vaka → İlke → Veçhe" akışı; `DEV-060` (vaka formatı) + `DEV-070` (rol) |
+| 4. Kalibrasyon/doğrulama | plan §7.3 terfi merdiveni + §8.3 ayırt edicilik; `DEV-066` |
+| 5. Genişletilebilirlik/erişilebilirlik testi | plan §8.5 **soğuk başlangıç sınavı**; `DEV-070` |
+
+> **GÜNCELLEME (2026-10-05): aşağıdaki açık karar ÇÖZÜLDÜ.** Alternatiflerin hiçbiri
+> tek başına seçilmedi: (a)+(b) birlikte, (c)'ye açık. Gerekçe ve karar için "2026-10-05
+> genişletmesi — özet" ve `ARCHITECTURAL_REASONING_PLAN.md` §2.1. Aşağıdaki metin
+> TARİHSEL kayıt olarak korunur.
+
+**[Tarihsel, 2026-10-02] Açık karar (kullanıcı AYRICA tartışacağını belirtti, BURADA
 ÇÖZÜLMEDİ):** Aşama 2'nin uygulama biçimi/teknolojisi HENÜZ SEÇİLMEDİ —
 somut alternatifler (hiçbiri onaylanmadı):
 - **(a) Düz dokümantasyon** — `docs/development/` altında yeni bir
@@ -566,6 +653,16 @@ muhakemenin KOD tarafı, `DEV-040` ile kavramsal KOMŞU ama FARKLI),
 `scripts/standards/` (kalibrasyon/"v1 pratik varsayılan" disiplininin
 emsali), kök `CLAUDE.md` + `scripts/CLAUDE.md` (agentic doküman sistemi
 ilkesi — Aşama 5'in ölçütü).
+
+**Genişleyen ilişkili belgeler (2026-10-05):** `ARCHITECTURAL_REASONING_PLAN.md`
+(ayrıntılı plan, TEK kaynak), `scripts/collision/CLAUDE.md` (ters bağımlılık +
+`COLLISION_EXEMPT` emsali — `reasoning/` aynı deseni izler), `scripts/axis/CLAUDE.md`
+(`AxisCoverageReport` emsali — muhakeme kapsam raporu), `docs/agents/`
+(operatör talimatı §5 diyalog sözleşmesinin yaşayacağı yer; `DEV-070` bilgi mühendisi
+talimatı). **`DEV-040`ın altı fikri bu plana oturur** (plan §10.2): şiddet sayısı →
+bulgu modeli, bina tipi profilleri → `Profile`, katlar arası ilişkiler → aday
+`tesisat_hijyen` merceğine girdi, `options_for_*` → `remedies`, proje bazlı profil →
+yalnız profil SEÇİMİ, bilinçli göz ardı → `DEV-065`. `DEV-040` kendi başına kalır.
 
 > **`DEV-049`…`DEV-056`** ALTINCI bir türdür: kullanıcının kendi plan
 > incelemesinden ("mimar modülün berbat bir iş çıkarmış ... 250mm
@@ -610,6 +707,36 @@ belirleyeceksin ... her birini sıralama olarak birbirine bağla"):**
    yoksa rev-23'teki gibi yine EL İLE yapılırdı.
 7. `DEV-056` (etüt 2D optimizasyonu) `DEV-055`in EL ile yapılan TEK-
    ÖRNEKLİ çözümünü GENELLEŞTİREN kapanış maddesidir.
+
+> **`DEV-059`…`DEV-070`** YEDİNCİ bir türdür: `DEV-048`in (2026-10-05'te genişletilen)
+> şemsiye planından çıkarılmış uygulama maddeleridir; ayrıntı ve gerekçenin TEK kaynağı
+> `ARCHITECTURAL_REASONING_PLAN.md`dir, burada TEKRARLANMAZ. `DEV-049`…`DEV-056` ile AYNI
+> disiplin: **hiçbiri `READY` değildir**, her biri yalnızca kullanıcının açık talimatıyla
+> başlar. `DEV-059`, `DEV-068` ve `DEV-069` plan çalışılırken **keşfedilen** ek
+> modül/geliştirme fikirleridir (kullanıcı: *"ilave bir modül ya da geliştirme fikri
+> keşfedersen görevlere ekleyebilirsin, başka bir agentic oturumda detaylı çalışırız"*).
+> **Uygulama sırası (2026-10-09, kod denetimiyle yeniden belirlendi; doğrusal — aynı anda tek `IN_PROGRESS`
+> görev olabilir, eski 'paralel' gösterimler geçersizdir):** **`DEV-059` → `DEV-060` → `DEV-061` → `DEV-064` →
+> `DEV-065` → `DEV-070` → `DEV-062` → `DEV-063` → `DEV-066` → `DEV-069` → `DEV-068` → `DEV-067`**. Gerekçe ve
+> kritik yol: `ARCHITECTURAL_REASONING_PLAN.md` §10.1; çapraz bulgular §10.4. Her madde aşağıda bu sırayla
+> durur ve "Geliştirici yorumu / Netleştirme soruları / Metin düzeltmeleri" taşır; **madde ancak kullanıcı
+> soruları tek tek yanıtlayıp `READY`ye aldığında başlar.** Her maddenin kabul ölçütü deterministiktir ve
+> **mevcut `validate.py` çıktısını ve golden referansları bozmamak** ortak kabul şartıdır (`DEV-065`in şema
+> sürümü uyarısı satırı bilinen tek istisnadır). Bölünmesi önerilen maddelerde parçalar **sayısal** yeni DEV
+> kimlikleri olur (`doc_check` `### DEV-\d+` ister; `DEV-063A` gibi kimlikler görünmez kalır).
+
+### DEV-070 — `docs/agents/` — bilgi mühendisi rolü ve büyütme protokolü
+
+- **Durum:** COMPLETED (2026-10-09) — kullanıcı onayıyla (dört netleştirme kararı) uygulandı. Ayrıntılı kayıt: `HD-045`.
+- **Özet:** `KNOWLEDGE_ENGINEER_AGENT.md` + `AGENT_PERMISSIONS.json` (`knowledge_engineering`, reviews/ yalnız reviewer) + reviewer "Sistem sınavı"; sınav `DEV-071`e ayrıldı (PLANNED).
+
+### DEV-071 — `docs/development/reviews/` — soğuk başlangıç sınavı (reviewer)
+
+- **Durum:** PLANNED
+- **Kapsam (plan §8.5; `DEV-070` kullanıcı kararı 2026-10-09):** yeni bir ajan yalnız kök `CLAUDE.md` + plan + çekirdek `CLAUDE.md` ile üç vakada (a) doğru teşhisi koyar, (b) sayı uydurmadan §5 iskeletiyle anlatır, (c) `uC` vakasındaki kokuyu adıyla bulur. Sınavı **reviewer** (geliştirici dışı) yürütür. Soğukluk: proje kökü içinde silinen **mühürlü paket**; yalnız çıkarma tarifi (commit + kat + komut) commit'lenir, cevap anahtarı pakette yoktur. Rubrik + vaka seti bu maddede yazılır.
+- **Geçme kuralı:** vaka başına 3 bağımsız koşu, ≥2/3'ü tüm rubrik maddelerini sağlar; rapor model kimliği + belge commit'ini taşır; çekirdekte MINOR değişiklikten sonra yeniden koşulur. Raporlar `docs/development/reviews/` (ekleme-yalnız). Geçmezse bilgi eksiktir, belge düzeltilir.
+- **Önkoşul:** yok (bugünkü belgelerle bir taban koşusu yapılabilir; `DEV-070` rol belgesi ve `DEV-064` anlatım yolu sınanan malzemedir).
+- **Kullanıcı kararları:** `DEV-070` netleştirmesinde (1)–(3) EVET (2026-10-09). Başlamak için kullanıcı onayı bekleniyor.
 
 ## COMPLETED
 
@@ -1710,3 +1837,84 @@ Bir görev için agent şunları yapmadan `COMPLETED` yazamaz:
 > BLOCKED maddeler "PLANNED" başlığı altında birikti. Kullanıcı fark etti.
 > Düzyazı hatırlatma bu hata sınıfını engellemiyor, bu yüzden `doc_check.py`
 > yazıldı ve kontrolleri kasıtlı bozma testleriyle doğrulandı.
+
+### DEV-059 — `spatial/` — ortak mekânsal sorgu katmanı
+
+- **Durum:** COMPLETED (2026-10-09) — kullanıcı onayıyla (dört netleştirme kararı) uygulandı. Ayrıntılı kayıt: `HD-040`.
+- **Özet:** `scripts/spatial/` kuruldu; `architect`/`standards`/`shafts`/`rooms` kopyaları davranış korunarak taşındı (`spatial → collision.geometry`); doğruluk eski↔yeni diferansiyel selftest'le kanıtlandı çünkü `validate.py`/`--golden-set` bu yardımcılara kördür.
+
+### DEV-060 — `reasoning/` — muhakeme çekirdeği
+
+- **Durum:** COMPLETED (2026-10-09) — kullanıcı onayıyla (dört netleştirme kararı) uygulandı. Ayrıntılı kayıt: `HD-041`.
+- **Özet:** `scripts/reasoning/` çekirdeği + `scripts/reasoning_report.py` + `doc_check` kapıları #10–#12, #14, #15 kuruldu; `validate.py` çıktısı değişmedi; çekirdek bilgi taşımaz (mercek paketleri `DEV-061`+).
+
+### DEV-061 — `reasoning/` — mahremiyet mercek paketi
+
+- **Durum:** COMPLETED (2026-10-09) — kullanıcı onayıyla (dört netleştirme kararı) uygulandı. Ayrıntılı kayıt: `HD-042`.
+- **Özet:** `reasoning/lenses/mahremiyet.py` (14 veçhe, 3 koku) + `architect/privacy.py` + `architect/reasoning.py` + 22 sentetik vaka; `validate.py` çıktısı değişmedi; rev-28'de ölçüm #4/#5/#6 gölge olarak raporlanır.
+
+### DEV-064 — `reasoning/`+operatör talimatı — diyalog sözleşmesi, açıklama motoru, kümeleme
+
+- **Durum:** COMPLETED (2026-10-09) — kullanıcı onayıyla (dört netleştirme kararı) uygulandı. Ayrıntılı kayıt: `HD-043`.
+- **Özet:** `reasoning/explain.py` (rakam lint'i, sunum kuyruğu, anlatım, `dialogue.jsonl`) + `scripts/reasoning_dialogue.py` + `doc_check` #13 + operatör/reviewer talimatları; `validate.py` değişmedi; rev-28 15 satır → 3 konu.
+
+### DEV-065 — Şema + `reasoning/` — tasarım kararı kaydı
+
+- **Durum:** COMPLETED (2026-10-09) — kullanıcı onayıyla (dört netleştirme kararı) uygulandı. Ayrıntılı kayıt: `HD-044`.
+- **Özet:** şema 1.4.0 opt-in `design_decisions[]` + `reasoning/decisions.py` + `reasoning_dialogue.py decide`; kanıta bağlı kabul (ölçüm değişirse düşer, "önce → şimdi"); `validate.py` yalnız `check_decisions` kancası; çıktı sürüm uyarısı satırı hariç aynı.
+
+### DEV-062 — `reasoning/` — ışık-hava-yönelim mercek paketi
+
+- **Durum:** COMPLETED (2026-10-09) — kullanıcı onayıyla (dört netleştirme kararı) uygulandı. Ayrıntılı kayıt: `HD-046`.
+- **Özet:** `lenses/isik_hava_yonelim.py` (4 `shadow` + 1 `draft`, `active` yok) + `openings/daylight.py` + `shafts/ventilation.py` + `spatial` cephe sorguları + opsiyonel `openings[].height`; `north_angle` yokken yönelim "kuzey yönü verilmedi" diye koşamaz.
+
+### DEV-063 — `reasoning/`+`furniture/` — yaşanabilirlik mercek paketi + deneme yerleşimi
+
+- **Durum:** COMPLETED (2026-10-12) — kullanıcı onayıyla (dört netleştirme kararı) uygulandı. Ayrıntılı kayıt: `HD-047`.
+- **Özet:** yeni `scripts/testfit/` (K1–K4 deneme yerleştirme sınavı; `furniture` + `collision` yalnız tüketilir) + `lenses/yasanabilirlik.py` (2 `shadow`, 1 `draft`, 1 `idea`; `active` yok); rev-28 5 yatak odası K1.
+
+### DEV-066 — `reasoning/` — kalibrasyon, ayırt edicilik ve terfi protokolü
+
+- **Durum:** COMPLETED (2026-10-12) — kullanıcı onayıyla (dört netleştirme kararı) uygulandı. Ayrıntılı kayıt: `HD-048`.
+- **Özet:** `Promotion` kaydı + `doc_check` #16 + `reasoning_report.py --promotion` (kontrol listesi, N'li tetik oranı, dejenere engeli, bayat liste, kullanıcı parametreli bütçe); terfi kullanıcı kararıdır, hiçbir veçhe terfi ettirilmedi.
+
+### DEV-069 — `brief/` — kullanıcı ihtiyaç beyanı ve mimari program toplama (v0)
+
+- **Durum:** COMPLETED (2026-10-12) — kullanıcı onayıyla (soru politikası ve v0 biçimi) yalnız v0 uygulandı. Ayrıntılı kayıt: `HD-049`.
+- **Özet:** `PROJECT_OPERATOR_AGENT.md` "İhtiyaç toplama" bölümü + soru kataloğu (şemasız, kodsuz); sorular opsiyonel, varsayılan adıyla bildirilir, kaynaklı varsayılanı olmayan değerde üretim durur. **v1 (`brief` şema alanı) AÇIK:** v0 gerçek bir konuşmada koşulana dek başlamaz.
+
+### DEV-068 — `impact/` — revizyon etki analizi (v1: salt okunur etki alanı raporu)
+
+- **Durum:** COMPLETED (2026-10-12) — kullanıcı onayıyla (dört netleştirme kararı) uygulandı. Ayrıntılı kayıt: `HD-050`.
+- **Özet:** `scripts/impact/` (açık kenar tabloları, duvar-parça/span duyarlı yayılım, `touched_from_diff`, kapsam raporu) + `impact_report.py` + `doc_check` #17; duvar-oda kenarı örtüşmesi `spatial`a taşındı. Minimal patch planı kapsam dışı (patch grameri tanımlanınca ayrı sayısal kimlikle).
+
+### DEV-067 — Tüm modüller — modül başına muhakeme katkısı (yaygınlaştırma)
+
+- **Durum:** COMPLETED (2026-10-12) — kullanıcı onayıyla (dört netleştirme kararı) uygulandı. Ayrıntılı kayıt: `HD-051`.
+- **Özet:** PENDING geçiş kaydı kaldırıldı; kapı #10 iki durumlu ve bloklayıcı (+ #10b muaf gerekçe biçimi, #10c standart `## Muhakeme katkısı` bölümü); kalan 20 modül gerekçeli muaf (4 sağlayıcı + 23 muaf). Muafiyet "bugün veçhe yok" demektir; veçhe doğunca modül sağlayıcıya geçer.
+
+### DEV-072 — `openings/` — pencere yüksekliği ve denizlik
+
+- **Durum:** COMPLETED (2026-10-12) — kullanıcı onayıyla uygulandı. Ayrıntılı kayıt: `HD-053`.
+- **Özet:** katalog varsayılanları (pencere 1200 mm; boy pencere 2000 mm + 40 mm denizlik), kullanıcı değeri varsayılanı ezer, normal pencere denizliği `verilmedi` (uydurulmaz); şema 1.5.0 (`sill_height`, `window_class`); cetvel yükseklik/denizlik sütunları; `defaults_report.py`.
+
+### DEV-074 — Kuzey sözleşmesi
+
+- **Durum:** COMPLETED (2026-10-12) — kullanıcı onayıyla uygulandı. Ayrıntılı kayıt: `HD-054`.
+- **Özet:** `meta.north_angle` ∈ [−45°, +45°] (kuzeye en yakın cephe üstte), eşdeğer açılar normalize, aralık dışı `validate` HATASI; vaziyet planında kuzey daima yukarı (vaziyet paftası `DEV-024`).
+
+### DEV-073 — `elevations/` — cepheyi plan açıklıklarından türet
+
+- **Durum:** COMPLETED (2026-10-12) — kullanıcı kabulüyle. Ayrıntılı kayıt: `HD-055`.
+- **Özet:** `elevations[].openings_from: "plan"` (opt-in) ile cephe pencere/kapıları plandaki dış duvar açıklıklarından türetilir (`elevations/derive.py`); şema 1.6.0.
+
+### DEV-075 — `openings/` — varsayılan denizlik 900 mm + pencere yerleşimi
+
+- **Durum:** COMPLETED (2026-10-12) — kullanıcı kabulüyle. Ayrıntılı kayıt: `HD-056`.
+- **Özet:** normal pencere denizliği 900 mm; varsayılan konum iç duvarlar arasında ortalı; iç duvar–dış cephe birleşiminde pencere `validate` UYARISI; `window_placement_report.py`.
+
+### DEV-076 — `openings/` — açıklık sınıfları kataloğu
+
+- **Durum:** COMPLETED (2026-10-12) — kullanıcı kabulüyle. Ayrıntılı kayıt: `HD-057`.
+- **Özet:** boy pencere 1600×2000/40, vitrin 2000×2200/40, ana giriş 1700×2100/40, dükkân kapısı (ayrı sınıf) 1700×2100/40; şema 1.7.0 (`door_class`, `shopfront`).
+

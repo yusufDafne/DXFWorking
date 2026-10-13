@@ -57,9 +57,20 @@ from .symbols import ARCS_PER_VARIANT, DOOR_SYMBOLS
 # refactor artirmaz. rev-13'te `variant` / `swing` / `host_side` okunmaya
 # baslandigi icin 1.0 -> 1.1 (geriye uyumlu: hepsi opsiyonel ve varsayilanlari
 # eski davranisi verir).
-CONTRACT_VERSION = "1.3"  # rev-25: type=passage (kapisiz duvar acikligi)
+CONTRACT_VERSION = "1.6"  # DEV-076: aciklik siniflari (door_class, shopfront); 1.5: DEV-075: varsayilan denizlik 900 mm + yerlesim; 1.4: DEV-072: openings[].sill_height + window_class (yukseklik/denizlik varsayilanlari); 1.3: type=passage
+
+from .placement import (check_window_junctions, default_window_position, free_spans, host_junctions,  # noqa: E402
+                        placement_suggestions, room_span)
+from .classes import (OPENING_CLASSES, OpeningClassSpec, class_of, new_opening, new_window)  # noqa: E402
+from .heights import (CLASS_STANDARD, CLASS_TALL, DEFAULT_TALL_WINDOW_HEIGHT_MM, DEFAULT_TALL_WINDOW_SILL_MM,  # noqa: E402
+                      DEFAULT_WINDOW_HEIGHT_MM, DEFAULT_WINDOW_SILL_MM, ResolvedHeights, check_window_class_errors, check_window_heights, defaults_used,
+                      resolve_door_heights, resolve_window_heights)
 
 __all__ = [
+    "OPENING_CLASSES", "OpeningClassSpec", "class_of", "new_opening", "new_window", "resolve_door_heights",
+    "check_window_junctions", "default_window_position", "free_spans", "host_junctions", "placement_suggestions", "room_span",
+    "CLASS_STANDARD", "CLASS_TALL", "DEFAULT_TALL_WINDOW_HEIGHT_MM", "DEFAULT_TALL_WINDOW_SILL_MM", "DEFAULT_WINDOW_HEIGHT_MM", "DEFAULT_WINDOW_SILL_MM",
+    "ResolvedHeights", "check_window_class_errors", "check_window_heights", "defaults_used", "resolve_window_heights",
     "ELEVATOR_DEFAULT_VARIANT",
     "ELEVATOR_DOOR_INSET_MM",
     "ELEVATOR_DOOR_VARIANTS",

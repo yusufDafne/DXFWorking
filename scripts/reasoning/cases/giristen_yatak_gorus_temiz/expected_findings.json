@@ -1,0 +1,6 @@
+{
+ "expect_keys": [],
+ "expect_absent": [
+  "mahremiyet.gorsel.giristen_yatak_odasi_gorus|*|d_giris,d_hedef|b471b7ec"
+ ]
+}

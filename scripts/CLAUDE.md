@@ -67,6 +67,30 @@ kalanını bilmeye ihtiyaç duymadan o modül üzerinde derinlemesine/izole
   `check_shafts` (şaft↔oda kesişimi HATA, ıslak hacim sırt sırta/şafta değmeli,
   WC+banyo çifti arası şaft), kat arası aynı konum kontrolü, `SAFT` katmanı
   çizimi. Yerleşimi üretmez, doğrular — bkz. `scripts/shafts/CLAUDE.md`, `HD-038`.
+- ✅ **`scripts/reasoning/`** — `DEV-060` (2026-10-09): mimari muhakeme ÇEKİRDEĞİ (plan:
+  `docs/development/ARCHITECTURAL_REASONING_PLAN.md`). Mercek → veçhe → bulgu modeli, kayıt defteri
+  (`REASONING_PROVIDERS`/gerekçeli `REASONING_EXEMPT`; DEV-067'de PENDING kaldırıldı), kararlı bulgu anahtarı + regresyon
+  farkı + kat-bağımsız kümeleme, `validate.py` stdout adaptörü, kapsam raporu, asgari terfi ölçeri,
+  vaka koşucusu. **Bilgi taşımaz**, çizim modülü import etmez (`collision/` deseni); `doc_check`
+  kapıları #10–#12, #14, #15. Rapor komutu `scripts/reasoning_report.py`. Bkz. `scripts/reasoning/CLAUDE.md`.
+  **`DEV-061`de ilk mercek paketi** (`reasoning/lenses/mahremiyet.py`, 14 veçhe) geldi; ölçüm sahibi `architect/`
+  (`privacy.py`, `reasoning.py` = sağlayıcı). **`DEV-062`de ikinci paket** `isik_hava_yonelim` (5 veçhe, hepsi `shadow`/`draft`); ölçüm sahipleri `openings/daylight.py`,
+  `shafts/ventilation.py`, cephe sorguları `spatial`de. **`DEV-066`da terfi politikası:** `Promotion` kaydı + `doc_check` #16 + `reasoning_report.py --promotion` (terfi kullanıcı kararıdır).
+  **`DEV-064`te açıklama motoru** (`reasoning/explain.py`: rakam lint'i, sunum kuyruğu, diyalog kaydı) ve köprü
+  `scripts/reasoning_dialogue.py` geldi; `doc_check` kapı #13. **`DEV-065`te** şema 1.4.0: opt-in `design_decisions[]` (kanıta bağlı
+  kabul, `reasoning/decisions.py`, `reasoning_dialogue.py decide`); `reasoning` `CONTRACT_VERSION` 1.1.
+- ✅ **`scripts/testfit/`** — `DEV-063` (2026-10-12): deneme yerleştirme SINAVI — tipik tefriş kümesinin (yatak odası: K1 çift yatak+2 komodin+gardırop … K4 tek yatak)
+  net odaya + kapı açılım sektörüne sığıp sığmadığını sınar. `furniture` (tip ölçüleri) ve `collision` (kapı sektörü + politika + son doğrulama) modüllerini
+  yalnız TÜKETİR; sonuç türevdir, `context.json`a yazılmaz; çözüm önerisi değil sınavdır. Geçiş payı = 0 (Katman A, `shadow`); rahat sığma payları (Katman B)
+  mimar değer verene dek kodlanmaz — bkz. `scripts/testfit/CLAUDE.md`.
+- ✅ **`scripts/impact/`** — `DEV-068` (2026-10-12): revizyon ETKİ ALANI raporu — dokunulan elemanlardan (kat, tür, id) etkilenen eleman kümesi. Salt okunur, türevdir,
+  `context.json`a yazmaz; patch planı YOK. Açık kenar tabloları (şema alan adlarıyla `doc_check` #17 tamlık kapısı) + `spatial`/`collision` sorguları; duvara kenarla
+  varılınca etki yalnız ilgili duvar PARÇASINDAN (span) ilerler; aynı birim ve kat ikizi yayılmaz, "ilgili" diye listelenir — bkz. `scripts/impact/CLAUDE.md`.
+- ✅ **`scripts/spatial/`** — `DEV-059` (2026-10-09): eleman-farkındalıklı mekânsal sorguların
+  (kapı → orta nokta, değen odalar, ortak kenar, görüş hattı) TEK sahibi. `architect`/`standards`/
+  `shafts`/`rooms` içindeki kopyalar buraya **davranış korunarak** taşındı; `spatial → collision.geometry`
+  tek yönlü. `validate.py` ve `--golden-set` bu yardımcılara kördür, bu yüzden doğruluk eski↔yeni
+  diferansiyel selftest'le kanıtlanır — bkz. `scripts/spatial/CLAUDE.md`.
 - ✅ **`scripts/stairs/`** — `DEV-022` (2026-09-25): merdiven odasının
   İÇİNE gerçek basamak/rıht geometrisi çizer. `resolve_stair` tek kaynaktır
   (`openings::swing_geometry` ile AYNI desen — validate.py VE çizim kodu
@@ -218,6 +242,21 @@ bir `collision.py` ayak izi sağlayıcısı taşımasını ya da
 arar. "Bu modül hangi modülle çakışabilir?" sorusu artık cevapsız
 bırakılamaz — düzyazı bir hatırlatma bu hata sınıfını engellemiyordu.
 
+### Muhakeme katmanı (PLANLANAN — `DEV-048`, plan: `docs/development/ARCHITECTURAL_REASONING_PLAN.md`)
+
+Çakışma denetimi "iki eleman aynı yeri mi işgal ediyor" sorusunu tek yerde topladığı gibi,
+muhakeme katmanı "bu tasarım mimari olarak **düşünülmüş** mü" sorusunu toplar — ve AYNI
+bağımlılık yönünü izler: `scripts/reasoning/` çekirdeği bilgi taşımaz ve hiçbir çizim modülünü
+import etmez; bilgi (veçhe beyanı, ölçüm, kural) **sahibi modülde** yaşar
+(`scripts/<modül>/reasoning.py`); çekirdek onları noktalı referansla tembel çözer. Bir **mercek**
+(mahremiyet, ışık-hava-yönelim, yaşanabilirlik …) kural değil bir soru ailesidir; **veçheler**
+(alt örneklemler) zamanla artar. Yeni bir modül eklerken sorulan ikinci soru artık şudur:
+*"bu modül hangi mercek(ler)e ölçüm veya kural sağlar?"* — `doc_check` bunu `collision.py`/
+`COLLISION_EXEMPT` gibi mekanik denetleyecek (her modül `reasoning.py` **ya da** gerekçeli
+`REASONING_EXEMPT`; `DEV-060`). Bu bir **plandır**, kod henüz yok; mevcut `check_*` fonksiyonları
+DEĞİŞMEZ (adaptörle kaydedilir) ve `validate.py` çıktısı bozulmaz. Aşağıdaki tabloda `reasoning/`,
+`spatial/`, `impact/`, `brief/` satırları durur (`impact/` DEV-068'de UYGULANDI).
+
 ### Sürüm sözleşmesi (UYGULANDI — rev-12, `DEV-020`)
 
 Her modül `__init__.py` içinde bir `CONTRACT_VERSION` taşır. Bu **kod sürümü
@@ -279,13 +318,13 @@ Ortak desen (pafta + walls ile kanitlandi):
 | `pafta/`      | `Sheet`, `PaperSizePlanner`, `CoverBlock`, `PaftaOverflowError` | UYGULANDI; uniform template + keyplan bekliyor; `ScaleBar` rev-17'de eklendi, rev-18'de kullanici talebiyle KALDIRILDI |
 | `walls/`      | `Wall`, `WallNetwork`, `WallCatalog`, `RoomPolygonScanner`, `RailDrawingStandard`, `CatalogRailStandard` | UYGULANDI (rev-15); kind-farkindali rail standardi |
 | `axis/`       | `AxisGrid`, `AxisDrawingStandard`, `Axis`, `AxisCoverageReport`, `check_labels` | UYGULANDI; kismi/ara aks + etiket kurali (rev-13)          |
-| `openings/`   | `Opening`, `Door`, `Window`, `OpeningSymbolStyle`, `OpeningSchedule`, `SwingGeometry`, `swing_geometry`, `DOOR_SYMBOLS`, `ARCS_PER_VARIANT` | UYGULANDI; 4 varyant + swing/host_side (rev-13) |
+| `openings/`   | `Opening`, `Door`, `Window`, `OpeningSymbolStyle`, `OpeningSchedule`, `SwingGeometry`, `swing_geometry`, `DOOR_SYMBOLS`, `ARCS_PER_VARIANT`, `OpeningClassSpec`, `OPENING_CLASSES`, `class_of`, `new_opening`, `new_window` | UYGULANDI; 4 varyant + swing/host_side (rev-13); DEV-076: aciklik siniflari (ana giris, dukkan kapisi, vitrin, boy pencere) |
 | `rooms/`      | `Room`, `RoomLabeler`, `PolygonOps`, `RoomPolygonScanner`, `ensure_room_label_block` | UYGULANDI; 3 satirli mahal etiketi (rev-9), BLOK+ATTRIB (rev-14) |
 | `dimensions/` | `DimensionChain`, `LinearDim`, `ChainLayout`, `ChainStack`, `DimensionStyle`, `FloorOrdinates`, `FloorDimensionPlanner`, `DimensionSettings` | UYGULANDI; turetilen 3 kademeli olcu yigini (rev-13) |
 | `typography/` | `TextStyles`                                                                | UYGULANDI; proje fontu Arial Narrow (rev-9)                    |
 | `furniture/`  | `FurnitureCatalog`, `FurnitureBlocks`, `FurnitureRenderer`, `FurnitureSpec`, `FurnitureItem`, `FurnitureGroup`, `FurnitureSchedule` | UYGULANDI; tefris = DXF BLOCK (rev-10) |
 | `columns/`    | `Column`, `ColumnGrid`, `ColumnRenderer`, `ColumnSection`, `ColumnSectionCatalog`, `ColumnHatchStyle`, `ColumnLabelStyle` | UYGULANDI; tarali kolon ANSI33/3.0 (rev-10) |
-| `elevations/` | `ElevationSheet`, `LevelStack`, `FacadeOpeningPlacer`, `Level`, `elevation_vertical_extent` | UYGULANDI (rev-14); zemin-alti DASHED linetype kapandi |
+| `elevations/` | `ElevationSheet`, `LevelStack`, `FacadeOpeningPlacer`, `Level`, `elevation_vertical_extent`, `FacadeRect`, `derive_level_openings` | UYGULANDI (rev-14); zemin-alti DASHED linetype kapandi; DEV-073: `openings_from='plan'` ile plan acikliklarindan turetilen cephe (opt-in) |
 | `legend/`     | `OpeningLegend`, `LegendRenderer`, `ScheduleRow`                            | UYGULANDI (rev-14); Fikir 1 (kapi/pencere cetveli) secildi     |
 | `importer/`   | `DxfWallScanner`, `ImportReport`, `WallCandidate`                           | UYGULANDI (rev-15); Fikir 1 - salt-okunur DXF duvar tarayicisi |
 | `collision/`  | `CollisionShape`, `CollisionPolicy`, `CollisionEngine`, `Clash`, `ClashReport`, `Scene`, `check_context` | UYGULANDI (rev-12); validate.py ONCESI bloklayici kapi |
@@ -298,6 +337,11 @@ Ortak desen (pafta + walls ile kanitlandi):
 | `standards/`  | `RoomStandard`, `STANDARDS`, `room_aspect_ratio`, `validate_standards`, `check_room_types`, `check_room_proportions` | UYGULANDI (DEV-036, 2026-09-28); sartname/oransal mahal kutuphanesi, ihlal HER ZAMAN UYARI |
 | `templates/`  | `CirculationCoreTemplate`, `DEFAULT_TEMPLATE`, `generate_circulation_core` | UYGULANDI (DEV-037, 2026-09-28; DEV-045 duzeltmesi, 2026-10-02); sirkulasyon cekirdegi sablon ureteci, v1 yalnizca cekirdek (birim ici bolme YOK), koridor artik israf eden L-sekli DEGIL |
 | `architect/`  | `check_circulation_area_share`, `check_common_circulation_share`, `check_bedroom_via_corridor`, `check_entry_sightlines`, `check_door_core_balance`, `check_wet_area_reachable_without_bedroom`, `check_wet_area_door_proximity`, `FeasibilityReport`, `check_fits`, `ZoneAssignment`, `ZoningPlan`, `resolve_unit_zoning`, `PlacementOption`, `options_for_core_placement`, `place_unit_entry_doors` | UYGULANDI (DEV-039, 2026-09-28; DEV-042/043/045, 2026-10-02); iliskisel (arity-2+) mimari mantik kurallari, DEV-038 absorbe edildi, `rooms[].unit_id` opt-in |
+| `spatial/`    | `door_midpoint`, `door_frame`, `rooms_touching_point`, `dist_point_segment`, `touches_within`, `vertex_mean`, `segments_intersect`, `clear_line_of_sight`, `shared_edge_length`, `point_in_polygon`, `facade_normal`, `window_rooms`, `exterior_windows`, `wall_edge_overlap`, `wall_on_polygon_edge`, `exterior_openings` | UYGULANDI (DEV-059, 2026-10-09); eleman-farkindali mekansal sorgularin TEK sahibi; davranis korunarak tasindi, `spatial -> collision.geometry` tek yonlu |
+| `reasoning/`  | `Lens`, `Facet`, `Finding`, `Registry`, `CheckAdapter`, `Thresholds`, `Provenance`, `build_coverage`, `parse_validate_output`, `diff_findings`, `group_across_floors`, `trigger_report`, `load_registry`, `validate_registry` | UYGULANDI (DEV-060, 2026-10-09); muhakeme cekirdegi - bilgi tasimaz; ilk mercek paketi `lenses/mahremiyet.py` (DEV-061); isik/yasanabilirlik paketleri (DEV-062/063) ve aciklama motoru (DEV-064) sonraki maddeler |
+| `testfit/`    | `Cluster`, `BEDROOM_CLUSTERS`, `FitResult`, `Placement`, `try_fit`, `best_cluster`, `net_room_polygon`, `verify_with_collision`, `bedroom_capacity`, `check_bedroom_single_bed_fits`, `check_bedroom_double_bed_wardrobe_fits` | UYGULANDI (DEV-063, 2026-10-12); deneme yerlestirme sinavi - furniture + collision tuketir, context'e yazmaz, v1 yalniz yatak odasi |
+| `impact/`     | `Node`, `Graph`, `ImpactReport`, `ImpactError`, `build_graph`, `blast_radius`, `touched_from_diff`, `diff_report`, `coverage`, `format_report` | UYGULANDI (DEV-068, 2026-10-12); salt-okunur etki alani raporu, span-duyarli yayilim, patch plani YOK, context'e yazmaz |
+| `brief/`      | (yok) | PLANLANAN (DEV-069): kullanici ihtiyac beyani ve mimari program toplama; v0 yalniz operator diyalogu (`docs/agents/PROJECT_OPERATOR_AGENT.md`), kod/sema v1'de |
 
 > Bu tablo `scripts/doc_check.py` tarafindan DENETLENIR: `UYGULANDI` isaretli bir
 > satirda anilan her sinif adi, o modulde gercekten tanimli olmalidir. Yalnizca

@@ -44,7 +44,7 @@ from version import (  # noqa: E402
     generation_timestamp,
 )
 from rooms import RoomLabeler  # noqa: E402
-from elevations import LevelStack, elevation_vertical_extent  # noqa: E402
+from elevations import LevelStack, derive_level_openings, elevation_vertical_extent  # noqa: E402
 from legend import COLUMNS, COLUMN_WEIGHTS, OpeningLegend  # noqa: E402
 from northarrow import NORTH_LABEL, NorthArrow, rotate_point  # noqa: E402
 from sections import (  # noqa: E402
@@ -129,7 +129,7 @@ def _draw_legend_preview(ax, rows, x0: float, y_top: float, width: float,
         ax.text((cx0 + cx1) / 2.0, (row_ys[0] + row_ys[1]) / 2.0, label,
                 fontsize=2.2, color="#111827", ha="center", va="center", zorder=5)
     for row_index, row in enumerate(rows, start=1):
-        values = (row.mark, row.type_label, row.variant_label, str(row.width_cm), str(row.count))
+        values = row.values()
         y_center = (row_ys[row_index] + row_ys[row_index + 1]) / 2.0
         for value, cx0, cx1 in zip(values, col_xs[:-1], col_xs[1:]):
             ax.text((cx0 + cx1) / 2.0, y_center, value, fontsize=2.0,
@@ -298,24 +298,31 @@ def draw_axes_on_elevation(ax, grid: dict, dx: float, axis_source: str | None, y
         ax.text(x, y_top + ext, axis["label"], fontsize=5, color="#dc2626", ha="center", va="bottom")
 
 
-def draw_elevation(ax, elevation: dict, dx: float) -> None:
+def draw_elevation(ax, elevation: dict, dx: float, context: dict | None = None) -> None:
     # DEV-011 (rev-14): cursor/extent hesabi artik scripts/elevations
     # modulunde TEK yerde (LevelStack) - burada tekrarlanmaz. below_ground
     # kesikli cizgisi bu onizlemede zaten VARDI (matplotlib linestyle="--");
     # gercek DXF cikisinda ise rev-14'ten once YOKTU (bkz. ElevationSheet).
     width = elevation["width"]
-    for level, y0, y1 in LevelStack.from_context(elevation).placements():
+    plan_rects = {}
+    if elevation.get("openings_from") == "plan" and context is not None:      # DEV-073: DXF ile AYNI kaynak (derive_level_openings)
+        plan_rects, _notes = derive_level_openings(context, elevation)
+    for index, (level, y0, y1) in enumerate(LevelStack.from_context(elevation).placements()):
         style = "--" if level.below_ground else "-"
         ax.plot([dx, dx + width, dx + width, dx, dx], [y0, y0, y1, y1, y0], color="black", linewidth=0.8, linestyle=style)
         ax.text(dx - 200, (y0 + y1) / 2, level.label, fontsize=5, ha="right", va="center")
-        if level.window_count:
+        for r in plan_rects.get(index, []):
+            ax.add_patch(plt.Rectangle((dx + r.x0, y0 + r.sill), r.x1 - r.x0, r.height, facecolor="#bfdbfe", edgecolor="#2563eb", linewidth=0.4))
+        if elevation.get("openings_from") == "plan":
+            pass
+        elif level.window_count:
             win_w, win_h = level.window_size
             gap = width / (level.window_count + 1)
             sill = max(0.0, (level.height - win_h) / 2.0)
             for i in range(1, level.window_count + 1):
                 cx = dx + gap * i
                 ax.add_patch(plt.Rectangle((cx - win_w / 2, y0 + sill), win_w, win_h, facecolor="#bfdbfe", edgecolor="#2563eb", linewidth=0.4))
-        if level.door:
+        if level.door and elevation.get("openings_from") != "plan":
             dw, dh = 1800, 2100
             ax.add_patch(plt.Rectangle((dx + width / 2 - dw / 2, y0), dw, dh, facecolor="#fecaca", edgecolor="#dc2626", linewidth=0.4))
     ax.plot([dx - 1000, dx + width + 1000], [0, 0], color="#9ca3af", linewidth=0.6)
@@ -413,7 +420,7 @@ def generate_preview(context_path: Path = DEFAULT_CONTEXT_PATH, output_path: Pat
                 draw_north_arrow_preview(ax, arrow_center, north_angle, north_arrow.radius)
             cursor += floor_width + 2 * FRAME_HALF_WIDTH
         for elevation in context["elevations"]:
-            draw_elevation(ax, elevation, cursor)
+            draw_elevation(ax, elevation, cursor, context)
             y_bottom, y_top = elevation_vertical_extent(elevation)
             if grid:
                 draw_axes_on_elevation(ax, grid, cursor, elevation.get("axis_source"), y_bottom, y_top)

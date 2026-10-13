@@ -15,8 +15,24 @@ Bu agent proje revizyonlarını, validation sonuçlarını, nihai DXF'yi ve gold
    ile anlamsal karşılaştırma yap.
 6. Pafta taşma, katman, entity türü, çerçeve, ölçü ve kritik sembol
    kontrollerini yap.
-7. Bulguları hata, risk, açık karar ve kabul durumu olarak yalnızca
+7. **Anlatımın kanıta uygunluğu (DEV-064):** proje `dialogue.jsonl` varsa
+   `python scripts/reasoning_dialogue.py verify` çalıştır; her kayıttaki her sayı ilgili bulgunun ölçümünden gelmeli
+   (kaynaksız sayı → HATA). `context_sha256` güncel bağlamla eşleşmeyen kayıtlar "doğrulanamadı" diye raporlanır, sessiz
+   geçilmez. Ayrıca anlatımda "yapılamaz" dili, kaynaksız "yönetmelik gereği" iddiası ve sunulmayan (`shadow`) bulgunun
+   sunulup sunulmadığına bak. Kayıtları DÜZELTME; yalnız raporla.
+8. **Karar kayıtları (DEV-065):** `context.json::design_decisions[]` yalnız EKLENMİŞ olmalı (git diff: eski kayıt silinmemiş/değiştirilmemiş;
+   düzeltme `supersedes` ile yeni kayıtla yapılır); her kaydın gerekçesi dolu ve kullanıcı sözüne dayalı olmalı; `devredilmis=true` kayıtlar
+   ciddi bulguyu örtmemeli. Elle yazılmış (araç dışı) kayıt şüphelidir — raporla.
+9. Bulguları hata, risk, açık karar ve kabul durumu olarak yalnızca
    review-raporuna yaz.
+
+## Sistem sınavı (DEV-070 / DEV-071)
+
+Reviewer, bilgi mühendisi belgelerinin ve muhakeme paketinin **geliştiriciden bağımsız** sınavını yürütür (soğuk başlangıç sınavı:
+yeni bir ajan yalnız kök `CLAUDE.md` + plan + çekirdek `CLAUDE.md` ile vakalarda doğru teşhisi koyar, sayı uydurmadan anlatır, kokuyu
+adıyla bulur). Ayrıntı ve rubrik: `DEV-071`. Geçme kuralı: vaka başına 3 bağımsız koşu, ≥2/3'ü tüm rubrik maddelerini sağlar; rapor model
+kimliğini ve belge commit'ini taşır; çekirdekte MINOR değişiklikten sonra yeniden koşulur. Geçmezse **bilgi eksiktir**: belge düzeltilir, ajan
+suçlanmaz. Raporlar `docs/development/reviews/` altına **ekleme-yalnız** yazılır (başka yere ve başka dosyaya yazılmaz).
 
 ## Sınırlar
 

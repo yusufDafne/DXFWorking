@@ -1,6 +1,6 @@
 {
   "source": "golden/tefris_kolon",
-  "entity_count": 296,
+  "entity_count": 304,
   "entity_types": {
     "ARC": 2,
     "ATTRIB": 9,
@@ -8,20 +8,20 @@
     "DIMENSION": 15,
     "HATCH": 14,
     "INSERT": 26,
-    "LINE": 78,
+    "LINE": 80,
     "LWPOLYLINE": 39,
-    "TEXT": 82
+    "TEXT": 88
   },
   "layers": {
     "AKS": 90,
-    "CERCEVE": 36,
+    "CERCEVE": 38,
     "DUVARLAR": 34,
     "KAPI-PENCERE": 12,
     "KESIT": 10,
     "KOLON": 9,
     "KOLON-TARAMA": 9,
     "KOT": 12,
-    "METIN": 51,
+    "METIN": 57,
     "OLCU": 10,
     "TEFRIS-ISLAK": 5,
     "TEFRIS-MUTFAK": 5,

@@ -77,6 +77,10 @@
           "description": "Duvarin baslangic noktasindan itibaren acikligin ortasina olan mesafe"
         },
         "width": { "type": "number", "exclusiveMinimum": 0 },
+        "height": { "type": "number", "exclusiveMinimum": 0, "description": "Aciklik yuksekligi (mm) - OPSIYONEL (DEV-062, sema 1.4.0). PENCERE icin verilmezse katalog varsayilani kullanilir ve ADIYLA bildirilir (DEV-072, sema 1.5.0): normal 1200 mm, boy pencere (window_class=tall) 2000 mm - kullanici karari 2026-10-12. Verilen deger varsayilani ezer." },
+        "sill_height": { "type": "number", "minimum": 0, "description": "Pencere denizligi: zeminden pencere altina mesafe (mm) - OPSIYONEL (DEV-072, sema 1.5.0). Verilmezse yalniz boy pencere icin katalog varsayilani (40 mm) kullanilir; NORMAL pencerenin denizligi VERILMEDI ve uydurulmaz ('verilmedi')." },
+        "window_class": { "type": "string", "enum": ["standard", "tall", "shopfront"], "description": "Yalniz type=window icin (DEV-072/076): 'standard' (varsayilan; 1200 mm yukseklik, 900 mm denizlik), 'tall' = boy pencere / balkon kapisi (1600x2000 mm, denizlik 40 mm), 'shopfront' = dukkan vitrini (2000x2200 mm, denizlik 40 mm). Varsayilanlar katalogdadir (scripts/openings/classes.py), kullanici degeri ezer." },
+        "door_class": { "type": "string", "enum": ["main_entry", "shop"], "description": "Yalniz type=door icin (DEV-076, sema 1.7.0), OPSIYONEL: 'main_entry' = apartman ana girisi (1700x2100 mm, esik 40 mm), 'shop' = dukkan kapisi (ana giris olculeriyle baslar, AYRI sinif). Cephe turetiminde (openings_from='plan') sinif yuksekligi/denizligi kullanilir; verilmezse dis kapi boy pencere varsayilaniyla cizilir." },
         "layer": { "type": "string" },
         "variant": {
           "type": "string", "enum": ["single", "double", "sliding", "folding", "sliding_double"],
@@ -274,6 +278,10 @@
           "type": "array", "minItems": 1, "items": { "$ref": "#/definitions/elevation_level" },
           "description": "Zeminden yukariya (ve varsa asagiya) dogru seviye istifi, ciziliş sirasiyla"
         },
+        "openings_from": {
+          "type": "string", "enum": ["generic", "plan"],
+          "description": "DEV-073 (sema 1.6.0): 'plan' ise bu cephede jenerik window_count/window_size/door DEGIL, planin dis duvarlarindaki GERCEK pencere/kapi acikliklari cizilir (ayni genislik, yukseklik, denizlik, konum). Kat<->seviye eslesmesi SIRAYLA (kat sayisi = seviye sayisi); axis_source ('vertical' = on cephe, 'horizontal' = sag cephe) zorunlu. Varsayilan 'generic' = eski davranis."
+        },
         "axis_source": {
           "type": "string", "enum": ["vertical", "horizontal"],
           "description": "Bu cepheye plandan hangi aks ailesi izdusurulsun: 'vertical' (numerik akslar, on/arka cephe) veya 'horizontal' (alfabetik akslar, sag/sol cephe). Belirtilmezse aks cizilmez."
@@ -426,7 +434,7 @@
         "floor_depth": { "type": "number", "exclusiveMinimum": 0, "description": "Tum katlarda ortak bina ayak izi derinligi" },
         "north_angle": {
           "type": "number",
-          "description": "Kuzey oku (DEV-025, scripts/northarrow). Sac cizgisinin (kat paftasinin +Y yonu, 'yukari') GERCEK KUZEY'e olan saat-yonunde acisi, derece. 0 = kuzey yukarida. Verilmezse ok HIC CIZILMEZ - yon uydurulmaz."
+          "description": "Kuzey oku (DEV-025, scripts/northarrow). Plan paftasinin 'yukari' yonunun (+Y) GERCEK KUZEY'e olan saat-yonunde acisi, derece. 0 = kuzey yukarida. DEV-074 sozlesmesi: vaziyet planinda kuzey daima yukaridir; proje planinin kuzeye en yakin cephesi paftanin ust kenarina paraleldir, bu yuzden aci -45..+45 olmalidir (esdeger acilar normalize edilir; aralik disi aci validate HATASI, proje sessizce dondurulmez). Verilmezse ok HIC CIZILMEZ - yon uydurulmaz."
         }
       }
     },
@@ -469,6 +477,37 @@
           "rev": { "type": "integer", "minimum": 1 },
           "ts": { "type": "string" },
           "summary": { "type": "string" }
+        }
+      }
+    },
+    "design_decisions": {
+      "type": "array",
+      "description": "Tasarim karari kaydi (DEV-065, OPT-IN; ekleme-yalnizlik KONVANSIYONDUR: yeni karar eskiyi `supersedes` ile ezer, kayit silinmez). Bir bulgunun bilincli goz ardi edilmesi gerekcesiyle birlikte buradadir. KANITA BAGLI: bir `covers[]` ogesinin `evidence_hash`i bulgunun guncel olcumuyle eslesmezse kabul DUSER ve bulgu yeniden sunulur. Kaydi bir dil modeli ELLE yazmaz: `scripts/reasoning_dialogue.py decide`. Gerekce bos olamaz (validate.py HATA).",
+      "items": {
+        "type": "object",
+        "required": ["id", "rev", "ts", "reason", "covers"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "minLength": 1, "description": "Karar kimligi (ornek: dd-0001)." },
+          "rev": { "type": "integer", "minimum": 0, "description": "Kararin verildigi revizyon (requests.jsonl rev ile ayni)." },
+          "ts": { "type": "string", "description": "ISO 8601 zaman damgasi." },
+          "reason": { "type": "string", "minLength": 1, "description": "Kullanicinin gerekcesi (ZORUNLU; yalniz bosluktan olusamaz - validate.py denetler)." },
+          "covers": {
+            "type": "array", "minItems": 1,
+            "description": "Kararin kapsadigi bulgular (ozdes katlardaki ayni bulgu icin kat basina bir oge).",
+            "items": {
+              "type": "object",
+              "required": ["finding_key", "evidence_hash", "evidence"],
+              "additionalProperties": false,
+              "properties": {
+                "finding_key": { "type": "string", "minLength": 1 },
+                "evidence_hash": { "type": "string", "description": "Kanit ozeti (16 haneli onaltilik)." },
+                "evidence": { "type": "object", "additionalProperties": { "type": "number" }, "description": "Olculen sayilarin anlik goruntusu ('once -> simdi' anlatimi icin)." }
+              }
+            }
+          },
+          "devredilmis": { "type": "boolean", "description": "Kullanici 'sen karar ver' diyerek devrettiyse true." },
+          "supersedes": { "type": "string", "description": "Bu kararin ezdigi onceki karar kimligi." }
         }
       }
     }
