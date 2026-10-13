@@ -21,7 +21,7 @@ ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_OUT = ROOT / ".exam_sealed"
 HISTORICAL_COMMIT = "727405f"
 CASES = ("eski_uC", "guncel", "kuzey30")
-EXCLUDE_DIRS = {"__pycache__", "cases", "golden", ".git"}      # cases = beklenen-bulgu cevap anahtari
+EXCLUDE_DIRS = {"__pycache__", "cases", "golden", ".git", "review_exam.py"}      # cases = beklenen-bulgu cevap anahtari; review_exam.py vaka icerigini yazar (tur 1'de sizinti riski olarak bulundu)
 
 
 def case_context(case: str) -> dict:
