@@ -326,7 +326,7 @@ geliştirme görevleri, tamamlanmış geçmiş, fikirler ve geliştirici notlar�
   edilir: 350 = −10); aralık dışı açı `validate.py` **HATASI**dır — proje sessizce döndürülmez (otomatik migrasyon yok), karar
   istenir. Kullanıcı bir yerleşim planı verirse bunu analiz edecek altyapı henüz yoktur: yön yalnız **açıyla** bildirilir.
   Uygulama: `scripts/northarrow::check_north_convention`.
-  **Revizyon bekliyor (2026-10-13, `DEV-081`):** kullanıcı kat planında okun **sağ üst köşede** durmasını ve vaziyet pusulasının **kullanıcının belirteceği açıda** olmasını istedi; bu, "vaziyette daima yukarı" cümlesini ve `[−45°, +45°]` kuralının kapsamını değiştirebilir (Q1/Q2 kullanıcı onayı bekliyor, plan: `docs/development/SITE_PLAN_STUDY_PLAN.md`). **O güne dek yukarıdaki sözleşme geçerlidir.**
+  **Revizyon bekliyor (2026-10-13, `DEV-081`):** kullanıcı kat planında okun **sağ üst köşede** durmasını ve vaziyet pusulasının **kullanıcının belirteceği açıda** olmasını istedi; **Karar verildi (Q1/Q2, plan: `docs/development/SITE_PLAN_STUDY_PLAN.md` §2):** gelen vaziyet planı kuzey yukarıdır (değilse kullanıcıya uyarı); proje paftaya binanın uzun kenarı yatay, kuzeye yakın uzun yüzü üstte olacak şekilde yerleşir; pusula vaziyetteki gerçek yöne göre döner (30° → −30°); aralık dikdörtgen binada `[−90°, +90°]` olacak (kare: `[−45°, +45°]`; teyit bekliyor). **Uygulama `DEV-081`de yapılana dek yukarıdaki sözleşme (vaziyette daima yukarı, `[−45°, +45°]`) kodda geçerlidir.**
 - Kuzey okunun **NASIL çizildiği** (`NorthArrowStyle` Protocol'ü,
   `scripts/northarrow/`) standarttan ayrılmıştır — ileride farklı bir
   sembol tasarımına geçilmesi `NorthArrow(style=...)` ile enjekte edilir,

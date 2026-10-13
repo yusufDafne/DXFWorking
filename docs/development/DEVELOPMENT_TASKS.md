@@ -80,11 +80,13 @@ Tamamlanan işlerin ayrıntılı gerekçesi, karar süreci ve ölçülen etkisi
 | DEV-078 | `reasoning/` — shadow gözlemlerin sunumu: kuyruğa girmez, tek satırlık "henüz doğrulanmamış gözlemler" notuyla anılır | PLANNED |
 | DEV-079 | `reasoning/` + belgeler — DEV-071 tur 2: belge eksiklerinin kapatılması, rubrik düzeltmesi, ikinci sınav turu | PLANNED |
 | DEV-080 | `validate.py` — başarı satırındaki "(N uyari)" sayacı yalnız çakışma uyarılarını sayıyor; toplam uyarıyı yansıtmalı | PLANNED |
-| DEV-081 | `northarrow/` — kuzey oku kat planlarında sağ üst köşe; vaziyet pusulası kullanıcının açısında (`DEV-074` sözleşme revizyonu) | PLANNED |
+| DEV-081 | `northarrow/` — kuzey sözleşmesi: kat planında sağ üst köşe, paftalama (uzun kenar yatay, kuzeye yakın yüz üstte), pusula vaziyetteki gerçek yöne göre (`DEV-074` revizyonu) | PLANNED |
 | DEV-082 | `site/` I — şema `site`, `Parcel`/çekme, vaziyet DXF içeri aktarma (aday + onaylı patch) | PLANNED |
 | DEV-083 | `site/` II — deterministik yerleşim etüdü motoru (aday, eleme, ölçüm, alternatifler) | PLANNED |
 | DEV-084 | `site/` III — vaziyet paftası + bağımsız DXF çıktısı + alternatif karşılaştırma | PLANNED |
-| DEV-085 | `site/` IV — brief + dil modeli rolü + onay diyaloğu + seçim patch'i | PLANNED |
+| DEV-085 | `site/` IV — kullanıcı/dil modeli bilgi akışı, faz dallanması, onay diyaloğu, seçim patch'i | PLANNED |
+| DEV-086 | İmar standart değer kataloğu — çekme, TAKS, KAKS varsayılanları (kısa araştırma; kullanıcı gerçek yönetmelikle değiştirecek) | PLANNED |
+| DEV-087 | DWG girdisi — dönüştürücü kararı ve entegrasyonu | PLANNED |
 | DEV-071 | `docs/development/reviews/` — soğuk başlangıç sınavı (reviewer; `DEV-070` ayrılan parça, önkoşulsuz) | PLANNED |
 
 ## READY
@@ -781,47 +783,62 @@ belirleyeceksin ... her birini sıralama olarak birbirine bağla"):**
 - **Kabul ölçütü:** rev-29'da son satır 15 uyarıyı yansıtır; uyarısız golden projede "0"; uyarı üreten bir golden'da gerçek sayı; kasıtlı bozma: sayaç yine yalnız çakışmayı sayarsa test kırılır; `reasoning` adaptörü ve tüm selftest/golden/doc_check temiz.
 - **Önkoşul:** yok.
 
-### DEV-081 — `northarrow/` — kuzey oku yerleşimi ve vaziyet pusulası
+### DEV-081 — `northarrow/` — kuzey sözleşmesi, paftalama ve pusula (`DEV-074` revizyonu)
 
-- **Durum:** PLANNED — kullanıcı talebi 2026-10-13; plan: `SITE_PLAN_STUDY_PLAN.md` §2. **Başlamadan ÖNCE Q1/Q2 (aşağıda) kullanıcıdan alınır.**
-- **Kullanıcı talebi:** *"plan paftalarında [kuzey oku] sağ üst köşede olmalı; pusula vaziyet planında kullanıcının belirteceği açıda olacak."*
-- **Kapsam:** (1) `generate_dxf.py` kat planı kuzey oku konumu: şimdiki "kuzey kenarı padding bölgesi, kat genişliğinin ortası" yerine **pafta iç çizgisinin sağ üst köşesi** (`CONTENT_PADDING` içinde, aks baloncukları/ölçü zinciriyle çakışmaz; pafta taşma koruması ve `verify_within_frame` geçmeli); `scripts/northarrow/CLAUDE.md` "Yerleşim" bölümü ve kök `CLAUDE.md` "Kuzey oku" güncellenir. (2) Vaziyet pusulası: `NorthArrow` aynı sınıf, açı `site.north_angle` (`DEV-082` şeması); vaziyet paftası `DEV-084`te çizilir, bu madde yalnız sözleşmeyi ve çağrı noktasını hazırlar. (3) `DEV-074` revizyonu: "vaziyet planında kuzey daima yukarı" cümlesi, kullanıcının belirttiği açıyla DEĞİŞİR; `meta.north_angle` ile `site.north_angle − bina_donusu` ilişkisi ve `[−45°, +45°]` kuralının kaderi Q1/Q2'ye göre yazılır (kod + `validate` + belge + selftest birlikte).
-- **Açık kararlar:** **Q1** ilişki (kat planı açısı vaziyetten türetilir mi); **Q2** `[−45°, +45°]` kuralı korunur mu.
-- **Kabul ölçütü:** rev-29 projesinde ok sağ üst köşede (DXF'te koordinatla doğrulanır, preview görsel kontrol); çerçeve/padding/taşma kapıları temiz; `north_angle` yoksa ok HİÇ çizilmez (değişmez); kasıtlı bozma: ok yine ortada çizilirse test kırılır; golden `expected.json` değişimleri bilinçli ve raporlanır.
-- **Önkoşul:** Q1/Q2 kararı. `DEV-082` ile paralel yürüyebilir, `DEV-084`ün önkoşuludur.
+- **Durum:** PLANNED — kullanıcı kararları 2026-10-13 (Q1/Q2, `SITE_PLAN_STUDY_PLAN.md` §2). Kalan teyit: Q2' (aşağıda).
+- **Kullanıcı kararı:** *"gelen vaziyet planı zaten daima kuzeyi gösterecek, göstermiyorsa kullanıcıya uyarı yapılacak. Paftalama yapılırken binanın uzun kenarı yatay olacak ve kuzeye yakın tarafı paftanın üstüne bakacak şekilde yerleştirilecek. Pafta pusulası vaziyetteki gerçek yöne göre döndürülmüş olacak (30° → pusula −30° dönmüş). Kat planı paftalarında da aynı mantık geçerli; pusula vaziyete göre gerçek yönü göstermeli."* Ayrıca (2026-10-13): kat planında ok **sağ üst köşede**.
+- **Kapsam:** (1) `generate_dxf.py` kat planı kuzey oku konumu: **pafta iç çizgisinin sağ üst köşesi** (padding içinde; aks/ölçü zinciri çakışması ve taşma kapıları geçmeli). (2) Sözleşme: `meta.north_angle = −bina_donusu` (bina_donusu: vaziyette binanın üst yüzü dış normalinin kuzeyden saat yönünde açısı; örnek +30° → −30°); pusula sınıfı değişmez (`NorthArrow`), açı verilir. (3) Aralık: dikdörtgen binada uzun kenar yatay, kuzeye yakın uzun yüz üstte ⇒ `north_angle ∈ [−90°, +90°]`; tam kare binada `[−45°, +45°]` (eski kural); `meta.floor_width ≥ meta.floor_depth` değilse `validate` UYARISI (otomatik döndürme YOK, karar sorulur). (4) Kök `CLAUDE.md` "Kuzey oku", `scripts/northarrow/CLAUDE.md`, `check_north_convention`, `schema` açıklaması ve operatör belgesi yeni sözleşmeye göre yeniden yazılır (bugünkü "vaziyette daima yukarı + ±45°" cümlesi KALKAR; "gelen vaziyet kuzey yukarıdır, değilse uyarı" girer). (5) Vaziyet pusulası `DEV-084`te çizilir; bu madde çağrı noktasını hazırlar.
+- **Teyit (Q2'):** `±45°` yerine dikdörtgen binada `±90°` sonucu (planın çıkarımı, kullanıcı doğrulamadı). Uygulayıcı bunu kullanıcıya gösterip onay alır.
+- **Kabul ölçütü:** rev-29 projesinde (20000×17500, north 0) ok sağ üst köşede (DXF koordinatı + preview); sınır değerleri ELLE (±90 geçer, ±90,01 hata; kare bina ±45); `floor_width < floor_depth` uyarısı; `north_angle` yoksa ok HİÇ çizilmez; kasıtlı bozma: ok yine ortada, işaret ters (+30 yerine −30), aralık hâlâ ±45 ise test kırılır; golden `expected.json` değişimleri bilinçli ve raporlanır.
+- **Önkoşul:** Q2' teyidi. `DEV-084`ün önkoşuludur.
 
-### DEV-082 — `site/` I — şema, parsel/çekme, vaziyet DXF içeri aktarma
+### DEV-082 — `site/` I — şema, parsel/çekme, vaziyet DXF içeri aktarma, örnek DXF
 
-- **Durum:** PLANNED — plan: `SITE_PLAN_STUDY_PLAN.md` §3, §4(A,B), §6. **Başlamadan önce Q3/Q5 kullanıcıdan alınır.**
-- **Kullanıcı talebi:** *"kullanıcı bir vaziyet planı sağlayacak."* (dışarıdan DXF girdisi)
-- **Kapsam:** yeni modül `scripts/site/` (+ `CLAUDE.md`, `selftest.py`, golden, `CONTRACT_VERSION`; `doc_check` kapıları #10/#10b/#10c ve çakışma muafiyeti/ayak izi kararı); şema **MINOR** (additif, opt-in): `site` (`parcel.polygon`, `setbacks`, `north_angle`, `source{path,sha256}`, `building{position,rotation}`); `Parcel` geçerlilik denetimleri (kapalı, kendini kesmez, alan); `setback.py` iç offset (yapılaşma alanı) — **çekme değerleri girdidir**, yoksa soru; `dxf_in.py`: vaziyet DXF'inden parsel ADAYI + bağlam (`importer/` ile aynı salt-okunur ilke, birim/ölçek TAHMİN EDİLMEZ, belirsizse sorar, kapanmayan/çok adaylı durum raporlanır); `WallCandidate.as_wall_dict` deseninde `Parcel.as_site_dict()` ile **onaylı patch** (otomatik birleştirme YOK); `validate.py` kancası (parsel geçerliliği HATA; bina yapılaşma alanı dışı UYARI → etüt/seçimden sonra HATA mı Q-sonra).
-- **Açık kararlar:** **Q3** DXF girdi/çıktı yorumu; **Q5** çekme/TAKS/KAKS girişi (kenar kenar mı, imar durumu belgesi mi).
-- **Kabul ölçütü:** ELLE hesaplanan mini parseller (dikdörtgen, L, eğik kenarlı) için alan/offset; DXF'ten LINE zinciri ve LWPOLYLINE parsel okuma; kasıtlı bozma (offset ters yön, açık zincir kabulü, birim tahmini) yakalanır; yanlış-pozitif (sınırda duran poligon); örnek proje çıktısı DEĞİŞMEZ (`site` yazılmaz); tüm selftest/golden/doc_check temiz.
-- **Önkoşul:** Q3/Q5. `DEV-083`ün önkoşuludur.
+- **Durum:** PLANNED — plan: `SITE_PLAN_STUDY_PLAN.md` §3, §4(A,B), §6, §8.
+- **Kullanıcı kararı:** girdi muhtemelen DWG; çizim basit: parsel sınırları, yorumlanabilir kısa metinler, yaklaşık yerleşim bölgesi alanı; sistem **basit örnek vaziyet DXF'i** hazırlayıp sunar. Gelen vaziyet kuzey yukarıdır, değilse **uyarı**.
+- **Kapsam:** yeni modül `scripts/site/` (+ `CLAUDE.md`, `selftest.py`, golden, `CONTRACT_VERSION`; `doc_check` #10/#10b/#10c; çakışma muafiyeti/ayak izi kararı); şema **MINOR** (additif, opt-in): `site` (`parcel.polygon`, `placement_zone.polygon`, `setbacks`, `north_confirmed`, `source{path,sha256}`, `building{position,rotation}`); `Parcel` geçerlilik (kapalı, kendini kesmez, alan); `setback.py` iç offset (çekme değeri kullanıcıdan, yoksa `DEV-086` varsayılanı ADIYLA bildirilerek); `dxf_in.py`: parsel/yerleşim alanı/yol/not ADAYLARI (katman adı zorunlu değil; dil modeli yalnız ÖNERİR, kullanıcı onaylar), **kuzey işareti denetimi** (işaret yok/yukarıyı göstermiyor/okunamıyor ⇒ kullanıcıya UYARI + açıyı kullanıcıdan iste; tahmin YOK), birim/ölçek TAHMİN EDİLMEZ; **`scripts/site_sample.py` örnek vaziyet DXF üreteci** (`scripts/site/samples/ornek_vaziyet.dxf`: `PARSEL`, `YERLESIM_ALANI`, `YOL`, `NOT`, `KUZEY` katmanlı basit parsel + kısa kullanım notu); `Parcel.as_site_dict()` ile onaylı patch (otomatik birleştirme YOK). DWG: sessiz okunmaz; "DXF olarak kaydedin" der (`DEV-087`).
+- **Kabul ölçütü:** ELLE hesaplanan mini parseller (dikdörtgen, L, eğik) için alan/offset; örnek DXF'in script tarafından üretilip `dxf_in` ile bire bir okunması; kasıtlı bozma (offset ters yön, açık zincir kabulü, birim tahmini, kuzey işareti yokken uyarısız geçme); yanlış-pozitif (sınırda poligon, kuzey işaretli dosyada uyarı yok); örnek proje çıktısı DEĞİŞMEZ; tüm selftest/golden/doc_check temiz.
+- **Önkoşul:** yok. `DEV-083`ün önkoşuludur.
 
 ### DEV-083 — `site/` II — deterministik yerleşim etüdü motoru
 
 - **Durum:** PLANNED — plan: `SITE_PLAN_STUDY_PLAN.md` §5, §7.
-- **Kullanıcı talebi:** *"onun üzerine uygun yerleşim planı (etütleme) vs yaparak kullanıcıya uygun yerleşim planı alternatifleri sunacaksın ... deterministik olarak bu çalışma gerçekleştirilip."*
-- **Kapsam:** `candidates.py` (sıralı konum ızgarası × izinli dönüşler; adım/dönüş kümesi kullanıcı parametresi, varsayılan UYDURULMAZ), `metrics.py` (çekmeye pay, sınır mesafeleri, yolu gören cephe, cephe yönleri [kuzey açısıyla], bahçe sürekliliği, doluluk oranı; TAKS/KAKS yalnız değer verilirse denetlenir), `study.py` (FORBID eleme: yapılaşma alanı/parsel dışı/komşu çakışma → listeye girmez; ölçüm; **sıralama yalnız kullanıcı onaylı ağırlıkla**, yoksa Pareto/küme sunumu — tek "en iyi" iddiası yok), `Alternative` veri sınıfı (ölçümlerin kaynak fonksiyon adı + değeri), sunum yardımcıları `reasoning/explain.py` deseninde (rakam lint'i), `scripts/site_study.py` CLI (salt okunur, `context.json`a yazmaz). Ayak izi: bugünkü tek dikdörtgen `floor_width × floor_depth`; çok bloklu/L bina kapsam dışı (belgede yazılı).
-- **Kabul ölçütü:** elle hesaplanan küçük parselde alternatif kümesi ve elenenler birebir; **determinizm** (aynı girdi → bayt-bayt aynı liste); kasıtlı bozma: çekmeyi yok sayan eleme, parsel dışı alternatifin sızması, rotasyon işareti, ağırlıksız tek "en iyi" üretimi; yanlış-pozitif: sınırda duran alternatif elenmemeli, 1 mm içeri giren elenmeli; `validate`/DXF çıktısı değişmez.
-- **Önkoşul:** `DEV-082`.
+- **Kullanıcı kararı:** *"alternatif sayısı default 3 olsun, kullanıcının dil modelinden talebine göre yeniden değerlendirilebilsin. Ağırlıklar da aynı şekilde isteğe bağlı olsun."*
+- **Kapsam:** `candidates.py` (sıralı konum ızgarası × izinli dönüşler; adım/dönüş kümesi kullanıcı parametresi, varsayılan UYDURULMAZ), `metrics.py` (çekmeye pay, sınır mesafeleri, yolu gören cephe, cephe yönleri [kuzey açısıyla], bahçe sürekliliği, doluluk; **TAKS/KAKS tavanı** kullanıcı değeriyle ya da `DEV-086` varsayılanıyla [adıyla bildirilerek]; **`YERLESIM_ALANI` örtüşmesi** eleme DEĞİL ölçülen nitelik), `study.py` (FORBID eleme: yapılaşma alanı/parsel dışı/komşu çakışma; ölçüm; **N varsayılan 3**; ağırlık verilmişse onunla sıralama, verilmemişse Pareto'dan çeşitliliği en yüksek 3 aday — seçim kuralı deterministik ve belgeli; tek "en iyi" iddiası yok), `Alternative` (ölçümün kaynak fonksiyon adı + değeri), anlatım şablonları (`reasoning/explain.py` deseni, rakam lint'i), `scripts/site_study.py` CLI (salt okunur). Ayak izi: bugünkü tek dikdörtgen; çok bloklu/L bina kapsam dışı. Paftalama kuralı (uzun kenar yatay, kuzeye yakın yüz üstte) aday dönüşlerini ETKİLEMEZ — dönüş bina yerleşimidir; paftalama `DEV-084`/`DEV-081`.
+- **Kabul ölçütü:** elle hesaplanan küçük parselde alternatif kümesi ve elenenler birebir; **determinizm** (aynı girdi → bayt-bayt aynı liste); N=3 varsayılan ve N=5 isteğe bağlı; ağırlıksız/ağırlıklı iki mod; kasıtlı bozma: çekmeyi yok sayan eleme, parsel dışı sızma, rotasyon işareti, ağırlıksız tek "en iyi", varsayılan değerin bildirilmemesi; yanlış-pozitif: sınırdaki alternatif elenmemeli, 1 mm içeri giren elenmeli.
+- **Önkoşul:** `DEV-082`, `DEV-086`.
 
-### DEV-084 — `site/` III — vaziyet paftası ve bağımsız DXF çıktısı
+### DEV-084 — `site/` III — vaziyet paftası, bağımsız DXF çıktısı, paftalama
 
-- **Durum:** PLANNED — plan: `SITE_PLAN_STUDY_PLAN.md` §8.
-- **Kullanıcı talebi:** vaziyet planı dışarıdan alınan/dışarıya verilebilen bir DXF; pusula kullanıcı açısında.
-- **Kapsam:** `site/sheet.py` (`pafta::Sheet` üzerinden vaziyet paftası, ölçek 1:200 veya 1:500 — `PaperSizePlanner` kısıtı `VAZIYET_PLANI`; parsel, çekme sınırı, bina oturumu, yola yönelim, `NorthArrow` pusulası `site.north_angle` açısında [`DEV-081` sözleşmesi]); `site/export.py` (vaziyet paftasını ve istenirse alternatifleri **bağımsız DXF** olarak yazma; elle düzenleme yasağı: tek yol script); alternatif karşılaştırma paftası (yan yana küçük vaziyetler, her biri etiketli ve ölçülmüş niteliklerle); `generate_dxf.py` vaziyet paftasını (veri varsa, opt-in) ana projeye ekleme kancası — `site` yoksa ana çıktı DEĞİŞMEZ; `pafta` taşma koruması ve `golden_report --rules` kuralları (pusula var mı, çerçeve içinde mi).
-- **Kabul ölçütü:** sentetik parselde pafta DXF'i; pusula açısı DXF'te ölçülür; ana proje (site yok) çıktısı bayt-bayt aynı; golden temiz; kasıtlı bozma: pusula yukarıya kilitli çizilirse test kırılır.
-- **Önkoşul:** `DEV-081`, `DEV-082` (alternatif paftası için `DEV-083`).
+- **Durum:** PLANNED — plan: `SITE_PLAN_STUDY_PLAN.md` §2, §8.
+- **Kullanıcı kararı:** vaziyet planı DXF olarak dışarıya da alınabilmeli; pusula vaziyetteki gerçek yöne göre döner.
+- **Kapsam:** `site/sheet.py` (`pafta::Sheet` üzerinden vaziyet paftası, ölçek 1:200 veya 1:500; parsel, çekme sınırı, bina oturumu, yola yönelim, **kuzey yukarı** vaziyet pusulası); **proje paftalama**: bina yerleşiminden `bina_donusu`nu hesaplayıp kat planı paftalarında uzun kenar yatay/kuzeye yakın yüz üstte düzenini ve `meta.north_angle = −bina_donusu` türetmeyi `DEV-081` sözleşmesiyle uygular (kullanıcı değer verdiyse tutarlılık denetimi); `site/export.py` (bağımsız vaziyet DXF'i + alternatif karşılaştırma paftası: yan yana küçük vaziyetler, etiketli ve ölçülmüş niteliklerle); `generate_dxf.py` vaziyet paftasını (veri varsa, opt-in) ana projeye ekleme kancası — `site` yoksa ana çıktı DEĞİŞMEZ; `pafta` taşma koruması ve `golden_report --rules` kuralları (pusula var mı, çerçeve içinde mi, döndürme işareti).
+- **Kabul ölçütü:** sentetik parselde bina 30° dönük ⇒ kat planı pusulası −30° (DXF'te ölçülür); 0° ve ±90° sınırları; ana proje (site yok) çıktısı bayt-bayt aynı; kasıtlı bozma: işaret ters, pusula yukarıya kilitli, uzun kenar dikey yerleşim; golden temiz.
+- **Önkoşul:** `DEV-081`, `DEV-082` (karşılaştırma için `DEV-083`).
 
-### DEV-085 — `site/` IV — brief, dil modeli rolü ve onay diyaloğu
+### DEV-085 — `site/` IV — kullanıcı/dil modeli bilgi akışı, dallanma, onay diyaloğu
 
-- **Durum:** PLANNED — plan: `SITE_PLAN_STUDY_PLAN.md` §4(onay kapıları), §5. **Başlamadan önce Q6 kullanıcıdan alınır.**
-- **Kullanıcı talebi:** *"bunun için dil modelinin desteği alınacak ... kullanıcı onayına göre de çalışmaya başlanılacak."*
-- **Kapsam:** `Brief` şeması (izinli alanlar: öncelik ağırlıkları, yola cephe isteği, bahçe/güneş tercihi, yerleşim kısıtları; her alan birim/aralık kuralıyla; serbest metin yalnız `notes`); dil modeli kullanım sözleşmesi (`docs/agents/PROJECT_OPERATOR_AGENT.md` ek bölüm: model brief ÖNERİR, kullanıcı doğrular; model sayı/koordinat üretmez); `scripts/site_dialogue.py` (reasoning_dialogue.py deseni: `guide|brief|study|select`), anlatım şablonları (rakam lint'i #13), `dialogue.jsonl` kaydı ekleme-yalnız; **seçim patch'i** (`site.building` + gerekirse `meta.north_angle`) yalnız kullanıcı seçimiyle; `requests.jsonl` + `rev_history` ile normal revizyon akışı; "sen karar ver" devri kuralı (kök muhakeme ilkesi 4).
-- **Kabul ölçütü:** model önerisi kullanıcı onayı olmadan motora geçmez (kasıtlı bozma: onaysız brief ile çalışma denemesi reddedilir); şema dışı alan reddi; seçim patch'i `validate` geçer ve provenance'a yazılır; anlatımda kaynaksız sayı yok; tüm selftest/golden/doc_check temiz.
+- **Durum:** PLANNED — plan: `SITE_PLAN_STUDY_PLAN.md` §4, §5, §9 (faz dallanması).
+- **Kullanıcı kararları:** dil modeli desteği alınır, çalışma deterministik; kullanıcı onayına göre ilerlenir. *"Kullanıcı dil modeline çekme/TAKS/KAKS gibi bilgileri ayrıca sunacak; bilinmiyorsa standart değerler kullanılacak."* Faz kullanıcının parsel planı sunup sunmak istemesine göre belirlenir; sunmak istemezse sonraki faza geçilir.
+- **Kapsam:** operatör akışının ilk sorusu **"Parsel/vaziyet planı sunmak ister misiniz?"** — evet ⇒ birinci faz (bu plan); hayır ⇒ ikinci faz (kat/birim yerleşim alternatifleri, ayrı plan); `Brief` şeması (izinli alanlar: ağırlıklar [isteğe bağlı], alternatif sayısı N [varsayılan 3], çekme/TAKS/KAKS [kullanıcı verirse], yola cephe/bahçe/güneş tercihi; serbest metin yalnız `notes`); bilinmeyen bilgi için `DEV-086` varsayılanı **adıyla bildirilir**; dil modeli kullanım sözleşmesi (`docs/agents/PROJECT_OPERATOR_AGENT.md` ek bölüm: model brief/parsel adayı yorumunu ÖNERİR, kullanıcı doğrular; sayı/koordinat üretmez); `scripts/site_dialogue.py` (`guide|brief|study|select`, `reasoning_dialogue.py` deseni), anlatım şablonları (rakam lint'i), `dialogue.jsonl` ekleme-yalnız; **seçim patch'i** (`site.building` + `meta.north_angle`) yalnız kullanıcı seçimiyle, normal revizyon akışıyla; "sen karar ver" devri (kök muhakeme ilkesi 4).
+- **Kabul ölçütü:** onaysız brief ile çalışma reddedilir (kasıtlı bozma); şema dışı alan reddi; "parsel sunmuyorum" dalı ikinci faza yönlendirir (ve birinci faz kodu çalışmaz); varsayılan kullanımı bildirilir; seçim patch'i `validate` geçer ve provenance'a yazılır; anlatımda kaynaksız sayı yok; tüm selftest/golden/doc_check temiz.
 - **Önkoşul:** `DEV-083`.
+
+### DEV-086 — İmar standart değer kataloğu (çekme, TAKS, KAKS varsayılanları)
+
+- **Durum:** PLANNED — kullanıcı talebi 2026-10-13 ("ayrıca kaydet; Türkiye standartları hakkında kısa araştırmayla default değerler tanımla; gerçek yönetmelik verileriyle ben sonra belirleyeceğim").
+- **Kaynak araştırma:** `SITE_PLAN_STUDY_PLAN.md` §13 (ikincil kaynaklar, DOĞRULANMADI): ön bahçe 5,00 m / yan 3,00 m / arka 3,00 m (asgari, planda aksi hüküm yoksa); TAKS 0,40 (planda TAKS yoksa ayrık/blok nizam); KAKS verilmediyse yaklaşma mesafelerinden bulunan taban alanı × kat adedi ve TAKS en çok 0,60.
+- **Kapsam:** yeni kütüphane (öneri: `scripts/site/zoning.py` ya da `scripts/standards/` altında; `standards/` ile aynı konum/sözleşme: proje VERİSİ DEĞİL, `context.json`a yazılmaz): `ZoningDefaults` kayıtları — her değer **koşul, nizam, kaynak, tarih, doğrulandı=False** alanı taşır; `resolve(user_values)` kullanıcı değerini her zaman üstün tutar; kullanılan her varsayılan **adıyla bildirilir** (`defaults_report.py` deseni); `python scripts/defaults_report.py --catalog` bu kataloğu listeler; "Güncelleme sözleşmesi" (kullanıcı gerçek yönetmelikle değerleri değiştirir → HD kaydı, `provenance.reviewed` güncellenir, `CONTRACT_VERSION` değişmez). v1 yalnız **ayrık nizam**; katalogda olmayan nizam/koşul için sistem SORAR (varsayım yok).
+- **Kabul ölçütü:** elle okunan değerler tabloyla birebir; kullanıcı değeri ezer; koşul eşleşmezse varsayılan UYGULANMAZ (soru döner); her kullanımda bildirim; kasıtlı bozma: kullanıcı değeri varsayılana ezdirilirse, koşulsuz uygulanırsa, bildirilmezse test kırılır; `doğrulandı=False` iken çıktıda "doğrulanmamış varsayılan" ibaresi.
+- **Önkoşul:** yok. `DEV-083`ün önkoşuludur.
+
+### DEV-087 — DWG girdisi (dönüştürücü kararı)
+
+- **Durum:** PLANNED — kullanıcı kararı bekliyor (araç/lisans).
+- **Kaynak:** Q3: kullanıcı muhtemelen DWG verecek. `ezdxf` DWG okumaz.
+- **Kapsam:** seçenekler: (a) kullanıcı "DXF olarak kaydet" yapar (kod yok, belge); (b) ODA File Converter (ücretsiz, kapalı kaynak) komut satırı entegrasyonu; (c) LibreDWG `dwg2dxf` (GPL). Seçilen araç `scripts/site/dwg_in.py` ile **dış araç sarmalı** olur: kurulu değilse açık hata ("DXF olarak kaydedin"), çıktı DXF yine `dxf_in` onay kapısından geçer, dönüşüm kaydı (araç adı/sürümü/sha256) `site.source`a yazılır. Ortamda araç yoksa test sahte dönüştürücüyle yapılır.
+- **Kabul ölçütü:** araç yok ⇒ sessiz yutma yok; dönüşüm sonrası aynı aday akışı; kasıtlı bozma: dönüştürücü hatasını yutma; lisans/kurulum notu belgelenir.
+- **Önkoşul:** kullanıcı kararı; `DEV-082`.
 
 ### DEV-071 — `docs/development/reviews/` — soğuk başlangıç sınavı (reviewer)
 

@@ -1,6 +1,6 @@
 # Vaziyet planı girdisi ve yerleşim etüdü — plan (DEV-081 … DEV-085)
 
-Durum: **PLAN** (kod yok). Kaynak: kullanıcı talebi 2026-10-13. Görev durumu ve sıra `DEVELOPMENT_TASKS.md`de TEK kaynaktır;
+Durum: **PLAN** (kod yok). Kaynak: kullanıcı talebi ve **Q1–Q6 cevapları, 2026-10-13** (§12'de kayıtlı). Görev durumu ve sıra `DEVELOPMENT_TASKS.md`de TEK kaynaktır;
 bu belge tasarımı, veri akışını, dil modeli sınırını ve açık kararları tutar. Hiçbir madde kullanıcı onayı olmadan başlamaz
 (`DEV-048` planıyla aynı kural). `DEV-024` (`site/` vaziyet planı) bu planla yeniden kapsamlandı (bkz. §9).
 
@@ -12,20 +12,18 @@ bu belge tasarımı, veri akışını, dil modeli sınırını ve açık kararla
 3. **Dil modeli desteği alınır, çalışma deterministik yürür:** model niyeti/tercihi yapılandırılmış girdiye çevirir ve sonuçları anlatır;
    ölçü, koordinat, alternatif üretimi ve eleme **Python kodudur**. Çalışma, **kullanıcı onayına göre** başlar ve ilerler.
 
-## 2. Çelişki / netleştirme: kuzey sözleşmesi (`DEV-074`) ile bu talep
+## 2. Kuzey ve paftalama sözleşmesi (kullanıcı kararı 2026-10-13; `DEV-074`ü değiştirir)
 
-`DEV-074` (2026-10-12) şunu kurdu: *vaziyet planında kuzey daima yukarı*; proje, kuzeye en yakın cephesi üstte olacak şekilde paftaya konur;
-`meta.north_angle ∈ [−45°, +45°]`. Yeni talep vaziyetteki pusulanın **kullanıcının belirttiği açıda** olmasını söylüyor. İkisi birlikte şöyle
-okunabilir (ÖNERİ — onay bekler, bkz. Q1):
+Önceki çelişki çözüldü (Q1/Q2 cevapları):
 
-- **Vaziyet paftasında** pusula açısı = kullanıcının DXF'inde/beyanında verdiği açı (`site.north_angle`, serbest, derece). Kullanıcının vaziyet
-  DXF'i zaten bir yöne sahiptir; sistem onu döndürmez.
-- **Kat planı paftalarında** ok, *binanın paftadaki yukarısı ile gerçek kuzey arasındaki açıyı* gösterir (`meta.north_angle`) ve **sağ üst köşede**
-  durur. Bu açı artık **türetilebilir**: `meta.north_angle = site.north_angle − bina_donusu` (bina vaziyette `bina_donusu` kadar döndürülmüştür).
-  Kullanıcı bunu elle de verebilir; ikisi verilirse tutarlılık `validate` denetimidir (HATA değil, UYARI + hangisi kazanır kuralı açıkça seçilir).
-- `[−45°, +45°]` kuralı, "kat planı paftası kuzeye en yakın cephe üstte olacak şekilde yerleştirilir" sözleşmesinin sonucuydu. Vaziyet yerleşimi
-  binayı serbestçe döndürebiliyorsa bu kural kat planı paftası için **hâlâ geçerli kalır mı** (paftaya yerleştirme kuralı) yoksa **kalkar mı**
-  (çünkü kuzey okunun açısı artık vaziyetten gelir)? **Q2.**
+1. **Gelen vaziyet planı DAİMA kuzey yukarı kabul edilir.** Girdi bunu göstermiyorsa (kuzey işareti yok / yukarıyı göstermiyor / okunamıyor) sistem **kullanıcıyı UYARIR**; yönü tahmin etmez, açıyı kullanıcıdan ister.
+2. **Paftalama:** vaziyetteki bina yerleşimine göre proje paftasına yerleştirilirken **binanın uzun kenarı yatay** olur ve **kuzeye yakın uzun yüzü paftanın üstüne bakar**.
+3. **Pusula döner:** pafta pusulası vaziyetteki **gerçek yöne** göre döndürülür. Kullanıcının örneği: vaziyette kuzeye göre 30° duran yapı paftaya yerleştirilince pusulanın kuzeyi paftanın düşeyine göre **−30°** dönmüş görünür.
+4. **Kat planı paftalarında aynı mantık** geçerlidir (ok vaziyete göre gerçek yönü gösterir) ve ok **sağ üst köşede** durur.
+
+Tanım (işaret): `bina_donusu` = vaziyette (kuzey yukarı) binanın üst yüzünün dış normalinin kuzeyden **saat yönünde** açısı; `meta.north_angle` (mevcut tanım: paftanın yukarısından kuzeye, saat yönünde) = **−bina_donusu**. Kullanıcı örneği: `bina_donusu = +30° → north_angle = −30°`.
+
+**Çıkarılan sonuç (kullanıcı teyidi gerek, Q2'):** `DEV-074`teki `[−45°, +45°]` aralığı "dört cepheden kuzeye en yakını üstte" varsayımından geliyordu. Yeni kural *uzun kenar yatay* olduğundan paftanın üstüne bakan yüz **iki uzun yüzden kuzeye yakın olandır**; dış normali kuzeyle ≤ 90° yapar. Bu yüzden dikdörtgen (uzun ≠ kısa kenar) binada izinli aralık **`[−90°, +90°]`** olur; **tam kare** binada eski kural (en yakın cephe, `[−45°, +45°]`) kalır. Ayrıca `meta.floor_width ≥ meta.floor_depth` olmalıdır (çizilen plan uzun kenarı yatay tutar); aksi `validate` uyarısı (otomatik döndürme YOK, karar sorulur). Bu, `DEV-081`de koda/`validate`e/belgeye birlikte işlenir.
 
 ## 3. Kavramlar
 
@@ -78,7 +76,7 @@ sağlayıcı — `doc_check` #10), `CONTRACT_VERSION`. Alt parçalar (öneri; ko
 | Dosya | Görev |
 |---|---|
 | `parcel.py` | `Parcel` (poligon, kenarlar, alan, yönelim), geçerlilik (kapalı, kendini kesmez, saat yönü normalizasyonu) |
-| `setback.py` | iç offset ile yapılaşma alanı; **çekme değerleri girdidir** (kenar başına ya da tek değer); yok ise ETÜT BAŞLAMAZ ve soru döner |
+| `setback.py` | iç offset ile yapılaşma alanı; **çekme değerleri girdidir** (kenar başına ya da tek değer); kullanıcı vermediyse `DEV-086` kataloğundaki **varsayılan** kullanılır ve **adıyla bildirilir** (sessiz varsayım yok) |
 | `dxf_in.py` | vaziyet DXF'inden parsel **adayı** + bağlam çıkarır (`importer/` ile aynı salt-okunur ilke; LWPOLYLINE/LINE zinciri → kapalı poligon, birim/ölçek tespiti raporlanır, tahmin edilmez) |
 | `candidates.py` | deterministik aday üretimi (konum ızgarası × izinli dönüşler) |
 | `metrics.py` | ölçülen nitelikler (aşağıda §7) |
@@ -91,33 +89,37 @@ sağlayıcı — `doc_check` #10), `CONTRACT_VERSION`. Alt parçalar (öneri; ko
 **Eleme (FORBID benzeri, alternatif listesine hiç girmez):** ayak izi yapılaşma alanı dışında; parsel dışı; (varsa) komşu/yol ayak izi ile çakışma.
 **Ölçülen nitelikler (hepsi proje geometrisinin ölçüsüdür; her biri ölçüm sahibi fonksiyonla):**
 çekme sınırlarına pay (min/ortalama), bina–parsel sınırı mesafeleri, yolu gören cephe, her cephenin gerçek yönü (kuzey açısıyla), bahçe alanının sürekliliği
-(tek parça mı bölünmüş mü), parsel doluluğu (ayak izi / parsel — ham oran; **TAKS/KAKS "tavan" olarak yalnız kullanıcı/imar durumu değer verirse** denetlenir),
+(tek parça mı bölünmüş mü), parsel doluluğu (ayak izi / parsel — ham oran; **TAKS/KAKS "tavan" olarak kullanıcı değeriyle, yoksa `DEV-086` varsayılanıyla (adıyla bildirilerek)** denetlenir),
 cephe başına gün ışığı yönelimi (`isik_hava_yonelim` merceğiyle aynı tanım; **kaynaksız eşik uydurulmaz**), giriş cephesinin yola/ortak alana bakışı.
-**Sıralama:** kullanıcının brief'inden gelen **ağırlıklar** ile (ağırlıklar kullanıcı onaylı sayılardır, dil modeli önermiş olsa bile kullanıcı doğrular); ağırlık yoksa
-sıralama yapılmaz, alternatifler "farklı bir ödünleşimi temsil eden" kümeler olarak sunulur (Pareto sunumu) — **tek "en iyi" iddiası uydurulmaz.**
+**Kullanıcının `YERLESIM_ALANI` bölgesi (yaklaşık istek):** eleme DEĞİL, ölçülen nitelik ve sıralama girdisidir (ayak izinin bölgeyle örtüşme oranı, merkez uzaklığı); "yaklaşık" bir istek olduğu için bölge dışına taşan alternatif listeye girebilir ama bu açıkça belirtilir.
+**Alternatif sayısı N:** varsayılan **3** (kullanıcı kararı Q6); kullanıcı dil modeline "daha çok/az alternatif" derse yeniden değerlendirilir (N bir kullanıcı parametresidir, sınırı `DEV-083`te yazılır).
+**Sıralama/ağırlık (Q6):** ağırlıklar **isteğe bağlıdır**. Kullanıcı vermişse (dil modeli önerir, kullanıcı onaylar) sıralama o ağırlıklarla yapılır; vermemişse alternatifler, farklı bir ödünleşimi (örn. yola yakınlık / bahçe bütünlüğü / ışık) temsil eden **3 aday** olarak seçilir (Pareto'dan çeşitliliği en yüksek 3, seçim kuralı deterministik ve belgelenmiş) — tek bir "en iyi" iddiası yapılmaz.
 Tüm sayısal anlatım §5 kuralıyla (ölçülmüş yer-tutucu) üretilir.
 
-## 8. "Dışarıdan DXF" — iki yön (yorum; Q3 ile onay)
+## 8. Girdi biçimi ve örnek vaziyet DXF'i (Q3 cevabı)
 
-Talepteki "vaziyet planı için dışarıda bir DXF alınabilecek şekilde" şöyle okunuyor ve ikisi de planlandı:
-- **Girdi:** kullanıcı bir vaziyet planı DXF'i sağlar → `dxf_in.py` (aday, onaylı patch). Kullanıcının DXF'i **kaynak olarak saklanır** (sha256 + yol `site.source`; DXF'in kendisi
-  `context.json`a gömülmez, projenin `site/` kaynak dizininde kalır — "çıktı DXF'ler elle düzenlenmez" kuralı girdi için değil üretim için geçerlidir).
-- **Çıktı:** vaziyet paftası ana `plan.dxf` içine eklenmeden de **tek başına bir DXF** olarak alınabilir (`export.py`); alternatifler karşılaştırma paftasına ya da ayrı dosyalara yazılır.
-  Üretim yolu yine yalnız script'tir (elle düzenleme yasağı geçerli).
+Kullanıcı **muhtemelen DWG** sunacak ve çizim **olabildiğince basit** olacak: parsel sınırları, dil modelinin yorumlayabileceği kısa metinler ve binanın **yaklaşık yerleşmesini istediği bölgeyi** gösteren bir alan.
+
+- **DWG:** `ezdxf` DWG okumaz. Bu yüzden sistem girdisi **DXF**'tir; DWG için bir dönüştürücü (ODA File Converter, LibreDWG `dwg2dxf` vb.) gerekir. Dönüştürücü bir dış araç ve lisans/kurulum kararıdır → ayrı madde `DEV-087`, kararı kullanıcı verir. Geçici yol: kullanıcı CAD'den "DXF olarak kaydet" yapar. Dönüştürücü yoksa sistem DWG'yi **sessizce okumaz**; "DXF olarak kaydedin" der.
+- **Basit vaziyet sözleşmesi** (`DEV-082`de belgelenir; sistemin ürettiği örnek dosya aynı kuralı izler): `PARSEL` katmanında kapalı polyline (parsel sınırı); `YERLESIM_ALANI` katmanında kapalı polyline (binanın yaklaşık oturmasını istediği bölge); `YOL` katmanında çizgiler (yol kenarı); `NOT` katmanında kısa metinler (`KUZEY`, `YOL`, `KOMSU PARSEL`, ada/parsel no, serbest not); `KUZEY` katmanında kuzey işareti. **Katman adları zorunlu DEĞİLDİR:** kullanıcının dosyasında farklı adlar olabilir → sistem kapalı poligonları ve metinleri **aday** olarak listeler, dil modeli metinlere bakarak hangisinin parsel/yerleşim alanı olduğunu **önerir**, kullanıcı onaylar (§5, onay kapısı 1).
+- **Örnek dosya:** `scripts/site/samples/` altında, **script tarafından üretilen** bir `ornek_vaziyet.dxf` (basit dikdörtgen/yamuk parsel + yol + `YERLESIM_ALANI` + notlar + kuzey işareti) ve kullanıcıya verilecek kısa kullanım notu. DXF'i elle yazmak yasaktır; `python scripts/site_sample.py` üretir (`DEV-082`).
+- **Çıktı:** vaziyet paftası ve alternatifleri ana `plan.dxf`'ten **bağımsız DXF** olarak da alınabilir (`export.py`, `DEV-084`).
+- Kullanıcının DXF'i **kaynak olarak saklanır** (sha256 + yol `site.source`); `context.json`a gömülmez.
 
 ## 9. Görev dilimleri (bağımlılık sırası; ayrıntı `DEVELOPMENT_TASKS.md`de)
 
 | Madde | Konu | Önkoşul |
 |---|---|---|
-| `DEV-081` | Kuzey oku: kat planı sağ üst köşe; vaziyet pusulası kullanıcı açısı (`DEV-074` sözleşme revizyonu) | yok (Q1/Q2 kararı) |
-| `DEV-082` | `site/` I: şema (`site`), `Parcel`/`setback`, vaziyet DXF içeri aktarma (aday + onaylı patch) | yok |
-| `DEV-083` | `site/` II: deterministik etüt motoru (aday, eleme, ölçüm, alternatif) | `DEV-082` |
-| `DEV-084` | `site/` III: vaziyet paftası (pusula dahil) + bağımsız DXF çıktısı + alternatif karşılaştırma | `DEV-081`, `DEV-082` (`DEV-083` alternatif karşılaştırması için) |
-| `DEV-085` | Brief + onay diyaloğu: dil modeli rolü, `Brief` şeması, sunum/seçim/onay kaydı, seçim patch'i | `DEV-083` |
-| `DEV-024` | (eski) vaziyet planı | **yeniden kapsamlandı:** `DEV-082`/`DEV-084`e bölündü; bu madde yeni uygulamada ayrıca açılmaz |
+| `DEV-081` | Kuzey sözleşmesi: kat planında ok sağ üst köşe; paftalama kuralı (uzun kenar yatay, kuzeye yakın yüz üstte); pusula vaziyetteki gerçek yöne göre döner; `north_angle` aralığı `[−90°, +90°]` (kare: `[−45°, +45°]`) | Q2' teyidi |
+| `DEV-082` | `site/` I: şema `site`, `Parcel`/çekme, vaziyet DXF içeri aktarma, kuzey işareti denetimi, **örnek vaziyet DXF üreteci** | yok |
+| `DEV-083` | `site/` II: deterministik yerleşim etüdü motoru (varsayılan **3** alternatif, isteğe bağlı ağırlık) | `DEV-082`, `DEV-086` |
+| `DEV-084` | `site/` III: vaziyet paftası, bağımsız DXF çıktısı, alternatif karşılaştırma; pafta pusulası döndürülmüş | `DEV-081`, `DEV-082` (`DEV-083` karşılaştırma için) |
+| `DEV-085` | `site/` IV: kullanıcı/dil modeli bilgi akışı, dallanma (parsel sunuyor mu?), onay diyaloğu, seçim patch'i | `DEV-083` |
+| `DEV-086` | İmar standart değer kataloğu (çekme, TAKS, KAKS varsayılanları; kullanıcı sonra gerçek yönetmelikle değiştirecek) | yok |
+| `DEV-087` | DWG girdisi: dönüştürücü kararı ve entegrasyonu | kullanıcı kararı (araç/lisans) |
+| `DEV-024` | (eski) vaziyet planı | **yeniden kapsamlandı:** `DEV-082`/`DEV-084`e bölündü; ayrıca açılmaz |
 
-İkinci faz (bu plana DAHİL DEĞİL, kullanıcı isterse ayrı plan): **birim içi/kat planı yerleşim alternatifleri** — mevcut `architect/study.py`, `templates/`, `testfit/`
-ve `DEV-056` (2D yerleşim optimizasyonu) ile birleşir. Talepteki "uygun yerleşim planı (etütleme)" ifadesinin ilk fazı **bina–parsel yerleşimi**dir (Q4).
+**Faz dallanması (Q4 cevabı):** operatör akışının ilk sorusu "Parsel/vaziyet planı sunmak ister misiniz?"dır. **Evet** → birinci faz (bina–parsel yerleşimi, bu plan). **Hayır** → doğrudan ikinci faz: **kat planı/birim yerleşim alternatifleri** (mevcut `architect/study.py`, `templates/`, `testfit/`, `DEV-056` ile birleşir; ayrı plan). Soru ve dallanma `DEV-085`te.
 
 ## 10. Doğrulama stratejisi (her madde için asgari)
 
@@ -131,17 +133,35 @@ ve `DEV-056` (2D yerleşim optimizasyonu) ile birleşir. Talepteki "uygun yerle�
 
 ## 11. Riskler
 
-- **Çekme/TAKS/KAKS değerleri uydurulabilir** → motor bu değerler olmadan başlamaz; değer yoksa soru döner (kök `CLAUDE.md` "eksik bilgi varsa sorulur").
+- **Çekme/TAKS/KAKS değerleri uydurulabilir** → kullanıcı vermezse yalnız `DEV-086` kataloğundaki kaynaklı varsayılan kullanılır, her kullanımda adıyla bildirilir; kaynak ikincildir ve kullanıcı gerçek yönetmelikle değiştirecektir (§13). Katalogda olmayan değer (örn. başka nizam) için motor SORAR.
 - **DXF çeşitliliği** (birim, katman adı, açık polyline, yay) → ilk sürümde desteklenen entity kümesi açıkça sınırlı; desteklenmeyen girdi sessizce yutulmaz, raporlanır.
 - **Eğik/serbest yerleşim** kat planı paftası sözleşmesini (kuzeye en yakın cephe üstte, `DEV-074`) zorlar → Q2.
 - **Tek ayak izi varsayımı:** bugünkü proje tek dikdörtgen kat; L/çok bloklu binalar bu planın dışındadır (açıkça yazılır).
 - **Alternatif patlaması** → üst sınır N kullanıcı parametresidir (varsayılan yok; sorulur).
 
-## 12. Açık kararlar (kullanıcıya sorulacak; cevaplanmadan uygulama başlamaz)
+## 12. Kullanıcı kararları (2026-10-13) ve kalan teyitler
 
-- **Q1.** Vaziyet pusulası açısı ile kat planı kuzey okunun ilişkisi §2'deki öneri mi (kat planı açısı `site.north_angle − bina_donusu`'dan türetilir)?
-- **Q2.** `meta.north_angle ∈ [−45°, +45°]` ve "kuzeye en yakın cephe üstte" kuralı kat planı paftası için korunsun mu, vaziyet yerleşimi serbest döndürürse kalksın mı?
-- **Q3.** "Dışarıdan DXF" yorumu (§8): hem **girdi** (kullanıcının vaziyet DXF'i) hem **çıktı** (bağımsız vaziyet DXF'i) doğru mu?
-- **Q4.** İlk faz yalnız **bina–parsel yerleşimi** mi (kat planı yerleşim alternatifleri ikinci faz)?
-- **Q5.** Çekme mesafeleri/TAKS/KAKS nasıl gelecek: kullanıcı kenar kenar mı söyleyecek, imar durumu belgesinden (PDF/metin) mi? (Belge ayrıştırma ayrı bir madde olur.)
-- **Q6.** Alternatif sayısı N ve sıralama: ağırlıkları kullanıcı mı verecek, yoksa Pareto sunumu (tek "en iyi" yok) yeterli mi?
+| # | Karar |
+|---|---|
+| Q1 | Gelen vaziyet kuzey yukarı kabul edilir, değilse UYARI. Paftalama: uzun kenar yatay, kuzeye yakın yüz üstte; pusula vaziyetteki gerçek yöne göre döner (30° → pusula −30°). |
+| Q2 | Kat planı paftalarında aynı mantık; ok vaziyete göre gerçek yönü gösterir. |
+| Q3 | Girdi muhtemelen **DWG**; basit çizim (parsel sınırı, yorumlanabilir kısa metinler, yaklaşık yerleşim bölgesi alanı). Sistem **basit örnek vaziyet DXF'i** üretip sunar. |
+| Q4 | İlk faz, kullanıcının parsel planı sunmak isteyip istemediğine göre: **evet → bina–parsel yerleşimi; hayır → ikinci faz** (kat/birim yerleşim alternatifleri). |
+| Q5 | Kullanıcı çekme/TAKS/KAKS bilgisini dil modeline ayrıca sunar; bilinmiyorsa **standart değerler** kullanılır. Bu değerler sistemde henüz yok → `DEV-086` (kısa araştırmayla varsayılanlar; kullanıcı sonra gerçek yönetmelikle belirleyecek). |
+| Q6 | Alternatif sayısı varsayılan **3**, kullanıcının dil modeline talebiyle değişebilir; ağırlıklar **isteğe bağlı**. |
+
+**Kalan teyitler (uygulayıcı kullanıcıya sorar):** (Q2') `[−45°,+45°]` yerine dikdörtgen binada `[−90°,+90°]`, kare binada `[−45°,+45°]` sonucu (§2); DWG dönüştürücü seçimi (`DEV-087`); `DEV-086` varsayılan değerlerinin (araştırma ikincil kaynaklıdır) kullanıcı tarafından ilk bakışta onayı.
+
+## 13. İmar standart değerleri — kısa araştırma kaydı (`DEV-086` girdisi)
+
+Kullanıcı gerçek yönetmelik verisiyle sonra değiştirecek; bu değerler **geçici, kaynağı ikincil, doğrulanmamış** varsayılanlardır ve kullanıldığında **adıyla bildirilir** ("varsayılan: …, kaynak: araştırma 2026-10-13"). Plan notu/uygulama imar planı farklı değer veriyorsa o geçer.
+
+| Değer | Varsayılan | Koşul | Kaynak (ikincil) |
+|---|---|---|---|
+| Ön bahçe / yol kenarı | **5,00 m** (asgari) | uygulama imar planında aksi hüküm yoksa | Planlı Alanlar İmar Yönetmeliği md. 24, [İzmir BB belgesinde alıntı](https://www.izmir.bel.tr:443/YuklenenDosyalar/Dokumanlar/13022024141408.pdf) ve [Alomaliye yönetmelik metni](https://alomaliye.com/2017/07/03/planli-alanlar-imar-yonetmeligi/) |
+| Yan bahçe | **3,00 m** (asgari) | aynı | aynı |
+| Arka bahçe | **3,00 m** (asgari) | aynı | aynı |
+| TAKS (tavan) | **0,40** | uygulama imar planında TAKS belirtilmeyen ayrık/blok nizam | [Bursa Hakimiyet](https://www.bursahakimiyet.com.tr/gundem/imar-yonetmeligi-nde-kapsamli-degisiklik-yapildi-1660706), [Müşavirler Kulübü](https://musavirlerkulubu.com.tr/makale/planli-alanlar-imar-yonetmeligi-degisikligi-ve-emsal-asansor-hukumleri-2026) (1 Temmuz 2026 değişikliği; Resmî Gazete 33297 metni DOĞRULANMADI) |
+| KAKS (emsal) | **sayı yok** — KAKS verilmeyen parselde: yapı yaklaşma mesafelerine göre bulunan taban alanı × kat adedi; bu durumda TAKS en çok **0,60** | KAKS belirtilmemişse | aynı ikincil kaynaklar |
+
+Notlar: (1) ön bahçe çoğu zaman planda ayrıca belirtilir; 5 m yalnız aksi yazılmadığında geçerli asgaridir. (2) TAKS 0,40 ile 0,60 farklı koşulların değerleridir, birbirinin yerine geçmez; katalog **koşulu** taşımalıdır. (3) Bölgesel/belediye yönetmelikleri ve nizam (bitişik/ayrık/blok) farklılaştırır — katalog nizam alanı taşır, v1'de yalnız ayrık nizam. (4) Bu tablo `DEV-086`da `scripts/standards/` benzeri bir kütüphane olur (proje verisi DEĞİL, `context.json`a yazılmaz); kullanıcı değeri her zaman ezer.
