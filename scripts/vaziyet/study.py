@@ -9,12 +9,12 @@ from dataclasses import dataclass, field
 try:
     from .candidates import REASON_OUTSIDE_BUILDABLE, REASON_OUTSIDE_PARCEL, build_candidates, classify
     from .metrics import Measurement, measure_candidate
-    from .parcel import Parcel, VaziyetError
+    from .parcel import Parcel, VaziyetError, validate_polygon
     from .setback import plan_north_angle
 except ImportError:
     from candidates import REASON_OUTSIDE_BUILDABLE, REASON_OUTSIDE_PARCEL, build_candidates, classify  # type: ignore
     from metrics import Measurement, measure_candidate  # type: ignore
-    from parcel import Parcel, VaziyetError  # type: ignore
+    from parcel import Parcel, VaziyetError, validate_polygon  # type: ignore
     from setback import plan_north_angle  # type: ignore
 
 try:
@@ -175,6 +175,10 @@ def run_study(parcel_polygon, buildable_polygon, width: float, depth: float, *, 
         raise VaziyetError("bina genisligi/derinligi pozitif olmali")
     parcel = Parcel.from_polygon(parcel_polygon)
     ppoly = list(parcel.polygon)
+    if zone is not None:
+        zerr = validate_polygon(zone)
+        if zerr:
+            raise VaziyetError("yerlesim bolgesi (placement_zone) gecersiz: " + "; ".join(zerr))
     road_edges = tuple(sorted(set(road_edges)))
     cands = build_candidates(buildable_polygon, step_mm, rotations_deg)
     eliminated = {REASON_OUTSIDE_PARCEL: 0, REASON_OUTSIDE_BUILDABLE: 0}

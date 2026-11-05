@@ -17,7 +17,7 @@ except ImportError:
     from zoning import resolve_zoning, setbacks_for_parcel  # type: ignore
 
 
-def study_from_context(context: dict, *, step_mm, rotations_deg, n=None, weights=None, min_separation_mm=None, taks=None, kaks=None, floors=None):
+def study_from_context(context: dict, *, step_mm, rotations_deg, n=None, weights=None, min_separation_mm=None, taks=None, kaks=None, floors=None, setbacks_user=None):
     """(StudyResult, bildirimler, yapilasma alani). `site.setbacks` yoksa katalog cekmesi KULLANILIR ve bildirimlere ADIYLA yazilir. Veri eksikse `VaziyetError`."""
     site = context.get("site") or {}
     meta = context.get("meta", {})
@@ -27,15 +27,27 @@ def study_from_context(context: dict, *, step_mm, rotations_deg, n=None, weights
         raise VaziyetError("meta.floor_width/floor_depth yok: bina ayak izi bilinmiyor (uydurulmaz)")
     parcel = Parcel.from_polygon(site["parcel"]["polygon"])
     roads = list(site.get("road_edges", []))
+    n_edges = len(parcel.polygon)
+    for i in roads:
+        if isinstance(i, bool) or not isinstance(i, int) or not 0 <= i < n_edges:
+            raise VaziyetError(f"site.road_edges: {i!r} gecersiz kenar indeksi (parselde {n_edges} kenar var)")
     notices: list[str] = []
     user = {k: v for k, v in (("taks", taks), ("kaks", kaks)) if v is not None}
+    sb_user = {k: v for k, v in (setbacks_user or {}).items() if v is not None}
+    if sb_user and site.get("setbacks"):
+        raise VaziyetError("hem site.setbacks hem brief cekmesi var: celiskili olabilir, biri kaldirilmali (sessiz oncelik yok)")
+    user.update(sb_user)
     res = resolve_zoning(user)
     if site.get("setbacks"):
         buildable = buildable_area(parcel, site["setbacks"])
     else:
         sb, sres = setbacks_for_parcel(parcel, roads, user)
         buildable = buildable_area(parcel, sb)
-        notices += ["site.setbacks yok: imar katalogu varsayilani kullanildi."] + sres.describe()
+        sb_defaults = [z for z in sres.used_defaults if z.key.endswith("setback_mm")]       # TAKS/KAKS varsayilanlari asagida ayri bildirilir
+        if sb_defaults:
+            notices += ["site.setbacks yok: imar katalogu varsayilani kullanildi."] + [ln for ln in sres.describe() if any(f"[{z.name};" in ln for z in sb_defaults)]
+        else:
+            notices.append("site.setbacks yok: cekmeler brief'teki kullanici degerlerinden alindi.")
     taks_lim = {"value": res.values["taks"], "source": res.sources["taks"]} if res.values.get("taks") is not None else None
     kaks_lim = {"value": res.values["kaks"], "source": res.sources["kaks"]} if res.values.get("kaks") is not None else None
     for z in res.used_defaults:
@@ -81,3 +93,14 @@ def views_from_study(context: dict, result, buildable) -> list[SiteView]:
                               buildable=buildable, road_edges=tuple(site.get("road_edges", [])), zone=(site.get("placement_zone") or {}).get("polygon"),
                               info_lines=lines))
     return views
+
+
+def study_from_brief(context: dict, fields: dict):
+    """ONAYLI brief alanlariyla etut (`study_from_context`); onay denetimi cagiranin isidir (`brief.require_phase_and_brief`)."""
+    for k in ("step_mm", "rotations_deg"):
+        if k not in fields:
+            raise VaziyetError(f"brief'te '{k}' yok: adim ve donus kumesi varsayilansizdir, kullanicidan istenir")
+    return study_from_context(
+        context, step_mm=fields["step_mm"], rotations_deg=fields["rotations_deg"], n=fields.get("n"), weights=fields.get("weights"),
+        min_separation_mm=fields.get("min_separation_mm"), taks=fields.get("taks"), kaks=fields.get("kaks"), floors=fields.get("floors"),
+        setbacks_user={k: fields.get(k) for k in ("front_setback_mm", "side_setback_mm", "rear_setback_mm")})

@@ -937,6 +937,302 @@ def check_site_export_dev084() -> list[str]:
     return e
 
 
+# ----------------------------------------------------------------------------- DEV-085: kullanici / dil modeli bilgi akisi
+def check_brief_schema_and_gates_dev085() -> list[str]:
+    from vaziyet import (PHASE_SITE, PHASE_UNITS, append_record, brief_numbers, brief_sha, current_phase, effective_brief, read_log, require_phase_and_brief,
+                         route_phase, unsourced_numbers, validate_brief)
+    e: list[str] = []
+    good = {"step_mm": 5000, "rotations_deg": [0, 90], "n": 3, "weights": {"road_proximity": 2, "light_south": 1}, "front_setback_mm": 5000, "taks": 0.4, "floors": 5,
+            "site_scale": "1/500", "notes": "bahce 777 m2 olsun"}
+    _eq(e, "gecerli brief", validate_brief(good), [])
+    _eq(e, "bos brief gecerli (alanlar opsiyonel)", validate_brief({}), [])
+    bads = (({"zzz": 1}, "bilinmeyen alan"), ({"n": 0}, "n=0"), ({"n": 11}, "n=11"), ({"n": True}, "n bool"), ({"n": 2.5}, "n float"),
+            ({"weights": {}}, "bos agirlik"), ({"weights": {"x": 1}}, "bilinmeyen eksen"), ({"weights": {"road_proximity": -1}}, "negatif agirlik"),
+            ({"weights": {"road_proximity": 0}}, "hepsi sifir"), ({"weights": {"road_proximity": True}}, "bool agirlik"),
+            ({"step_mm": 0}, "adim 0"), ({"step_mm": "5"}, "adim metin"), ({"rotations_deg": []}, "bos donus"), ({"rotations_deg": ["0"]}, "donus metin"),
+            ({"front_setback_mm": -1}, "negatif cekme"), ({"taks": -0.1}, "negatif taks"), ({"kaks": "1"}, "kaks metin"), ({"floors": 0}, "kat 0"),
+            ({"floors": 2.0}, "kat float"), ({"site_scale": "1/100"}, "olcek 1/100"), ({"notes": 5}, "notes sayi"), ([], "sozluk degil"))
+    for fields, label in bads:
+        if not validate_brief(fields):
+            e.append(f"brief reddedilmeli: {label}")
+    _eq(e, "faz: evet", route_phase(True), PHASE_SITE)
+    _eq(e, "faz: hayir", route_phase(False), PHASE_UNITS)
+    for bad in ("evet", 1, None):
+        try:
+            route_phase(bad)
+            e.append(f"faz cevabi bool olmali: {bad!r}")
+        except VaziyetError:
+            pass
+    _eq(e, "brief_sha determinist + alan sirasindan bagimsiz", brief_sha({"a": 1, "b": 2}), brief_sha({"b": 2, "a": 1}))
+    if brief_sha({"a": 1}) == brief_sha({"a": 2}):
+        e.append("farkli brief farkli sha vermeli")
+    nums = brief_numbers(good)
+    for want in ("5000", "0", "90", "3", "2", "1", "0.4", "5"):
+        if want not in nums:
+            e.append(f"brief_numbers '{want}' icermeli")
+    if "777" in nums:
+        e.append("brief_numbers notes'tan (serbest metin) sayi almamali")
+    _eq(e, "kaynaksiz sayi", unsourced_numbers("bina 5000 mm ve 777 mm", {"5000"}), ["777"])
+    _eq(e, "A1 gibi kimlikler sayi sayilmaz", unsourced_numbers("A1 secildi", set()), [])
+    with tempfile.TemporaryDirectory() as tmp:
+        log = Path(tmp) / "l.jsonl"
+        try:
+            append_record(log, "xyz", {})
+            e.append("gecersiz kayit turu reddedilmeli")
+        except VaziyetError:
+            pass
+        try:
+            append_record(log, "selection", {}, text="yerlesim 777 mm", allowed_numbers={"5000"})
+            e.append("kaynaksiz sayili metin reddedilmeli")
+        except VaziyetError:
+            pass
+        if log.exists() and log.read_text(encoding="utf-8").strip():
+            e.append("reddedilen kayit dosyaya YAZILMAMALI")
+        append_record(log, "selection", {}, text="yerlesim 5000 mm", allowed_numbers={"5000"})
+        _eq(e, "kaynakli sayili metin yazilir", len(read_log(log)), 1)
+        # faz / brief / onay mantigi
+        log2 = Path(tmp) / "l2.jsonl"
+        recs = lambda: read_log(log2)  # noqa: E731
+        _eq(e, "kayit yok: faz yok", current_phase(recs()), None)
+        for label, setup in (("faz sorusu cevaplanmadi", lambda: None),):
+            try:
+                require_phase_and_brief(recs())
+                e.append(f"kapi: {label}")
+            except VaziyetError:
+                pass
+        append_record(log2, "phase", {"phase": PHASE_UNITS})
+        try:
+            require_phase_and_brief(recs())
+            e.append("kapi: faz2'de vaziyet etudu calismamali")
+        except VaziyetError as exc:
+            if "faz2_kat_birim" not in str(exc):
+                e.append(f"faz2 mesaji: {exc}")
+        append_record(log2, "phase", {"phase": PHASE_SITE})
+        _eq(e, "son faz kaydi gecerli", current_phase(recs()), PHASE_SITE)
+        try:
+            require_phase_and_brief(recs())
+            e.append("kapi: brief yok")
+        except VaziyetError:
+            pass
+        append_record(log2, "brief_proposed", {"fields": good, "sha": brief_sha(good), "proposed_by": "dil_modeli"})
+        _eq(e, "onerilen brief onaysiz", effective_brief(recs())["approved"], False)
+        try:
+            require_phase_and_brief(recs())
+            e.append("kapi: model onerisi (onaysiz brief) motora gecmemeli")
+        except VaziyetError as exc:
+            if "ONAYLANMADI" not in str(exc):
+                e.append(f"onaysiz brief mesaji: {exc}")
+        append_record(log2, "brief_approved", {"fields": good, "sha": brief_sha(good), "proposed_by": "dil_modeli", "approved_by": "kullanici"})
+        _eq(e, "onayli brief", require_phase_and_brief(recs())["fields"], good)
+        newer = dict(good, n=5)
+        append_record(log2, "brief_proposed", {"fields": newer, "sha": brief_sha(newer), "proposed_by": "dil_modeli"})
+        try:
+            require_phase_and_brief(recs())
+            e.append("kapi: onaydan SONRA gelen yeni oneri yeniden onay ister")
+        except VaziyetError:
+            pass
+        bad_fields = dict(good, n=99)
+        append_record(log2, "brief_approved", {"fields": bad_fields, "sha": brief_sha(bad_fields), "approved_by": "kullanici"})
+        try:
+            require_phase_and_brief(recs())
+            e.append("kapi: onayli olsa da gecersiz brief reddedilmeli")
+        except VaziyetError:
+            pass
+    return e
+
+
+def check_selection_and_delegation_dev085() -> list[str]:
+    from vaziyet import check_patch, deep_merge, delegation_decision, run_study, selection_patch
+    e: list[str] = []
+    buildable = _buildable(5000)
+    r = run_study(PARCEL_30x40, buildable, 10000, 6000, step_mm=5000, rotations_deg=[0, 30], road_edges=[0], north_confirmed=True)
+    alt30 = next(a for a in run_study(PARCEL_30x40, buildable, 10000, 6000, step_mm=5000, rotations_deg=[30], road_edges=[0]).alternatives)
+    patch = selection_patch(alt30, None)
+    _eq(e, "patch: bina donusu", patch["site"]["building"]["rotation_deg"], 30.0)
+    _eq(e, "patch: north_angle = -donus (30 -> -30)", patch["meta"]["north_angle"], -30.0)
+    _eq(e, "patch: konum alternatifin merkezi", patch["site"]["building"]["position"], [alt30.position[0], alt30.position[1]])
+    if set(patch) != {"site", "meta"} or set(patch["site"]) != {"building"} or set(patch["meta"]) != {"north_angle"}:
+        e.append("patch YALNIZ site.building + meta.north_angle icermeli")
+    ctx = _ctx(setbacks={"uniform_mm": 5000}, road_edges=[0])
+    ctx["meta"].update({"floor_width": 10000, "floor_depth": 6000})
+    merged = deep_merge(ctx, patch)
+    _eq(e, "deep_merge: meta mevcut alanlari korur", merged["meta"]["floor_width"], 10000.0)
+    _eq(e, "deep_merge: orijinal DEGISMEZ", "building" in ctx["site"], False)
+    _eq(e, "gecerli patch: hata yok", check_patch(ctx, patch), [])
+    off = {"site": {"building": {"position": [100, 100], "rotation_deg": 0.0}}, "meta": {}}
+    if not check_patch(ctx, off):
+        e.append("parsel disina tasan patch reddedilmeli")
+    # devir
+    w = {"road_proximity": 1.0}
+    rw = run_study(PARCEL_30x40, buildable, 10000, 6000, step_mm=5000, rotations_deg=[0], road_edges=[0], weights=w)
+    ok, why = delegation_decision(rw, {"weights": w})
+    _eq(e, "devir: agirlik var, ciddi bulgu yok -> gecerli, A1", (ok, why.startswith("A1")), (True, True))
+    ok, why = delegation_decision(rw, {})
+    if ok or "agirlik" not in why:
+        e.append("devir: agirlik yoksa tek oneri yok -> reddedilmeli")
+    over = run_study(PARCEL_30x40, buildable, 10000, 6000, step_mm=5000, rotations_deg=[0], road_edges=[0], weights=w, taks={"value": 0.01, "source": "kullanici"})
+    ok, why = delegation_decision(over, {"weights": w})
+    if ok or "TAKS" not in why:
+        e.append("devir: tavan asiliyorsa (ciddi bulgu) devir olsa bile sorulur")
+    zone = [(24000, 33000), (25000, 33000), (25000, 34000), (24000, 34000)]
+    zo = run_study(PARCEL_30x40, buildable, 10000, 6000, step_mm=5000, rotations_deg=[0], road_edges=[0], weights=w, zone=zone)
+    ok, why = delegation_decision(zo, {"weights": w})
+    if ok or "bolge" not in why:
+        e.append("devir: oneri bolge disindaysa (ciddi bulgu) reddedilmeli")
+    none = run_study(PARCEL_30x40, _buildable(14000), 10000, 6000, step_mm=1000, rotations_deg=[0], weights=w)
+    _eq(e, "devir: alternatif yok", delegation_decision(none, {"weights": w})[0], False)
+    return e
+
+
+def check_dialogue_cli_dev085() -> list[str]:
+    import importlib.util
+    import io
+    import json as _j
+    from contextlib import redirect_stdout
+    from vaziyet import run_study
+    e: list[str] = []
+    spec = importlib.util.spec_from_file_location("site_dialogue_cli", str(Path(__file__).resolve().parent.parent / "site_dialogue.py"))
+    cli = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(cli)
+
+    def run(*argv):
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            try:
+                code = cli.main(list(argv))
+            except SystemExit as exc:
+                code = int(exc.code or 0)
+        return code, buf.getvalue()
+
+    def project(tmp, name, **site):
+        d = Path(tmp) / name
+        d.mkdir()
+        ctx = {"meta": {"floor_width": 10000, "floor_depth": 6000}, "site": {"north_confirmed": True, "parcel": {"polygon": [list(p) for p in PARCEL_30x40]}, "road_edges": [0]}}
+        ctx["site"].update(site)
+        (d / "context.json").write_text(_j.dumps(ctx), encoding="utf-8")
+        return d / "context.json"
+
+    with tempfile.TemporaryDirectory() as tmp:
+        p = project(tmp, "a", setbacks={"uniform_mm": 5000})
+        before = hashlib.sha256(p.read_bytes()).hexdigest()
+        c = str(p)
+        code, out = run("guide")
+        if code != 0 or "Parsel/vaziyet" not in out or "ONAYLANMADAN" not in out:
+            e.append("guide sozlesmeyi (ilk soru + onay kapisi) icermeli")
+        code, out = run("study", c)
+        if code != 1 or "faz sorusu cevaplanmadi" not in out:
+            e.append(f"faz sorusu cevaplanmadan etut calismamali: {out!r}")
+        code, out = run("brief", "propose", c, "--by", "dil_modeli", "--json", '{"step_mm":5000,"rotations_deg":[0,90]}')
+        if code != 1:
+            e.append("faz cevabindan once brief onerisi reddedilmeli")
+        code, _ = run("phase", c, "--provide-site", "evet")
+        _eq(e, "faz evet", code, 0)
+        code, out = run("brief", "propose", c, "--by", "dil_modeli", "--json", '{"step_mm":5000,"setback_guess_mm":3000}')
+        if code != 1 or "bilinmeyen brief alani" not in out:
+            e.append(f"izinli olmayan brief alani reddedilmeli: {out!r}")
+        code, out = run("brief", "propose", c, "--by", "dil_modeli", "--json", "{bozuk")
+        _eq(e, "bozuk JSON", code, 2)
+        code, out = run("brief", "propose", c, "--by", "dil_modeli", "--json", '{"step_mm":5000,"rotations_deg":[0,90],"weights":{"road_proximity":1}}')
+        _eq(e, "gecerli oneri", code, 0)
+        if "BEKLENIYOR" not in out:
+            e.append("onerinin onay bekledigi soylenmeli")
+        code, out = run("study", c)
+        if code != 1 or "ONAYLANMADI" not in out:
+            e.append(f"onaysiz brief ile etut CALISMAMALI (model onerisi motora gecmez): {out!r}")
+        code, out = run("select", c, "--alternative", "A1")
+        if code != 1:
+            e.append("onaysiz brief ile secim calismamali")
+        _eq(e, "onay", run("brief", "approve", c)[0], 0)
+        code, out = run("study", c)
+        if code != 0 or "A1" not in out or "A2" not in out or "A3" not in out:
+            e.append(f"onayli brief ile etut calismali (3 alternatif): {out!r}")
+        # bagimsiz hesap: ayni parametreler -> ayni alternatifler
+        ref = run_study(PARCEL_30x40, _buildable(5000), 10000, 6000, step_mm=5000, rotations_deg=[0, 90], weights={"road_proximity": 1}, road_edges=[0], north_confirmed=True)
+        code, out = run("select", c, "--alternative", "A2")
+        _eq(e, "secim kodu", code, 0)
+        patch = _j.loads(out[out.index("{"):])
+        a2 = ref.alternatives[1]
+        _eq(e, "secim patch'i motor sonucuyla ayni (konum, donus, north_angle)",
+            (patch["site"]["building"]["position"], patch["site"]["building"]["rotation_deg"], patch["meta"]["north_angle"]),
+            ([a2.position[0], a2.position[1]], a2.rotation_deg, ((-a2.rotation_deg + 180) % 360) - 180))
+        _eq(e, "context DEGISMEDI (patch yalniz taslak)", hashlib.sha256(p.read_bytes()).hexdigest(), before)
+        if run("select", c, "--alternative", "A9")[0] != 1:
+            e.append("olmayan alternatif reddedilmeli")
+        if run("select", c)[0] != 2:
+            e.append("--alternative ya da --delegate gerekir")
+        if run("select", c, "--alternative", "A1", "--delegate")[0] != 2:
+            e.append("ikisi birlikte verilemez")
+        code, out = run("select", c, "--delegate")
+        _eq(e, "devir (agirlik var, ciddi bulgu yok)", code, 0)
+        dpatch = _j.loads(out[out.index("{"):])
+        _eq(e, "devir patch'i = A1 (en yuksek skor)", dpatch["site"]["building"]["position"], [ref.alternatives[0].position[0], ref.alternatives[0].position[1]])
+        if "devredildi" not in out:
+            e.append("devirde secim ve bedelinin sonradan bildirildigi yazilmali")
+        recs = [_j.loads(x) for x in (p.parent / "site_dialogue.jsonl").read_text(encoding="utf-8").splitlines()]
+        kinds = [r["kind"] for r in recs]
+        _eq(e, "kayit sirasi (ekleme-yalniz)", kinds, ["phase", "brief_proposed", "brief_approved", "study", "selection", "selection"])
+        _eq(e, "devir kaydi", [r["data"]["delegated"] for r in recs if r["kind"] == "selection"], [False, True])
+        if any(r.get("context_sha256") != before for r in recs):
+            e.append("her kayit context sha256'sini tasimali")
+        # onaydan sonra yeni oneri -> yeniden onay gerekir
+        run("brief", "propose", c, "--by", "kullanici", "--json", '{"step_mm":2500,"rotations_deg":[0]}')
+        code, out = run("study", c)
+        if code != 1 or "ONAYLANMADI" not in out:
+            e.append("onaydan sonra degisen brief yeniden onay ister")
+        # agirliksiz brief: devir REDDEDILIR (tek 'en iyi' iddiasi yok)
+        run("brief", "approve", c)
+        code, out = run("select", c, "--delegate")
+        if code != 1 or "agirlik" not in out:
+            e.append(f"agirliksiz brief ile devir reddedilmeli: {out!r}")
+        # adim/donus brief'te yoksa varsayilan UYDURULMAZ
+        run("brief", "propose", c, "--by", "kullanici", "--json", '{"n":3}')
+        run("brief", "approve", c)
+        code, out = run("study", c)
+        if code != 1 or "varsayilansizdir" not in out:
+            e.append(f"adim yoksa etut calismamali, varsayilansizligi acikca soylenmeli: {out!r}")
+        # gecersiz (kendini kesen) placement_zone: etut ONCE reddeder (eskiden sifir alan merkezinde cokerdi)
+        bz = project(tmp, "e", setbacks={"uniform_mm": 5000}, placement_zone={"polygon": [[6000, 8000], [24000, 30000], [24000, 8000], [6000, 30000]]})
+        run("phase", str(bz), "--provide-site", "evet")
+        run("brief", "propose", str(bz), "--by", "kullanici", "--json", '{"step_mm":5000,"rotations_deg":[0]}')
+        run("brief", "approve", str(bz))
+        code, out = run("study", str(bz))
+        if code != 1 or "placement_zone" not in out:
+            e.append(f"gecersiz placement_zone acik hata vermeli (cokmemeli): {out!r}")
+        # gecersiz road_edges: etut cokmeden acik hata verir
+        re_ = project(tmp, "f", setbacks={"uniform_mm": 5000}, road_edges=[9])
+        run("phase", str(re_), "--provide-site", "evet")
+        run("brief", "propose", str(re_), "--by", "kullanici", "--json", '{"step_mm":5000,"rotations_deg":[0]}')
+        run("brief", "approve", str(re_))
+        code, out = run("study", str(re_))
+        if code != 1 or "road_edges" not in out:
+            e.append(f"gecersiz road_edges acik hata vermeli: {out!r}")
+        # hayir dali: ikinci faz, vaziyet kodu calismaz
+        q = project(tmp, "b", setbacks={"uniform_mm": 5000})
+        run("phase", str(q), "--provide-site", "hayir")
+        code, out = run("brief", "propose", str(q), "--by", "kullanici", "--json", '{"step_mm":5000,"rotations_deg":[0]}')
+        if code != 1:
+            e.append("hayir dalinda brief onerisi reddedilmeli")
+        code, out = run("study", str(q))
+        if code != 1 or "faz2_kat_birim" not in out:
+            e.append(f"hayir dalinda vaziyet etudu calismamali: {out!r}")
+        # cekme brief'ten (kullanici degeri), site.setbacks yok -> katalog DEGIL kullanici degeri; site.setbacks varsa celiski HATASI
+        r2 = project(tmp, "c")
+        run("phase", str(r2), "--provide-site", "evet")
+        run("brief", "propose", str(r2), "--by", "kullanici", "--json", '{"step_mm":5000,"rotations_deg":[0],"front_setback_mm":5000,"side_setback_mm":3000,"rear_setback_mm":3000}')
+        run("brief", "approve", str(r2))
+        code, out = run("study", str(r2))
+        if code != 0 or "brief'teki kullanici degerlerinden" not in out or "DEFAULT_FRONT_SETBACK_MM" in out:
+            e.append(f"brief cekmesi kullanilmali ve katalog bildirilmemeli: {out!r}")
+        r3 = project(tmp, "d", setbacks={"uniform_mm": 5000})
+        run("phase", str(r3), "--provide-site", "evet")
+        run("brief", "propose", str(r3), "--by", "kullanici", "--json", '{"step_mm":5000,"rotations_deg":[0],"front_setback_mm":2000}')
+        run("brief", "approve", str(r3))
+        code, out = run("study", str(r3))
+        if code != 1 or "celiskili" not in out:
+            e.append(f"hem site.setbacks hem brief cekmesi: celiski hatasi (sessiz oncelik yok): {out!r}")
+    return e
+
+
 def main() -> int:
     groups = (
         ("cokgen gecerliligi (kendini kesen/yinelenen/kolinear + L yanlis-pozitif yok)", check_polygon_validity()),
@@ -953,6 +1249,9 @@ def main() -> int:
         ("kat plani north_angle <-> site.building.rotation_deg tutarliligi (DEV-084)", check_north_consistency_dev084()),
         ("vaziyet paftasi: pusulalar, katmanlar, cm olcusu, tasma, bitisik paftalar (DEV-084)", check_site_sheet_dev084()),
         ("vaziyet DXF cikti: gorunumler + site_export CLI (DEV-084)", check_site_export_dev084()),
+        ("brief semasi + faz dallanmasi + onay kapisi + diyalog kaydi (DEV-085)", check_brief_schema_and_gates_dev085()),
+        ("secim patch'i + 'sen karar ver' devri (DEV-085)", check_selection_and_delegation_dev085()),
+        ("site_dialogue CLI uctan uca: faz, brief, onay, etut, secim, devir (DEV-085)", check_dialogue_cli_dev085()),
     )
     failed = False
     for name, errors in groups:
