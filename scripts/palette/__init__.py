@@ -114,6 +114,11 @@ PALETTE: dict[str, LayerColor] = {
         "TAVAN", (130, 70, 150), "primary",
         "mor/eflatun - DEV-023; RCP kot/malzeme etiketi, diger \"primary\" "
         "tonlarindan (gri/kirmizi/mavi/yesil) bilerek farkli bir aile."),
+    "VAZ-PARSEL": LayerColor("VAZ-PARSEL", (20, 20, 20), "vaziyet", "DEV-084 vaziyet paftasi: parsel siniri (koyu)."),
+    "VAZ-CEKME": LayerColor("VAZ-CEKME", (200, 60, 160), "vaziyet", "DEV-084: cekme siniri / yapilasma alani (magenta, kesikli)."),
+    "VAZ-YOL": LayerColor("VAZ-YOL", (140, 140, 40), "vaziyet", "DEV-084: yol kenari (zeytin)."),
+    "VAZ-BINA": LayerColor("VAZ-BINA", (0, 90, 200), "vaziyet", "DEV-084: bina ayak izi (mavi)."),
+    "VAZ-ALAN": LayerColor("VAZ-ALAN", (60, 170, 170), "vaziyet", "DEV-084: istenen yerlesim bolgesi (turkuaz, kesikli)."),
     "TEFRIS-OTURMA": LayerColor(
         "TEFRIS-OTURMA", (139, 94, 60), None,
         "kahverengi ailesi (rev-10) - kullanici: \"zit renk kullanilmaz\", "

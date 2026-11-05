@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import copy
 import hashlib
+import math
 import sys
 import tempfile
 from pathlib import Path
@@ -155,7 +156,8 @@ def check_site_validation_hook() -> list[str]:
     errs, warns = check_site(_ctx(setbacks={"uniform_mm": 3000}, placement_zone={"polygon": [[1000, 1000], [40000, 1000], [40000, 5000]]}))
     _eq(e, "yerlesim alani parsel disi UYARI", (errs, any("placement_zone" in w for w in warns)), ([], True))
     ok = _ctx(setbacks={"uniform_mm": 3000}, building={"position": [15000, 20000], "rotation_deg": 0.0})
-    _eq(e, "bina icerde: temiz", check_site(ok), ([], []))
+    ok["meta"]["north_angle"] = 0.0
+    _eq(e, "bina icerde, north_angle tutarli: temiz", check_site(ok), ([], []))
     errs, warns = check_site(_ctx(setbacks={"uniform_mm": 3000}, building={"position": [5500, 20000], "rotation_deg": 0.0}))
     _eq(e, "bina cekmeye giriyor UYARI", (errs, any("cekmeler" in w for w in warns)), ([], True))     # sol kenar x=500 < 3000
     errs, _ = check_site(_ctx(setbacks={"uniform_mm": 3000}, building={"position": [2000, 20000], "rotation_deg": 0.0}))
@@ -717,6 +719,224 @@ def check_study_narration_and_cli_dev083() -> list[str]:
     return e
 
 
+# ----------------------------------------------------------------------------- DEV-084: vaziyet paftasi + bagimsiz DXF
+def _ctx_building(rot, north=None):
+    c = _ctx(setbacks={"uniform_mm": 3000}, building={"position": [15000, 20000], "rotation_deg": rot}, road_edges=[0])
+    if north is not None:
+        c["meta"]["north_angle"] = north
+    return c
+
+
+def check_north_consistency_dev084() -> list[str]:
+    e: list[str] = []
+    for rot, north, bad in ((30, -30, False), (0, 0, False), (350, 10, False), (90, -90, False), (180, 180, False), (180, -180, False), (330, -30, True), (30, 30, True), (0, 5, True)):
+        warns = check_site(_ctx_building(rot, north))[1]
+        has = any("tutarsiz" in w for w in warns)
+        _eq(e, f"donus {rot}, north_angle {north}: tutarsizlik uyarisi", has, bad)
+    warns = check_site(_ctx_building(30))[1]
+    if not any("north_angle yok" in w and "-30" in w for w in warns):
+        e.append("north_angle YOKKEN turetilen deger onerilmeli (yazilmadan)")
+    if any("north_angle" in w for w in check_site(_ctx(setbacks={"uniform_mm": 3000}))[1]):
+        e.append("site.building yokken north_angle uyarisi OLMAMALI")
+    return e
+
+
+def _sheet_view(rot=0.0, road=(0,), **kw):
+    from vaziyet import SiteView
+    parcel = [(0, 0), (30000, 0), (30000, 40000), (0, 40000)]
+    fp = building_footprint(10000, 6000, (15000, 20000), rot)
+    return SiteView(label=kw.pop("label", "VAZIYET PLANI"), parcel_polygon=parcel, footprint=fp, rotation_deg=rot,
+                    buildable=[(3000, 3000), (27000, 3000), (27000, 37000), (3000, 37000)], road_edges=tuple(road), **kw)
+
+
+def _compasses(doc):
+    """(merkez, igne ucu) listesi: CERCEVE katmanindaki daireler + 3 koseli kapali ucgenler."""
+    msp = doc.modelspace()
+    circles = [c for c in msp.query("CIRCLE") if c.dxf.layer == "CERCEVE"]
+    needles = [p for p in msp.query("LWPOLYLINE") if p.dxf.layer == "CERCEVE" and len(list(p.get_points())) == 3]
+    out = []
+    for c in circles:
+        cx, cy = c.dxf.center.x, c.dxf.center.y
+        best = None
+        for nd in needles:
+            pts = [(q[0], q[1]) for q in nd.get_points()]
+            tip = pts[0]                                           # NorthArrow ibresinin ilk kosesi ucu
+            if best is None and math.hypot(tip[0] - cx, tip[1] - cy) <= c.dxf.radius * 1.0001 and abs(math.hypot(tip[0] - cx, tip[1] - cy) - c.dxf.radius) < 1e-6:
+                best = (tip[0] - cx, tip[1] - cy, c.dxf.radius)
+        out.append(((cx, cy), best))
+    return out
+
+
+def check_site_sheet_dev084() -> list[str]:
+    from vaziyet import SITE_SCALES, SiteView, render_site_views
+    from pafta import PaftaOverflowError, CONTENT_PADDING, FRAME_GAP
+    e: list[str] = []
+    for bad in ("1/50", "1/100", "1:500", None, ""):
+        try:
+            render_site_views([_sheet_view()], bad)
+            e.append(f"gecersiz olcek kabul edildi: {bad!r}")
+        except VaziyetError:
+            pass
+    try:
+        render_site_views([], "1/500")
+        e.append("bos gorunum listesi reddedilmeli")
+    except VaziyetError:
+        pass
+    _eq(e, "izinli vaziyet olcekleri", SITE_SCALES, ("1/200", "1/500"))
+    doc, sheets = render_site_views([_sheet_view(30.0, info_lines=["BINA DONUSU: 30 DERECE"])], "1/500")
+    layers = {en.dxf.layer for en in doc.modelspace()}
+    for name in ("VAZ-PARSEL", "VAZ-CEKME", "VAZ-YOL", "VAZ-BINA", "CERCEVE", "METIN"):
+        if name not in layers:
+            e.append(f"{name} katmaninda cizim yok")
+    if "VAZ-ALAN" in layers:
+        e.append("bolge verilmediyse VAZ-ALAN cizilmemeli")
+    from palette import color_for
+    for name in ("VAZ-PARSEL", "VAZ-CEKME", "VAZ-YOL", "VAZ-BINA", "VAZ-ALAN"):
+        _eq(e, f"{name} rengi paletten", tuple(doc.layers.get(name).rgb), tuple(color_for(name)))
+    _eq(e, "cekme/bolge katmani kesikli", (doc.layers.get("VAZ-CEKME").dxf.linetype, doc.layers.get("VAZ-ALAN").dxf.linetype), ("DASHED", "DASHED"))
+    texts = [t.dxf.text for t in doc.modelspace().query("TEXT")]
+    for want in ("3000", "4000", "YOL", "UST", "K", "KAT PLANI PUSULASI", "BINA DONUSU: 30 DERECE"):
+        if want not in texts:
+            e.append(f"metin yok: {want!r}")
+    pb = [en for en in doc.modelspace().query("LWPOLYLINE") if en.dxf.layer == "VAZ-PARSEL"][0]
+    pxs = [q[0] for q in pb.get_points()]
+    pys = [q[1] for q in pb.get_points()]
+    lab = [(t.dxf.insert.x, t.dxf.insert.y) for t in doc.modelspace().query("TEXT") if t.dxf.text == "3000"]
+    labw = [(t.dxf.insert.x, t.dxf.insert.y) for t in doc.modelspace().query("TEXT") if t.dxf.text == "4000"]
+    if sorted(1 if y > max(pys) else (-1 if y < min(pys) else 0) for _, y in lab) != [-1, 1]:
+        e.append("3000 cm etiketleri parselin ALTINDA ve USTUNDE (disinda) olmali")
+    if sorted(1 if x > max(pxs) else (-1 if x < min(pxs) else 0) for x, _ in labw) != [-1, 1]:
+        e.append("4000 cm etiketleri parselin SOLUNDA ve SAGINDA (disinda) olmali")
+    if "30000" in texts or "300" in texts:
+        e.append("kenar olcusu TAM SAYI CM olmali (3000 cm), mm degil")
+    # iki pusula: vaziyet (sag-ust) DAIMA yukari; kat plani (sol-ust) -B kadar donuk
+    from northarrow import NorthArrow
+    arrow = NorthArrow("1/500")
+    comp = _compasses(doc)
+    _eq(e, "iki pusula", len(comp), 2)
+    comp.sort(key=lambda c: c[0][0])
+    (left_c, left_n), (right_c, right_n) = comp
+    _eq(e, "sag pusula (vaziyet) yukari: ibre (0, +r)", (round(right_n[0], 6), round(right_n[1], 6)), (0.0, round(arrow.radius, 6)))
+    want_x, want_y = arrow.radius * math.sin(math.radians(-30)), arrow.radius * math.cos(math.radians(-30))
+    _eq(e, "sol pusula (kat plani) -30 derece: ibre (-0.5r, +0.866r)", (round(left_n[0], 6), round(left_n[1], 6)), (round(want_x, 6), round(want_y, 6)))
+    # konum: sag pusula iç cizginin sag-ust kosesi (DEV-081 ile ayni yardimci)
+    from pafta import Sheet
+    sh = sheets[0]
+    plans_sheet = Sheet("1/500", 2.5 * 500, ["VAZIYET PLANI"], [(sh["y_bottom"], sh["y_top"])])
+    ix0, iy0, ix1, iy1 = plans_sheet.inner_bounds(sh["dx"], sh["width"], sh["y_bottom"], sh["y_top"])
+    margin = 10.0 * 500
+    want_c = arrow.corner_center(ix1, iy1, margin)
+    _eq(e, "sag pusula merkezi = ic cizgi sag-ust kose", (round(right_c[0], 3), round(right_c[1], 3)), (round(want_c[0], 3), round(want_c[1], 3)))
+    _eq(e, "sol pusula sol-ustte", (round(left_c[0], 3), round(left_c[1], 3)), (round(ix0 + margin + arrow.extent, 3), round(want_c[1], 3)))
+    # donus -> kat plani pusulasi acisi (elle: -B normalize)
+    for rot, want_ang in ((0.0, 0.0), (90.0, -90.0), (330.0, 30.0)):
+        d, _ = render_site_views([_sheet_view(rot)], "1/500")
+        cs = sorted(_compasses(d), key=lambda c: c[0][0])
+        tipx, tipy = cs[0][1][0], cs[0][1][1]
+        got = math.degrees(math.atan2(tipx, tipy))
+        _eq(e, f"donus {rot}: kat plani pusulasi {want_ang}", round(((got - want_ang + 180) % 360) - 180, 6), 0.0)
+    # UST yuzu gosteren ok: bina cizgisi (VAZ-BINA LINE) yonu = bina donusu (saat yonunde, +Y'den)
+    bl = [en for en in doc.modelspace().query("LINE") if en.dxf.layer == "VAZ-BINA"]
+    _eq(e, "UST oku tek cizgi", len(bl), 1)
+    if bl:
+        dxv, dyv = bl[0].dxf.end.x - bl[0].dxf.start.x, bl[0].dxf.end.y - bl[0].dxf.start.y
+        _eq(e, "UST oku yonu = bina donusu (30 derece, saat yonu)", round(math.degrees(math.atan2(dxv, dyv)), 6), 30.0)
+    # parsel yatay ortalanir ve pafta icinde (tasma korumasi calisiyor)
+    big = _sheet_view(info_lines=["x" * 400])
+    d2, s2 = render_site_views([big], "1/500")
+    if s2[0]["width"] <= 30000:
+        e.append("uzun bilgi satiri paftayi GENISLETMELI (gercek font olcusu)")
+    off = _sheet_view()
+    off.footprint = [(x + 80000, y) for x, y in off.footprint]              # bina pafta disinda -> tasma
+    try:
+        render_site_views([off], "1/500")
+        e.append("pafta disina tasan icerik PaftaOverflowError vermeli")
+    except PaftaOverflowError:
+        pass
+    # birden cok pafta: bitisik + ortak y-araligi
+    d3, s3 = render_site_views([_sheet_view(label="A1 ALTERNATIFI"), _sheet_view(90.0, label="A2 ALTERNATIFI", info_lines=["a"])], "1/500")
+    gap = CONTENT_PADDING + FRAME_GAP
+    _eq(e, "paftalar dis cizgilerinden BITISIK", round(s3[1]["dx"] - gap, 6), round(s3[0]["dx"] + s3[0]["width"] + gap, 6))
+    frames = [p for p in d3.modelspace().query("LWPOLYLINE") if p.dxf.layer == "CERCEVE" and len(list(p.get_points())) == 4]
+    ys = {(round(min(q[1] for q in p.get_points()), 3), round(max(q[1] for q in p.get_points()), 3)) for p in frames}
+    _eq(e, "tum paftalarin dis cerceve / ic cerceve / antet Y araligi ORTAK (3 farkli aralik; paftalar kaysaydi 6 olurdu)", len(ys), 3)
+    return e
+
+
+def check_site_export_dev084() -> list[str]:
+    import json as _j
+    import subprocess
+    from vaziyet import study_from_context, view_from_building, views_from_study
+    e: list[str] = []
+    ctx = _ctx_building(30.0, -30.0)
+    ctx["meta"].update({"floor_width": 10000, "floor_depth": 6000})
+    view = view_from_building(ctx)
+    _eq(e, "secilmis yerlesim: dönüs", view.rotation_deg, 30.0)
+    if not any("30" in ln and "BINA DONUSU" in ln for ln in view.info_lines):
+        e.append("bilgi satirinda bina donusu olmali")
+    if view.buildable is None:
+        e.append("cekme bildirildiyse yapilasma alani cizilmeli")
+    nosb = _ctx(building={"position": [15000, 20000], "rotation_deg": 0.0})
+    nosb["meta"].update({"floor_width": 10000, "floor_depth": 6000})
+    v2 = view_from_building(nosb)
+    if v2.buildable is not None or not any("CEKME BILDIRILMEDI" in ln for ln in v2.info_lines):
+        e.append("cekme yoksa katalog SESSIZCE uygulanmamali; yapilasma alani cizilmez ve bu yazilir")
+    for bad in ({"site": {}}, {"meta": {"floor_width": 1, "floor_depth": 1}, "site": {"parcel": {"polygon": [[0, 0], [1, 0], [1, 1]]}}}):
+        try:
+            view_from_building(bad)
+            e.append("eksik veri reddedilmeli")
+        except VaziyetError:
+            pass
+    res, notices, buildable = study_from_context(ctx, step_mm=5000, rotations_deg=[0, 90])
+    views = views_from_study(ctx, res, buildable)
+    _eq(e, "her alternatif icin bir gorunum", [v.label for v in views], [f"{a.id} ALTERNATIFI" for a in res.alternatives])
+    for v, a in zip(views, res.alternatives):
+        if f"KAT PLANI KUZEY ACISI: {a.plan_north_angle:g} DERECE" not in v.info_lines:
+            e.append(f"{a.id}: kat plani kuzey acisi satiri olmali")
+    script = str(Path(__file__).resolve().parent.parent / "site_export.py")
+    with tempfile.TemporaryDirectory() as tmp:
+        ctx["site"]["north_confirmed"] = True
+        p = Path(tmp) / "c.json"
+        p.write_text(_j.dumps(ctx), encoding="utf-8")
+        before = hashlib.sha256(p.read_bytes()).hexdigest()
+        run = lambda *a: subprocess.run([sys.executable, script, str(p), *a], capture_output=True, text=True, timeout=300)  # noqa: E731
+        out = Path(tmp) / "o" / "v.dxf"
+        r = run("--scale", "1/500", "--out", str(out))
+        if r.returncode != 0 or not out.exists() or "1 pafta" not in r.stdout:
+            e.append(f"tek pafta cikti uretilmedi: {r.stdout!r} {r.stderr[-300:]!r}")
+        else:
+            d = ezdxf.readfile(out)
+            _eq(e, "cikti DXF: parsel katmani var", any(x.dxf.layer == "VAZ-PARSEL" for x in d.modelspace()), True)
+        r = run("--scale", "1/500", "--study", "--step-mm", "5000", "--rotations", "0,90", "--out", str(out))
+        if r.returncode != 0 or "3 pafta" not in r.stdout:
+            e.append(f"karsilastirma cikti uretilmedi: {r.stdout!r} {r.stderr[-300:]!r}")
+        _eq(e, "CLI salt okunur (context degismedi)", hashlib.sha256(p.read_bytes()).hexdigest(), before)
+        if run("--out", str(out)).returncode != 2:
+            e.append("--scale verilmeden calismamali (varsayilan yok)")
+        if run("--scale", "1/100").returncode != 2:
+            e.append("1/100 vaziyet olcegi degil: reddedilmeli")
+        if run("--scale", "1/500", "--study", "--rotations", "0").returncode != 2:
+            e.append("--study icin --step-mm zorunlu")
+        # varsayilan cikti yeri: context'in yanindaki output/vaziyet.dxf
+        r = run("--scale", "1/200")
+        if r.returncode != 0 or not (Path(tmp) / "output" / "vaziyet.dxf").exists():
+            e.append(f"varsayilan cikti yeri context/output/vaziyet.dxf olmali: {r.stdout!r}")
+        big = _j.loads(p.read_text(encoding="utf-8"))
+        big["meta"].update({"floor_width": 90000, "floor_depth": 90000})        # bina yapilasma alanina SIGMAZ -> alternatif yok
+        p.write_text(_j.dumps(big), encoding="utf-8")
+        r = run("--scale", "1/500", "--study", "--step-mm", "5000", "--rotations", "0")
+        if r.returncode != 1 or "ALTERNATIF YOK" not in r.stdout:
+            e.append(f"alternatif yoksa acik hata (ALTERNATIF YOK): {r.stdout!r}")
+        p.write_text(_j.dumps(ctx), encoding="utf-8")
+        nob = dict(ctx)
+        nob["site"] = {k: v for k, v in ctx["site"].items() if k != "building"}
+        p.write_text(_j.dumps(nob), encoding="utf-8")
+        r = run("--scale", "1/500")
+        if r.returncode != 1 or "site.building yok" not in r.stdout:
+            e.append(f"site.building yoksa acik hata: {r.stdout!r}")
+    return e
+
+
 def main() -> int:
     groups = (
         ("cokgen gecerliligi (kendini kesen/yinelenen/kolinear + L yanlis-pozitif yok)", check_polygon_validity()),
@@ -730,6 +950,9 @@ def main() -> int:
         ("etut: Pareto + agirliksiz/agirlikli secim (DEV-083)", check_study_selection_dev083()),
         ("etut: uctan uca, determinizm, N, veri eksikligi notlari, TAKS/KAKS (DEV-083)", check_study_run_dev083()),
         ("etut: anlatim sablonu rakam lint'i + site_study CLI (DEV-083)", check_study_narration_and_cli_dev083()),
+        ("kat plani north_angle <-> site.building.rotation_deg tutarliligi (DEV-084)", check_north_consistency_dev084()),
+        ("vaziyet paftasi: pusulalar, katmanlar, cm olcusu, tasma, bitisik paftalar (DEV-084)", check_site_sheet_dev084()),
+        ("vaziyet DXF cikti: gorunumler + site_export CLI (DEV-084)", check_site_export_dev084()),
     )
     failed = False
     for name, errors in groups:

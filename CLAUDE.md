@@ -329,7 +329,7 @@ geliştirme görevleri, tamamlanmış geçmiş, fikirler ve geliştirici notlar�
   köşesinde durur** (`NorthArrow.corner_center`, `Sheet.inner_bounds`). İzinli aralık (geometriden türer, ölçüm eşiği değildir): **dikdörtgen binada
   `[−90°, +90°]`** (iki uzun yüzden kuzeye yakın olanın dış normali kuzeyle ≤ 90°), **tam kare binada `[−45°, +45°]`**; eşdeğer açılar normalize edilir (350 = −10);
   aralık dışı açı `validate.py` **HATASI**dır ve `meta.floor_width < meta.floor_depth` (uzun kenar yatay değil) `north_angle` verilmişse **UYARI**dır — proje sessizce
-  döndürülmez (otomatik migrasyon yok), karar istenir. Yön yalnız **açıyla** bildirilir. Uygulama: `scripts/northarrow::check_north_convention` / `check_north_layout`.
+  döndürülmez (otomatik migrasyon yok), karar istenir. Yön yalnız **açıyla** bildirilir. Uygulama: `scripts/northarrow::check_north_convention` / `check_north_layout`. **Vaziyet paftası (DEV-084, bağımsız `vaziyet.dxf`):** sağ-üstte vaziyet pusulası DAİMA yukarı, sol-üstte "KAT PLANI PUSULASI" bina dönüşünün tersi kadar dönük (`site.building` varsa `meta.north_angle` ile tutarlılığı `validate.py` UYARIR).
 - Kuzey okunun **NASIL çizildiği** (`NorthArrowStyle` Protocol'ü,
   `scripts/northarrow/`) standarttan ayrılmıştır — ileride farklı bir
   sembol tasarımına geçilmesi `NorthArrow(style=...)` ile enjekte edilir,

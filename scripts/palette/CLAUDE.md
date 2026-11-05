@@ -119,3 +119,6 @@ hesaplanabilir olduğu (3-4-5 üçgeni).
 **Rol:** gerekçeli muaf (`reasoning/registry.py::REASONING_EXEMPT`, DEV-067). **Gerekçe (düşünüldü, ölçüm/kural vermez):** katman renk kaydi; okunabilirlik/kontrast denetimi kendi validate_palette'indedir, mimari muhakemeye konu degildir.
 **Sağlayıcıya geçiş:** bu modül için bir veçhe doğarsa modül `REASONING_EXEMPT`ten çıkar, `scripts/palette/reasoning.py` (rol + ölçüm beyanı;
 veçhe kaydı lens paketinde) yazılır ve `REASONING_PROVIDERS`a girer — kural ve izinler: `docs/agents/KNOWLEDGE_ENGINEER_AGENT.md`.
+
+## DEV-084: vaziyet katmanları
+`VAZ-PARSEL` (koyu), `VAZ-CEKME` (magenta, kesikli), `VAZ-YOL` (zeytin), `VAZ-BINA` (mavi), `VAZ-ALAN` (turkuaz, kesikli) — `vaziyet` kontrast grubu (kendi aralarında ≥ `CONTRAST_MIN_DISTANCE`; tüm paletle tam-eşitlik yasağı geçerli). Kullanan: `scripts/vaziyet/sheet.py` (bağımsız vaziyet DXF'i; kat planı paftalarında yoktur).

@@ -1,8 +1,8 @@
-# vaziyet modülü (vaziyet/parsel girdisi + yerleşim etüdü) — DEV-082 v1, DEV-083
+# vaziyet modülü (vaziyet/parsel girdisi + yerleşim etüdü + vaziyet paftası) — DEV-082 v1, DEV-083, DEV-084
 
 Kullanıcının **vaziyet/parsel planı** girdisini içeri alır, parsel ve çekme geometrisini doğrular ve yapılaşma alanını hesaplar. Plan: `docs/development/SITE_PLAN_STUDY_PLAN.md`
-(`DEV-081`…`DEV-087`). Girdi katmanı `DEV-082`, **yerleşim etüdü motoru `DEV-083`** (aşağıda); vaziyet paftası/DXF çıktısı `DEV-084`, brief/onay diyaloğu `DEV-085`, imar varsayılan
-kataloğu `DEV-086`, DWG `DEV-087`. **Context'e YAZMAZ, DXF ÇİZMEZ, çekme/adım/dönüş/ağırlık değeri UYDURMAZ.**
+(`DEV-081`…`DEV-087`). Girdi katmanı `DEV-082`, **yerleşim etüdü motoru `DEV-083`** (aşağıda); **vaziyet paftası/bağımsız DXF çıktısı `DEV-084`** (aşağıda), brief/onay diyaloğu `DEV-085`, imar varsayılan
+kataloğu `DEV-086`, DWG `DEV-087`. **Context'e YAZMAZ, çekme/adım/dönüş/ağırlık/ölçek değeri UYDURMAZ.** (DXF yalnız `sheet.py` ile, bağımsız vaziyet çıktısı olarak üretilir; ana `plan.dxf`e dokunmaz.)
 
 ## İsim notu
 Plan `site/` adını kullanıyordu; `site` bir **Python stdlib modülüdür** (yorumlayıcı başlarken otomatik yüklenir) — `import site` paketimizi DEĞİL stdlib'i verirdi (`import` → `importer`, `fixture` → `golden`
@@ -26,6 +26,8 @@ ile aynı sınıf bir ad düzeltmesi). Dizin/paket: `vaziyet/`. **Veri anahtarı
 | `build_candidates`, `footprint_within`, `StudyCandidate` | **DEV-083** sıralı aday ızgarası (adım + dönüş kümesi KULLANICI parametresi, varsayılan yok) ve ayak izi içerme testi (sınır içeridir, 1 mm içeri giren dışarıdır) |
 | `Measurement`, `measure_candidate` | **DEV-083** aday ölçümleri; her ölçüm kaynak fonksiyon adını taşır; veri yoksa ölçüm YOKTUR |
 | `pareto_front`, `select_unweighted`, `select_weighted`, `ceiling_checks`, `run_study`, `Alternative`, `StudyResult`, `OBJECTIVES`, `DEFAULT_ALTERNATIVES`, `MAX_ALTERNATIVES` | **DEV-083** eleme + seçim + TAKS/KAKS tavanı + etüt |
+| `SiteView`, `render_site_views`, `draw_site_view`, `ensure_site_layers`, `SITE_SCALES` | **DEV-084** vaziyet paftası + bağımsız DXF belgesi (aşağıda) |
+| `study_from_context`, `view_from_building`, `views_from_study` | **DEV-083/084** `context.json::site` → etüt / görünüm çözümlemesi (CLI'lar AYNI yolu kullanır) |
 | `narrate_alternative` | **DEV-083** alternatif anlatımı (sabit şablon + ölçülmüş yer-tutucu; şablonda rakam lint'i) |
 | `write_sample` | basit ÖRNEK vaziyet DXF'i (kullanıcıya verilir); CLI `python scripts/site_sample.py`; tarama CLI `python scripts/site_scan.py dosya.dxf [--patch c0,c1]` |
 
@@ -56,6 +58,16 @@ yola bakan kenar bilinmiyorsa rol UYDURULMAZ. `setbacks_for_parcel` → `site.se
 - **CLI:** `python scripts/site_study.py context.json --step-mm 5000 --rotations 0,90 [--n 3] [--weights road_proximity=2,...] [--min-separation-mm X] [--taks 0.4] [--kaks 1.2] [--floors 5] [--json]`. `site.setbacks` yoksa katalog çekmesine düşer ve bunu bildirir.
 - **Standart profili (planlı, DEV-088):** çekme/TAKS/KAKS bugün `zoning.py` kataloğundan gelir; bölge/şehir bazlı profil seçimi ("İstanbul standartlarına göre", "şuranın standartları nasıl", "proje özelinde ilerle") DEV-088'dedir ve bu modül değeri yine TEK çözümleyiciden (`resolve_zoning`) alır.
 
+## Vaziyet paftası ve bağımsız DXF (DEV-084, `sheet.py` / `from_context.py`, CLI `scripts/site_export.py`)
+**Ana `plan.dxf`ten BAĞIMSIZ çıktı** (`output/vaziyet.dxf`; dosya açıksa `<ad>_N.dxf` yedeği, `generate_dxf.save_with_fallback`). `pafta::Sheet` (çift çerçeve, antet, **taşma koruması**, bitişik paftalar, ortak Y aralığı) ve `northarrow::NorthArrow` TÜKETİLİR.
+- **Ölçek ZORUNLU ve `SITE_SCALES = ("1/200", "1/500")`** (kök CLAUDE.md: vaziyet planı 1:200 ya da 1:500); varsayılan yok, başka ölçek `VaziyetError`/CLI çıkış 2.
+- **İki pusula (DEV-081 sözleşmesi):** sağ-üst iç köşede **vaziyet pusulası DAİMA yukarı**; sol-üstte **KAT PLANI PUSULASI** = `plan_north_angle(bina_dönüşü)` kadar dönük ("−B": 30° dönük bina → −30°) — kat planı paftasında ok böyle görünecek. Bina ÜST yüzü kısa bir okla ve "UST" yazısıyla işaretlenir (ok yönü = bina dönüşü).
+- **Çizilenler:** parsel (`VAZ-PARSEL`), çekme/yapılaşma alanı (`VAZ-CEKME`, kesikli; yalnız çekme BİLDİRİLDİYSE — katalog çekmesi sessizce çizilmez, satırda "ÇEKME BİLDİRİLMEDİ"), istenen yerleşim bölgesi (`VAZ-ALAN`, kesikli), yol kenarı (parsel dışında ofsetli çizgi, `VAZ-YOL`) ve bina ayak izi (`VAZ-BINA`); kenar uzunlukları **tam sayı cm** (ölçü metni standardı). Katman renkleri `palette::PALETTE`ten (`vaziyet` kontrast grubu).
+- **Bilgi satırları** pafta altında: seçilmiş yerleşim için bina dönüşü; alternatif karşılaştırmada `narrate_alternative` çıktısı (ölçülmüş sayılar) + "KAT PLANI KUZEY ACISI". Pafta genişliği gerçek font ölçüsüyle bilgi satırlarına göre genişler (dinamik genişlik kuralı).
+- **Karşılaştırma:** `--study` ile her alternatif ayrı bir pafta (A1/A2/…); paftalar dış çizgilerinden bitişiktir.
+- **`validate.py` tutarlılığı (UYARI, otomatik düzeltme YOK):** `site.building` varken `meta.north_angle` yoksa "vaziyetteki dönüşten türetilen değer X" önerilir (yazılmaz); varsa ve `−dönüş` ile (360° modunda) uyuşmuyorsa "tutarsız" uyarısı.
+- CLI: `python scripts/site_export.py context.json --scale 1/500 [--out yol]` (secilmiş `site.building`) ya da `--study --step-mm .. --rotations ..` (alternatifler; ağırlık/N/TAKS/KAKS seçenekleri `site_study.py` ile aynı).
+
 ## Çakışma denetimi: EXEMPT
 `collision/scene.py::COLLISION_EXEMPT` içinde: vaziyet düzlemi kat sahnesinden ayrı bir koordinat dünyasıdır; parsel/yapılaşma alanı/ayak izi içerme denetimi `checks.py::check_site`te (tekil arite).
 
@@ -64,10 +76,11 @@ yola bakan kenar bilinmiyorsa rol UYDURULMAZ. `setbacks_for_parcel` → `site.se
 **Sağlayıcıya geçiş:** bu modül için bir veçhe doğarsa modül `REASONING_EXEMPT`ten çıkar, `scripts/vaziyet/reasoning.py` (rol + ölçüm beyanı; veçhe kaydı lens paketinde) yazılır ve `REASONING_PROVIDERS`a girer — kural ve izinler: `docs/agents/KNOWLEDGE_ENGINEER_AGENT.md`.
 
 ## Doğrulama
-`python scripts/vaziyet/selftest.py` — 11 grup (5 girdi + DEV-086 + 5 DEV-083): çokgen geçerliliği (kelebek/yinelenen/kolinear + L yanlış-pozitif yok), **ELLE hesaplanan** offset (dikdörtgen, kenar başına, L konkav reflex genişlemesi, çökme, eşdoğrusal, kısmen çöken), çekme çözümleme +
+`python scripts/vaziyet/selftest.py` — 14 grup (5 girdi + DEV-086 + 5 DEV-083 + 3 DEV-084): çokgen geçerliliği (kelebek/yinelenen/kolinear + L yanlış-pozitif yok), **ELLE hesaplanan** offset (dikdörtgen, kenar başına, L konkav reflex genişlemesi, çökme, eşdoğrusal, kısmen çöken), çekme çözümleme +
 ayak izi (90° saat yönü elle) + `plan_north_angle`, `check_site` kancası, DXF içeri aktarma (üretilen örnek, salt-okunurluk/sha256, birim/cm×10, LINE zinciri [açık/dallı/8-şekli/0,5 mm–5 mm boşluk], kuzey 4 durum + 1° sınırı, desteklenmeyenler, DWG, bozuk dosya).
 DEV-086 testi `check_zoning_catalog_dev086` (elle okunan değerler, kullanıcı üstünlüğü, koşul/nizam, rol seçimi, defaults_report CLI; 17 kasıtlı bozmadan 16'sı yakalandı, 1'i ölü savunma satırı). Kasıtlı bozma (DEV-082: 31 mutasyon): 29'u yakalandı; 2'si **eşdeğer savunma satırı** (offset'te `signed_area<=0` kenar-yönü kontrolüyle örtüşür; LINE zincirinde derece≠2 dışlaması dolaşma başarısızlığıyla örtüşür — rastgele 4000+20000 çokgen aramasıyla ayrıştıran girdi bulunamadı).
 **DEV-083 testleri** (ELLE hesap: 30×40 m parsel, çekme 5 m → yapılaşma alanı 20×30 m, bina 10×6 m, adım 5 m → 35 aday/15 kalan [dönüş 90 ile 70/30], çekme 2 m adım 13 m → 9 aday/2 kalan/7 parsel dışı; yol/bahçe/bölge/yüz açısı ölçümleri; Pareto ve seçim vektörleri; TAKS 0,05, KAKS 0,25; CLI): 41 kasıtlı bozmanın 41'i yakalandı (ilk turda 6'sı sızdı: iki yol kenarı, çeşitlilikte en yakın aday, bir negatif + bir pozitif ağırlık, `min_separation_mm`, "az alternatif" notu, Nd-dışı rakam lint'i → testler güçlendirildi). Yanlış-pozitif: sınırdaki aday elenmez, L içindeki ayak izi geçer, bölgeyi kapsayan ayak izi 1,0.
+**DEV-084 testleri** (ELLE: pusula ibre ucu vaziyette (0, +r), kat planında −30° için (−0,5r, +0,866r); sağ pusula merkezi = `Sheet.inner_bounds` sağ-üst köşe; kenar etiketleri 3000/4000 cm parselin DIŞINDA; paftalar bitişik + ortak Y aralığı; taşma koruması; ölçek/eksik veri reddi; `north_angle` tutarlılığı 9 durum [350≡−10, 180≡−180 dahil]; CLI: ölçek zorunlu, salt okunur, varsayılan çıktı yeri): 24 kasıtlı bozmanın 23'ü yakalandı (ilk turda `UST` oku yönü ve "alternatif yok" hatası sızdı → test eklendi); 1'i **eşdeğer çift savunma** (`site_export.py`te `scale is None` kontrolü, sonraki `scale not in SITE_SCALES` ile örtüşür).
 Golden: `scripts/vaziyet/golden/parsel_ornek` (şema 1.8.0 + `site` + `north_angle=−30`; bina 6000×9000 olduğundan `floor_width < floor_depth` UYARISI bilinçli olarak görünür).
 
 ## Bilinen sınırlamalar
@@ -77,4 +90,5 @@ Golden: `scripts/vaziyet/golden/parsel_ornek` (şema 1.8.0 + `site` + `north_ang
 - Tek parsel, tek bina dikdörtgeni; çok parselli/çok bloklu/L biçimli bina kapsam dışı.
 - Bina ayak izi parsel DIŞINDA ise HATA, yalnız çekmeye giriyorsa UYARI; `placement_zone` eleme değildir.
 - **Etüt (DEV-083) sınırları:** tek dikdörtgen bina; ızgara tabanlı (adım kullanıcıda — adımın arasında kalan en iyi konum görülmez); bahçe "parça sayısı" yalnız parsel sınırına değme üzerinden hesaplanır (alan/şekil ölçüsü yok); cephe başına ışık için kaynaksız eşik YOK (yalnız güneyden sapma ölçülür); komşu parsel/mevcut bina çakışması ve yol ayak izi yok (parsel dışı elemesi bunların yerini tutmaz); alternatifin vaziyet paftası/DXF'i `DEV-084`, brief/onay diyaloğu `DEV-085`.
-- Vaziyet paftası/pusulası, brief ve DWG sonraki maddelerdir. İmar varsayılanları ikincil kaynaklıdır ve doğrulanmamıştır; yalnız ayrık nizam; TAKS 0,40 / 0,60 farklı koşulların değeridir (birbirinin yerine geçmez); kat adedi/taban alanı hesabı (KAKS) etüt motorunda (DEV-083).
+- **Vaziyet paftası (DEV-084) sınırları:** ana `plan.dxf`e EKLENMEZ — `pafta::Sheet` ölçeği PROJE geneli tek değerdir (antet/metin yükseklikleri ondan türer), 1:500 vaziyet 1:50 projeye aynı Sheet ile karışamaz; vaziyet bağımsız DXF'tir (açık karar kullanıcıda: ana pafta setine ayrı ölçekli bir pafta eklenmesi `Sheet` ölçek-bağımsızlaşmasını gerektirir). Yol çizgisi parselden ofsetli şematik çizgidir (gerçek yol geometrisi değil); anlatım satırları paftaya tek satır sığdırılır (satır sarma yok, pafta genişler); preview PNG'si bu çıktı için üretilmez.
+- Brief ve DWG sonraki maddelerdir. İmar varsayılanları ikincil kaynaklıdır ve doğrulanmamıştır; yalnız ayrık nizam; TAKS 0,40 / 0,60 farklı koşulların değeridir (birbirinin yerine geçmez); kat adedi/taban alanı hesabı (KAKS) etüt motorunda (DEV-083).

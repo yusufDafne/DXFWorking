@@ -3,10 +3,10 @@ from __future__ import annotations
 
 try:
     from .parcel import Parcel, VaziyetError, validate_polygon
-    from .setback import buildable_area, building_footprint
+    from .setback import buildable_area, building_footprint, plan_north_angle
 except ImportError:
     from parcel import Parcel, VaziyetError, validate_polygon  # type: ignore
-    from setback import buildable_area, building_footprint  # type: ignore
+    from setback import buildable_area, building_footprint, plan_north_angle  # type: ignore
 
 try:
     from ..collision.geometry import point_in_polygon, point_inside_or_on
@@ -67,4 +67,11 @@ def check_site(context: dict) -> tuple[list[str], list[str]]:
                 errors.append("site.building ayak izi PARSEL disina tasiyor")
             elif buildable is not None and not all(point_inside_or_on(v, buildable, 1e-6) for v in foot):
                 warnings.append("site.building ayak izi yapilasma alani (cekmeler) disina giriyor")
+    if building:                                                  # DEV-084: kat plani pusulasi vaziyetteki bina donusuyle tutarli mi (UYARI; otomatik duzeltme YOK)
+        expected = plan_north_angle(float(building.get("rotation_deg", 0.0)))
+        actual = context.get("meta", {}).get("north_angle")
+        if actual is None:
+            warnings.append(f"site.building var ama meta.north_angle yok: kat planinda kuzey oku cizilmez; vaziyetteki donusten turetilen deger {expected:g} (meta.north_angle = -bina_donusu; yazilmadi, karar sizin)")
+        elif abs((float(actual) - expected + 180.0) % 360.0 - 180.0) > 1e-6:
+            warnings.append(f"meta.north_angle ({float(actual):g}) site.building.rotation_deg ile tutarsiz: bu bina donusu icin beklenen {expected:g} (meta.north_angle = -bina_donusu); otomatik duzeltme yapilmadi")
     return errors, warnings

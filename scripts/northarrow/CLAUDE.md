@@ -90,3 +90,6 @@ Gelen vaziyet kuzey yukarıdır; proje paftaya uzun kenar yatay, kuzeye yakın u
 dikdörtgen binada **[−90°, +90°]** (`NORTH_LONG_SIDE_HALF_RANGE_DEG`), tam karede **[−45°, +45°]** (`NORTH_HALF_RANGE_DEG`), ölçü bilinmiyorsa muhafazakâr 45 (`north_half_range(meta)`). `check_north_convention` aralık
 dışında HATA; `check_north_layout`: `north_angle` verilmişse `floor_width < floor_depth` UYARI (otomatik döndürme YOK). Sağ-üst köşe yerleşimi için "Yerleşim". `CONTRACT_VERSION` 1.1 → 1.2.
 Vaziyetteki bina dönüklüğünün hesabı ve vaziyet pusulası `DEV-084`te. Test: `selftest.py::check_north_convention_dev081` + `check_corner_placement_dev081` (üretilen DXF'te ok merkezi ⇒ kendi iç çizgisinin sağ-üst köşesi; başka öğeye binmeme), `validate_selftest.py::check_north_hook_in_validate_dev081`; 11 kasıtlı bozma yakalandı.
+
+## DEV-084: vaziyet paftasında kullanım
+`vaziyet/sheet.py` aynı `NorthArrow`u iki kez çizer: sağ-üst iç köşede vaziyet pusulası (açı 0, DAİMA yukarı) ve sol-üstte KAT PLANI pusulası (`plan_north_angle(bina_dönüşü)` kadar dönük). Bu modülün API'si değişmedi; konum kararı çağırandadır (`Sheet.inner_bounds` + `corner_center`).
