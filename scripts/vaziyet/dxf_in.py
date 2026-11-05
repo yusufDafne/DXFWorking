@@ -165,7 +165,7 @@ def scan_site_dxf(path, join_tolerance_mm: float = JOIN_TOLERANCE_MM) -> SiteSca
         raise DxfInputError(f"dosya yok: {p}")
     head = p.read_bytes()[:6]
     if head.startswith(b"AC10") or head.startswith(b"AC1"):
-        raise DxfInputError("bu bir DWG dosyasi: sistem yalniz DXF okur. CAD'de 'DXF olarak kaydedin' (DWG dönüştürücü: DEV-087).")
+        raise DxfInputError("bu bir DWG dosyasi: scan_site_dxf yalniz DXF okur. DWG icin `scan_site_dwg` (kurulu donusturucu gerekir) ya da CAD'de 'DXF olarak kaydedin'.")
     try:
         doc = ezdxf.readfile(p)
     except Exception as exc:  # noqa: BLE001

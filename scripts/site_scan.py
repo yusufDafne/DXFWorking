@@ -11,7 +11,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from vaziyet import DxfInputError, VaziyetError, build_site_patch, scan_site_dxf  # noqa: E402
+from vaziyet import DxfInputError, VaziyetError, build_site_patch, scan_site_dwg, scan_site_dxf  # noqa: E402
 
 
 def main(argv=None) -> int:
@@ -25,7 +25,11 @@ def main(argv=None) -> int:
         print(__doc__)
         return 2
     try:
-        scan = scan_site_dxf(args[0])
+        if args[0].lower().endswith(".dwg"):
+            scan, rec = scan_site_dwg(args[0])
+            print(f"DWG donusturuldu: arac {rec.tool} ({rec.tool_path}); DWG sha256 {rec.dwg_sha256[:12]}..., uretilen DXF sha256 {rec.dxf_sha256[:12]}...")
+        else:
+            scan = scan_site_dxf(args[0])
     except DxfInputError as exc:
         print("HATA:", exc)
         return 1

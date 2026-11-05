@@ -1233,6 +1233,100 @@ def check_dialogue_cli_dev085() -> list[str]:
     return e
 
 
+# ----------------------------------------------------------------------------- DEV-087: DWG girdisi (dis arac sarmali)
+def check_dwg_input_dev087() -> list[str]:
+    import os
+    import stat
+    import subprocess
+    from vaziyet import DxfInputError, convert_dwg, find_converter, scan_site_dwg, scan_site_dxf, write_sample
+    e: list[str] = []
+    with tempfile.TemporaryDirectory() as tmp:
+        t = Path(tmp)
+        sample = t / "ornek.dxf"
+        write_sample(sample)
+        dwg = t / "arsa.dwg"
+        dwg.write_bytes(b"AC1032" + b"\x00" * 64)                         # DWG basligi (sahte icerik: donusturucu sahte)
+        fake_ok = t / "dwg2dxf"
+        fake_ok.write_text(f"#!{sys.executable}\nimport shutil, sys\nargs = sys.argv[1:]\nshutil.copy({str(sample)!r}, args[args.index('-o') + 1])\n", encoding="utf-8")
+        fake_fail = t / "dwg2dxf_fail"
+        fake_fail.write_text(f"#!{sys.executable}\nimport sys\nsys.stderr.write('bozuk dwg')\nsys.exit(3)\n", encoding="utf-8")
+        fake_empty = t / "dwg2dxf_empty"
+        fake_empty.write_text(f"#!{sys.executable}\nimport sys\nsys.exit(0)\n", encoding="utf-8")
+        for f in (fake_ok, fake_fail, fake_empty):
+            f.chmod(f.stat().st_mode | stat.S_IEXEC)
+        # arac arama: ortam degiskeni > PATH
+        _eq(e, "ortam degiskeni gosterilen arac", find_converter({"VAZIYET_DWG_CONVERTER": str(fake_ok), "PATH": ""}), ("dwg2dxf", str(fake_ok)))
+        fake_oda = t / "ODAFileConverter"
+        fake_oda.write_text(f"#!{sys.executable}\nimport shutil, sys\nin_dir, out_dir, ver, fmt, rec, audit, name = sys.argv[1:8]\nassert (ver, fmt) == ('ACAD2018', 'DXF'), sys.argv\n"
+                            f"shutil.copy({str(sample)!r}, out_dir + '/' + name.rsplit('.', 1)[0] + '.dxf')\n", encoding="utf-8")
+        fake_oda.chmod(fake_oda.stat().st_mode | stat.S_IEXEC)
+        _eq(e, "ODAFileConverter adi -> oda turu", find_converter({"VAZIYET_DWG_CONVERTER": str(fake_oda), "PATH": ""})[0], "ODAFileConverter")
+        scan_oda, rec_oda = scan_site_dwg(dwg, converter=("ODAFileConverter", str(fake_oda)))
+        _eq(e, "ODA komut duzeniyle de ayni adaylar", [c.points for c in scan_oda.candidates], [c.points for c in scan_site_dxf(sample).candidates])
+        _eq(e, "arac yok -> None", find_converter({"PATH": str(t / "bos")}), None)
+        _eq(e, "PATH'te dwg2dxf bulunur", find_converter({"PATH": str(t)}), ("dwg2dxf", str(fake_ok)))
+        try:
+            find_converter({"VAZIYET_DWG_CONVERTER": str(t / "yok")})
+            e.append("gosterilen arac yoksa ACIK hata")
+        except DxfInputError:
+            pass
+        # donusum: basarili
+        scan, rec = scan_site_dwg(dwg, converter=("dwg2dxf", str(fake_ok)))
+        _eq(e, "kaynak yol DWG (donusturulen DXF degil)", scan.path, str(dwg))
+        _eq(e, "kaynak sha256 DWG'nin sha256'si", scan.sha256, hashlib.sha256(dwg.read_bytes()).hexdigest())
+        _eq(e, "donusum kaydi: arac + DWG sha + DXF sha", (rec.tool, rec.dwg_sha256 == scan.sha256, rec.dxf_sha256 == hashlib.sha256(sample.read_bytes()).hexdigest()), ("dwg2dxf", True, True))
+        ref = scan_site_dxf(sample)
+        _eq(e, "adaylar dogrudan DXF taramasiyla ayni (ayni aday/onay hatti)", [(c.id, c.layer, c.points) for c in scan.candidates], [(c.id, c.layer, c.points) for c in ref.candidates])
+        _eq(e, "birim ayni", scan.units, ref.units)
+        # basarisiz donusturucu: sessiz yutma YOK
+        for tool, label, needle in ((fake_fail, "cikis kodu 3", "bozuk dwg"), (fake_empty, "cikti uretmedi", "uretmedi")):
+            try:
+                scan_site_dwg(dwg, converter=("dwg2dxf", str(tool)))
+                e.append(f"donusturucu basarisizsa hata: {label}")
+            except DxfInputError as exc:
+                if needle not in str(exc) or "DXF olarak kaydedin" not in str(exc):
+                    e.append(f"hata mesaji ({label}) neden + 'DXF olarak kaydedin' icermeli: {exc}")
+        saved = {k: os.environ.get(k) for k in ("PATH", "VAZIYET_DWG_CONVERTER")}
+        os.environ["PATH"] = str(t / "bos")
+        os.environ.pop("VAZIYET_DWG_CONVERTER", None)
+        try:
+            scan_site_dwg(dwg)
+            e.append("donusturucu yokken ACIK hata bekleniyordu")
+        except DxfInputError as exc:
+            if "DXF olarak kaydedin" not in str(exc) or "PATH" not in str(exc) or "ODA" not in str(exc):
+                e.append(f"arac yok mesaji kurulum ipucu icermeli: {exc}")
+        finally:
+            for k, v in saved.items():
+                if v is None:
+                    os.environ.pop(k, None)
+                else:
+                    os.environ[k] = v
+        notdwg = t / "x.dwg"
+        notdwg.write_bytes(b"merhaba dunya")
+        try:
+            convert_dwg(notdwg, t / "o", ("dwg2dxf", str(fake_ok)))
+            e.append("DWG basligi olmayan dosya reddedilmeli")
+        except DxfInputError:
+            pass
+        try:
+            scan_site_dxf(dwg)
+            e.append("scan_site_dxf DWG'yi sessizce OKUMAMALI")
+        except DxfInputError as exc:
+            if "scan_site_dwg" not in str(exc):
+                e.append(f"DWG mesaji scan_site_dwg'yi gostermeli: {exc}")
+        # CLI: .dwg yolu donusturucuyle taranir; donusturucu yoksa hata (cikis 1)
+        script = str(Path(__file__).resolve().parent.parent / "site_scan.py")
+        env = dict(os.environ, VAZIYET_DWG_CONVERTER=str(fake_ok))
+        r = subprocess.run([sys.executable, script, str(dwg)], capture_output=True, text=True, timeout=300, env=env)
+        if r.returncode != 0 or "DWG donusturuldu" not in r.stdout or "c0" not in r.stdout:
+            e.append(f"site_scan .dwg: donusturucuyle taranmali: {r.stdout!r} {r.stderr[-200:]!r}")
+        env2 = dict(os.environ, VAZIYET_DWG_CONVERTER=str(fake_fail))
+        r = subprocess.run([sys.executable, script, str(dwg)], capture_output=True, text=True, timeout=300, env=env2)
+        if r.returncode != 1 or "HATA" not in r.stdout:
+            e.append(f"site_scan .dwg: donusturucu hatasi acik hata (cikis 1): {r.stdout!r}")
+    return e
+
+
 def main() -> int:
     groups = (
         ("cokgen gecerliligi (kendini kesen/yinelenen/kolinear + L yanlis-pozitif yok)", check_polygon_validity()),
@@ -1252,6 +1346,7 @@ def main() -> int:
         ("brief semasi + faz dallanmasi + onay kapisi + diyalog kaydi (DEV-085)", check_brief_schema_and_gates_dev085()),
         ("secim patch'i + 'sen karar ver' devri (DEV-085)", check_selection_and_delegation_dev085()),
         ("site_dialogue CLI uctan uca: faz, brief, onay, etut, secim, devir (DEV-085)", check_dialogue_cli_dev085()),
+        ("DWG girdisi: dis arac sarmali, sahte donusturucu, basarisizlik acik hata (DEV-087)", check_dwg_input_dev087()),
     )
     failed = False
     for name, errors in groups:

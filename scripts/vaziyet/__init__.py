@@ -11,6 +11,7 @@ from __future__ import annotations
 CONTRACT_VERSION = "1.0"   # DEV-086 katalogu context'ten ALAN okumaz (surum degismez); DEV-082: context.json::site (parcel, placement_zone, road_edges, setbacks, building, source, north_confirmed)
 
 from .checks import check_site  # noqa: E402
+from .dwg_in import ConversionRecord, convert_dwg, find_converter, scan_site_dwg  # noqa: E402
 from .dxf_in import (Candidate, DxfInputError, SiteScan, build_site_patch, layer_hint, scan_site_dxf)  # noqa: E402
 from .parcel import Parcel, VaziyetError, inward_offset, normalize_ccw, validate_polygon  # noqa: E402
 from .sample import write_sample  # noqa: E402
@@ -33,7 +34,7 @@ __all__ = [
     "write_sample", "check_site", "ZONING_DEFAULTS", "ZoningValue", "ZoningResolution", "resolve_zoning", "edge_roles", "setbacks_for_parcel",
     "StudyCandidate", "build_candidates", "footprint_within", "Measurement", "measure_candidate", "narrate_alternative", "DEFAULT_ALTERNATIVES", "MAX_ALTERNATIVES",
     "OBJECTIVES", "OBJECTIVE_LABEL", "Alternative", "StudyResult", "ceiling_checks", "pareto_front", "run_study", "select_unweighted", "select_weighted",
-    "study_from_brief", "study_from_context", "view_from_building", "views_from_study", "SITE_SCALES", "SiteView", "draw_site_view", "ensure_site_layers", "render_site_views",
+    "ConversionRecord", "convert_dwg", "find_converter", "scan_site_dwg", "study_from_brief", "study_from_context", "view_from_building", "views_from_study", "SITE_SCALES", "SiteView", "draw_site_view", "ensure_site_layers", "render_site_views",
     "BRIEF_FIELDS", "PHASE_QUESTION", "PHASE_SITE", "PHASE_UNITS", "append_record", "brief_numbers", "brief_sha", "check_patch", "current_phase", "deep_merge",
     "delegation_decision", "effective_brief", "log_path", "read_log", "require_phase_and_brief", "route_phase", "selection_patch", "unsourced_numbers", "validate_brief",
 ]
